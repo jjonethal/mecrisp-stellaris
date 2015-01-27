@@ -1,0 +1,61 @@
+#!/bin/bash
+
+cd lpc1114fn28
+make clean
+cd ..
+
+cd kl25z128
+make clean
+cd ..
+
+cd mk20dx256
+make clean
+cd ..
+
+cd nrf51822
+make clean
+cd ..
+
+cd lm4f120
+make clean
+cd ..
+
+cd lm4f232
+make clean
+cd ..
+
+cd tm4c1294
+make clean
+cd ..
+
+cd stm32f051
+make clean
+cd ..
+
+cd stm32l152
+make clean
+cd ..
+
+cd stm32f100
+make clean
+cd ..
+
+cd stm32f103
+make clean
+cd ..
+
+cd stm32f303
+make clean
+cd ..
+
+cd stm32f401
+make clean
+cd ..
+
+cd stm32f407
+make clean
+cd ..
+
+cd stm32f429
+make clean
+cd ..

@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# This shell script generates a file called "s0init.txt" and "s1init.txt"
+# s0init.txt is the bare minimum to crank up the clock speed and implement flowcontrol
+# For S0 to load, you probably need a 50ms pause at the end of newlines
+# After S0, you can turn on flow control and should be able to load the rest of the files at full speed
+
+# Stage 0 initialization file - to be loaded with newline delays until flowcontrol can be established
+{
+  echo compiletoflash
+
+  # First, get the clock speed up to 96 MHz
+  ssed -Rf ss < mcg.txt
+  echo fullspeed
+  echo '\ Add a comment line ... it often gets garbled when the uart clock changes'
+
+  # Now, initiate basic flow control
+  # Forgone software flow control.  Now using CTS/RTS
+  # ssed -Rf ss < swflowcontrol.txt
+
+  # Add to init to automatically go to full speed and software flow control
+  # echo ': init fullspeed ['"'"'] prompt hook-quit ! CR ." Running at 96MHz" CR ." XON/XOFF enabled" CR ';
+  # Add to init to automatically go to full speed
+  echo ': init fullspeed CR ." Running at 96MHz" CR ;'
+  echo init
+  ssed -Rf ss < fault.txt
+  echo "' .fault irq-fault !"
+  ssed -Rf ss < nvic.txt
+  ssed -Rf ss < uart.txt
+  echo "' uart0e-isr irq-uart0e !"
+  echo uart0e-eint
+
+  ssed -Rf ss < gpio.txt
+  ssed -Rf ss < delay.txt
+  ssed -Rf ss < timer.txt
+  ssed -Rf ss < led.txt
+  ssed -Rf ss < asciiart.txt
+  ssed -Rf ss < init.txt
+  ssed -Rf ss < ../common/disassembler-m3.txt
+  ssed -Rf ss < struct.txt
+
+  echo compiletoram
+
+} > s0init.txt
+
+
+
+
+
+

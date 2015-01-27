@@ -1,0 +1,97 @@
+#!/bin/bash
+
+cd lpc1114fn28
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28 && cp *.hex ../../lpc1114fn28
+cd ..
+
+cd kl25z128
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128 && cp *.srec ../../kl25z128
+cd ..
+
+cd mk20dx256
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk20dx256 && cp *.hex ../../mk20dx256
+cd ..
+
+cd nrf51822
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
+cd ..
+
+cd lm4f120
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
+cd ..
+
+cd lm4f232
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f232
+cd ..
+
+cd tm4c1294
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../tm4c1294
+cd ..
+
+cd stm32f051
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f051
+cd ..
+
+cd stm32l152
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152
+cd ..
+
+cd stm32f100
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f100
+cd ..
+
+cd stm32f103
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103
+cd ..
+
+cd stm32f303
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303
+cd ..
+
+cd stm32f401
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401
+cd ..
+
+cd stm32f407
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407
+cd ..
+
+cd stm32f429
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f429
+cd ..
+
+# Intel Hex images for STM targets:
+
+cd ..
+
+cd stm32f051
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f051.bin mecrisp-stellaris-stm32f051.hex
+cd ..
+
+cd stm32l152
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l152.bin mecrisp-stellaris-stm32l152.hex
+cd ..
+
+cd stm32f100
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f100.bin mecrisp-stellaris-stm32f100.hex
+cd ..
+
+cd stm32f103
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103.bin mecrisp-stellaris-stm32f103.hex
+cd ..
+
+cd stm32f303
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303.bin mecrisp-stellaris-stm32f303.hex
+cd ..
+
+cd stm32f401
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
+cd ..
+
+cd stm32f407
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
+cd ..
+
+cd stm32f429
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f429.bin mecrisp-stellaris-stm32f429.hex
+cd ..

@@ -1,0 +1,18 @@
+# This requires Super Sed (ssed).  Invoke with ssed -Rf ss <files>
+
+# First let's get rid of lines that are bnegin with comments
+/^\\[\t \n\r]/d
+
+# Now, let's get rid of end-of-line comments.  This isn't perfect.  It will not remove a comment
+# if there is a quote in it
+s/[\t ]\\[\t ][^"]*$//
+
+# This collapses all white spaces ... as long as they aren't between quotes
+s/\s+(?=([^"]*"[^"]*")*[^"]*$)/ /g
+
+# get rid of blank lines
+/^\s*$/d 
+
+# Note:  if a commented line also has quotes (either in the code or comment)
+# this script just leaves the comment in. 
+

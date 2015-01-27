@@ -1,0 +1,132 @@
+
+\ ----------------------------------------------------------------------
+\  To plot an oscilloscope trace on a Tek 4014 vector graphics terminal
+\ ----------------------------------------------------------------------
+
+\  needs oscilloscope.txt
+
+\ ----------------------------------------------------------------------
+\ TEK4014 plotting functions
+\ ----------------------------------------------------------------------
+
+: tek4014-coord ( x y -- )
+  3071 umin swap 4095 umin swap \ Limit to screen
+
+  dup  7 rshift $1F and             $20 or emit  \ hiy
+  over 3 and over 3 and 2 rshift or $60 or emit  \ lsbxy
+  dup  2 rshift $1F and             $60 or emit  \ loy
+  over 7 rshift $1F and             $20 or emit  \ hix
+  over 2 rshift $1F and             $40 or emit  \ lox
+  
+  2drop
+;
+
+: clear ( -- ) 27 emit 12 emit ;
+: tek4014-pen   ( -- ) 29 emit ; \ $1D
+: tek4014-text  ( -- ) 31 emit ; \ $1F
+: tek4014-text-at ( x y -- ) tek4014-pen tek4014-coord tek4014-text ;
+
+: rectangle ( x y x y -- )
+  tek4014-pen
+  2over tek4014-coord
+  3 pick over tek4014-coord
+  2dup  tek4014-coord
+  over 3 pick tek4014-coord
+  2over tek4014-coord
+  2drop 2drop
+;
+
+: frame ( -- ) 0 0 4095 3071 rectangle ;
+
+: tek4014-start ( -- )
+  27 emit ." [?38h" \ TEK mode
+  clear
+;
+
+: tek4014-end ( -- )
+  31 emit        \ Text mode
+  27 emit 3 emit \ VT PAGE
+;
+
+\ ----------------------------------------------------------------------
+\ Signal drawing
+\ ----------------------------------------------------------------------
+
+: buffermax ( -- u ) \ Search for maximum measurement in buffer
+  0 fetchsample-ch1 0 fetchsample-ch2 umax
+  buffermask 1+ 0 
+  do
+    i fetchsample-ch1 i fetchsample-ch2 umax
+    umax
+  loop
+;
+
+: buffermin ( -- u ) \ Search for minimum measurement in buffer
+  0 fetchsample-ch1 0 fetchsample-ch2 umin
+  buffermask 1+ 0 
+  do
+    i fetchsample-ch1 i fetchsample-ch2 umin
+    umin
+  loop
+;
+
+0 variable maximum
+0 variable minimum
+
+: scaletime ( time -- x )
+  3500 buffermask u*/
+  500 +
+;
+
+: scaleamplitude ( sample -- y )
+  minimum @ - 
+  1000 maximum @ minimum @ - u*/
+  2000 +
+;
+
+: drawwave ( -- )
+  clear frame
+
+  buffermin minimum !
+  buffermax maximum !
+
+  500 1000 4000 3000 rectangle
+
+  100 1000 tek4014-text-at  minimum @ . cr
+  100 3000 tek4014-text-at  maximum @ . cr
+
+  tek4014-pen
+  buffermask 1+ 0 
+  do
+    i scaletime
+    i sample# @ + fetchsample-ch1 scaleamplitude
+    tek4014-coord    
+  loop
+  tek4014-text ."  1"
+
+  tek4014-pen
+  buffermask 1+ 0 
+  do
+    i scaletime
+    i sample# @ + fetchsample-ch2 scaleamplitude
+    tek4014-coord    
+  loop
+  tek4014-text ."  2"
+
+  100 900 tek4014-text-at  ." Signal"
+;
+
+: draw ( -- )
+  init-capture \ Sets ADC to sample continuously into circular buffer
+  
+  cr ." Sampling: Wait for trigger - press a key"
+  start  
+    begin key? until
+  stop
+
+  tek4014-start
+  drawwave
+  tek4014-end
+
+  close-capture
+;

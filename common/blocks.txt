@@ -1,0 +1,115 @@
+\ Blocks for Mecrisp-Stellaris
+
+1024 constant blocksize
+
+\ This will be in Flash or external memory later. In RAM just for testing.
+\ Block numbers can be 0 to $FFFFFE. $FFFFFF is reserved for "not assigned".
+
+8 constant #blocks
+blocksize #blocks * buffer: blockspace
+: block#toaddress ( n -- addr ) blocksize * blockspace + ;
+:  readblock ( block# addr -- )  ." Read block " over u. ." into " dup hex. cr    swap block#toaddress swap blocksize move ;
+: writeblock ( block# addr -- ) ." Write " dup hex. ." into block " over u. cr    swap block#toaddress      blocksize move ;
+
+\ Blocks implementation
+
+2 constant #buffers \ Choose number of buffers between 1 and 128
+#buffers cells buffer: bufferlist
+blocksize #buffers * buffer: blockbuffers
+
+: >block#   ( n -- n ) cells bufferlist + @ $00FFFFFF and ;
+: >buffer#  ( n -- n ) cells bufferlist + @ $7F000000 and 24 rshift ;
+: >changed? ( n -- ? ) cells bufferlist + @ $80000000 and 0<> ;
+: >clean!   ( n -- )   cells bufferlist + dup @ $80000000 bic swap ! ;
+
+: >bufferaddr ( n -- addr ) blocksize * blockbuffers + ;
+
+: topbuffer ( -- addr ) 0 >buffer# >bufferaddr ;
+
+: empty-buffers ( -- ) #buffers 0 do i 24 lshift $00FFFFFF or bufferlist i cells + ! loop ;
+: update ( -- ) bufferlist @ $80000000 or bufferlist ! ;
+
+: buffertotop ( n -- ) \ Takes one element of the buffer list and moves it to the top.
+  dup cells bufferlist + @ \ Get the element
+  swap
+  ( Element n )
+  bufferlist
+  dup cell+
+  rot cells
+  move \ Let all other elements fall down, for example 3: 2->3 1->2 0->1
+  bufferlist ! \ Store on the top
+;
+
+: save-buffer ( n -- ) dup >changed? if dup dup >block# swap >buffer# >bufferaddr writeblock >clean! else drop then ;
+: save-buffers ( -- ) #buffers 0 do i save-buffer loop ;
+: flush ( -- ) save-buffers empty-buffers ;
+
+: load-buffer ( block# -- ) dup topbuffer readblock bufferlist @ $FF000000 and or bufferlist ! ; \ Always loads into the top buffer
+
+: block ( n -- addr )
+  \ Check if the desired block is already in one of the buffers.
+  #buffers 0 do dup i >block# = if ." Already " drop i buffertotop topbuffer unloop exit then loop
+
+  \ Check if there is an empty buffer
+  #buffers 0 do i >block# $00FFFFFF = if ." Empty " i buffertotop load-buffer topbuffer unloop exit then loop
+
+  \ Check if there is an assigned, but still clean buffer
+  #buffers 0 do i >changed? not if ." Clean " i buffertotop load-buffer topbuffer unloop exit then loop
+
+  \ No buffer is empty. Write back the least recent one
+  ." Writeback "
+  #buffers 1- save-buffer
+  #buffers 1- buffertotop
+  load-buffer
+  topbuffer
+;
+
+: listbuffers ( -- ) \ Show current buffer allocations and state
+  cr
+  #buffers 0 do
+    ."  Buffer: " i >buffer# u. 
+    ." Block: " i >block# dup $00FFFFFF = if ." Not assigned " drop else u. then
+    i >changed? if ." Changed" else ." Clean" then
+    cr
+  loop
+;
+
+empty-buffers \ Needed before start as buffer: space is uninitialised !
+
+
+
+\ Some code for testing only
+
+: lb ( -- ) listbuffers ;
+: db ( -- ) cr #blocks 0 do i u. blockspace i blocksize * + ctype cr loop ;
+: s ( buffer-addr -- ) >r token ( string-addr length ) dup r@ c! ( string-addr length ) r> 1+ ( string-addr length buffer-addr ) swap move update ;
+
+\ Erase the block memory in RAM
+blockspace   blocksize #blocks *   0   fill
+
+0 block s Have
+1 block s a
+2 block s good
+3 block s time
+4 block s with
+5 block s Mecrisp
+6 block s Stellaris
+
+lb
+db
+
+0 block ctype 
+1 block ctype
+2 block ctype
+3 block ctype
+4 block ctype
+5 block ctype
+6 block ctype
+
+0 block s Enjoy
+2 block s nice
+
+lb
+db
+flush
+db

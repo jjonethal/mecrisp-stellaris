@@ -1,0 +1,26 @@
+
+compiletoflash
+
+: Flamingo cr
+."      _" cr
+."     ^-)" cr
+."      (.._          .._" cr
+."       \`\\        (\`\\        (" cr
+."        |>         ) |>        |)" cr
+." ______/|________ (7 |` ______\|/_______a:f" cr
+;
+
+: init
+  cr
+  Flamingo
+  cr
+  ." Have a nice day !" cr
+;
+
+\ Cornerstone for 256 Bytes Flash pages that contain zero in erased state
+
+: cornerstone ( Name ) ( -- )
+  <builds begin here $FF and while $FFFF h, repeat
+  does>   begin dup  $FF and while 2+       repeat 
+          eraseflashfrom
+;

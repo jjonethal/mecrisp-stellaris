@@ -1,0 +1,63 @@
+#!/bin/bash
+
+cd ..
+
+cd lpc1114fn28
+md5sum *.bin
+cd ..
+
+cd kl25z128
+md5sum *.bin
+cd ..
+
+cd mk20dx256
+md5sum *.bin
+cd ..
+
+cd nrf51822
+md5sum *.bin
+cd ..
+
+cd lm4f120
+md5sum *.bin
+cd ..
+
+cd lm4f232
+md5sum *.bin
+cd ..
+
+cd tm4c1294
+md5sum *.bin
+cd ..
+
+cd stm32f051
+md5sum *.bin
+cd ..
+
+cd stm32l152
+md5sum *.bin
+cd ..
+
+cd stm32f100
+md5sum *.bin
+cd ..
+
+cd stm32f103
+md5sum *.bin
+cd ..
+
+cd stm32f303
+md5sum *.bin
+cd ..
+
+cd stm32f401
+md5sum *.bin
+cd ..
+
+cd stm32f407
+md5sum *.bin
+cd ..
+
+cd stm32f429
+md5sum *.bin
+cd ..

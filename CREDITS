@@ -1,0 +1,29 @@
+
+Contributions:
+
+nRF51822 port by John Huberts
+MK20DX256 port for Teensy 3.1 board by Mark Schweizer
+Ethernet drivers for TM4C1294 by Bernd Paysan
+Random number generator for STM32F4 by Sean Stasiak
+LM4F232H5QC port for Chinese QF-LM4F232 board by 呂明貴 (Albert)
+
+Hardware donations:
+
+Dirk Brühl
+Guy Fortabat
+Michael Kalus
+Terry Porter
+Glen Worstell
+
+Testing and hints in alphabetical order:
+
+John O. 'Sandy' Bumgarner
+Michael Kalus
+Bernd Paysan
+Terry Porter
+Glen Worstell
+
+Inspiring projects:
+
+m3forth by Cliff Biffle (https://bitbucket.org/cbiffle/m3forth/src)
+Thumbulator by David Welch (https://github.com/dwelch67/thumbulator)

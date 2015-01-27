@@ -1,0 +1,327 @@
+05.06.2013, Matthias Koch, Mecrisp-Stellaris 0.1 experimental:
+
+  I am very happy to announce Mecrisp-Stellaris !
+  This is the very first beginning, expect monsters inside.
+
+  As this is the younger sister of Mecrisp for MSP430,
+  they share their development history and most design ideas.
+
+
+12.06.2013, Matthias Koch, Mecrisp-Stellaris 0.2 experimental:
+
+  - Unicode support
+  - First interrupt handler for Systick-Timer
+  - Lots of small changes
+  - Ledcomm ported
+
+15.06.2013, Matthias Koch, Mecrisp-Stellaris 0.3 experimental:
+
+  - Recognizes both LF and CR as line ending
+  - Uses hardware FIFO buffer for serial communication
+  - Enables GPIO hardware on startup
+  - Tidied up internal register usage
+  - Faster interrupt entry
+  - Fetch-Modify-Store definitions are now interrupt safe
+  - Mecrisp-Stellaris now generates smaller code
+  - Tidied up debug messages
+  - Lots of small changes
+
+23.06.2013, Matthias Koch, Mecrisp-Stellaris 0.4 experimental:
+
+  - Examples in Forth for Analog, Timer, PWM and Interrupts
+  - Interrupt handling for Ports and Timers included
+  - Tidied up source code
+  - Core needs less RAM
+  - Lots of small changes
+
+01.07.2013, Matthias Koch, Mecrisp-Stellaris 0.5 experimental:
+
+  - Faster comparisons & bit@
+  - Beautiful output for .s in current base
+  - Analog Interrupts for ADC0 included
+  - Examples in Forth for PLL setup and 1 Msps analog sampling
+
+07.07.2013, Matthias Koch, Mecrisp-Stellaris 0.6 experimental:
+
+  - New target: STM32F407 on STM32F4-Discovery board
+  - Removed experimental atomic memory access from core
+  - Rearranged source code and 
+    added English comments to simplify porting
+  - First examples for STM32F4 included
+
+29.07.2013, Matthias Koch, Mecrisp-Stellaris 0.6.1 experimental:
+
+  - Bugfix in min and max
+  - 1 Msps analog sampling example for STM
+
+24.08.2013, Matthias Koch, Mecrisp-Stellaris 0.7 experimental:
+
+  - New target: KL25Z128 on Freescale Freedom FRDM-KL25Z board
+  - Deep changes in core:
+    - New code generator for M0
+    - Improved code generator for M3
+
+10.08.2013, Matthias Koch, Mecrisp-Stellaris 0.7.1 experimental:
+
+  - ADC and DAC examples for KL25Z128
+  - Improved code generation for M0
+
+07.11.2013, Matthias Koch, Mecrisp-Stellaris 0.7.2:
+
+  - A lot of testing later: "experimental" is gone !
+  - Disassembler for M0 included
+  - Two channel 1 Msps sampling example for LM4F120
+  - Contributions:
+      Random number generator for STM32F4 by Sean Stasiak
+      LM4F232H5QC port for Chinese QF-LM4F232 board by 呂明貴 (Albert)
+
+16.11.2013, Matthias Koch, Mecrisp-Stellaris 0.8:
+
+  - Deep changes in core: Opcodings !
+    They generate faster code for all targets.
+
+28.11.2013, Matthias Koch, Mecrisp-Stellaris 0.8.1:
+
+  - New target: STM32F100 on STM VL Discovery board
+
+18.12.2013, Matthias Koch, Mecrisp-Stellaris 0.9:
+
+  - Double numbers and s31.32 fixpoint calculations
+  - Sine/Cosine Cordic algorithm
+  - Two channel 1 Msps oscilloscope for LM4F120
+
+31.12.2013, Matthias Koch, Mecrisp-Stellaris 0.9.1:
+
+  - Partial disassembler for M3/M4 included
+  - Small optimisations in core
+
+13.01.2014, Matthias Koch, Mecrisp-Stellaris 0.9.2:
+
+  - Small optimisations in M3/M4 code generator
+  - Faster interrupt trampolines for M3/M4
+  - Timer interrupts for STM32F407
+  - Added rdrop and 2rdrop
+
+06.02.2014, Matthias Koch, Mecrisp-Stellaris 0.9.3:
+
+  - Added for convenience: d/ mod f.n
+  - Final testing package for upcoming stable 1.0 release
+
+01.03.2014, Matthias Koch, Mecrisp-Stellaris 1.0:
+
+  Finally the first stable release of Mecrisp-Stellaris !
+
+21.03.2014, Matthias Koch, Mecrisp-Stellaris 1.0.1:
+
+  Bugfix in third loop index "k"
+
+26.03.2014, Matthias Koch, Mecrisp-Stellaris 1.0.2:
+
+  - New target: TM4C1294 on Tiva Connected Launchpad
+
+05.04.2014, Matthias Koch, Mecrisp-Stellaris 1.0.3:
+
+  - New target: STM32F429ZIT6 on STM F429 Discovery
+  - Instruction set emulator for Cortex M0 included
+
+23.04.2014, Matthias Koch, Mecrisp-Stellaris 1.0.4:
+
+  - Added Intel Hex style binaries for STM targets
+  - Improved code generation for do and ?do
+  - Fixed minor issue with arshift when opcoded 
+      with folding constant >= 32
+  - Added bit rotations ror and rol
+  - M3/M4 only: 
+    - Added 12bitencoding
+    - Faster opcodes for inline literals,
+        calculations, logic and comparisions
+    - Included new opcodes into disassembler-m3
+
+01.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.0
+
+  Big tidyup release !
+  - Improved readability of chip specific code
+  - Factored out a lot of common code
+  - Move now behaves well for both directions
+  - Added fill and compiletoram?
+  - Improved dictionary building macros
+  - Fixed flaw in LM4F120 PLL example
+
+02.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.1
+
+  - New target: STM32F051R8 on STM F0 Discovery
+  - Tidyup and factoring of common STM terminal code
+
+03.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.2
+
+  - New target: STM32F401RE on STM Nucleo F401RE
+  - Variables and <builds does> are now 4-aligned on M3/M4, too
+  - Added buffer:
+  - Hooks for terminal redirection on TM4C1294
+
+08.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.3
+
+  - Added sp@ sp! rp@ rp!
+  - Added hook for inner quit loop
+  - ?emit and hooks for terminal redirection on all targets
+  - Serial terminal code calls vectorized pause for multitasking
+  - Tidyup and factoring of more common code
+
+19.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.4
+
+  - New target: STM32F103C8 on Shenzhen LC Technology board
+
+21.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.5
+
+  - Tab is now recognized as whitespace
+  - Added irq-fault
+
+27.05.2014, Matthias Koch, Mecrisp-Stellaris 1.1.6
+
+  - Analog and PLL examples for TM4C1294
+  - Enabled Prefetch Buffer in PLL examples for STM32F407
+  - Added Forth source for multiline comments
+  - Added Bitlog and Bitexp functions
+  - Improved code generation for fetch-modify-store shortcuts
+  - Testing of LM4F120 binary on TI Tiva Launchpad with TM4C123GH6PM
+
+03.06.2014, Matthias Koch, Mecrisp-Stellaris 1.1.7
+
+  - Added string handling helpers: expect tib >in
+  - Contribution by Mark Schweizer:
+      MK20DX256VLH7 port for Teensy 3.1 board
+
+26.06.2014, Matthias Koch, Mecrisp-Stellaris 1.1.8
+
+  - Added Loran-C for TM4C1294
+  - Contribution by John Huberts:
+      Port for Nordic nRF51822
+  - Contribution by Bernd Paysan:
+      Ethernet drivers for TM4C1294
+
+30.06.2014, Matthias Koch, Mecrisp-Stellaris 2.0.0
+
+  - Big changes in string handling !
+    The new core is now a lot more ANS aligned and handles addr-length strings.
+  - Renamed ?key in key? and ?emit in emit?
+  - Renamed old counted-string handling with c-prefix
+  - Create now has default action equivalent to : create <builds does> ;
+    Old behaviour is renamed into (create)
+  - Added irq-terminal to LM4F120 and TM4C1294 targets
+  - Fixed flaw in 16-bit Flash write emulation layer for Freescale targets
+  - Changed disassemblers and examples for new string handling
+
+  Simply renamed with same function:
+     ?key          --> key?
+     ?emit         --> emit?
+     serial-?key   --> serial-key?
+     serial-?emit  --> serial-emit?
+     hook-?key     --> hook-key?
+     hook-?emit    --> hook-emit?
+     expect        --> cexpect
+     create        --> (create)
+     type          --> ctype
+     s"            --> c"
+
+  Chanced behaviour:
+     string,
+     find
+     compare
+     number
+     token
+     parse
+     #>
+
+     s"
+     type
+     create
+
+  Freshly added:
+     cell+
+     cells
+     align
+     aligned
+     spaces
+     count
+     create
+     type
+     accept
+     evaluate
+     s"
+     current-source
+     setsource
+     source
+
+02.07.2014, Matthias Koch, Mecrisp-Stellaris 2.0.0a
+
+  - Fixed a flaw in NVIC Forth code 
+  - Fixed a minor flaw in ethernet driver
+  - Added 1Msps analog-digital converter ethernet stream example
+
+08.07.2014, Matthias Koch, Mecrisp-Stellaris 2.0.0b
+
+  - Added comments for nRF51822 in README
+  - Fixed flaw in Pascal UDP ethernet terminal code
+
+09.07.2014, Mark Schweizer, Mecrisp-Stellaris 2.0.1
+
+  Following changes added for MK20DX256:
+
+  - terminal.s:  Turned on UART0 RX/TX FIFO
+                 Changed code for ensuring UART overrun flag is cleared
+		 Added support for hardware flow control
+  - vectors.s:   Added UART0_S/E interrupt vektor to permit the possibility
+                 of interrupt driven serial (interrupts not enabled by
+                 default)
+  - interrupt.s: Added "ipsr" word to push Interrupt Program Status Register
+                 on stack
+                 Added initialization of UART0S / UART0E interrupts
+  - README:      Documented serial connection, flashing, etc. (basic info)
+  - Forth:       Added more examples, cleaned up code.  Seperate README
+                 located in that directory.
+
+  Matthias Koch:
+  - Cleaned up core sources to save a few bytes
+
+16.07.2014, Matthias Koch, Mecrisp-Stellaris 2.0.2
+
+  - Added IPSR by Mark Schweizer for all targets
+  - Added UNHANDLED as new default for all IRQs
+  - irq-fault now catches fault handlers only
+  - irq-collection catches all other interrupts
+  - Factored common vector tables and interrupts
+  - Added dictionarynext to core
+  - Removed dump
+
+  - New target: STM32F303VCT6 on STM F3 Discovery
+  - New target: STM32L152RE   on STM Nucleo L152RE
+
+23.08.2014, Matthias Koch, Mecrisp-Stellaris 2.0.3
+
+  - Bugfix: Double division
+  - Some small optimisations in core
+  - Assembler for Cortex M0 added
+
+18.10.2014, Matthias Koch, Mecrisp-Stellaris 2.0.4
+
+  - Optimisations for bit@ hbit@ cbit@
+  - Added rdepth rpick
+  - Forth code for blocks and trace
+  - Ported Ledcomm to Nucleo L152
+  - Contribution by John Huberts:
+      Nordic nRF51822 radio code
+
+06.11.2014, Matthias Koch, Mecrisp-Stellaris 2.0.5
+
+  - New experimental target: LPC1114FN28 (without Flash write access for now)
+  - Unicode block editor added
+
+11.11.2014, Matthias Koch, Mecrisp-Stellaris 2.0.5a
+
+  - Adapted Thumbulator emulator for LPC1114FN28 and 
+      added Forth code to generate custom binaries for this target
+  - Fixed a small flaw in disassemblers
+
+04.12.2014, Matthias Koch, Mecrisp-Stellaris 2.0.6
+
+  - Finally solved compilation into Flash for LPC1114FN28

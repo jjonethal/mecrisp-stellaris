@@ -1,0 +1,623 @@
+
+\ ARM Cortex M0 Assembler, Copyright (C) 2014  Matthias Koch
+\ This is free software under GNU General Public License v3.
+\ Resolves constants, symbols and variable names and
+\ gives you a comfortable way to write machine instructions.
+
+\ Still missing: ADR, CPS, SWI, BKPT, PC relative LDR, and special cases of ADD with SP
+
+\ -----------------------------------------------------------------------------
+\ A few helpers for strings - Ein paar Stringhelferlein
+\ -----------------------------------------------------------------------------
+
+: vorneabschneiden ( Adresse Länge -- Adresse Länge ) \ Remove first character
+  1- swap 1+ swap
+;
+
+: ersteszeichen ( Adresse Länge -- Adresse Länge Zeichen ) \ Get first character
+  over c@
+;
+
+\ -----------------------------------------------------------------------------
+\ A few helpers for parsing
+\ -----------------------------------------------------------------------------
+
+\ Muss jetzt noch angegebene Konstanten, Variablen, Wörter und Werte abhandeln.
+\ Das passiert dadurch, dass ich das Ding
+\ - im Dictionary suche
+\     - Falls Variable  --> Variablenadresse
+\     - Falls Konstante --> Konstante holen
+\ - Versuche in eine Zahl umzuwandeln
+
+\ Konstanten im Flash und Variablen im RAM haben Flag $40, Feste Variablen im Flash haben Flag $81, selbstdefinierte Einfachvariablen $C1 oder Doppeltvariablen $C2.
+
+: symbolwert ( Stringadresse Länge -- Symbolwert )
+  ( token )
+
+  2dup find ( Adresse Flags ) over 0<>
+        if
+          \ Probe, ob die Flags auf Variablen oder Konstanten hindeuten
+          ( Adresse Flags )
+          $8000 bic \ Remove visible Flag on some targets
+          swap
+          ( Flags Adresse )
+          over $40 = if execute then \ Konstanten im RAM und Flash; Variablen im RAM
+          over $81 = if execute then \ Selbstdefinierte Variablen        im Flash
+          over $82 = if execute then \ Selbstdefinierte Doppeltvariablen im Flash
+          nip ( Adresse oder geholte Konstante )
+
+          nip nip exit \ Vergiss Stringadresse, Rücksprung
+        else
+          2drop
+        then
+
+  2dup number 1 =
+        if \ ."  Zahl " dup u.
+          nip nip exit \ Vergiss Stringadresse, Rücksprung
+        then
+
+  ." Invalid Symbol: "    \ ." Ungültiges Symbol: "
+  type cr quit
+;
+
+: registerparser16 ( Stringadresse Länge -- Nummer )
+  ersteszeichen [char] r = if base @ >r decimal
+                             vorneabschneiden
+                             number 1 <> if ." Invalid Register. " cr quit then
+                             dup $F bic  if ." Invalid Register. " cr quit then
+                             r> base !
+                           exit
+                           then
+
+  2dup s" tos" compare if 2drop 6 exit then
+  2dup s" psp" compare if 2drop 7 exit then
+  2dup s" sp"  compare if 2drop 13 exit then
+  2dup s" lr"  compare if 2drop 14 exit then
+  2dup s" pc"  compare if 2drop 15 exit then
+
+  ." Invalid Operand" type \ ." Falsche Operandenangabe"
+  cr quit
+;
+
+: registerparser ( Stringadresse Länge -- Nummer )
+  registerparser16 dup 8 u>= if ." Only low registers allowed." cr quit then
+;
+
+: operandenparser  \ Bearbeitet r14, #42
+  ( Stringadresse Länge -- Daten Register? )
+
+    ersteszeichen [char] # =
+      if  \ ." Konstante "
+        vorneabschneiden \ # weg
+        symbolwert false
+      exit
+      then
+
+    registerparser true
+;
+
+\ -----------------------------------------------------------------------------
+\ Jumps and Labels
+\ -----------------------------------------------------------------------------
+
+0 variable label-
+0 variable label--
+0 variable label---
+
+: l-:   label-- @ label--- !
+        label-  @ label--  !
+        here      label-   !
+immediate ;
+
+\ Forward labels
+\ Idea: Remember place and jump-opcodes to be filled in when label is reached.
+
+0. 2variable label-f1
+0. 2variable label-f2
+0. 2variable label-f3
+0. 2variable label-f4
+0. 2variable label-f5
+0. 2variable label-f6
+0. 2variable label-f7
+0. 2variable label-f8
+
+: check+label ( Sprungkonstruktadresse -- )
+  dup @ $000F and ( Addr Labelzähler )
+    dup if \ Ungleich 0 ( Addr Labelzähler )
+
+          1 = if ( Adresse )
+                dup 2@ ( Adresse Lückenadresse Labelopcode )
+                1- \ Label 1 auf 0 setzen, damit Opcode stimmt !
+                ( Adresse Lückenadresse Opcode-Bitmaske )
+                here swap
+                ( Adresse Lückenadresse Zieladresse Opcode-Bitmaske )
+                dup $E000 = if drop jump, else cjump, then
+                ( Adresse )
+                >r 0. r> 2!  \ Sprunglabel aus Tabelle löschen
+
+              else
+
+                dup ( Adresse Adresse )
+                @   ( Adresse Labelopcode )
+                1-  ( Adresse Labelopcode* )
+                swap ( Labelopcode* Adresse )
+                !
+              then
+
+        else \ Null - nichts tun
+          ( Addr Labelzähler )
+          2drop
+        then
+;
+
+: l+:
+  \ Time to fill in opcodes for forward jumps.
+  \ Crawl the notes to see what is pending.
+  label-f1 check+label
+  label-f2 check+label
+  label-f3 check+label
+  label-f4 check+label
+  label-f5 check+label
+  label-f6 check+label
+  label-f7 check+label
+  label-f8 check+label
+immediate ;
+
+: remember+jump ( Zieladresse Opcode )
+  \ Find an empty location in the forward-jump-notes.
+  \ If it contains zero, the fresh wish for a jump can be filled in.
+  label-f1 @ 0= if label-f1 2!  exit then
+  label-f2 @ 0= if label-f2 2!  exit then
+  label-f3 @ 0= if label-f3 2!  exit then
+  label-f4 @ 0= if label-f4 2!  exit then
+  label-f5 @ 0= if label-f5 2!  exit then
+  label-f6 @ 0= if label-f6 2!  exit then
+  label-f7 @ 0= if label-f7 2!  exit then
+  label-f8 @ 0= if label-f8 2!  exit then
+  ." Too many forward references" cr quit
+;
+
+: jump-destination ( Opcode Stringaddress Length -- Opcode Flag )
+    2dup s" +"   compare if 2drop 1 or false exit then  \ False: Has to be resolved later
+    2dup s" ++"  compare if 2drop 2 or false exit then
+    2dup s" +++" compare if 2drop 3 or false exit then
+
+    2dup s" -"   compare if 2drop label-   @ true exit then \ True: Insert now
+    2dup s" --"  compare if 2drop label--  @ true exit then
+    2dup s" ---" compare if 2drop label--- @ true exit then
+
+    symbolwert true
+;
+
+: jumps <builds h, $30 setflags
+        does> @ token
+              jump-destination  \ Maybe some checks for jump distance soon ?
+              if   \ Backward Jump
+                ( Opcode Destination )
+                here 2 allot -rot ( Location Opcode Destination )
+                swap ( Location Destination Opcode )
+                dup $E000 = if drop jump, else cjump, then
+              else \ Forward-Jump
+                here swap remember+jump 2 allot
+              then
+;
+
+\ Conditional jumps have this instruction format: %1011ccccdddddddd
+
+$D000 jumps beq
+$D100 jumps bne
+$D200 jumps bcs
+$D300 jumps bcc
+$D400 jumps bmi
+$D500 jumps bpl
+$D600 jumps bvs
+$D700 jumps bvc
+$D800 jumps bhi
+$D900 jumps bls
+$DA00 jumps bge
+$DB00 jumps blt
+$DC00 jumps bgt
+$DD00 jumps ble
+
+\ Aliases:
+
+$D200 jumps bhs
+$D300 jumps blo
+
+\ Unconditional jump:
+
+$E000 jumps b
+
+\ -----------------------------------------------------------------------------
+\ Simple instructions without operands
+\ -----------------------------------------------------------------------------
+
+: zero-operand <builds h, $30 setflags
+                 does> h@ h, ;
+
+$BF30 zero-operand wfi
+
+\ -----------------------------------------------------------------------------
+\ Instructions with its own special handling
+\ -----------------------------------------------------------------------------
+
+: bl ( -- ) \ If range is too far for bl opcode, it will generate a blx r0 sequence.
+  token symbolwert call,
+immediate inline ; \ This combination gives immediate-compileonly
+
+: ldr= ( -- ) \ Generated opcodes may change flags !
+  token registerparser
+  token symbolwert
+  swap
+  registerliteral,
+immediate inline ; \ This combination gives immediate-compileonly
+
+: mov&add      <builds h, $30 setflags
+                 does> h@ ( Opcode )
+                       token registerparser16 dup 7 and swap 8 and 4 lshift or
+                       or
+                       token registerparser16 3 lshift or
+                       h,
+;
+
+$4400 mov&add add
+$4600 mov&add mov
+
+\ -----------------------------------------------------------------------------
+\ Instructions with one register-16 operand
+\ -----------------------------------------------------------------------------
+
+: single-operand <builds h, $30 setflags
+                 does> h@ ( Opcode )
+                       token registerparser16 3 lshift or                    
+                       h,
+;
+
+$4700 single-operand bx
+$4780 single-operand blx
+
+\ -----------------------------------------------------------------------------
+\ Instructions with two register operands
+\ -----------------------------------------------------------------------------
+
+: double-operand <builds h, $30 setflags
+                 does> h@ ( Opcode )
+                       token registerparser or
+                       token registerparser 3 lshift or
+                       h,
+;
+
+$4000 double-operand ands
+$4040 double-operand eors
+$4140 double-operand adcs
+$4180 double-operand sbcs
+$41C0 double-operand rors
+$4200 double-operand tst
+$4300 double-operand orrs
+$4340 double-operand muls
+$4380 double-operand bics
+$43C0 double-operand mvns
+
+$B240 double-operand sxtb
+$B200 double-operand sxth
+$B2C0 double-operand uxtb
+$B280 double-operand uxth
+
+$BA00 double-operand rev
+$BA40 double-operand rev16
+$BAC0 double-operand revsh
+
+\ -----------------------------------------------------------------------------
+\ Instructions with 8 bit immediate operands
+\ -----------------------------------------------------------------------------
+
+: movs&cmp      <builds h, ( Opcode immediate ) h, ( Opcode register ) $30 setflags
+                 does> >r
+                       token registerparser                 
+                       token operandenparser
+                       if \ Register
+                         ( reg reg )
+                         3 lshift
+                         r> 2+ h@ or or
+                       else \ Immediate
+                         ( reg imm )
+                         dup $FF u> if ." Immediate too big" cr quit then
+                         r> h@ or 
+                         swap 8 lshift or
+                       then
+                       h,
+;
+
+\ Reg  Imm8
+$0000 $2000 movs&cmp movs
+$4280 $2800 movs&cmp cmp
+
+: adds&subs      <builds h, ( Opcode short immediate ) h, ( Opcode immediate ) h, ( Opcode register ) $30 setflags
+                 does> >r
+                       token registerparser                 
+                       token operandenparser
+                       if \ Register
+                         ( reg reg )
+
+                         token operandenparser
+                         if ( reg reg reg )
+                           6 lshift
+                           r> 4 + h@ or
+                           swap 3 lshift or
+                           or
+                         else ( reg reg imm )
+                           dup 7 u> if ." Immediate too big" cr quit then
+                           6 lshift
+                           r> h@ or
+                           swap 3 lshift or
+                           or
+                         then
+
+                       else \ Immediate
+                         ( reg imm )
+                         dup $FF u> if ." Immediate too big" cr quit then
+                         r> 2+ h@ or 
+                         swap 8 lshift or
+                       then
+                       h,
+;
+
+\ Reg  Imm8  Imm3
+$1800 $3000 $1C00 adds&subs adds
+$1A00 $3800 $1E00 adds&subs subs
+
+\ -----------------------------------------------------------------------------
+\ Instructions for Load and Store
+\ -----------------------------------------------------------------------------
+
+: load&store    <builds h, ( Shift ) h, ( Opcode immediate ) h, ( Opcode register ) $30 setflags
+                 does> >r
+                       token registerparser
+                       token registerparser 3 lshift
+                       token operandenparser
+                       if \ Register
+                         ( reg reg reg )
+                         6 lshift
+                         r> 4 + h@
+                       else \ Immediate
+                         ( reg reg imm )
+                         r@ h@ rshift
+                         dup 32 u> if ." Immediate too big" cr quit then
+                         6 lshift
+                         ( reg reg imm* )
+                         r> 2+ h@
+                       then
+                       or or or h,
+;
+
+$5000 $6000 2 load&store str
+$5400 $7000 0 load&store strb
+$5200 $8000 1 load&store strh
+
+$5800 $6800 2 load&store ldr
+$5C00 $7800 0 load&store ldrb
+$5A00 $8800 1 load&store ldrh
+
+: signedloads  <builds h, $30 setflags
+                 does> h@
+                       token registerparser or
+                       token registerparser 3 lshift or
+                       token registerparser 6 lshift or
+                       h,
+;
+
+$5600 signedloads ldrsb
+$5E00 signedloads ldrsh
+
+\ -----------------------------------------------------------------------------
+\ Shift instructions
+\ -----------------------------------------------------------------------------
+
+: shifts-imm   <builds h, $30 setflags
+                 does> h@
+                       token registerparser
+                       token registerparser
+                       token operandenparser
+                       if \ Register
+                         cr quit
+                       else \ Immediate
+                         ( opcode reg reg imm )
+                         dup 32 u> if ." Immediate too big" cr quit then
+                         6 lshift
+                         swap 3 lshift or
+                         or or h,
+                       then
+;
+
+$0000 shifts-imm lsls
+$0800 shifts-imm lsrs
+$1000 shifts-imm asrs
+
+\ Shifts by a register are like logic operations. 
+\ Forth cannot tell apart both variants just by their operands, so they have other mnemonics here.
+
+$4080 double-operand lslsr
+$40C0 double-operand lsrsr
+$4100 double-operand asrsr
+
+\ -----------------------------------------------------------------------------
+\ Instructions with register lists
+\ -----------------------------------------------------------------------------
+
+: push&pop     <builds h, $30 setflags
+                 does> h@
+                       token s" {" compare not if cr quit then
+                       begin
+                         token 2dup s" }" compare not
+                       while
+                         registerparser16
+                         dup 14 = over 15 = or \ LR or PC ?
+                         if drop $0100 or
+                         else 
+                           dup 7 u<=  
+                           if 1 swap lshift or else ." Only low registers allowed." cr quit then
+                         then
+                       repeat
+                       2drop
+                       h,
+;
+
+$B400 push&pop push
+$BC00 push&pop pop
+
+: stmia&ldmia  <builds h, $30 setflags
+                 does> h@
+                       token registerparser 8 lshift or
+
+                       token s" {" compare not if cr quit then
+                       begin
+                         token 2dup s" }" compare not
+                       while
+                         registerparser 1 swap lshift or
+                       repeat
+                       2drop
+                       h,
+;
+
+$C000 stmia&ldmia stmia
+$C800 stmia&ldmia ldmia
+
+\ -----------------------------------------------------------------------------
+\ Examples
+\ -----------------------------------------------------------------------------
+
+42 constant answertoeverything
+ 0 variable value
+
+: clipto255 ( x -- b )
+  movs r0 #$ff
+  ands tos r0
+;
+
+: checkit ( x -- )
+  clipto255 value !
+
+  ldr= r1 value
+  ldr r1 r1 #0
+  movs r0 #answertoeverything
+  cmp r0 r1
+  bne +
+    ." Value is 42"
+l+:
+;
+
+see clipto255
+see checkit
+
+ 42 checkit
+ 43 checkit
+
+ 42 256 + checkit
+ 43 256 + checkit
+ 
+
+\ -----------------------------------------------------------------------------
+\ Test cases
+\ -----------------------------------------------------------------------------
+
+: pp
+  push { r3 r4 pc }
+  pop { r0 r2 }
+  ldmia r5 { r0 r2 r4 }
+  stmia r5 { r0 r2 r4 }
+;
+see pp
+
+hex   
+: a 
+  adcs r4 r5 
+  ands psp tos
+  ands r1 r2
+;
+decimal
+see a
+
+hex 
+: p beq + b + cr l+: ;
+: m l-: cr beq - b - ;
+: n bhi p ;
+see p
+see m
+see n
+decimal
+
+42 variable antwort
+
+hex
+: ls
+
+  ldr r0 r2 #4
+  str r4 r5 #8
+
+  ldrh r0 r2 #4
+  strh r4 r5 #8
+
+  ldrb r0 r2 #4
+  strb r4 r5 #8
+
+  ldr r0 r2 r6
+  str r4 r5 r7
+
+  ldrh r0 r2 r6
+  strh r4 r5 r7
+
+  ldrb r0 r2 r6
+  strb r4 r5 r7
+
+  ldrsb r2 r3 r4
+  ldrsh r2 r3 r4
+
+  movs r2 r3
+  movs tos #42
+
+  cmp r2 r3
+  cmp tos #43
+
+  adds r1 r2 r3
+  adds r1 r2 #5
+  adds r1 #34
+
+  subs r1 r2 r3
+  subs r1 r2 #5
+  subs r1 #34
+
+  blx tos
+  bl bl
+
+  ldr= r4 $12345678
+  ldr= r5 dup
+  ldr= r3 antwort
+
+  mov lr pc
+  mov tos sp
+  mov r13 psp
+
+  add lr pc
+  add tos sp
+  add r13 psp
+;
+
+decimal
+see ls
+
+hex
+: sh
+
+  lslsr r1 r2
+  lsls r1 r2 #3
+
+  lsrsr r1 r2
+  lsrs r1 r2 #3
+
+  asrsr r1 r2
+  asrs r1 r2 #3
+
+;
+
+decimal
+see sh

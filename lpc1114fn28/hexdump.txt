@@ -1,0 +1,65 @@
+
+compiletoram
+
+\ Print a copy of core and dictionary contents to clone everything into another chip.
+
+: u.4 ( u -- ) 0 <# # # # # #> type ;
+: u.2 ( u -- ) 0 <# # # #> type ;
+
+0 variable hexsegment
+
+: segmentrecord ( addr -- )
+  dup hexsegment !
+  ." :02000004"
+  $06 \ Begin checksum
+  over 24 rshift $FF and dup u.2 +
+  over 16 rshift $FF and dup u.2 +
+  negate u.2  \ Write Checksum
+  drop cr
+;
+
+: newsegment ( addr -- )
+  dup $FFFF0000 and hexsegment @ <> if segmentrecord else drop then
+;
+
+: hexdump ( -- ) \ Dumps complete Flash
+  base @ hex
+
+  \ LPC1114FN28 Flash:    $00000000 to $00008000
+  \ LPC1114FN28 Boot ROM: $1FFF0000 to $1FFF4000
+  
+  cr
+  $00000000 hexsegment !
+  $00000000 segmentrecord
+  $00008000 $00000000   \ Complete Flash dump
+
+  do
+    \ Check if it would be $FFFF only:
+    0               \ Not worthy to print
+    i 16 + i do      \ Scan data
+      i c@ $FF <> or  \ Set flag if there is a non-$FF byte
+    loop
+
+    if
+      i newsegment
+
+      ." :10" i u.4 ." 00" \ Write record-intro with 4 digits.
+      $10                   \ Begin checksum
+      i          $FF and +   \ Sum the address bytes 
+      i 8 rshift $FF and +    \ separately into the checksum
+
+      i 16 + i do
+        i c@ u.2 \ Print data with 2 digits
+        i c@ +    \ Sum it up for Checksum
+      loop
+
+      negate u.2  \ Write Checksum
+      cr
+    then
+
+  16 +loop
+  ." :00000001FF" cr
+  base !
+; 
+
+\ arm-none-eabi-objcopy -I ihex -O binary hexerei.hex binary.bin

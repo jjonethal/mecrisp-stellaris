@@ -1,0 +1,45 @@
+
+\ Read voltage on P1.0 = AD1
+
+$40048080 constant SYSAHBCLKCTRL
+$40048238 constant PDRUNCFG \ Power-down configuration register
+$40044078 constant IOCON_PIO1_0
+
+$4001C000 constant AD0CR
+$4001C004 constant AD0GDR
+
+\ $4001C00C constant AD0INTEN
+\ $4001C010 constant AD0DR0
+\ $4001C014 constant AD0DR1
+\ $4001C018 constant AD0DR2
+\ $4001C01C constant AD0DR3
+\ $4001C020 constant AD0DR4
+\ $4001C024 constant AD0DR5
+\ $4001C028 constant AD0DR6
+\ $4001C02C constant AD0DR7
+\ $4001C030 constant AD0STAT
+
+: analog-init ( -- )
+  1 13 lshift SYSAHBCLKCTRL bis! \ Enable Clock for ADC
+  1  4 lshift PDRUNCFG bic!      \ Clear Power-down for ADC
+  $42 IOCON_PIO1_0 !             \ Select Analog input mode for P1.0
+;
+
+: analog ( -- measurement )
+  1  1 lshift   \ AD1 Channel
+  4  8 lshift or \ CLKDIV = 4 --> 12 Mhz / 4 = 3 MHz < 4.5 MHz maximum.
+  0 16 lshift or  \ Burst off
+  0 17 lshift or   \ 11 clock cycles - 10 Bit accuraccy
+  1 24 lshift or    \ Start conversion now.
+  AD0CR !
+
+  begin 1 31 lshift AD0GDR bit@ until \ Wait for done flag.
+  AD0GDR @ 6 rshift $3FF and
+;
+
+: scan ( -- )
+  analog-init
+  begin
+    analog u. cr
+  key? until
+;

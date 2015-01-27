@@ -1,0 +1,7 @@
+
+[Wed Jan 14 20:12:15.069 2015] : xon $11 emit ; Redefine xon.
+[Wed Jan 14 20:12:15.070 2015]  ok.
+[Wed Jan 14 20:12:15.070 2015]   ok.
+[Wed Jan 14 20:12:46.283 2015] Mecrisp-Stellaris 2.0.6 for STM32F303 by Matthias Koch
+[Wed Jan 14 20:12:51.228 2015] compiletoflash  ok.
+[Wed Jan 14 20:12:56.221 2015]   ok.

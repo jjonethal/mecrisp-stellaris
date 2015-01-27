@@ -1,0 +1,74 @@
+Directory Contents:
+-------------------
+asciiart.txt	ASCII art words
+
+delay.txt	Words for using the systick timer in polling mode
+
+fault.txt	Redefines the fault ISR.  This allows unhandled exceptions
+		to report the exception number
+
+swflow.txt	Words for implementing XON/XOFF flow control
+
+gpio.txt	Define constants for GPIO
+
+hwflow.txt	Words for implementing RTS/CTS flow control
+
+init.txt	My sample init routine for automatically running words after
+		reset
+
+led.txt		Examples of using the on-board LED
+		REQUIRES:  gpio.txt, delay.txt, timer.txt
+
+loopback.txt	Miscellanous words used when testing flowcontrol and uart
+
+m4-core.txt	Memory mapping of Cortex-M4 system control space
+
+mcg.txt		Words to control the Multipurpose Clock Generator (MCG)
+		After loading execute "fullspeed" to switch to 96MHz
+
+misc.txt	Holding place for uncategorized words
+
+nvic.txt	Words for enabling/disabling IRQ's.  Also word for creating
+		a software triggered interrupt.
+
+struct.txt	Words for creating data structures
+
+terminal.txt	Work-in-progress.  Start of ANSI terminal code words
+
+timer.txt	Words for using the systick timer in interrupt mode
+		See led.txt for example of how to use (led-pulse)
+
+uart.txt: 	Words for capturing UART errors and displaying info
+
+usb.txt:  	Work-in-porogress.  Beginning of USB support.
+	   	       Unusable at the moment.
+
+
+Files for facilitating loading the Forth system:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+geninit		This shell script generates a file called "s0init.txt"
+		from a selection of other files and inline commands.
+		This version should be used if hardware flow control
+		is being implemented (or at least the RTS part), or
+		you want to permanently run with end-of-line delays.
+		
+geninit-2stage	This shell script generates a file called "s0init.txt" 
+		and "s1init.txt".  s0init.txt is the bare minimum to 
+		crank up the clock speed and implement SW flowcontrol.
+		For S0 to load, you probably need a 50ms pause at the end
+		of newlines.  After S0, you can turn on software flow control
+		and should be able to load the S1 file at full speed.
+		Note: I have had mxied sucess with SW flow control and
+		the PL2303 USB-to-serial chip, so I've switched to HW
+		flow control.
+
+ss		A Super Sed script, used by geninit, to strip comments and
+		extra white space to minimize file size for uploading.
+		If you don't have supersed, remove from geninit and just "cat"
+		the files.
+
+s0init.txt	Stage 0 initialization file created by geninit 
+
+s1init.txt	Stage 1 initialization file created by geninit 
+
+
