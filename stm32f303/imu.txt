@@ -1,0 +1,425 @@
+
+\ Intertial sensing with accelerometer, magnetometer and gyroscope
+\   needs basisdefinitions.txt
+
+\ --------------------------------------------------------------
+\  Connections of Inertial Sensors to Pins of STM32F3 Discovery
+\ --------------------------------------------------------------
+\
+\ PA5: Gyro SCL/SPC       PA5 with AF05: SPI1_SCK
+\ PA6: Gyro SAO/SDO       PA6 with AF05: SPI1_MISO
+\ PA7: Gyro SDA/SDI/SDO   PA7 with AF05: SPI1_MOSI
+\
+\ PB6: Mag SCL
+\ PB7: Mag SDA
+\
+\ PE0: Gyro INT1
+\ PE1: Gyro DRDY/INT2
+\ PE2: Mag DRDY
+\ PE3: Gyro CS_I2C/SPI
+\ PE4: Mag INT1
+\ PE5: Mag INT2
+
+\ -----------------------------
+\  Bit-Bang SPI Implementation
+\ -----------------------------
+
+1 3 lshift constant gyro-select
+
+: gyro-sel   ( -- ) gyro-select 16 lshift porte_bsrr ! ; \ Assuming positive logic
+: gyro-unsel ( -- ) gyro-select           porte_bsrr ! ;
+
+
+\ Primitives for SPI bit-banging
+
+1 5 lshift constant spi-sck
+1 6 lshift constant spi-miso
+1 7 lshift constant spi-mosi
+
+: sck-high  ( -- ) spi-sck            porta_bsrr ! ;
+: sck-low   ( -- ) spi-sck  16 lshift porta_bsrr ! ;
+: mosi-high ( -- ) spi-mosi           porta_bsrr ! ;
+: mosi-low  ( -- ) spi-mosi 16 lshift porta_bsrr ! ;
+
+: miso ( -- ? ) spi-miso porta_idr bit@ ;
+
+
+: spi-init ( -- )
+
+  \ Select pins as outputs and deselect
+  %01 3 2* lshift porte_moder bis!  \ Set select pin as output
+  gyro-unsel
+
+  \ Do line initialisation for SPI bit-banging
+                                      
+  %01 5 2* lshift                    \ Set SCK pin as output
+                                      \ MISO is input after Reset
+  %01 7 2* lshift or porta_moder bis!  \ Set MOSI pin as output
+  sck-high                          
+
+  \ Finished.
+;
+
+: bit-spix ( ? -- ? )
+  if mosi-high else mosi-low then 
+  sck-low
+  sck-high
+  miso
+;
+
+: spix ( x -- x ) $FF and
+
+    dup 128 and bit-spix if 128 or else 128 bic then
+    dup 64 and bit-spix if 64 or else 64 bic then
+    dup 32 and bit-spix if 32 or else 32 bic then
+    dup 16 and bit-spix if 16 or else 16 bic then
+
+    dup 8 and bit-spix if 8 or else 8 bic then
+    dup 4 and bit-spix if 4 or else 4 bic then
+    dup 2 and bit-spix if 2 or else 2 bic then
+    dup 1 and bit-spix if 1 or else 1 bic then
+;
+
+: >spi ( x -- ) spix drop ;
+: spi> ( -- x ) 0 spix ; 
+
+\ -----------------------------
+\  Bit-Bang I2C Implementation
+\ -----------------------------
+
+\ Low-level target specific pin configurations
+
+1 6 lshift constant i2c-scl
+1 7 lshift constant i2c-sda
+
+: scl-high ( -- ) i2c-scl           portb_bsrr ! ;
+: scl-low  ( -- ) i2c-scl 16 lshift portb_bsrr ! ;
+: sda-high ( -- ) i2c-sda           portb_bsrr ! ;
+: sda-low  ( -- ) i2c-sda 16 lshift portb_bsrr ! ;
+
+: scl-@    ( -- f ) 20 0 do loop i2c-scl portb_idr bit@ ;
+: sda-@    ( -- f ) 20 0 do loop i2c-sda portb_idr bit@ ;
+
+
+: I2C-Init ( -- ) 
+
+  %01 6 2* lshift
+  %01 7 2* lshift or portb_moder  bis!  \ Set both I2C lines as outputs
+  i2c-scl i2c-sda or portb_otyper bis!  \ Open Drain mode
+
+  scl-high sda-high \ Bus free default state. During communication, SCL is low for default.
+;
+
+\ Low-Level I2C-Protocol
+
+: I2C-Start ( -- ) sda-high scl-high sda-low scl-low ;
+: I2C-Stop  ( -- ) sda-low scl-high sda-high ;
+
+: I2C-Bit-TX ( f -- )
+  if sda-high else sda-low then
+  scl-high begin scl-@ until
+  scl-low
+;
+
+: I2C-Bit-RX ( -- f )
+  sda-high
+
+  scl-high begin scl-@ until
+  sda-@
+  scl-low
+;
+
+\ Higher level I2C-Protocol
+
+: I2C-TX ( b -- f )
+  dup $80 and I2C-Bit-TX
+  dup $40 and I2C-Bit-TX
+  dup $20 and I2C-Bit-TX
+  dup $10 and I2C-Bit-TX
+  dup $08 and I2C-Bit-TX
+  dup $04 and I2C-Bit-TX
+  dup $02 and I2C-Bit-TX
+      $01 and I2C-Bit-TX
+
+  I2C-Bit-RX 0=
+;
+
+: I2C-RX ( f -- b )
+  I2C-Bit-RX $80 and
+  I2C-Bit-RX $40 and or
+  I2C-Bit-RX $20 and or
+  I2C-Bit-RX $10 and or
+  I2C-Bit-RX $08 and or
+  I2C-Bit-RX $04 and or
+  I2C-Bit-RX $02 and or
+  I2C-Bit-RX $01 and or
+
+  swap 0= I2C-Bit-TX
+;
+
+\ I2C device detection
+
+: u.2 s>d <# # # #> type ;
+
+: i2c-ping? ( addr - f ) i2c-start shl i2c-tx i2c-stop ;
+: i2c-7bitaddr? ( addr -- f ) dup $7 u>= swap $77 u<= and ;
+
+: i2c-detect   ( -- )
+  i2c-init cr
+    base @ hex
+    4 spaces $10 0 do i space u.2 loop
+
+    $80 0 do
+      i $0f and 0= if
+        cr i u.2 [char] : emit space
+      then
+      i i2c-7bitaddr? if
+        i i2c-ping? if \ does device respond?
+            i space u.2
+          else
+            ."  --" 
+        then
+      else
+         ."    "
+      then
+    loop 
+    cr base !
+;
+
+\ I2C Register primitives
+
+: i2c-reg! ( data register address -- )
+  i2c-start
+  shl i2c-tx not if ."  I2C device not connected." cr quit then  \ Transmit address
+  i2c-tx drop \ Transmit register
+  i2c-tx drop \ Transmit data
+  i2c-stop
+;
+
+: i2c-first-reg@ ( register address -- data )
+  shl tuck ( address register address )
+  i2c-start
+  i2c-tx not if ."  I2C device not connected." cr quit then  \ Transmit address
+  i2c-tx drop \ Transmit register
+  i2c-start
+  1 or \ Set Read bit in address
+  i2c-tx drop
+  true i2c-rx
+;
+
+: i2c-next-reg@ ( -- data )  true i2c-rx ;
+: i2c-last-reg@ ( -- data ) false i2c-rx i2c-stop ;
+
+
+: i2c-reg@ ( register address -- data )
+  shl tuck ( address register address )
+  i2c-start
+  i2c-tx not if ."  I2C device not connected." cr quit then  \ Transmit address
+  i2c-tx drop \ Transmit register
+  i2c-start
+  1 or \ Set Read bit in address
+  i2c-tx drop
+  false i2c-rx
+  i2c-stop
+;
+
+\ ------------------------
+\  Magnetometer Interface
+\ ------------------------
+
+: sign16 ( s16 -- n ) [ $b236 h, ] inline ; \ sxth r6, r6 Opcode
+
+$19 constant i2c-addr-accel
+$1E constant i2c-addr-mag
+
+: mag-init ( -- )
+  i2c-init
+  $00 $02 i2c-addr-mag i2c-reg!      \ Enable the magnetometer
+  $1C $00 i2c-addr-mag i2c-reg!      \ Set 220 Hz rate
+  $20 $01 i2c-addr-mag i2c-reg!      \ Set gain to known level
+;
+
+
+: mag-xyz ( -- x y z )
+
+  $03 i2c-addr-mag i2c-first-reg@ 8 lshift
+                   i2c-next-reg@ or sign16
+
+                   i2c-next-reg@ 8 lshift
+                   i2c-next-reg@ or sign16
+
+                   i2c-next-reg@ 8 lshift
+                   i2c-last-reg@ or sign16
+;
+
+\ -------------------------
+\  Accelerometer Interface
+\ -------------------------
+
+: accel-init ( -- )
+  i2c-init
+  $67 $20 i2c-addr-accel i2c-reg!  \ Enable the accelerometer, 200 Hz rate
+;
+
+: accel-xyz ( -- x y z )
+
+  $28 i2c-addr-accel i2c-reg@
+  $29 i2c-addr-accel i2c-reg@ 8 lshift or sign16
+
+  $2A i2c-addr-accel i2c-reg@
+  $2B i2c-addr-accel i2c-reg@ 8 lshift or sign16
+
+  $2C i2c-addr-accel i2c-reg@
+  $2D i2c-addr-accel i2c-reg@ 8 lshift or sign16
+;
+
+\ ---------------------
+\  Gyroscope interface
+\ ---------------------
+
+: gyro! ( c addr -- ) gyro-sel        >spi >spi gyro-unsel ;
+: gyro@ ( addr -- c ) gyro-sel $80 or >spi spi> gyro-unsel ;
+
+: gyro-init ( -- )
+  spi-init
+  $0F gyro@ $D4 = if ." Gyro connected." else ." Gyro not ready." quit then
+
+\   Set CTRL_REG1 (0x20)
+\   ====================================================================
+\   BIT  Symbol    Description                                   Default
+\   ---  ------    --------------------------------------------- -------
+\   7-6  DR1/0     Output data rate                                   00
+\   5-4  BW1/0     Bandwidth selection                                00
+\     3  PD        0 = Power-down mode, 1 = normal/sleep mode          0
+\     2  ZEN       Z-axis enable (0 = disabled, 1 = enabled)           1
+\     1  YEN       Y-axis enable (0 = disabled, 1 = enabled)           1
+\     0  XEN       X-axis enable (0 = disabled, 1 = enabled)           1
+
+  $0F $20 gyro! \ Switch to normal mode and enable all three channels
+
+\   Set CTRL_REG2 (0x21)
+\   ====================================================================
+\   BIT  Symbol    Description                                   Default
+\   ---  ------    --------------------------------------------- -------
+\   5-4  HPM1/0    High-pass filter mode selection                    00
+\   3-0  HPCF3..0  High-pass filter cutoff frequency selection      0000
+
+\   Nothing to do ... keep default values
+
+\   Set CTRL_REG3 (0x22)
+\   ====================================================================
+\   BIT  Symbol    Description                                   Default
+\   ---  ------    --------------------------------------------- -------
+\     7  I1_Int1   Interrupt enable on INT1 (0=disable,1=enable)       0
+\     6  I1_Boot   Boot status on INT1 (0=disable,1=enable)            0
+\     5  H-Lactive Interrupt active config on INT1 (0=high,1=low)      0
+\     4  PP_OD     Push-Pull/Open-Drain (0=PP, 1=OD)                   0
+\     3  I2_DRDY   Data ready on DRDY/INT2 (0=disable,1=enable)        0
+\     2  I2_WTM    FIFO wtrmrk int on DRDY/INT2 (0=dsbl,1=enbl)        0
+\     1  I2_ORun   FIFO overrun int on DRDY/INT2 (0=dsbl,1=enbl)       0
+\     0  I2_Empty  FIFI empty int on DRDY/INT2 (0=dsbl,1=enbl)         0
+
+\     Nothing to do ... keep default values
+
+
+\   Set CTRL_REG4 (0x23)
+\   ====================================================================
+\   BIT  Symbol    Description                                   Default
+\   ---  ------    --------------------------------------------- -------
+\     7  BDU       Block Data Update (0=continuous, 1=LSB/MSB)         0
+\     6  BLE       Big/Little-Endian (0=Data LSB, 1=Data MSB)          0
+\   5-4  FS1/0     Full scale selection                               00
+\                                  00 = 250 dps
+\                                  01 = 500 dps
+\                                  10 = 2000 dps
+\                                  11 = 2000 dps
+\     0  SIM       SPI Mode (0=4-wire, 1=3-wire)                       0
+
+\ Adjust resolution if requested
+  0 $23 gyro!
+
+
+\   Set CTRL_REG5 (0x24)
+\   ====================================================================
+\   BIT  Symbol    Description                                   Default
+\   ---  ------    --------------------------------------------- -------
+\     7  BOOT      Reboot memory content (0=normal, 1=reboot)          0
+\     6  FIFO_EN   FIFO enable (0=FIFO disable, 1=enable)              0
+\     4  HPen      High-pass filter enable (0=disable,1=enable)        0
+\   3-2  INT1_SEL  INT1 Selection config                              00
+\   1-0  OUT_SEL   Out selection config                               00
+
+\     Nothing to do ... keep default values
+
+;
+
+: gyro-xyz ( -- x y z )
+  gyro-sel
+  $28 $40 or $80 or >spi \ X-Low Register, Address Autoincrement, Read
+
+  spi>             \ X-Low
+  spi> 8 lshift or \ X-High
+  sign16
+
+  spi>             \ Y-Low
+  spi> 8 lshift or \ Y-High
+  sign16
+
+  spi>             \ Z-Low
+  spi> 8 lshift or \ Z-High
+  sign16
+
+  gyro-unsel
+;
+
+\ -------------------------------------
+\  Demos to try out individual sensors
+\ -------------------------------------
+
+: mag-demo ( -- )
+  mag-init
+  begin
+    mag-xyz ." z: " . ." y: " . ." x: " . cr
+  key? until
+;
+
+: accel-demo ( -- )
+  accel-init
+  begin
+    accel-xyz ." z: " . ." y: " . ." x: " . cr
+  key? until
+;
+
+: gyro-demo ( -- )
+  gyro-init
+  begin
+    gyro-xyz ." z: " . ." y: " . ." x: " . cr
+  key? until
+;
+
+: ledangle ( u -- ) \ Let it shine, 0 through 7
+  $FF00 16 lshift PORTE_BSRR !
+  1 swap 8 + lshift PORTE_BSRR !
+;
+
+: compass ( -- )
+  $55550000 PORTE_MODER ! \ Outputs PE8-PE15
+  mag-init
+  begin
+    mag-xyz nip ( x z ) \ Forget y, as this is the axis outside of the LEDs plane.
+
+    \ Determine which LED should glow:
+    dup 0< if abs
+             over 0< if  swap abs swap
+                          >= if 1 else 0 then ( z-, x- )
+                     else >= if 6 else 7 then ( z-, x+ )
+                     then
+           else
+             over 0< if  swap abs swap
+                          >= if 2 else 3 then ( z+, x- )
+                     else >= if 5 else 4 then ( z+, x+ )
+                     then
+           then
+    ledangle
+  key? until
+;

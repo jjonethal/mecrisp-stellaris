@@ -325,3 +325,16 @@
 04.12.2014, Matthias Koch, Mecrisp-Stellaris 2.0.6
 
   - Finally solved compilation into Flash for LPC1114FN28
+
+01.01.2015, Matthias Koch, Mecrisp-Stellaris 2.0.7
+
+  - Delete character 127 is now recognized
+  - New target: STM32F030F4
+  - Ethernet driver now has support for DHCP and ARP
+  - Improved analog stream over ethernet
+  - Added Ledcomm for LPC1114FN28
+  - Added Real Time Clock for LM4F120 and TM4C1294
+  - Added Inertial Sensor code for STM32F3 Discovery
+  - Fixed counter rollover issues in systick timer delay
+  - Contribution by Terry Porter:
+      Register file generator from SVD to Forth with STM examples

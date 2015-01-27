@@ -59,7 +59,7 @@ decimal
 true variable Zustand ( Hell oder Dunkel ? )
  244 variable Basiszeit ( in Mikrosekunden )
 
-: msb? ( x -- x Flag ) dup $80000000 and 0<> ;
+: msb? ( x -- x Flag ) dup 0< ;
 
 : HolePuls ( -- )
   8 Strahlzaehler ! \ Null-Puls, wird auch im Ruhezustand gesendet.

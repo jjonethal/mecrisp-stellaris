@@ -1,0 +1,32 @@
+
+\ Real Time Clock with on-board 32768 Hz crystal
+
+$400FC000 constant HIBRTCC    \ Hibernation RTC Counter
+$400FC004 constant HIBRTCM0   \ Hibernation RTC Match 0
+$400FC00C constant HIBRTCLD   \ Hibernation RTC Load
+$400FC010 constant HIBCTL     \ Hibernation Control
+$400FC014 constant HIBIM      \ Hibernation Interrupt Mask
+$400FC018 constant HIBRIS     \ Hibernation Raw Interrupt Status
+$400FC01C constant HIBMIS     \ Hibernation Masked Interrupt Status
+$400FC020 constant HIBIC      \ Hibernation Interrupt Clear
+$400FC024 constant HIBRTCT    \ Hibernation RTC Trim
+$400FC028 constant HIBRTCSS   \ Hibernation RTC Sub Seconds
+
+: RTC-Wait ( -- ) begin $80000000 HIBCTL bit@ until ;
+
+: RTC-Init ( Seconds -- )
+    $10 HIBIM ! \ Enable WC interrupt
+    $40 HIBCTL ! \ Enable oscillator input
+    begin $10 HIBMIS bit@ until \ Wait for the WC interrupt to trigger - clock is stable afterwards
+    $10 HIBIC !    \ Clear WC interrupt
+    0 HIBIM !       \ Disable WC interrupt
+
+    RTC-Wait
+    $41 HIBCTL ! \ Enable real time clock
+;
+
+: setseconds ( seconds -- ) RTC-Wait HIBRTCLD ! RTC-Wait ;
+: seconds    ( -- seconds ) HIBRTCC @ ;
+
+\ Example:
+: s ( -- ) RTC-Init 100 setseconds begin seconds u. HIBRTCSS @ u. cr key? until ;

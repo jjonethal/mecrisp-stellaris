@@ -1,0 +1,36 @@
+Terry Porter found and ported a Forth register file generator for Mecrisp-Stellaris:
+
+I came across a very interesting link that you may not have seen ?
+https://github.com/ralfdoering/cmsis-svd-fth
+
+Basically using this XML parser, one can instantly create *all* register constants and 
+words for *any* ARM chip that cmsis-svd supports. 
+No need to hack header files or spend weeks doing it by hand :)
+
+The howto is in the link along with the URL and info on how to obtain the SCD files for many ARM chips.
+
+The extract.xsl in the above release produces non Mecrisp compatible output, 
+so I've modified it so it does. I have attached my file extract-mecrisp.xsl for your entertainment.
+
+I have also attached the output from extract-mecrisp.xsl for a STM32F0xx mcu,
+called STM32F0xx.fth which I have tested and seems to work fine. 
+
+
+This is a small extract from the original README by Ralf Döring:
+
+It needs the following tools:
+- xsltproc
+- bash and sed to run the script
+
+Usage:
+
+0. chmod +x convert.sh
+
+1. Download the SVD files for your target CPU. On place to find them is on the 
+   [ARM Website](http://www.arm.com/products/processors/cortex-m/cortex-microcontroller-software-interface-standard.php).
+   This needs a simple registration.
+
+2. Create the FORTH code for the register definitions by running 'convert.sh file.svd > file.fs'.
+
+I converted the whole STM library with 'for i in *svd; do ./convert.sh $i > ${i%.svd}.fs; done'
+As they are covered by a licence, I cannot include SVD files in this package.

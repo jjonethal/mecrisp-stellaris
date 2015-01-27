@@ -30,6 +30,10 @@ cd tm4c1294
 md5sum *.bin
 cd ..
 
+cd stm32f030f4
+md5sum *.bin
+cd ..
+
 cd stm32f051
 md5sum *.bin
 cd ..

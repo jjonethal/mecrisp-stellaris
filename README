@@ -32,7 +32,9 @@ It runs out of the box on:
   - STM F4 Discovery             with STM32F407VGT6 
   - STM F429 Discovery           with STM32F429ZIT6
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
+  
   - Breadboard friendly, DIP packaged LPC1114FN28
+  - Very small TSSOP20 packaged       STM32F030F4
 
 Contributions:
   - Teensy 3.1                   with MK20DX256VLH7
@@ -56,6 +58,7 @@ Communication is via serial 115200 baud 8N1 over
   - UART0  in TM4C1294  (connected to USB-serial bridge on Tiva Connected Launchpad)
   - UART   in LPC1114FN28 (TX on P1.7, RX on P1.6)
   - USART1 in STM32F051 (TX on PA9, RX on PA10)
+  - USART1 in STM32F030F4 (TX on PA9, RX on PA10)
   - USART1 in STM32F100 (TX on PA9, RX on PA10)
   - USART1 in STM32F103 (TX on PA9, RX on PA10)
   - USART1 in STM32F303 (TX on PA9, RX on PA10)
@@ -186,6 +189,19 @@ Hardware and configuration for STM32F429:
   st-flash write mecrisp-stellaris-stm32f429.bin 0x08000000
 
   On startup, this runs with external 8 MHz crystal HSE clock.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for STM32F030F4:
+;------------------------------------------------------------------------------
+ 
+  Connect everything necessary to power up and flash the chip.
+  Connect your favourite serial link to PA9 (TX) and PA10 (RX),
+  keep logic voltage levels in mind !
+
+  st-flash erase
+  st-flash write mecrisp-stellaris-stm32f030f4.bin 0x08000000
+
+  On startup, this runs with internal 8 MHz HSI clock.
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for STM32F051:
@@ -394,6 +410,32 @@ families with adaptions in core, but leave writing initialisation code,
 testing and writing Forth examples to "family maintainers" which are deep 
 into their chip of choice. 
 
+;------------------------------------------------------------------------------
+; Hacking
+;------------------------------------------------------------------------------
+
+If you wish to dive into the assembly sources, here comes a register map:
+
+r0: Free scratch register            ( Saved on interrupt entry by hardware )
+r1: Free scratch register            ( Saved on interrupt entry by hardware )
+r2: Free scratch register            ( Saved on interrupt entry by hardware )
+r3: Free scratch register            ( Saved on interrupt entry by hardware )
+
+r4: Inner loop count                 ( Needs Push and Pop when used otherwise )
+r5: Inner loop limit                 ( Needs Push and Pop when used otherwise )
+
+r6=TOS: Top-Of-Stack                 ( Stack design is interrupt safe )
+r7=PSP: Parameter Stack Pointer      ( Stack design is interrupt safe )
+
+r8:  Unused
+r9:  Unused
+r10: Unused
+r11: Unused
+r12: Unused                          ( Saved on interrupt entry by hardware )
+
+r13=SP: Return Stack Pointer
+r14=LR: Link Register
+r15=PC: Program Counter, always odd
 
 ;------------------------------------------------------------------------------
 Here comes a word list,
@@ -1111,6 +1153,26 @@ Interrupts:
         irq-tim1_up
         irq-tim1_cc
         irq-tim2
+        irq-tim3
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for STM32F030F4:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-adc         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-exti0_1
+        irq-exti2_3
+        irq-exti4_15
+        irq-tim1_up
+        irq-tim1_cc
         irq-tim3
 
   Look into vectors.s and interrupts.s to add more interrupts.

@@ -1,0 +1,248 @@
+
+\ -----------------------------------------------------------------------------
+\ Delay with Systick-Timer for 16 MHz
+\ -----------------------------------------------------------------------------
+
+$E000E010 constant NVIC_ST_CTRL_R
+$E000E014 constant NVIC_ST_RELOAD_R      
+$E000E018 constant NVIC_ST_CURRENT_R
+
+: init-delay ( -- ) \ Start free running Systick Timer
+    0 NVIC_ST_CTRL_R !
+    $00FFFFFF NVIC_ST_RELOAD_R !
+    0 NVIC_ST_CURRENT_R !
+    %101 NVIC_ST_CTRL_R !
+;
+
+: delay-ticks ( ticks -- ) \  Tick = 1/16MHz = 62.5 ns
+  NVIC_ST_CURRENT_R @ \ Get the starting time
+  swap -              \ Subtract ticks to wait
+
+  dup 0< if  \ If difference is negative...
+           $00FFFFFF and \ Convert to 24-bit subtraction to calculate value after rollover
+           begin $800000 NVIC_ST_CURRENT_R bit@ until \ Wait for next rollover
+         then
+
+  begin dup NVIC_ST_CURRENT_R @ u>= until
+  drop
+;
+
+\ Values for 16 MHz:
+: us ( us -- ) 16 * delay-ticks ;
+: ms ( ms -- ) 0 ?do 16000 delay-ticks loop ;
+
+\ -----------------------------------------------------------------------------
+\ Small random for targets without hardware random number generator )
+\ -----------------------------------------------------------------------------
+
+: smallrandom ( u -- u ) NVIC_ST_CURRENT_R @ swap u/mod drop ;
+
+\ -----------------------------------------------------------------------------
+\ Terminal handling routines
+\ -----------------------------------------------------------------------------
+
+: u.base10 ( u -- ) base @ decimal swap 0 <# #s #> type base ! ;
+: ESC[ ( -- ) 27 emit 91 emit ;
+: at-xy ( column row -- ) 1+ swap 1+ swap ESC[ u.base10 ." ;" u.base10 ." H" ;
+: page ESC[ ." 2J" 0 0 at-xy ;
+
+\ -----------------------------------------------------------------------------
+\ -----------------------------------------------------------------------------
+
+\ Christmas Card
+\ Author: Ouatu Bogdan Ionut ouatubi@gmail.com (humptydumpty)
+\ Date: 19 Dec 2014
+\ Contains a 'Qualitative snow fall simulator' developed by author.
+\ Merry Christmas everyone!
+
+\ Changed for Mecrisp-Stellaris by Matthias Koch, January 2015
+
+: 4dup  2over 2over ;
+
+: s! ( addr length -- ) 0 do dup i + c@ c, loop drop ;
+
+CREATE CARD
+char " parse                                                " dup -rot s!
+char " parse                        +                       " s!
+char " parse                        A                       " s!
+char " parse                       / \                      " s!
+char " parse                      / Q \                     " s!
+char " parse                     /^ ^ ^\                    " s!
+char " parse                      /  &\                     " s!
+char " parse                     /J ^  \                    " s!
+char " parse                    /  ( ) i\                   " s!
+char " parse                   / ^  -  ^ \                  " s!
+char " parse                  ^^( )   \. ^^                 " s!
+char " parse                     -     \( )                 " s!
+char " parse                    /   ^   \-                  " s!
+char " parse                   .  i  J   \                  " s!
+char " parse                  / & ^   ^  &^                 " s!
+char " parse                 ^    J  ( )   \                " s!
+char " parse                /  ^    ^ -  ^  \               " s!
+char " parse               /  ( ) &    J   & ^              " s!
+char " parse              ^ J  -    ^    ^    \             " s!
+char " parse             /      C i     ( )    \            " s!
+char " parse             ^^ ^ ^ ^ ^__^ ^ - ^ ^^^            " s!
+char " parse                      |   |                     " s!
+char " parse                 MERRY CHRISTMAS!               " s!
+HERE align CONSTANT ENDCARD 
+  CONSTANT COLS#
+        ENDCARD CARD - COLS# / CONSTANT ROWS#
+
+: xy@           ( cx cy -- c ;return CHAR at X Y from card )
+        COLS# * + CARD + c@
+;
+: show
+        ENDCARD CARD
+        DO
+                I COLS# type CR
+        COLS# +LOOP
+;
+: field+!       ( cfield object -- object' )
+        8 lshift or
+;
+: field@+       ( object -- field object' )
+        dup 255 and swap 8 rshift
+;
+: new           ( cx cy cindex c -- object )
+        0 field+! field+! field+! field+!
+;
+: object        ( object -- cx cy cindex c )
+        field@+ field@+ field@+ field@+ drop
+;
+
+             23  8 0 BL new
+             20 10 1 BL new
+             28 11 2 BL new
+             25 15 2 BL new
+             18 17 0 BL new
+             28 19 1 BL new
+6 nvariable ooers
+ooers 6 cells + constant endooers
+
+: o3   at-xy [char] O emit ;  ' o3
+: o2   at-xy [char] o emit ;  ' o2
+: o1   at-xy [char] . emit ;  ' o1
+, , , HERE 3 cells - CONSTANT dooers
+
+: index++       ( cindex -- cindex' )
+        1+ 3 mod
+;
+: doo           ( --  ; execute each ooer object and its index++ )
+        endooers ooers
+        DO
+                I @ object 4dup
+                drop cells dooers + @ execute
+                swap index++ swap new I !
+        1 CELLS +LOOP
+;
+
+\ *******************************
+\ QUALITATIVE SNOW FALL SIMULATOR
+\ *******************************
+\ Tor space
+: x++           ( cx -- cx' )
+        1+ dup COLS# >= if drop 0 then
+;
+: x--           ( cx -- cx' )
+        1- dup 0< if drop COLS# 1- then
+;
+: y++           ( cy -- cy' )
+        1+ dup ROWS# >= if drop 0 then
+;
+: y--           ( cy -- cy' )
+        1- dup 0< if drop ROWS# 1- then
+;
+
+\ Snail of quantified snowflake Momentum
+\ 432
+\ 501
+\ 678   0 means no momentum, 1 momentum to right side, ...
+\ Here is Momentum Index -> Movements Table
+: m8         swap x++ swap y++ ;     ' m8 \ 8
+: m7         y++ ;                   ' m7 \ 7
+: m6         swap x-- swap y++ ;     ' m6 \ 6
+: m5         swap x-- swap ;         ' m5 \ 5
+: m4         swap x-- swap y-- ;     ' m4 \ 4
+: m3         y-- ;                   ' m3 \ 3
+: m2         swap x++ swap y-- ;     ' m2 \ 2
+: m1         swap x++ swap ;         ' m1 \ 1
+: m0         ;                       ' m0 \ 0
+, , , , , , , , , HERE 9 cells - CONSTANT MOVES
+
+\ As we know, change of body Momentum is proportional to Force exerted to that body.
+\ Here is encrypted changes of various Forces to snowflake Momentum
+CREATE  Gravitation             7 c, 8 c, 1 c, 0 c, 5 c, 6 c, 7 c, 7 c, 7 c,   align
+CREATE  WestWind                1 c, 1 c, 1 c, 2 c, 3 c, 0 c, 7 c, 8 c, 1 c,   align
+CREATE  EastWind                5 c, 0 c, 3 c, 4 c, 5 c, 5 c, 5 c, 6 c, 7 c,   align
+CREATE  Nothing                 0 c, 1 c, 2 c, 3 c, 4 c, 5 c, 6 c, 7 c, 8 c,   align
+CREATE  Geom+                   0 c, 2 c, 3 c, 4 c, 5 c, 6 c, 7 c, 8 c, 1 c,   align
+CREATE  Geom-                   0 c, 8 c, 1 c, 2 c, 3 c, 4 c, 5 c, 6 c, 7 c,   align
+\ IMPORTANT: as ratio surface/volume >> 1 of a snowflake (small&fractal-like geometry)
+\ surface derived forces prevails on inertial ones.  Example: air resistance force
+\ that counterbalance gravitational force will be achieved for relatively small fall speed.
+\ As snowflake moves through the air, peculiar geometry of snowflake
+\ induces deviation forces, Geom+-.  It introduces randomness
+\ to snowflake flight.
+
+\ Winds behavior.
+CREATE WINDS WestWind , Nothing , EastWind , Nothing ,
+0 VARIABLE Windex
+: windex++      Windex @ 1 + 4 MOD Windex ! ;
+: Wind          WINDS Windex @ cells + @ ;
+
+\ Randomness behavior.
+CREATE  GEOMS   Nothing , Geom+ , Nothing , Geom- , Nothing ,
+: Geom          5 smallrandom cells GEOMS + @ ;
+
+\ Snowflake object description: cx cy cmomentumindex cbackground
+
+: fly ( cx cy cmindex -- cx' cy' cmindex' ; calculate new position and momentum )
+        Gravitation + c@ Wind + c@ Geom + c@
+        dup >R
+        cells MOVES + @ EXECUTE
+        R>
+;
+
+              50 0 0 BL new
+              10 0 0 BL new
+              15 0 0 BL new
+              20 0 0 BL new
+              25 0 0 BL new
+              30 0 0 BL new
+              35 0 0 BL new
+              40 0 0 BL new
+              45 0 0 BL new
+9 nvariable Flakes
+Flakes 9 cells + constant EndFlakes
+
+: dosnow                ( --  ; snowflake dance )
+        EndFlakes Flakes
+        DO
+                I @ object 4dup
+                >R drop at-xy R> emit                   \ restore background to old position
+                drop fly >R                             \ new position&momentum
+                        2dup at-xy [CHAR] * emit        \ snow paint
+                        2dup xy@ R> swap                \ get background at new position
+                new I !                                 \ make&store the new object
+        1 CELLS +LOOP
+;
+
+: merry-Christmas       ( -- )
+        init-delay
+        page show 1
+        BEGIN
+                key? 0=
+        WHILE
+                dosnow
+                dup 4 mod 0=            IF doo THEN
+                dup 30 mod 0=           IF windex++ THEN
+                0 0 at-xy
+                1+
+                300 ms
+        REPEAT
+        drop
+        0 ROWS# at-xy BL EMIT
+;
+
+\ merry-Christmas

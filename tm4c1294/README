@@ -1,0 +1,36 @@
+
+--------------------------------------------------------
+ How to use Ethernet with Mecrisp-Stellaris on TM4C1294
+--------------------------------------------------------
+
+Flash Mecrisp-Stellaris binary and open serial terminal or type eraseflash to get to a clean state.
+
+Load basisdefinitions.txt
+Load ethernet.txt
+Reset
+
+Connect network cable.
+
+It starts with an 10.0.0.x IP-Address and tries to reach DHCP.
+
+Change netcat-terminal to the correct IP-Address and run to get a terminal over UDP.
+You can disable serial communication by typing "false serial? !"
+
+---------------------------------------------
+ How to stream 1 Msps ADC data over ethernet
+---------------------------------------------
+
+Connect signal to AIN0 = PE3
+
+Load ether-adc.txt on top
+Reset
+Change netcat-capture to the correct IP-Address
+
+Type "init-stream"
+
+  Now you can measure the current sampling rate on the LED that started to glow on typing init-stream.
+  Enter your frequency measurement with comma, e.g. "1000,023 khz" to fine-tune sample rate.
+
+Prepare reception with "netcat-capture datafile"
+Start capture with the desired number of samples, e.g. "1000000 capture" for sampling one second of signal.
+Stop netcat-capture.

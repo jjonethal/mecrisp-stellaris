@@ -25,8 +25,11 @@ $E000E018 constant NVIC_ST_CURRENT_R
 : delay-ticks ( ticks -- ) \  Tick = 1/4MHz = 250 ns
   NVIC_ST_CURRENT_R @ \ Get the starting time
   swap -              \ Subtract ticks to wait
-  $00FFFFFF and       \ Handle possible counter roll over by converting to 24-bit subtraction
-  ( finish )
+
+  dup 0< if  \ If difference is negative...
+           $00FFFFFF and \ Convert to 24-bit subtraction to calculate value after rollover
+           begin $800000 NVIC_ST_CURRENT_R bit@ until \ Wait for next rollover
+         then
 
   begin
     dup

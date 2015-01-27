@@ -3,6 +3,37 @@
 
 compiletoflash
 
+\ -----------------------------------------------
+\ Real Time Clock with on-board 32768 Hz crystal
+\ -----------------------------------------------
+
+$400FC000 constant HIBRTCC    \ Hibernation RTC Counter
+$400FC004 constant HIBRTCM0   \ Hibernation RTC Match 0
+$400FC00C constant HIBRTCLD   \ Hibernation RTC Load
+$400FC010 constant HIBCTL     \ Hibernation Control
+$400FC014 constant HIBIM      \ Hibernation Interrupt Mask
+$400FC018 constant HIBRIS     \ Hibernation Raw Interrupt Status
+$400FC01C constant HIBMIS     \ Hibernation Masked Interrupt Status
+$400FC020 constant HIBIC      \ Hibernation Interrupt Clear
+$400FC024 constant HIBRTCT    \ Hibernation RTC Trim
+$400FC028 constant HIBRTCSS   \ Hibernation RTC Sub Seconds
+
+: RTC-Wait ( -- ) begin $80000000 HIBCTL bit@ until ;
+
+: RTC-Init ( Seconds -- )
+    $10 HIBIM ! \ Enable WC interrupt
+    $40 HIBCTL ! \ Enable oscillator input
+    begin $10 HIBMIS bit@ until \ Wait for the WC interrupt to trigger - clock is stable afterwards
+    $10 HIBIC !    \ Clear WC interrupt
+    0 HIBIM !       \ Disable WC interrupt
+
+    RTC-Wait
+    $41 HIBCTL ! \ Enable real time clock
+;
+
+: setseconds ( seconds -- ) RTC-Wait HIBRTCLD ! RTC-Wait ;
+: seconds    ( -- seconds ) HIBRTCC @ inline ;
+
 \ -------------------------------------------
 \  Compatibility layer for ANS standard code
 \ -------------------------------------------
@@ -16,14 +47,6 @@ compiletoflash
 \ -----------------------------------------------------------
 \  Multitasking, Catch and Throw
 \ -----------------------------------------------------------
-
-\ field
-
-: +field ( offset size "name" -- )  <builds over , + does> @ + ;
-: cfield: ( u1 "name" -- u2 )  1 +field ;
-: field: ( u1 "name" -- u2 )   aligned 1 cells +field ;
-
-\ multitasker
 
 0 0 flashvar-here 3 cells - 3 nvariable boot-task \ boot task has no extra stackspace
 boot-task boot-task ! \ for compilation into RAM
@@ -137,7 +160,7 @@ task: lowpower-task
 
 ' nop variable> flush-hook
 : term-flush flush-hook @ execute ;
-: quit-loop ( -- )  BEGIN  term-flush query interpret ."  ok" cr  AGAIN ;
+: quit-loop ( -- )  BEGIN  term-flush query interpret ."  ok." cr  AGAIN ;
 : quit-catch ( -- )  BEGIN  ['] quit-loop catch
 	dup IF  ." Throw: " . cr  ELSE  drop  THEN  AGAIN ;
 
@@ -154,8 +177,6 @@ quit \ Activate Multitasking and new Catch/Throw mechanism
 \ --------------------------------------------------
 \  Ethernet drivers
 \ --------------------------------------------------
-
-: bounds ( addr len -- end start ) over + swap inline 2-foldable ;
 
 $400EC000 constant Ethernet-Base
 $400FE000 constant USB-Base \ for unique device ID
@@ -254,7 +275,9 @@ Ethernet-Base $FD8 + constant EPHYMISC      \ RW  $0000.0000 Ethernet PHY Masked
 1 16 lshift constant NIE
 1  6 lshift constant RIE
 
-\ Dies geht natürlich nur, während ins RAM kompiliert wird. Später Pufferinitialisationen für Flash entwickeln.
+\ -----------------------------------------------
+\  Definitions for Buffers and Descriptors
+\ -----------------------------------------------
 
 1 31 lshift constant own
 
@@ -304,7 +327,17 @@ desc-size txdescs# * buffer: TX-Descriptors
 : TX-Descriptor   TX-Descriptors tx-head @ + ;
 : TX-Descriptor'  TX-Descriptors tx-head @ desc-size - txdescs-mask and + ;
 
-\ ip header offsets
+
+\ -----------------------------------------------
+\  IP, UDP and other protocol fields
+\ -----------------------------------------------
+
+: bounds ( addr len -- end start ) over + swap inline 2-foldable ;
+: +field ( offset size "name" -- )  <builds over , + does> @ + ;
+: cfield: ( u1 "name" -- u2 )  1 +field ;
+: field: ( u1 "name" -- u2 )   aligned 1 cells +field ;
+
+\ IP header offsets
 
 0
 6 +field eth-dest
@@ -333,7 +366,15 @@ ip-header#
 2 +field icmp-cs
 Constant icmp-header#
 
-\ dump a packet
+
+\ -----------------------------------------------
+\  Insight into wild packets coming in
+\ -----------------------------------------------
+
+: netstat ( -- )
+  ." Incoming frames: " EMACRXCNTGB @ u. cr
+  ." Outgoing frames: " EMACTXCNTGB @ u. cr
+;
 
 : byte. ( u -- )
   base @ hex swap
@@ -378,10 +419,18 @@ Constant icmp-header#
     multitask
 ;
 
+: .send ( -- ) singletask
+     ." Outgoing: " cr
+    ." EMACDMARIS: "  emacdmaris @ hex. cr
+    TX-Descriptor' cell+ 2@ $3FFF and .packet
+;
 
+\ -----------------------------------------------
+\  MAC and routing essentials
+\ -----------------------------------------------
 
 1 5 lshift constant UNF \ Transmit Underflow
-1 2 lshift constant TU \ Transmit Unavailabl
+1 2 lshift constant TU \ Transmit Unavailable
 
 create mymac  
 $00 c, 
@@ -393,18 +442,23 @@ uniqueid3 3 + c@ c,
 $00 c, 
 $80 c,  \ use unique ID
 
-create myip   
-10 c, 
-0 c, 
-0 c, 
-mymac 5 + c@ c,
+mymac 5 + c@ 24 lshift 10 +
+Variable> myip \ in network byte order   
+
+3 cells buffer: routing \ router addr, subnet mask, broadcast address
 
 : tc, ( addr char -- addr' )  over c! 1+ ;
 : tw, ( addr word -- addr' )  >r r@ 8 rshift tc, r> tc, ;
 : tl, ( addr word -- addr' )  >r r@ $10 rshift tw, r> tw, ;
 : t$, ( addr addr1 u1 -- addr' ) rot 2dup + >r swap move r> ;
+: tz, ( addr u -- addr' ) 2dup 0 fill + ;
 
 : ffmac, ( addr -- addr' )   6 0 DO  $FF tc,  LOOP ;
+
+
+\ -----------------------------------------------
+\  Send and receive packets
+\ -----------------------------------------------
 
 : tx-buffer+ ( addr u -- )
     \ send this block
@@ -430,11 +484,9 @@ mymac 5 + c@ c,
     rx-head @ desc-size + descs-mask and rx-head !
     -1 EMACRXPOLLD ! ;
 
-: .send ( -- ) singletask
-     ." Losschicken: " cr
-    ." EMACDMARIS: "  emacdmaris @ hex. cr
-    TX-Descriptor' cell+ 2@ $3FFF and .packet
-;
+\ ---------------------------------------------------
+\  Prepare the handler for incoming ethernet frames
+\ ---------------------------------------------------
 
 task: ethernet-task
 
@@ -451,6 +503,10 @@ task: ethernet-task
 : rx-ipv6 ( desc -- )
     ." IPv6 packet received" cr dump-rx ;
 
+\ -----------------------------------------------
+\  Address Resolution Protocol
+\ -----------------------------------------------
+
 \ arp protocol: reply to requests (no caching and doing our own requests)
 
 10 constant /arp
@@ -460,7 +516,7 @@ Variable arp#
 : arp-cache+ ( addr u -- )
     arp-cache arp# @ + swap move
     /arp arp# @ + dup /arp arp-cache# * u< and arp# ! ;
-: ip>mac ( ip-addr -- macaddr/0 )  @
+: ip>mac ( ip-addr -- macaddr/0 ) \ look up MAC for IP in ARP cache
     arp-cache /arp arp-cache# * bounds DO
 	dup i 6 + @ = IF  drop I  UNLOOP  EXIT  THEN
     /arp +LOOP  drop 0 ;
@@ -509,12 +565,20 @@ Variable arp#
     fill-arp1  ffmac,  r> tl,  drop
     TX-Puffer 42 tx-buffer+ ;
 
-\ IP header debugging
+\ -----------------------------------------------
+\  IP header debugging
+\ -----------------------------------------------
 
 : be-w@ ( addr -- w )  count >r c@ r> 8 lshift or ;
 : be-w! ( w addr -- )  over 8 rshift over c! 1+ c! ;
 : be-l@ ( addr -- l )  count >r count >r count >r c@
     r> 8 lshift or  r> 16 lshift or r> 24 lshift or ;
+: be-l! ( l addr -- ) \ store l in network byte order
+    over 16 rshift over be-w!  2 + be-w! ;
+: w>< ( x' -- x' ) \ swap two bytes be/le
+    dup 8 lshift swap 8 rshift $FF and or $FFFF and ;
+: l>< ( x -- x' ) \ swap four bytes be/le
+    dup 16 rshift w>< swap w>< 16 lshift or ;
 
 : .iphdr ( addr len -- addr len )  singletask
     ." IP packet received" cr
@@ -525,13 +589,54 @@ Variable arp#
 
 : .ippacket ( addr len -- )  .iphdr .packet cr ;
 
-\ icmp
+
+\ -----------------------------------------------
+\  IP Routing
+\ -----------------------------------------------
+
+: ip>lan ( ip -- ip' ) \ if routable, replace by default GW
+    dup routing 2@ over and >r and r> <> IF
+	drop routing @
+    THEN ;
+
+Create ip-hdr-template
+$FF c, $FF c, $FF c, $FF c, $FF c, $FF c, \ will be replaced with my mac
+$08 c, $00 c, \ protocol: IP
+$45 c, $00 c, $00 c, $00 c, \ ip-version, ip-tos, ip-len
+$00 c, $00 c, $40 c, $00 c, \ ip-id, ip-frag
+$40 c, $00 c, $00 c, $00 c, \ ip-ttl, ip-protocol, ip-checksum
+
+$8000 variable> udp-myport# \ user-specified ports...
+
+: ip-socket ( ip addr -- ) >r
+    ip-hdr-template r@ 6 +  20 move \ default flags
+    myip @ r@ ip-src !
+    l>< dup r@ ip-dest ! ip>lan
+    3 >r \ four tries before giving up
+    BEGIN  dup ip>mac dup 0= WHILE  drop
+	    dup l>< req-arp   seconds rx-tail @
+	    BEGIN  pause 2dup seconds rx-tail @ d<>  UNTIL  2drop
+	    r> 1- dup >r 0< IF  -37 throw  THEN
+    REPEAT  rdrop
+    r> 6 move drop ;
+
+: udp-socket ( ip port addr -- source-port ) >r
+    swap \ ip is in host byte order
+    r@ ip-socket
+    17 r@ ip-protocol c! \ set protocol to UDP
+    0 r@ udp-len !
+    r@ udp-dest be-w! \ dest port
+    udp-myport# @ dup r> udp-src be-w! \ generate new source port
+    1 udp-myport# +! ;
+
+\ -----------------------------------------------
+\  ICMP Ping
+\ -----------------------------------------------
 
 : ip-reply ( addr destaddr -- addr destaddr' )
     over eth-src over eth-dest 6 move eth-src ffmac,
-    $800 tw, over ip-version over 10 move 10 + 0 tw, \ checksum 0
-    myip over 4 move 4 +
-    over ip-src  over 4 move 4 + ;
+    $800 tw, over ip-version 10 t$, 0 tw, \ checksum 0
+    myip 4 t$, over ip-src 4 t$, ;
 
 \ : >carries ( n -- n' )
 \     dup 16 rshift swap $FFFF and + ;
@@ -553,7 +658,10 @@ Variable arp#
 	.ippacket
     THEN ;
 
-\ udp
+
+\ -----------------------------------------------
+\  UDP Basics
+\ -----------------------------------------------
 
 udp-header# aligned buffer: term-hdr
 udp-header# aligned buffer: data-hdr
@@ -571,6 +679,10 @@ udp-header# aligned buffer: data-hdr
 
 : udp-data ( addr u -- ) \ just setup the reply buffer
     drop data-hdr udp-reply 2drop ;
+
+\ -----------------------------------------------
+\  UDP Terminal
+\ -----------------------------------------------
 
 \ inject strings into terminal
 
@@ -608,11 +720,14 @@ true variable> flush-key?
     emit-buffer emit-chars @ + c!
     1 emit-chars +!  emit-chars @ udp-max# u>=  IF  term-flush  THEN ;
 
-: udp-term ( addr u -- )
-    over term-hdr udp-reply 2drop
+: >udp-data ( addr u hdr -- addr' u' )
+    >r over r> udp-reply 2drop
     udp-header# - >r
     dup udp-len be-w@ 8 - r> umin >r \ careful: smaller limit wins!
-    udp-header# + inject-buffer r@ move
+    udp-header# + r> ;
+
+: udp-term ( addr u -- )  term-hdr >udp-data
+    >r inject-buffer r@ move
     inject-buffer r> inject-keys 2! ;
 
 : udp-io ( -- )
@@ -630,29 +745,139 @@ true variable> flush-key?
     ." UDP dest: " over udp-dest be-w@ . cr ;
 : .udppacket ( addr len -- )  .iphdr .udphdr .packet cr ;
 
-' .udppacket 0
-' .udppacket 0
-' .udppacket 0
-' .udppacket 0
-' .udppacket 0
-' .udppacket 0
-12 nvariable free-udpports
+\ -----------------------------------------------
+\  DHCP, UDP port 58 (only discover+request)
+\ -----------------------------------------------
 
+: chars, ( addr u -- )  bounds ?do  I c@ c,  LOOP ;
+
+$63825363 Constant dhcp-magic \ DHCP magic
+mymac 2@ xor Variable> dhcp-xid
+Create dhcp-head
+$45 c, $10 c, $00 c, $00 c,
+$00 c, $00 c, $40 c, $00 c,
+$40 c, $11 c,
+Create dhcp-discover
+53 c,  1 c, 1 c, \ message type: discover
+\ 61 c,  7 c, mymac 6 chars, 0 c, \ again: my mac
+\ 60 c, 13 c, char " parse net2o-ec 1.0" chars, 0 c, \ vendor id
+\ 12 c,  9 c, char " parse net2o-ec" chars, 0 c, \ host id
+55 c,  6 c, 58 c, 59 c,  1 c, 28 c, 33 c, 3 c, \ parameter request list
+$FF c,
+here dhcp-discover - Constant dhcp-discover#
+
+: new-dhcp ( -- )
+    1 dhcp-xid +! ; \ new "random" ID number
+
+: dhcp-part-1 ( start -- addr u )
+    ffmac, ffmac, \ broadcast, my mac wird ersetzt
+    $0800 tw, \ IPv4
+    dhcp-head 10 t$, 0 tw, \ constant part of header
+    0 tl, -1 tl, \ my ip: 0.0.0.0, dest: 255.255.255.255
+    68 tw, 67 tw, 0 tw, 0 tw, \ DHCP ports + len + checksum
+    $01010600 tl, dhcp-xid @ tl,
+    20 tz, \ 20 bytes all zero are ok
+    mymac over 6 move 6 + 10 tz, \ 16 bytes for mac
+    192 tz, \ no server host name, no boot file
+    dhcp-magic tl, ;
+
+: dhcp-discover ( -- ) \ generate a dhcp discover
+    TX-Puffer dhcp-part-1
+    dhcp-discover dhcp-discover# t$,
+    TX-Puffer udp-header# + tuck - TX-Puffer sendv ;
+
+Variable dhcp-server-ip
+
+: dhcp-request ( ip -- ) >r \ generate a dhcp request
+    TX-Puffer dhcp-part-1
+    dhcp-server-ip @ TX-Puffer $3E + !
+    r@ l>< TX-Puffer $3A + !
+    53 tc, 1 tc, 3 tc, \ message type: request
+    50 tc, 4 tc, r> tl,
+    51 tc, 4 tc, 24 60 60 * * tl, \ request for a day
+    54 tc, 4 tc, dhcp-server-ip be-l@ tl,
+    $FF tc,
+    TX-Puffer udp-header# + tuck - TX-Puffer sendv ;
+
+-1 variable> last-tick
+Variable lease-time
+10 Variable> lease-threshold
+Variable dhcp-type
+
+: next-dhcp ( addr u -- addr' u' )
+    over 1+ c@ 2 + /string ;
+: dhcp-options ( addr u -- )  -1 dhcp-type !
+    BEGIN
+	case  over c@
+	    51 of  over 2 + be-l@ dup lease-time !
+		3 rshift lease-threshold !  endof
+	    53 of  over 2 + c@ dhcp-type !  endof
+	    54 of  over 2 + @ dhcp-server-ip !  endof
+	    3  of  over 2 + @ routing !  endof
+	    1  of  over 2 + @ routing cell+ !  endof
+	    28 of  over 2 + @ routing cell+ cell+ !  endof
+	    $FF of  2drop  EXIT  endof
+	endcase
+	next-dhcp
+    dup 1- 0< UNTIL  2drop ;
+
+: dhcp-offer ( addr u -- ) \ receive the offer
+    udp-header# /string
+    dup $F0 u<= IF
+	." DHCP too short" cr  2drop EXIT  THEN
+    over c@ 2 <> IF  2drop EXIT  THEN \ not an offer
+    \    over $EC + be-l@ dhcp-magic <>
+    \ IF  ." Wrong magic" cr  2drop EXIT  THEN \ not dhcp
+    \    over cell+ be-l@ dhcp-xid @ <> IF
+    \ ." not our request: " over cell+ be-l@ u. cr
+    \ .packet  EXIT  THEN \ not our request
+    over $10 + be-l@ >r
+    $F0 /string  dhcp-options
+    case  dhcp-type @
+	2 of  r@ dhcp-request  endof
+	5 of  r@ l>< myip !  new-dhcp
+	    routing be-l@ req-arp  endof \ ack
+	6 of  0 lease-time !  new-dhcp  endof \ nack
+    endcase  rdrop ;
+
+: dhcp-tick ( -- )
+    last-tick @ seconds dup last-tick ! -
+    lease-time +!
+    lease-time @ 0< IF  dhcp-discover  EXIT  THEN
+    lease-time @ lease-threshold @ < IF
+	myip be-l@ dhcp-request
+    THEN ;
+
+
+\ -----------------------------------------------
+\  UDP port dispatcher
+\ -----------------------------------------------
+
+' .udppacket 0
+' .udppacket 0
+' .udppacket 0
+' .udppacket 0
+' .udppacket 0
+10 nvariable free-udpports
+
+' dhcp-offer 68
 ' udp-data 4202
 ' udp-term 4201
-4 nvariable udpports
-
-\ udp port dispatcher
+6 nvariable udpports
 
 : udp-rx ( addr u -- )
     over udp-dest be-w@
+    \ ." udp packet port: " dup . cr
     udpports 16 cells bounds do
 	dup i @ = if
 	    drop  i cell+ @ execute  unloop  exit
 	then
     2 cells  +loop  drop 2drop ;
 
-\ ip handler
+
+\ -----------------------------------------------
+\  IP dispatcher
+\ -----------------------------------------------
 
 ' .ippacket 0
 ' .ippacket 0
@@ -667,13 +892,17 @@ true variable> flush-key?
 4 nvariable iptypes
 
 : rx-ip ( desc -- ) desc@ over ip-protocol c@
+    \ ." ip packet type: " dup . cr
     iptypes 16 cells bounds do
 	dup i @ = if
 	    drop  i cell+ @ execute  unloop  exit
 	then
     2 cells  +loop  drop .ippacket ;
 
-\ ethernet handler
+
+\ -----------------------------------------------
+\  Ethertype dispatcher
+\ -----------------------------------------------
 
 ' dump-rx 0
 ' dump-rx 0
@@ -697,9 +926,19 @@ true variable> flush-key?
 : handle-rx ( descriptor -- )
     dup 8 + @ eth-type be-w@ rx-ethertype ;	
 
+
+\ -----------------------------------------------
+\  Ethernet handling task
+\ -----------------------------------------------
+
+: sys-tick? ( -- )
+    seconds last-tick @ <> IF
+	dhcp-tick
+    THEN ;
+
 : ether-loop ( -- )
     BEGIN
-	BEGIN  pause  RX-Descriptor' @ own and 0=  UNTIL
+	BEGIN  pause  sys-tick?  RX-Descriptor' @ own and 0=  UNTIL
 	
 	RX-Descriptor' dup >r handle-rx
 	r> 8 + @ ether-size rx-buffer+
@@ -711,6 +950,9 @@ true variable> flush-key?
     BEGIN  ['] ether-loop catch  drop  AGAIN
 ;
 
+\ -----------------------------------------------
+\  Hardware initialisations for MAC and PHY
+\ -----------------------------------------------
 
 $400FE000 constant Sysctl-Base
 
@@ -752,7 +994,7 @@ PORTF_BASE $52C + constant PORTF_PCTL   ( Pin Control )
 
     1 RCGCEMAC !  1 RCGCEPHY ! ;
 
-: descs-setup ( -- )
+: descs-setup ( -- )  0 term-hdr !
     RX-Descriptors desc-size descs# * 0 fill
     TX-Descriptors desc-size txdescs# * 0 fill
     arp-cache /arp arp-cache# *       0 fill
@@ -824,21 +1066,27 @@ PORTF_BASE $52C + constant PORTF_PCTL   ( Pin Control )
   \ Hardwired to Full-Duplex, store&forward, 100 Mbps here.
   1 21 lshift 1 13 lshift or 2 or EMACDMAOPMODE ! ;
 
+
+\ -----------------------------------------------
+\  Activate everything on startup
+\ -----------------------------------------------
+
+\ D3: Link-OK LED
+\ D4: RX/TX   LED
+
 : init ( -- )
     init
-    clocks-enable  descs-setup  enable-emac
+    clocks-enable RTC-Init
+    descs-setup  enable-emac
     reset-emac  emac-leds  emac-irqs  emac-init
     \ start background task
     ethernet& udp-io
     ." Mecrisp-Stellaris ethernet terminal ready" cr
 ;
 
-\ Die Link-OK LED (D3) leuchtet jetzt, und die TX/RX-Aktivitätsled (D4) blinkert bei Paketen auf der Leitung.
-
-: netstat ( -- )
-  ." Incoming frames: " EMACRXCNTGB @ u. cr
-  ." Outgoing frames: " EMACTXCNTGB @ u. cr
-;
+\ -----------------------------------------------
+\  Switch back to initialised variables
+\ -----------------------------------------------
 
 : variable variable> ; \ Define variable back to initialised mode
 : 2variable 2variable> ;

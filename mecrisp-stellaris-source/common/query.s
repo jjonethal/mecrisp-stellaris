@@ -52,6 +52,10 @@ accept: @ Nimmt einen String entgegen und legt ihn in einen Puffer.
 1:      @ Queryschleife  Collcting loop
         bl key              @ Tastendruck holen  Fetch keypress
         popda r0
+
+        cmp     r0, #127          @ Delete
+        beq     6f                @ Should do the same as Backspace
+
         cmp     r0, #32           @ ASCII 0-31 sind Steuerzeichen, 32 ist Space. Die Steuerzeichen müssten einzeln behandelt werden.
         bhs     2f                @ Space wird hier einfach so mit aufgenommen.
         
@@ -68,7 +72,7 @@ accept: @ Nimmt einen String entgegen und legt ihn in einen Puffer.
         cmp     r0, #8            @ Backspace
         bne     1b                @ Alle anderen Steuerzeichen ignorieren  Ignore all other control characters
 
-          cmp     r2, #0            @ Null Zeichen im Puffer ? Dann ist nichts zu löschen da.
+6:        cmp     r2, #0            @ Null Zeichen im Puffer ? Dann ist nichts zu löschen da.
           beq     1b                @ Zero characters in buffer ? Then we cannot delete one.
 
           bl dotgaensefuesschen  @ Clear a character visually. Emit sequence to delete one character in terminal.

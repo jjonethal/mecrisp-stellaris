@@ -1,7 +1,4 @@
-: xon $11 emit ;
-: xoff $13 emit ;
-: innerloop ( -- ) begin xon query xoff interpret ."  ok." cr again ;
-' innerloop hook-quit !
+
 compiletoflash
 
 : Flamingo cr
