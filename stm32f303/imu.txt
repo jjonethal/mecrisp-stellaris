@@ -1,3 +1,4 @@
+compiletoflash
 
 \ Intertial sensing with accelerometer, magnetometer and gyroscope
 \   needs basisdefinitions.txt
@@ -256,21 +257,25 @@ $1E constant i2c-addr-mag
 \  Accelerometer Interface
 \ -------------------------
 
+: accel@ i2c-addr-accel i2c-reg@ ;
+: accel! i2c-addr-accel i2c-reg! ;
+
 : accel-init ( -- )
   i2c-init
-  $67 $20 i2c-addr-accel i2c-reg!  \ Enable the accelerometer, 200 Hz rate
+  $67 $20 accel!  \ Enable the accelerometer, 200 Hz rate
+  $08 $23 accel!  \ High Res Mode
 ;
 
 : accel-xyz ( -- x y z )
 
-  $28 i2c-addr-accel i2c-reg@
-  $29 i2c-addr-accel i2c-reg@ 8 lshift or sign16
+  $28 accel@
+  $29 accel@ 8 lshift or sign16
 
-  $2A i2c-addr-accel i2c-reg@
-  $2B i2c-addr-accel i2c-reg@ 8 lshift or sign16
+  $2A accel@
+  $2B accel@ 8 lshift or sign16
 
-  $2C i2c-addr-accel i2c-reg@
-  $2D i2c-addr-accel i2c-reg@ 8 lshift or sign16
+  $2C accel@
+  $2D accel@ 8 lshift or sign16
 ;
 
 \ ---------------------
@@ -278,7 +283,7 @@ $1E constant i2c-addr-mag
 \ ---------------------
 
 : gyro! ( c addr -- ) gyro-sel        >spi >spi gyro-unsel ;
-: gyro@ ( addr -- c ) gyro-sel $80 or >spi spi> gyro-unsel ;
+: gyro@ ( -- addr )   gyro-sel $80 or >spi spi> gyro-unsel ;
 
 : gyro-init ( -- )
   spi-init
