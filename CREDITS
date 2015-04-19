@@ -8,6 +8,7 @@ Random number generator for STM32F4 by Sean Stasiak
 LM4F232H5QC port for Chinese QF-LM4F232 board by 呂明貴 (Albert)
 Forth register definition generator adapted for Mecrisp-Stellaris by Terry Porter
 Snowy Christmas Card by Ouatu Bogdan Ionut (humptydumpty)
+Gameduino 2 Forth library and Marsaglia pseudo random number generator by James Bowman
 
 Hardware donations:
 
@@ -16,6 +17,7 @@ Guy Fortabat
 Michael Kalus
 Terry Porter
 Glen Worstell
+James Bowman
 
 Testing and hints in alphabetical order:
 

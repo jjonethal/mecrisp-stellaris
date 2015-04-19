@@ -32,8 +32,8 @@ initflash: @ ( -- ) Löscht alle Einträge in der Sammeldatei
   ldr r1, =20 * Sammelstellen
   movs r2, #0
 
-1:strh r2, [r0]
-  adds r0, #2
+1:strb r2, [r0]
+  adds r0, #1
   subs r1, #1
   bne 1b
 

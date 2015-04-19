@@ -1,0 +1,57 @@
+
+\ -----------------------------------
+\  Lowpower terminal for LPC1114FN28
+\ -----------------------------------
+
+\ If you need to run with a smaller current, this is something for you.
+\ Normal run current: 3.8 mA  Low-Power-Terminal: Idle 2.4 mA, Words-Output 2.7 mA
+\ Do not mix with multitasking !
+
+: eint? ( -- ? ) dup [ $F3EF h, $8610 h, ] 0= ; \ Check if interrupts are enabled. Opcode: msr tos, primask
+: sleep ( -- ) [ $BF30 h, ] inline ; \ WFI Opcode, Wait For Interrupt, enters sleep mode
+
+\ ------------------------------
+\  Sleepy terminal
+\ ------------------------------
+
+: uart-handler ( -- ) 0 $40008004 ! ; \ U0IER: Disable UART IRQ sources. No more necessary to wake up.
+
+: serial-key-lowpower ( -- c )
+  eint? if
+    dint 
+    begin
+      serial-key? not 
+    while
+      1 $40008004 ! \ U0IER: UART Interrupt enable register. Enable UART RX Interrupt
+      sleep
+    repeat
+    $40008000 @ \ Fetch character
+    eint
+  else serial-key then
+;
+
+: serial-emit-lowpower ( c -- )
+  eint? if
+    dint 
+    begin
+      serial-emit? not 
+    while
+      2 $40008004 ! \ U0IER: UART Interrupt enable register. Enable UART TX Interrupt
+      sleep
+    repeat
+    $40008000 ! \ Transmit character
+    eint
+  else serial-emit then
+;
+
+: init ( -- )
+  $0001105F $40048080 !      \ SYSAHBCLKCTRL: Switch off all peripherals that are not necessary
+  ['] uart-handler irq-uart ! \ Accept and clear UART interrupts
+  3 $4003C010 bic!             \ FLASHCFG: No Flash wait states necessary for 12 MHz internal RC oscillator (<20MHz)
+  1 21 lshift $E000E100 !       \ Enable UART interrupt in NVIC
+
+  ['] serial-key-lowpower  hook-key !
+  ['] serial-emit-lowpower hook-emit !
+;
+
+init

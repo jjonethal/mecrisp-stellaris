@@ -1,0 +1,44 @@
+
+: 48MHz ( -- )
+
+  0 $40048070 ! \ MAINCLKSEL: Switch to IRC "Internal RC oscillator" clock
+  0 $40048074 ! \ MAINCLKUEN: Toggle this bit from zero
+  1 $40048074 ! \             to one to update clock selection
+
+  1 7 lshift $40048238 bis! \ PDRUNCFG: Set power-down bit for PLL
+
+\ Simply keep reset values here
+\ 0 $40048040 ! \ SYSPLLCLKSEL: Set IRC clock
+\ 0 $40048044 ! \ SYSPLLCLKUEN: Toggle this bit from zero
+\ 1 $40048044 ! \               to one to update clock selection
+
+  \ FCLKOUT = M * FCLKIN = FCCO / (2*P)
+
+  \ * Specify the input clock frequency FCLKIN.
+  \ * Calculate M to obtain the desired output frequency FCLKOUT with M = FCLKOUT / FCLKIN.
+  \ * Find a value so that FCCO = 2 * P * FCLKOUT.
+  \ * FCCO needs to be between 156 and 320 MHz.
+  \ * Ensure that FCLKOUT < 100 MHz.
+
+  \ Here: FCLKIN = 12 MHz
+  \       M = 48 MHz / 12 MHz = 4
+  \       FCCO = 2 * 2 * 48 MHz = 192 MHz
+
+  3             \ Feedback divider value, ranging from 0 (M=1) to 31 (M=32)
+  1 5 lshift or  \ Post divider ratio: 0: P=1  1: P=2  3: P=4  4: P=8
+  $40048008 !     \ SYSPLLCTRL: Configure PLL dividers
+
+  1 7 lshift $40048238 bic! \ PDRUNCFG: Clear power-down bit for PLL
+
+  begin $4004800C @ until \ SYSPLLSTAT: Wait for lock of PLL
+
+  $4003C010 @ 3 bic 2 or $4003C010 ! \ FLASHCFG: Set wait states for frequencies up to 50 MHz
+
+  4 $40048098 ! \ UARTCLKDIV: Divide 48 MHz / 4 = 12 MHz to get desired baud rate of 115200 baud.
+
+  3 $40048070 ! \ MAINCLKSEL: Switch to PLL output
+  0 $40048074 ! \ MAINCLKUEN: Toggle this bit from zero
+  1 $40048074 ! \             to one to update clock selection
+
+  48000 flash-khz ! \ Update current clock frequency, it is needed to write flash.
+; 

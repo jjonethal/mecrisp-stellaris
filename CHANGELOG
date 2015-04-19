@@ -338,3 +338,16 @@
   - Fixed counter rollover issues in systick timer delay
   - Contribution by Terry Porter:
       Register file generator from SVD to Forth with STM examples
+
+08.02.2015, Matthias Koch, Mecrisp-Stellaris 2.0.8
+
+  - Fixed flaw in LPC1114FN28 specific flash buffer handling
+    that caused freezes after calling quit
+  - Multitasking example for all targets
+  - PLL and lowpower terminal code for LPC1114FN28
+  - Initial graphics drivers to draw pixels on STM32F429 Discovery
+  - Contribution by James Bowmann:
+      Forth drivers for Gameduino 2 on STM32F401RE Nucleo
+      Marsaglia pseudo random number generator
+  - Contribution by Terry Porter:
+      Register file generator with individual bitfields
