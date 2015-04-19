@@ -98,7 +98,18 @@ smudge:
   @ Smudge for RAM
 smudge_ram:
   bl align4komma @ Align on 4 to fullfill ANS requirement.
-  pushdaconst Flag_visible
+
+  .ifdef erasedflashcontainszero
+    .ifdef m0core
+      pushdatos
+      ldr tos, =Flag_visible
+    .else
+      pushdaconst Flag_visible
+    .endif
+  .else
+    pushdaconst Flag_visible
+  .endif
+
   b.n setflags_intern
 
 @ -----------------------------------------------------------------------------
@@ -217,7 +228,11 @@ align4komma: @ Macht den Dictionarypointer auf 4 gerade
 
   .ifdef erasedflashcontainszero
     pushdatos
+    .ifdef m0core
+    ldr tos, =writtenhalfword
+    .else
     movw tos, #writtenhalfword
+    .endif
     bl hkomma
   .else 
     pushdaconst 0
@@ -572,7 +587,15 @@ create: @ Nimmt das nächste Token aus dem Puffer,
   @ ( Tokenadresse Länge Neue-Linkadresse )
 
   ldr r0, =FlashFlags
-  movs r1, #Flag_visible
+  .ifdef erasedflashcontainszero
+    .ifdef m0core
+      ldr r1, =Flag_visible
+    .else
+      movs r1, #Flag_visible
+    .endif
+  .else
+    movs r1, #Flag_visible
+  .endif
   str r1, [r0]  @ Flags vorbereiten  Prepare Flags for collecting
 
   .ifdef flash16bytesblockwrite

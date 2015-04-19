@@ -1,0 +1,27 @@
+ 
+\ Just to have a twinkling shine :-)
+
+\ PA0   User Button
+\ PA5   Red LED
+\ PB4   Green LED
+
+: blinky ( -- )
+  
+  $EBEBF4FC PORTA_MODER ! \ $EBFF FCFF is Reset value, with PA9 & PA10 alternate function. Set PA5 to output and PA0 to input.
+  $FFFFFDFF PORTB_MODER ! \ $FFFF FFFF is Reset value, set PB4 to output.
+
+  begin
+    1 PORTA_IDR bit@
+    if
+      1 5 lshift           PORTA_BSRR !
+      1000000 0 do loop
+      1 5 lshift 16 lshift PORTA_BSRR !
+      1000000 0 do loop
+    else
+      1 4 lshift           PORTB_BSRR !
+      1000000 0 do loop
+      1 4 lshift 16 lshift PORTB_BSRR !
+      1000000 0 do loop
+    then
+  key? until
+;

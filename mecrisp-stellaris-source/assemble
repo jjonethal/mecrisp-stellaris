@@ -44,6 +44,10 @@ cd stm32f051
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f051
 cd ..
 
+cd stm32l053c8
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8
+cd ..
+
 cd stm32l152
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152
 cd ..

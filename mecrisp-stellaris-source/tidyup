@@ -44,6 +44,10 @@ cd stm32f051
 make clean
 cd ..
 
+cd stm32l053c8
+make clean
+cd ..
+
 cd stm32l152
 make clean
 cd ..

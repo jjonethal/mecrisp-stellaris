@@ -1,0 +1,176 @@
+
+compiletoflash
+
+\ Ledcomm for FR4133 Launchpad
+
+$223 constant P4OUT
+$225 constant P4DIR
+
+$261 constant P8IN
+$263 constant P8OUT
+$265 constant P8DIR
+
+: Sendedatenholen ( -- Daten true | false ) key? dup if key tuck emit then ;
+: Datenempfangen  ( Daten -- ) emit ;
+: Verbindungsanfang ( -- ) ."  (Up) "      1 p4out cbis! ; \ Verbindungsanzeige nach Bedarf anpassen
+: Verbindungsende   ( -- ) ."  (Down) " cr 1 p4out cbic! ;
+
+4 constant Anode
+8 constant Kathode
+
+: Strahle ( -- )
+  Anode   P8OUT cbis!
+  Kathode P8OUT cbic!
+  Anode Kathode or P8DIR cbis!   
+;
+
+: Lauschen-Vorbereitung ( -- )
+  Anode   P8OUT cbic!            \ Sperrschichtkapazität
+  Kathode P8OUT cbis!            \ durch Verpolung laden
+  Anode Kathode or P8DIR cbis!
+  begin Kathode P8IN cbit@ until \ Warten, bis die Kathode geladen ist
+  Kathode P8DIR cbic!
+;
+
+: Lauschen-Nachbearbeitung ( -- Flag )
+  Kathode P8IN cbit@ not        \ Ist die Kathode entladen, ist es hell
+;
+
+
+18 constant Synchrondauer
+
+8 variable Strahlzaehler
+0 variable Verbindungsdauer
+0 variable Lauschzaehler
+0 variable Lichtmuster
+0 variable Sendedaten
+0 variable Datenregister
+
+true variable Zustand ( Hell oder Dunkel ? )
+
+: msb? ( x -- x Flag ) dup 0< ;
+
+: HolePuls ( -- )
+  8 Strahlzaehler ! \ Null-Puls, wird auch im Ruhezustand gesendet.
+
+  \ Verbindungsdauer prüfen, beginne erst zu Senden, wenn die Verbindung auch sicher besteht.
+  \ Belasse es im Falle einer gerade laufenden Synchronisation dabei, Ruhezustandspulse abzugeben.
+
+  Verbindungsdauer @ Synchrondauer =
+  if
+  
+  Sendedaten @ ?dup if  \ An bestehender Übertragung weiterarbeiten
+                      msb? if 4 Strahlzaehler ! then \ Eins-Puls erforderlich ?
+                      shl 
+                      dup 0= if 12 Strahlzaehler ! then \ Wurde gerade die Merk-Eins herausrotiert ? Übertragungspuls !
+                      Sendedaten !
+                    else  \ Neue Daten holen und vorbereiten                     
+                      Sendedatenholen
+                      if 
+                        ?dup if  ( Daten-zum-Senden )
+                               4 Strahlzaehler ! \ Bei neuen Daten ungleich Null wird die führende Eins gesendet
+                               
+                               msb? if \ Ist das MSB schon die führende Eins ?
+                                      shl 1 or \ Eine Merk-Eins reinrotieren, die nicht übertragen wird
+                                    else
+                                      shl 1 or \ Eine Merk-Eins reinrotieren, die nicht übertragen wird
+                                      begin
+                                        msb?   \ So lange schieben, bis die führende Eins herauspurzelt
+                                        swap shl swap
+                                      until
+                                    then
+                                                              
+                               Sendedaten ! \ Fertig geschobene Datenbits zum weiteren Senden bereitlegen
+                             else 12 Strahlzaehler ! \ Für eine Null genügt ein Übertragungspuls
+                             then
+                      then
+                    then
+  then
+;
+
+: Bitmustererkennung ( -- )
+  Verbindungsdauer @ Synchrondauer <>
+  if \ Verbindung besteht erst nach 18 mal Zublinkern stabil.
+    1 Verbindungsdauer +!
+    Verbindungsdauer @ Synchrondauer = if Verbindungsanfang then    
+  then
+
+  Lichtmuster @
+      %1111111111100 and    \ Übertragungspuls wird mit 11 bis 14 Basiszeiten erkannt
+  dup %1111111111100 = if drop Datenregister @ Datenempfangen 
+                             0 Datenregister ! \ Datenregister muss gelöscht werden,
+                       else                    \  da die Daten aus mit variabler Länge übertragen werden
+
+          %111111100 and    \ Null-Puls wird mit 7-10 Basiszeiten erkannt
+          %111111100 = if   Datenregister @ shl      Datenregister ! 
+                       else Datenregister @ shl 1 or Datenregister ! 
+                       then \ Eins-Puls wird mit 3-6 Basiszeiten erkannt.
+                       
+                       then
+; 
+
+: Taktlauscher-init ( -- )
+  0 Sendedaten !     \ Keine Daten zum Herausrotieren und Abstrahlen ! Wichtig !
+  Verbindungsdauer @ Synchrondauer = if Verbindungsende then
+  0 Verbindungsdauer !
+
+  Zustand @ if
+    \ Für einen hellen Taktlauscher
+    HolePuls
+    Strahle
+  else
+    \ Für einen dunkelen Taktlauscher  
+    0 Strahlzaehler !
+    1 Lauschzaehler !
+    Lauschen-Vorbereitung
+  then
+;
+
+: Taktlauscher ( -- )
+  Strahlzaehler @ ?dup 
+  if \ Strahlzähler ist nicht Null
+    -1 Strahlzaehler +! 
+    1- if 
+         Strahle
+       else \ Gerade Null geworden
+         32 Lauschzaehler !
+         0 Lichtmuster !
+         Lauschen-Vorbereitung
+       then
+  else
+    Lauschen-Nachbearbeitung
+    1 and Lichtmuster @ shl or
+    dup Lichtmuster ! ( Neues-Lichtmuster )
+    %11111 and
+    %11100 = if 
+               Bitmustererkennung 
+               HolePuls
+               Strahle
+             else
+               -1 Lauschzaehler +!
+               Lauschzaehler @ if Lauschen-Vorbereitung 
+                               else Taktlauscher-init then
+             then
+  then
+;
+
+: ledcomm ( -- )
+
+  Anode Kathode or p8dir cbis! \ Ausgänge für die Ledcomm-LED und die Verbindungsanzeige
+  1 p4out cbic!
+  1 p4dir cbis!
+
+  Taktlauscher-init
+  ['] Taktlauscher irq-timera0 !
+
+  $10  $0302 !  \ TA0CCTL0: Capture & Compare interrupt enable
+  1953 $0312 !  \ TA0CCR0:  1953 / 8 MHz = 244 us
+  $210 $0300 !  \ TA0CTL:   SMCLK, Up mode.
+
+  lpm0 \ Enable Interrupts and switch off CPU
+;
+
+: bright ( -- ) true zustand ! ;
+: dark   ( -- ) false zustand ! ;
+
+compiletoram
