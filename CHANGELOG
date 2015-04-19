@@ -357,3 +357,9 @@
   - Added eint? and reset
   - Removed obsolete ?dnegate
   - Fixed some documentation flaws in glossary
+
+13.03.2015, Matthias Koch, Mecrisp-Stellaris 2.1.0
+
+  - New target: LPC1115FBD48
+  - Contribution by Bert Lohmann:
+      I2C, LCD, PWM in and PWM out examples for LPC1114FN28

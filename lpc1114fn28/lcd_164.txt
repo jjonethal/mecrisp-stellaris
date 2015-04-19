@@ -1,0 +1,145 @@
+\ Display EA W164B-NLW 8 Bit Modus
+\ analog Eingang P0.11
+\ analoge Spannung wird im Display angezeigt
+
+
+$50003FFC constant P0DATA
+$50008000 constant P0DIR
+$50013FFC constant P1DATA
+$50018000 constant P1DIR
+
+$40048080 constant CLKCTRL
+$40048238 constant PDRUNCFG
+$4001C000 constant AD0CR
+$4001C004 constant AD0GDR
+
+
+
+: Portshift   ( x -- y )	\ test auf bit 6 u 7 schiebe sie 2 nach links setze die positionen 6 u 7 auf 0
+%11111111 and			\ setze alle bits im oberen byte auf 0
+dup %11000000 and        	\ isoliere die beiden bits
+2 lshift  or             	\ schiebe nach links, setze bits
+%1100111111 and          	\ sezte bit 6 u 7 auf 0
+;
+
+: ms 0 ?do 750 0 do i dup * drop loop loop ;	( n --) \ warte n ms
+
+: pp0 p0data ! ;   
+: pp1 Portshift p1data ! ;
+
+
+\ -----------------------
+\ LCD Commands
+\ -----------------------
+
+: en 
+pp1 
+%001000000 pp0 1 ms 
+0 pp0 1 ms 
+%001000000 pp0 1 ms 
+; 
+
+: wr ( byte -- )		\ Byte ASCII ins Display
+pp1 
+%101000000 pp0 1 ms 
+%100000000 pp0 1 ms 
+%101000000 pp0 1 ms 
+; 
+
+: DispShiftr %00011100 en ;
+: DispShiftl %00011000 en ;
+: CursShiftr %00010100 en ;
+: CursShiftl %00010000 en ;
+: goto %10000000 or en ;
+: zeile1 $80 en ;
+: zeile2 $C0 en ;
+: zeile3 $90 en ;
+: zeile4 $D0 en ;
+
+
+: ini164 ( -- )
+$38 en	\ 8-Bit
+$0F en	\ Display ein, Cursor ein
+$01 en	\ clear Display
+$06 en	\ Cursor Auto-Increment
+;
+
+
+: LCD-ini ( -- )
+$C0  $4004404C !  \ Port 0.6	Enable
+$C0  $40044050 !  \ Port 0.7	W/R
+$C0  $40044060 !  \ Port 0.8	RS
+
+$42  $40044074 !  \ P0.11 analog Eingang
+
+$C1 $40044078 !  \ P1.0 DigIO	D0
+$C1 $4004407C !  \ P1.1 DigIO	D1
+$C1 $40044080 !  \ P1.2 DigIO	D2
+$C1 $40044090 !  \ P1.3 DigIO	D3
+$C0 $40044094 !  \ P1.4 DigIO	D4
+$C0 $400440A0 !  \ P1.5 DigIO	D5
+$C0 $40044014 !  \ P1.8 DigIO	D6
+$C0 $40044038 !  \ P1.9 DigIO	D7
+
+%00111110000 P0DIR !
+%1111111111 P1DIR !
+1 13 lshift CLKCTRL bis!
+1 4  lshift PDRUNCFG bic!
+ini164
+;
+
+
+\ -------------------------
+\ analog Eingang aktivieren
+\ -------------------------
+
+: analog	( n -- n )	\ analog Eingang n
+1 swap lshift
+4 8 lshift or
+1 24 lshift or
+AD0CR !
+begin 1 31 lshift AD0GDR bit@ until
+AD0GDR @ 6 rshift $3ff and
+;
+
+
+\ -----------------------
+\ Display Commands
+\ -----------------------
+
+: DigitToLCD .digit wr ; ( number -- )
+
+: TextToLCD 0 do dup c@ wr 1 + loop drop ; 
+ 
+: NumberToLCD ( n -- )	\ 4 stellige Zahl ins Display
+4 1 do 10 /mod loop 
+4 0 do DigitToLCD loop
+;
+
+: Disp
+begin 
+0 analog 
+dup
+zeile1
+NumberToLCD
+s"  Digits     " TextToLCD
+zeile2
+330 * 1024 /	\ analogwert auf 3,3Volt skalieren
+10 /mod 
+10 /mod
+DigitToLCD
+s" ." TextToLCD 
+DigitToLCD 
+DigitToLCD
+s"  Volt       " TextToLCD
+key? 
+until 
+;
+
+
+\ -------------------
+
+
+LCD-ini
+Disp
+

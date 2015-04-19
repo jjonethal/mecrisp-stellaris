@@ -1,0 +1,87 @@
+\ I2C
+\ Port 0.4 ist SCL, Port 0.5 ist SDA
+\ Beispiel für PCF8574A als Slave A0=A1=A2=0, Slaveadresse %0111000
+
+
+$40048004 constant PRESETCTRL
+$40048080 constant CLKCTRL
+
+$40000000 constant I2C0CONSET
+$40000004 constant I2C0STAT
+$40000008 constant I2C0DAT
+$40000010 constant I2C0SCLH
+$40000014 constant I2C0SCLL
+$40000018 constant I2C0CONCLR
+
+: i2c-init ( -- )
+$01 $40044030 !                         \ Port 0.4  SCL
+$01 $40044034 !                         \ Port 0.5  SDA
+1 1 lshift PRESETCTRL bis!     \  I2C reset de-asserted
+1 5 lshift CLKCTRL bis!        \  Enables clock for I2C
+160 dup I2C0SCLH ! I2C0SCLL !  \  I2C Frequenz 
+;
+
+
+\ -----------------------
+\ I2C LPC Commands
+\ -----------------------
+
+: wsi begin 8 I2C0CONSET bit@ key? or until ; \ Wait for SI
+
+: SIC 8 I2C0CONCLR ! ; \  reset SI Bit
+
+: SICW sic wsi ; \ reset SI Bit + Wait for SI
+
+: I2EN 1 6 lshift I2C0CONSET bis! ; \  set I2EN Bit
+: STAC 1 5 lshift I2C0CONCLR ! ;    \  reset STA Bit
+
+: STA                      \  Start Condition
+1 5 lshift I2C0CONSET bis! \  set STA Bit
+wsi sic wsi stac           \  reset STA Bit
+; 
+
+: AA  4 I2C0CONSET ! ; \  set AA Bit
+: AAC 4 I2C0CONCLR ! ; \  reset AA Bit
+
+: STO                \  Stop Condition
+ 16 I2C0CONSET !     \  set STO Bit
+ 12 I2C0CONCLR !     \  reset AA un SI Bit 
+ ;
+
+
+\ ----------------------------
+\ I2C Read Write Commands
+\ ----------------------------
+
+: ms 0 ?do 750 0 do i dup * drop loop loop ; ( n -- )   \ n ms warten
+
+: i2cw i2en         \ ( n -- ) Byte auf I2C Slave schreiben
+%01110000 I2C0DAT ! \ Slaveadresse + Wr
+sta                 \ startbit
+ I2C0DAT !          \ Daten
+sicw                \ Daten über Bus schicken
+sto                 \ Stop Bit
+;
+
+: i2cr i2en         \ ( -- n )  Byte von I2C Slave lesen
+%01110001 I2C0DAT ! \ Slaveadresse + Rd
+sta                 \ Start Bit
+sic wsi             \ Byte über Bus holen
+I2C0DAT @           \ Byte auf Stack legen
+sto                 \ Stop Bit
+;
+
+
+: i2crr i2en        \  100 x lesen 
+%01110001 I2C0DAT ! \  Slaveadresse + Rd
+sta aa
+100 0 do sic wsi I2C0DAT @ . 50 ms loop  \ 100 x Byte vom Slave lesen
+sto 
+;
+
+: i2cww              \ Byte 255 bis 0 auf Slave schreiben
+256 0 do 
+i i2cw 10 ms 
+loop
+;
+ 

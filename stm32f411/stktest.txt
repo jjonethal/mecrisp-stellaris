@@ -1,0 +1,48 @@
+compiletoflash
+\ systick access
+$E000E010   constant STK_CTRL
+1 16 lshift constant STK_CTRL_COUNTFLAG
+1  2 lshift constant STK_CTRL_CLKSOURCE_DIV_1
+1  1 lshift constant STK_CTRL_TICKINT
+1           constant STK_CTRL_ENABLE
+
+$E000E014 constant STK_LOAD
+$E000E018 constant STK_VAL
+$E000E01C constant STK_CALIB
+
+$00FFFFFF                                   constant STK_RELOAD_VAL
+STK_RELOAD_VAL   1 +                        constant STK_CYCLE
+STK_CTRL_ENABLE STK_CTRL_CLKSOURCE_DIV_1 or constant STK_INIT_VAL
+
+0  variable syscounter
+0  variable last-systick     \ last systick when interrupt occured
+
+: systick-handler   STK_CTRL @ STK_CTRL_COUNTFLAG and 0<> if syscounter @ 1+ syscounter ! then ;
+: systick-int-init  ['] systick-handler irq-systick ! STK_CTRL @ STK_CTRL_TICKINT or STK_CTRL ! ;
+: systick-start  STK_CTRL @ STK_CTRL_ENABLE or      STK_CTRL ! ;
+: systick-stop   STK_CTRL @ STK_CTRL_ENABLE not and STK_CTRL ! ;
+: systick-reset  0 STK_CTRL ! 0 STK_VAL ! ;
+: systick-init   systick-reset STK_RELOAD_VAL STK_LOAD ! STK_INIT_VAL STK_CTRL ! ;
+: systick-run    systick-init systick-int-init systick-start ;
+: systicks       STK_VAL @ ;
+: .systicks      systicks . ;
+
+: time-stamp     syscounter @ systicks @ syscounter @ systicks @ 
+  systicks-equal? 
+  swap 2swap
+
+\  
+  
+\ if syscounter1 == syscounter2 :
+\   ts = systicks1
+\   syscounter = syscounter1
+\   if systicks2 > systicks1 : overflow
+\     syscounter = syscounter + 1
+\ else
+\   ts = systicks2
+\  
+
+: bench systick-init systicks systicks - . ;
+compiletoram
+
+bench

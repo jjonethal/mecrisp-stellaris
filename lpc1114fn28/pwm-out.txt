@@ -1,0 +1,37 @@
+
+\ PWM_Out
+\ Port 1.9 ist PWM-Ausgang
+\ 
+
+
+$40048080 constant CLKCTRL
+$40010008 constant Timer_counter
+$40010018 constant MR0 \ TMR16B0MR0
+
+
+: PWM-Out-init
+$C1 $40044038 !			\ P1.9 als CT16B1_MAT0
+
+1 8 lshift CLKCTRL bis!   \  CT16B1 enable
+1 $40010004 !             \  Time Control Register enable
+%010000000001 $40010014 ! \  If MR0 -> Interrupt, MR3 -> Reset TC
+
+%1111111 $4001000C !      \  Set Prescale Register
+
+%0100   MR0  !            \ Match Register MR0 auf Wert setzen 
+%100000 $40010024 !       \ Match Register MR3 auf Wert setzen 
+%110000 $4001003C !       \ External Match Register EMC0 -> Toggel CT16B1_MAT0
+%0011   $40010074 !       \ CT16B1_MAT0 und CT16B1_MAT3 ist PWM
+0 Timer_counter   !       \ Reset Timer Counter
+;
+
+
+: pwm MR0 ! 0 Timer_counter !  ;  ( n --)
+
+\ --------------------
+
+24 pwm 
+
+
+
+

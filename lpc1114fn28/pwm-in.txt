@@ -1,0 +1,46 @@
+\ PWM_In
+\ Port 0.2 ist PWM-Eingang
+
+
+$40048080 constant CLKCTRL
+$4000C008 constant Timer_counter0
+$4000C000 constant IRR0 \ Interrupt_Register0
+$4000C028 constant Capture_Control0
+$4000C02C constant Capture_Register0
+
+
+: PWM-init
+$D2  $4004401C !			\ Port 0.2 CT16B0_CAP0
+1 7 lshift CLKCTRL bis!   \ CT16B0 enable
+1 $4000C004 !             \  Time Control Register0 enable
+;
+
+\ -----------------------
+\ PWM LPC Commands
+\ -----------------------
+
+: Wait_IRCAP              \ Warten auf Interrupt Capture Bit
+begin %10000 IRR1 bit@ key? or until 
+; 
+
+: DEL_IRCAP %10000 IRR1 ! ;           \   Interrupt Capture Bit auf 0
+: Wait_Edge DEL_IRCAP Wait_IRCAP ;    \ auf Flanke warten (Vers 1)
+
+: Wait_Edge                           \ auf Flanke warten (Vers 2)
+%10000 IRR0 ! begin %10000 IRR0 bit@ key? or until 
+;
+
+
+\ --------------------------------------------------------
+\ PWM-In Command  n = number of systicks from low Periode 
+\ --------------------------------------------------------
+
+: PWM_In  \ ( -- n) PWM Signal muss an P0.2 anliegen!
+%110 Capture_Control0 ! Wait_Edge \ warten auf fallende Flanke
+0 Timer_counter0 !                \  Timer_counter auf 0 
+%101 Capture_Control0 ! Wait_Edge \ warten auf steigende Flanke 
+Capture_Register0 @ 
+;
+
+
+

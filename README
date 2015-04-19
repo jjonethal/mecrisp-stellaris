@@ -34,6 +34,7 @@ It runs out of the box on:
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
   
   - Breadboard friendly, DIP packaged LPC1114FN28
+  -                                   LPC1115FBD48
   - Very small TSSOP20 packaged       STM32F030F4
 
 Contributions:
@@ -56,7 +57,8 @@ inlining of short words.
 Communication is via serial 115200 baud 8N1 over
   - UART0  in LM4F120   (connected to USB-serial bridge on Stellaris Launchpad)
   - UART0  in TM4C1294  (connected to USB-serial bridge on Tiva Connected Launchpad)
-  - UART   in LPC1114FN28 (TX on P1.7, RX on P1.6)
+  - UART   in LPC1114FN28  (TX on P1.7, RX on P1.6)
+  - UART   in LPC1115FBD48 (TX on P1.7, RX on P1.6)
   - USART1 in STM32F051 (TX on PA9, RX on PA10)
   - USART1 in STM32F030F4 (TX on PA9, RX on PA10)
   - USART1 in STM32F100 (TX on PA9, RX on PA10)
@@ -605,7 +607,7 @@ Single-Comparisions:
         >=              ( n1 n2 -- flag )
         >               ( n1 n2 -- flag )
         <               ( n1 n2 -- flag )
-        0<              ( n - flag )         Negative ?
+        0<              ( n -- flag )         Negative ?
         0<>             ( x -- flag )
         0=              ( x -- flag )
         <>              ( x1 x2 -- flag )
@@ -1118,7 +1120,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
 
 ;------------------------------------------------------------------------------
-; Specials for LPC1114FN28:
+; Specials for LPC1114FN28 and LPC1115FBD48:
 ;------------------------------------------------------------------------------
 
         initflash       ( -- ) Clear buffers

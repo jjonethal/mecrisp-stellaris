@@ -9,6 +9,7 @@ LM4F232H5QC port for Chinese QF-LM4F232 board by 呂明貴 (Albert)
 Forth register definition generator adapted for Mecrisp-Stellaris by Terry Porter
 Snowy Christmas Card by Ouatu Bogdan Ionut (humptydumpty)
 Gameduino 2 Forth library and Marsaglia pseudo random number generator by James Bowman
+Examples for LPC1114FN28 by Bert Lohmann
 
 Hardware donations:
 
