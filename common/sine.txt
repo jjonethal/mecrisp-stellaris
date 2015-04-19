@@ -99,5 +99,5 @@ pi 4,0 f/ cosine f. \ Displays cos(Pi/4)
     3 of dnegate pi/2 d+ sine  dnegate endof
   endcase
 
-  r> ?dnegate
+  r> 0< if dnegate then
   2-foldable ;

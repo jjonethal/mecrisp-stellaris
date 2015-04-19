@@ -530,13 +530,14 @@ Stack pointers:
         xor             ( x1 x2 -- x3 ) Bitwise Exclusive-OR
         or              ( x1 x2 -- x3 ) Bitwise OR
         and             ( x1 x2 -- x3 ) Bitwise AND
-        clz             ( x1 -- u ) Count leading zeros
         false           ( --  0 ) False-Flag
         true            ( -- -1 ) True-Flag
+        clz             ( x1 -- u ) Count leading zeros
 
 ;------------------------------------------------------------------------------
 ; Calculus for single numbers  (exactly ANS, some logical extensions)
 ;------------------------------------------------------------------------------
+
         u/mod           ( u1 u2 -- u3 u4 ) 32/32 = 32 rem 32 Division
                                            u1 / u2 = u4 remainder u3
         /mod            ( n1 n2 -- n3 n4 ) n1 / n2 = n4 rem n3
@@ -586,7 +587,6 @@ Stack pointers:
         dshr            ( ud1 -- ud2 ) Logical right-shift
 
         dabs            ( d -- ud ) Absolute value
-        ?dnegate        ( d1 n -- d2 ) Negate d1 if n is negative
         dnegate         ( d1 -- d2 ) Negate
         d-              ( ud1|d1 ud2|d2 -- ud3|d3 ) Subtraction
         d+              ( ud1|d1 ud2|d2 -- ud3|d3 ) Addition
@@ -748,6 +748,7 @@ Counted string routines:
 
         skipstring      ( cstr-addr -- a-addr )
                         Increases the pointer to the aligned end of the string.
+
 Pictured numerical output:
 
         .digit          ( u -- char ) Converts a digit to a char
@@ -765,7 +766,7 @@ Pictured numerical output:
 
         #S              ( ud1|d1 -- 0 0 ) Add all remaining digits
                         from the double length number to output buffer
-        #               ( ud1|d1 -- ud2|nd2 ) Add one digit from the
+        #               ( ud1|d1 -- ud2|d2 ) Add one digit from the
                         double length number to output buffer
         #>              ( ud|d -- c-addr len )
                         Drops double-length number and finishes
@@ -773,6 +774,8 @@ Pictured numerical output:
         <#              ( -- ) Prepare pictured number output buffer
         u.              ( u -- ) Print unsigned single number
         .               ( n -- ) Print single number
+        ud.             ( ud -- ) Print unsigned double number
+        d.              ( d -- ) Print double number
 
 Deep insights:
 
@@ -878,6 +881,8 @@ Deep insights:
                                For flash, place it inside your definition !
         immediate       ( -- ) Makes current definition immediate.
                                For flash, place it inside your definition !
+        compileonly     ( -- ) Makes current definition compileonly.
+                               For flash, place it inside your definition !
         setflags        ( char -- ) Sets Flags with a mask. This isn't immediate,
                                but for flash, place it inside your definition !
         (create) name   ( -- ) Creates and links a new invisible dictionary
@@ -909,7 +914,6 @@ Deep insights:
                                Gives address to where you have stored data.
         <builds         ( -- ) Makes Dictionary header and reserves space
                                for special call.
-        (create) name   ( -- ) Create a definition with no code at all
         create name     ( -- ) Create a definition with default action which
                                cannot be changed later. Use <builds does> instead.
                                Equivalent to : create <builds does> ;
@@ -1010,10 +1014,13 @@ limit index   do ... [one or more leave(s)] ... loop
 ; Common Hardware access
 ;------------------------------------------------------------------------------
 
+        reset           ( -- ) Reset on hardware level
         dint            ( -- ) Disables Interrupts
         eint            ( -- ) Enables  Interrupts
-        ipsr            ( -- ipsr ) Interrupt Program Status Register
+        eint?           ( -- ) Are Interrupts enabled ?
         nop             ( -- ) No Operation. Hook for unused handlers !
+
+        ipsr            ( -- ipsr ) Interrupt Program Status Register
         unhandled       ( -- ) Message for unhandled interrupts.
 
         irq-systick     ( -- a-addr ) Memory locations for IRQ-Hooks

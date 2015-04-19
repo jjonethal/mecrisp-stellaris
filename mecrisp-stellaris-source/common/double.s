@@ -223,13 +223,12 @@ dabs:
   bx lr
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_foldable_3, "?dnegate" @ Negate a double number if top element on stack is negative.
+@  Wortbirne Flag_foldable_3, "?dnegate" @ Negate a double number if top element on stack is negative.
 @------------------------------------------------------------------------------
-qdnegate:
-  popda r0
-  cmp r0, #0
-  bmi.n dnegate
-  bx lr
+@   popda r0
+@   cmp r0, #0
+@   bmi.n dnegate
+@   bx lr
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_foldable_2, "dnegate"

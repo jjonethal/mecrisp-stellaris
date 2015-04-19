@@ -351,3 +351,9 @@
       Marsaglia pseudo random number generator
   - Contribution by Terry Porter:
       Register file generator with individual bitfields
+
+22.02.2015, Matthias Koch, Mecrisp-Stellaris 2.0.9
+
+  - Added eint? and reset
+  - Removed obsolete ?dnegate
+  - Fixed some documentation flaws in glossary

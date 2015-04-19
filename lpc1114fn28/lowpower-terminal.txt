@@ -7,7 +7,6 @@
 \ Normal run current: 3.8 mA  Low-Power-Terminal: Idle 2.4 mA, Words-Output 2.7 mA
 \ Do not mix with multitasking !
 
-: eint? ( -- ? ) dup [ $F3EF h, $8610 h, ] 0= ; \ Check if interrupts are enabled. Opcode: msr tos, primask
 : sleep ( -- ) [ $BF30 h, ] inline ; \ WFI Opcode, Wait For Interrupt, enters sleep mode
 
 \ ------------------------------

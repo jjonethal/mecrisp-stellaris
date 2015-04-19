@@ -19,6 +19,15 @@
 @ Common interrupt helpers
 
 @ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "eint?" @ ( -- ) Are Interrupts enabled ?
+@ ----------------------------------------------------------------------------- 
+  pushdatos
+  mrs tos, PRIMASK
+  subs tos, #1
+  sbcs tos, tos
+  bx lr
+
+@ -----------------------------------------------------------------------------
   Wortbirne Flag_inline, "eint" @ ( -- ) Aktiviert Interrupts  Enables Interrupts
 @ ----------------------------------------------------------------------------- 
   cpsie i @ Interrupt-Handler
@@ -55,6 +64,13 @@ unhandled:                            @   and handler for unused interrupts
   bl hexdot
   writeln "!"
   pop {pc}
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "reset" @ ( -- ) Hardware level reset
+@ ----------------------------------------------------------------------------- 
+  ldr r0, =0xE000ED0C
+  ldr r1, =0x5FA0004
+  str r1, [r0]
 
 @ -----------------------------------------------------------------------------
 @ Interrupt handler trampoline macro

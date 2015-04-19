@@ -159,7 +159,6 @@ boot-task variable up \ User Pointer
   drop true
 ;
 
-: eint? ( -- ? ) dup [ $F3EF h, $8610 h, ] 0= ; \ Check if interrupts are enabled. Opcode: msr tos, primask
 : sleep ( -- ) [ $BF30 h, ] inline ; \ WFI Opcode, Wait For Interrupt, enters sleep mode
 
 task: lowpower-task

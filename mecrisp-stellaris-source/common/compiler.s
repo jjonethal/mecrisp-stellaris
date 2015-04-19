@@ -37,7 +37,7 @@ tick: @ Nimmt das nächste Token aus dem Puffer, suche es und gibt den Einsprung
   push {lr}
   bl token
   bl find_not_found
-  drop @ No need for Flags here
+  popda r0 @ Drop Flags into r0 - used by postpone !
   pop {pc}
 
 @------------------------------------------------------------------------------
@@ -46,11 +46,8 @@ tick: @ Nimmt das nächste Token aus dem Puffer, suche es und gibt den Einsprung
 @------------------------------------------------------------------------------
   push {lr}
 
-  bl token
-  bl find_not_found
+  bl tick @ Stores Flags into r0 !
 
-  @ ( Einsprungadresse Flags )
-  popda r0 @ Flags holen  Fetch Flags
   @ ( Einsprungadresse )  
 
 1:movs r1, #Flag_immediate & ~Flag_visible @ In case definition is immediate: Compile a call to its address.
