@@ -39,14 +39,14 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20040000 @ End   of RAM. 256 kb. Porting: Change this !
+.equ RamAnfang, 0x01000000 @ Start of RAM          Porting: Change this !
+.equ RamEnde,   0x01010000 @ End   of RAM.  64 kb. Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
 .equ Kernschutzadresse,     0x00004000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
 .equ FlashDictionaryAnfang, 0x00004000 @ 16 kb für den Kern reserviert...           16 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x00100000 @ 1008 kb Platz für das Flash-Dictionary   1008 kb Flash available. Porting: Change this !
+.equ FlashDictionaryEnde,   0x00040000 @ 240 kb Platz für das Flash-Dictionary     240 kb Flash available. Porting: Change this !
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 
@@ -66,6 +66,19 @@
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn
 @ -----------------------------------------------------------------------------
+
+   @ Stop Watchdog timer
+   ldr  r1, =WDTPW|WDTHOLD
+   ldr  r0, =WDTCTL
+   strh r1, [r0]
+
+@    Let red LED shine
+@    movs r1, #1 @ Switch on P1.0
+@    ldr  r0, =P1DIR
+@    strb r1, [r0]
+@    ldr r0, =P1OUT
+@    strb r1, [r0]
+
    @ Initialisierungen der Hardware, habe und brauche noch keinen Datenstack dafür
    @ Initialisations for Terminal hardware, without Datastack.
    bl uart_init
@@ -73,7 +86,12 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " for TM4C1294 by Matthias Koch"
+@   Dark again
+@   movs r1, #0 @ Switch off P1.0
+@   ldr r0, =P1OUT
+@   strb r1, [r0]
+
+   welcome " for MSP432P401R by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"

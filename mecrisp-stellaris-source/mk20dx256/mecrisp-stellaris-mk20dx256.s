@@ -90,7 +90,6 @@ Reset: @ Einsprung zu Beginn
    @ Initializations for Terminal hardware, without Datastack.
    bl uart_init
 
-Restart:
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 

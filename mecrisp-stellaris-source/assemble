@@ -20,6 +20,10 @@ cd nrf51822
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
 cd ..
 
+cd msp432p401r
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r
+cd ..
+
 cd lm4f120
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
 cd ..

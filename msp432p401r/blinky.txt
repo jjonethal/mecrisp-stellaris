@@ -1,0 +1,36 @@
+
+\ Colourful blinking
+
+\ P1.0: Red LED
+\ P1.1: Switch 1
+\ P1.2: Terminal RXD
+\ P1.3: Terminal TXD
+\ P1.4: Switch 2
+
+\ P2.0: RGB LED Red
+\ P2.1: RGB LED Green
+\ P2.2: RGB LED Blue
+
+$40004C00 constant P1IN  \ Port 1 Input
+$40004C01 constant P2IN  \ Port 2 Input
+$40004C02 constant P1OUT \ Port 1 Output
+$40004C03 constant P2OUT \ Port 2 Output
+$40004C04 constant P1DIR \ Port 1 Direction
+$40004C05 constant P2DIR \ Port 2 Direction
+$40004C06 constant P1REN \ Port 1 Resistor Enable
+$40004C07 constant P2REN \ Port 2 Resistor Enable
+
+: blinky ( -- )
+  7 P2DIR c! \ All three pins should be outputs
+
+  begin
+    1 P2OUT c!
+    500000 0 do loop
+    2 P2OUT c!
+    500000 0 do loop
+    4 P2OUT c!
+    500000 0 do loop
+  key? until
+
+  0 P2OUT c!
+;

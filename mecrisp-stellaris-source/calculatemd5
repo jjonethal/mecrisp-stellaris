@@ -22,6 +22,10 @@ cd nrf51822
 md5sum *.bin
 cd ..
 
+cd msp432p401r
+md5sum *.bin
+cd ..
+
 cd lm4f120
 md5sum *.bin
 cd ..

@@ -1,0 +1,35 @@
+
+\ MCLK output on P4.3
+
+$40004C25 constant P4DIR
+$40004C2B constant P4SEL0
+$40004C2D constant P4SEL1
+
+: mclkout ( -- )
+  1 3 lshift P4DIR  cbis!
+  1 3 lshift P4SEL0 cbis!
+  1 3 lshift P4SEL1 cbic!
+;
+
+$40010400 constant CSKEY
+$40010404 constant CSCTL0
+$40010408 constant CSCTL1
+
+$40001000 constant UCA0CTLW0
+$40001006 constant UCA0BRW
+$40001008 constant UCA0MCTL
+
+: 12mhz ( -- )
+      $695A CSKEY  ! \ Unlock CS module for register access
+\         0 CSCTL0 !  \ Reset tuning parameters
+  $00030000 CSCTL0 !   \ Set DCO to 12MHz (nominal, center of 8-16MHz range)
+\       $33 CSCTL1 !    \ Select ACLK = LFEXT if available or REFO, SMCLK = MCLK = DCO
+          0 CSKEY  !     \ Lock CS module from unintended accesses
+
+  \ Change UART baud rate
+
+  1 UCA0CTLW0 hbis!  \ Put UART in Reset state
+      6 UCA0BRW  h!   \ Set Baud rate divider for 12 MHz / (16 * 115200 Baud) = 6.5104
+  $2081 UCA0MCTL h!    \ BRF 8, UCBRS $20, UCOS16
+  1 UCA0CTLW0 hbic!     \ Let UART run
+;

@@ -363,3 +363,8 @@
   - New target: LPC1115FBD48
   - Contribution by Bert Lohmann:
       I2C, LCD, PWM in and PWM out examples for LPC1114FN28
+
+04.04.2015, Matthias Koch, Mecrisp-Stellaris 2.1.1
+
+  - New target: MSP432P401R on MSP432 Launchpad
+  - Eraseflash now performs an hardware Reset on all targets

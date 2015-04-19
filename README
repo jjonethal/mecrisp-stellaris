@@ -23,6 +23,7 @@ a port of Mecrisp to the ARM Cortex M architecture.
 It runs out of the box on:
   - TI Stellaris/Tiva Launchpad  with LM4F120H5QR / TM4C123GH6PM
   - TI Tiva Connected Launchpad  with TM4C1294NCPDT
+  - TI MSP432 Launchpad          with MSP432P401R
   - STM Nucleo L152RE            with STM32L152RE
   - STM Nucleo 401RE             with STM32F401RE
   - STM F0 Discovery             with STM32F051R8
@@ -57,6 +58,7 @@ inlining of short words.
 Communication is via serial 115200 baud 8N1 over
   - UART0  in LM4F120   (connected to USB-serial bridge on Stellaris Launchpad)
   - UART0  in TM4C1294  (connected to USB-serial bridge on Tiva Connected Launchpad)
+  - USCI0  in MSP432P401R  (TX on P1.3, RX on P1.2, connected to USB-serial bridge)
   - UART   in LPC1114FN28  (TX on P1.7, RX on P1.6)
   - UART   in LPC1115FBD48 (TX on P1.7, RX on P1.6)
   - USART1 in STM32F051 (TX on PA9, RX on PA10)
@@ -99,6 +101,18 @@ Hardware and configuration for TM4C1294:
 
   On startup, this runs with internal PIOSC at 16 MHz, 
   which is specified +-3% over whole temperature range.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for MSP432P401R:
+;------------------------------------------------------------------------------
+  Connect your cable to the USB-Port,
+  set "JTAG switch" to XDS position,
+  close 5V, 3V3, RXD, TXD jumpers.
+
+  Flashing is possible with DSLite, which is part of Energia 15:
+  DSLite -c MSP432P401R.ccxml -f mecrisp-stellaris-msp432p401r.bin -l 0 
+
+  On startup, this runs with DCO on 12 MHz.
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for LPC1114FN28 on breadboard:
@@ -607,7 +621,7 @@ Single-Comparisions:
         >=              ( n1 n2 -- flag )
         >               ( n1 n2 -- flag )
         <               ( n1 n2 -- flag )
-        0<              ( n -- flag )         Negative ?
+        0<              ( n - flag )         Negative ?
         0<>             ( x -- flag )
         0=              ( x -- flag )
         <>              ( x1 x2 -- flag )
@@ -1116,6 +1130,38 @@ Interrupts:
         irq-adc1seq3
         irq-ethernet
         irq-terminal
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for MSP432P401R:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 1k flash page only. Take care:
+                                      No Reset, no dictionary reinitialisation.
+
+        cflash!         ( char c-addr -- )  Writes byte to flash
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+        flash!          ( u|n 4-a-addr -- ) Writes single number to flash, 
+                                              4 aligned !
+Interrupts:
+
+        irq-port1       ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-port2
+        irq-port3
+        irq-port4
+        irq-port5
+        irq-port6
+        irq-watchdog
+        irq-adc
+        irq-timera0
+        irq-timera1
 
   Look into vectors.s and interrupts.s to add more interrupts.
 

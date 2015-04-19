@@ -20,6 +20,10 @@ cd nrf51822
 make clean
 cd ..
 
+cd msp432p401r
+make clean
+cd ..
+
 cd lm4f120
 make clean
 cd ..

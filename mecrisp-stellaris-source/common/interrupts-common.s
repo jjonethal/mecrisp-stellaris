@@ -67,6 +67,7 @@ unhandled:                            @   and handler for unused interrupts
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "reset" @ ( -- ) Hardware level reset
+Restart:
 @ ----------------------------------------------------------------------------- 
   ldr r0, =0xE000ED0C
   ldr r1, =0x5FA0004
