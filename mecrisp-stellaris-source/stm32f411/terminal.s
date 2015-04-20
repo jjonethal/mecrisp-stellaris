@@ -83,9 +83,11 @@ awaitHSE:
 Setup_UART:
 @ -----------------------------------------------------------------------------
 
-        @ Enable the CCM RAM and all GPIO peripheral clock
+        @ Enable GPIO peripheral clock Port A
         ldr r1, = RCC_AHB1ENR
-        ldr r0, = BIT20+0x1FF
+        ldr r0, [r1]
+        and r0, 0xFFFFFFFE
+        orrs r0, 1              @ GPIOAEN
         str r0, [r1]
 
         @ Set PORTA pins in alternate function mode
@@ -106,7 +108,18 @@ Setup_UART:
         ldr r0, = BIT17
         str r0, [r1]
 
-        Set_Terminal_USART_Baudrate
+        @Set_Terminal_USART_Baudrate
+
+        @ Configure BRR by deviding the bus clock with the baud rate
+
+        ldr r1, =Terminal_USART_BRR
+        movs r0, #0x8B  @ 115200 bps
+        str r0, [r1]
+
+        @ Enable the USART, TX, and RX circuit
+        ldr r1, =Terminal_USART_CR1
+        ldr r0, =BIT13+BIT3+BIT2 @ USART_CR1_UE | USART_CR1_TE | USART_CR1_RE
+        str r0, [r1]
 
         bx lr
 
@@ -115,7 +128,7 @@ uart_init: @ ( -- )
 @ -----------------------------------------------------------------------------
   push {lr}
 
-  bl Setup_Clocks
+@  bl Setup_Clocks @ may be uncommented for MB 1136 C-02 or external 8 mhz clock source 
   bl Setup_UART
 
   pop {pc}
