@@ -113,7 +113,7 @@ Setup_UART:
         @ Configure BRR by deviding the bus clock with the baud rate
 
         ldr r1, =Terminal_USART_BRR
-        movs r0, #0x8B  @ 115200 bps
+        movs r0, #0x8B  @ 115200 bps / 16 MHz HSI
         str r0, [r1]
 
         @ Enable the USART, TX, and RX circuit
