@@ -1,0 +1,296 @@
+STM32 ST-LINK CLI v2.2.0
+STM32 ST-LINK Command Line Interface
+
+Available commands:
+===================
+-c        Connect to the device using JTAG or SWD.
+          Syntax: -c [ID=<id>/SN=<sn>] [JTAG/SWD SWCLK=<f>] [UR/HOTPLUG] [LPM]
+          [ID=<id>]   : id (Identifier) of ST-LINK [0..9] to use when multiple
+                        probes are connected to the host
+          [SN=<sn>]   : sn (Serial Number) of the chosen ST-LINK probe
+          [UR]        : Connect to target under reset
+          [HOTPLUG]   : Connect to target without halt or reset
+          [LPM]       : Activate debug in Low Power mode
+          [SWCLK=<f>] : frequency [0..10] of SWD protocol
+                       0  = 1.8 MHz (Default value when not specified)
+                       1  = 005 KHz
+                       2  = 015 KHz
+                       3  = 025 KHz
+                       4  = 050 KHz
+                       5  = 100 KHz
+                       6  = 125 KHz
+                       7  = 240 KHz
+                       8  = 480 KHz
+                       9  = 0.9 MHz
+                       10 = 4.0 MHz
+          Example: -c ID=1 SWD SWCLK=5 UR LPM
+          Example: -c SN=55FF6C064882485358622187 SWD UR LPM
+          Note: When [ID=<id>] and [SN=<sn>] are not specified, the first
+               ST-LINK with ID=0 will be selected
+               Selection of ST-LINK by ID or SN should be used with:
+               * V1J13Sx or greater ST-LINK firmware version
+               * V2J20Sx or greater ST-LINK/V2 firmware version
+               * V2J20Mx or greater ST-LINK/V2-1 firmware version
+               [UR] available only with ST-LINK/V2 and in SWD mode
+               For JTAG mode, connect under reset is available since
+               ST-LINK/V2 firmware Version V2J15Sx
+               The RESET pin of the JTAG connector(pin 15) should be connected
+               to the device reset pin
+               [HOTPLUG] available in SWD mode
+               For JTAG mode, HotPlug Connect is available since
+               ST-LINK/V2 firmware Version V2J15Sx
+               [SWCLK=<f>] available only with ST-LINK/V2 and in SWD mode
+
+-List     List the corresponding firmware version and the unique Serial Number
+          of every ST-LINK probe connected to the computer
+          Note: To have a correct SN the ST-LINK firmware version should be:
+               * V1J13Sx or greater for ST-LINK
+               * V2J20Sx or greater for ST-LINK/V2
+               * V2J20Mx or greater for ST-LINK/V2-1
+-r8       Read memory.       Syntax: -r8  <Address> <NumBytes>
+-w8       Write 8-bit data.  Syntax: -w8  <Address> <data>
+-w32      Write 32-bit data. Syntax: -w32 <Address> <data>
+- Core commands --------------------------------------------------------
+-Rst      System reset
+-HardRst  Hardware reset
+-Run      Run application. Syntax: -Run [<Address>]
+-Halt     Halt core
+-Step     Step core
+-SetBP    Set breakpoint. Syntax: -SetBP <Address>
+-ClrBP    Clear all hardware breakpoints
+-CoreReg  Read Core registers
+-SCore    Get Core status
+- Flash commands -------------------------------------------------------
+-ME       Full chip erase
+-SE       Erase flash sector(s). Syntax: -SE <Start_Sector> [<End_Sector>]
+                                 Syntax: -SE <Sector>
+-P        Load a into device. Syntax: -P <File_Path> [<Address>]
+-V        Verify if the programming operation was performed successfully
+          Syntax: -V <while_programming/after_programming>
+          Note: The "while_programming" is the default type
+-EL       Select a Custom external memory-loader. Syntax: -EL <File_Path>
+- Miscellaneous commands ----------------------------------------------
+-Q        Enable quiet mode. No progress bar displayed
+-CmpFile  Compare file with device. Syntax: -CmpFile <File_Path> [<Address>]
+-TVolt    Display target voltage
+-Log      Enable Trace LOG File generation
+-NoPrompt Disable user confirmation prompts
+          (For programming RDP Level 2 within a file for example)
+-Dump     Read target memory and save it in a file
+          Syntax  : -Dump <Address> <Memory_Size> <File_Path>
+- Option bytes commands ------------------------------------------------
+-rOB      Display all option bytes
+-OB       Configure the option bytes
+          Syntax: -OB [RDP=<Level>]          [BOR_LEV=<Level>]
+                      [WWDG_SW=<Value>]      [IWDG_SW=<Value>]
+                      [IWDG_STOP=<Value>]    [IWDG_STDBY=<Value>]
+                      [nRST_STOP=<Value>]    [nRST_STDBY=<Value>]
+                      [nRST_SHDW=<Value>]    [PCROP_RDP=<Value>]
+                      [nBFB2=<Value>]        [BFB2=<Value>]
+                      [nBoot1=<Value>]       [Boot1=<Value>]
+                      [nBoot0=<Value>]       [nBoot0_SW_Cfg=<Value>]
+                      [VDDA=<Value>]         [SDADC12_VDD=<Value>]
+                      [Data0=<Value>]        [Data1=<Value>]
+                      [nSRAM_Parity=<Value>] [SRAM2_RST=<Value>]
+                      [SRAM2_PE=<Value>]     [SPRMOD=<Value>]
+                      [PCROP1_STRT=<Value>]  [PCROP1_END=<Value>]
+                      [PCROP2_STRT=<Value>]  [PCROP2_END=<Value>]
+                      [WRP=<Value>]          [WRP2=<Value>]
+                      [WRP3=<Value>]         [WRP4=<Value>]
+                      [WRP1A_STRT=<Value>]   [WRP1A_END=<Value>]
+                      [WRP1B_STRT=<Value>]   [WRP1B_END=<Value>]
+                      [WRP2A_STRT=<Value>]   [WRP2A_END=<Value>]
+                      [WRP2B_STRT=<Value>]   [WRP2B_END=<Value>]
+                      [DB1M=<Value>]         [DUALBANK=<Value>]
+
+Press any key to continue
+   RDP=<Level>: Set the flash memory read protection level
+      0: Protection disabled             1: Protection enabled
+      2: Protection enabled(debug & boot in SRAM features are DISABLED)
+
+   BOR_LEV=<Level>: Set the Brownout Reset threshold level
+      For STM32 L1:
+               0: BOR OFF,1.45 to 1.55 V voltage range
+               1: 1.69 to 1.8 V voltage range
+               2: 1.94 to 2.1 V voltage range
+               3: 2.3 to 2.49 V voltage range
+               4: 2.54 to 2.74V voltage range
+               5: 2.77 to 3.0 V voltage range
+      For STM32 F2, STM32 F4 and and STM32 L4
+               0: BOR OFF, 1.8 to 2.10 V voltage range
+               1: 2.10 to 2.40 V voltage range
+               2: 2.40 to 2.70 V voltage range
+               3: 2.70 to 3.60 V voltage range
+
+   WWDG_SW=<Value>: <Value> should be 0/1
+      0: Hardware window watchdog         1: Software window watchdog
+
+   IWDG_SW=<Value>: <Value> should be 0/1
+      0: Hardware independent watchdog    1: Software independent watchdog
+
+   IWDG_STOP=<Value>: <Value> should be 0/1
+      0: Independent watchdog counter is frozen in Stop mode
+      1: Independent watchdog counter is running in Stop mode
+
+   IWDG_STDBY=<Value>: <Value> should be 0/1
+      0: Independent watchdog counter is frozen in Standby mode
+      1: Independent watchdog counter is running in Standby mode
+
+   nRST_STOP=<Value>: <Value> should be 0/1
+      0: Reset generated when CPU enters Stop mode     1: No reset generated
+
+   nRST_STDBY=<Value>: <Value> should be 0/1:
+      0: Reset generated when CPU enters Standby mode  1: No reset generated
+
+   nRST_SHDW=<Value>: <Value> should be 0/1
+      0: Reset generated when entering Shutdown mode   1: No reset generated
+
+   PCROP_RDP=<Value>: <Value> should be 0/1
+      0: PCROP area not erased when RDP level decreased from 1 to 0
+      1: PCROP area erased when RDP level decreased from 1 to 0=>full mass erase
+
+   nBFB2=<Value>: <Value> should be 0/1
+      0: Boot from flash bank 2 when boot pins set in "boot from user Flash"
+      1: Boot from flash bank 1 when boot pins set in "boot from user Flash"
+
+   BFB2=<Value>: <Value> should be 0/1
+      0: Boot from flash bank 1 when boot pins set in"Boot from user Flash"
+         (default)
+      1: Boot from flash bank 2 when boot pins set in "Boot from user Flash"
+
+   nBoot1=<Value>: <Value> should be 0/1
+      With Input pad Boot0 (or Option bit nBoot0) selects the Boot Source
+
+   nBoot0=<Value>: Value should be 0/1: Active only when Boot0_SW_Cfg is set
+
+   nBoot0_SW_Cfg=<Value>: <Value> should be 0/1:
+      0: Allows user to disable BOOT0 pin completely & use nBoot0 Option bit
+      1: The BOOT0 is bonded to GPIO pin (PB8 on LQFP32 and smaller packages,
+         PF11 for QFN32 and bigger packages)
+
+   VDDA=<Value>: <Value> should be 0/1:
+      Selects the analogue monitoring on VDDA Power source
+
+   SDADC12_VDD=<Value>: <Value> should be 0/1
+      Slects analogue monitoring (comparison with Bgap 1.2V voltage)
+      on SDADC12_VDD Power source
+
+   Data0=<Value>: Set Data0 option byte.<Value> should be in [0..0xFF]
+
+   Data1=<Value>: Set Data1 option byte.<Value> should be in [0..0xFF]
+
+   BOOT_ADD0=<Value>: Value should be in [0..0xFFFF]
+       Boot Address enable when Boot0=0
+       BOOT_ADD0[15:0] correspond to address [29:14]
+
+   BOOT_ADD1=<Value>: Value should be in [0..0xFFFF]
+       Boot Address enable when Boot0=1
+       BOOT_ADD1[15:0] correspond to address [29:14]
+
+   nSRAM_Parity=<Value>: <Value> should be 0/1
+       This bit allows the enable of the SRAM hardware parity check
+       0: Parity check enabled           1: Parity check disabled
+
+   SRAM2_RST=<Value>: <Value> should be 0/1
+       This bit allows the enable of the SRAM2 erase on system reset
+       0: SRAM2 erased when a system reset occurs
+       1: SRAM2 is not erased when a system reset occurs
+
+   SRAM2_PE=<Value>: <Value> should be 0/1
+       This bit allows the enable of the SRAM2 hardware parity check
+       0: SRAM2 parity check enable      1: SRAM2 parity check disable
+
+   SPRMOD=<Value>: <Value> should be 0/1
+       Selection of protection mode of nWPRi bits
+       0: nWPRi bits used for sector i write protection
+       1: nWPRi bits used for sector i PCROP protection
+
+   PCROP1_STRT=<Value>:  <Value> should be in [0..0xFFFFFFFF]
+       Read/Write Protection Start address for bank 1.
+       Note: PCROP1_STRT must be in the active zone of Bank 1
+       Note: PCROP1_STRT must be Double Word aligned
+
+   PCROP1_END=<Value>:  <Value> should be in [0..0xFFFFFFFF]
+       Read/Write Protection End address for bank 1
+       Note: PCROP1_END must be in the active zone of Bank 1
+       Note: PCROP1_END must be Double Word aligned
+
+   PCROP2_STRT=<Value>:  <Value> should be in [0..0xFFFFFFFF]
+       Read/Write Protection Start address for bank 2
+       Note: PCROP1_STRT must be in the active zone of Bank 2
+       Note: PCROP1_STRT must be Double Word aligned
+
+   PCROP2_END=<Value>:  <Value> should be in [0..0xFFFFFFFF]
+       Read/Write Protection End address for bank 2
+       Note: PCROP1_END must be in the active zone of Bank 2
+       Note: PCROP1_END must be Double Word aligned
+
+   WRP=<Value>: Enables/Disables write protection of the flash sectors
+       Each bit will Enable/Disable the write protection of one sector
+       or more depending on the connected device
+       For STM32 L1      => WRP[i] = 0 : Flash sector(s) is protected
+       For other devices => WRP[i] = 1 : Flash sector(s) is protected
+       For other devices => WRP[i] = 1 : Flash sector(s) is protected
+       Note: <Value> should be in [0..0xFFFFFFFF]
+
+   WRP2=<Value>: WRP2 is available only for STM32 L1 medium density
+       plus, high density and high density plus devices to enable or
+       disable the protection of Flash sectors from page 512 to 1023
+       Note: <Value> should be in [0..0xFFFFFFFF]
+
+   WRP3=<Value>: WRP3 is available only for STM32 L1 high density and
+       high density plus devices to enable/disable the protection of
+       Flash sectors from page 1024 to 1535
+       Note: <Value> should be in [0..0xFFFFFFFF]
+
+   WRP4=<Value>: WRP4 is available only on STM32 L1 high density plus
+       devices to enable/disable the protection of flash
+       sectors from sector 1536 to sector 2047
+       Note: <Value> should be in [0..0xFFFFFFFF]
+
+   WRP1A_STRT=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone A on Bank 1
+       Note: WRP1A_STRT must be in the active zone of Bank 1
+
+   WRP1A_END=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone A on Bank 1
+       Note: WRP1A_END must be in the active zone of Bank 1
+
+   WRP1B_STRT=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone B on Bank 1
+         Note: WRP1B_STRT must be in the active zone of Bank 1
+
+   WRP1B_END=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone B on Bank 1
+       Note: WRP1B_END must be in the active zone of Bank 1
+
+   WRP2A_STRT=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone A on Bank 2
+       Note: WRP2A_STRT must be in the active zone of Bank 2
+
+   WRP2A_END=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone A on Bank 2
+       Note: WRP2A_END must be in the active zone of Bank 2
+
+   WRP2B_STRT=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone B on Bank 2
+       Note: WRP2B_STRT must be in the active zone of Bank 2
+
+   WRP2B_END=<Value>: <Value> should be in [0..0xFF]
+       Flash Page Index of Start Write Protection Zone B on Bank 2
+       Note: WRP2B_END must be in the active zone of Bank 2
+
+   DB1M=<Value>: <Value> should be 0/1
+       Dual-Bank on 1MB Flash
+
+   DUALBANK=<Value>: <Value> should be 0/1
+       Dual-Bank on 512KB Flash or 256K Devices
+       0: 512KB/256K Single Flash Bank
+       1: 512KB/256K Dual-Bank Flash with contiguous addresses
+
+------------------------------------------------------------------------
+For more details, please refer to the Option Bytes section in the Flash
+programming manual corresponding to your device available at www.st.com
+------------------------------------------------------------------------
+Note: All parameters should be in hexadecimal format
+
