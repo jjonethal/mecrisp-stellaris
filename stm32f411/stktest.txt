@@ -62,7 +62,7 @@ base !           \ restore base
   ;
 
 : time-stamp2       ( -- tsl tsh )
-  systicks syscounter @ systicks syscounter @ ( st1 sc1 st2 sc2 )
+  STK_VAL @ syscounter @ STK_VAL @ syscounter @ ( st1 sc1 st2 sc2 )
   dup                   ( st1 sc1 st2 sc2 sc2 )
   3 pick                ( st1 sc1 st2 sc2 sc2 sc1 )
   = if                  ( st1 sc1 st2 sc2 ) 
