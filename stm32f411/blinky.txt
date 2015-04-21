@@ -57,7 +57,7 @@ RCC_Base $30 + constant RCC_AHB1ENR
 
 \ User LD2: the green LED is a user LED connected to Arduino signal D13 corresponding to
 \ MCU I/O PA5 (pin 21) or PB13 (pin 34) depending on the STM32 target.
-\ On the Nucleo 401RE, this is PA5.
+\ On the Nucleo 411RE, this is PA5.
 
 \ B1 USER: the user button is connected to the I/O PC13 (pin 2) of the STM32
 \ microcontroller.
