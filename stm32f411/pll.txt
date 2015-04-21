@@ -1,4 +1,5 @@
-
+\ DAS GEHT NOCH NICHT !!!
+\ THAT FILE doesn't work yet !!!
  
 $40023C00 constant Flash_ACR \ Flash Access Control Register
 $40004408 constant USART2_BRR
