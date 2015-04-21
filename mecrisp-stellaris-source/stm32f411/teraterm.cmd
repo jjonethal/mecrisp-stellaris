@@ -1,0 +1,1 @@
+C:\app\teraterm\ttermpro.exe
