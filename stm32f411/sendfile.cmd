@@ -2,11 +2,26 @@
 :: select comport
 set COMPORT=16
 
+:scanfiles
+if "%1" == "" goto ttstart
+if "%~sx1" == ".txt" call :send %1
+shift
+goto scanfiles
+
+:ttstart
+start C:\app\teraterm\ttermpro.exe /BAUD=115200 /C=%COMPORT%
+goto :EOF
+
+:send
+echo sending %1
 :: for %%I in (adc.txt) do set F=%%~fI
 if not "%1" == "" set F=%~f1
 echo.   > macro.ttl
-echo testlink >> macro.ttl
-echo if result ^> 0 closett >> macro.ttl
+echo connect '/C=16' >> macro.ttl
+echo timeout=2 >> macro.ttl
+echo callmenu 50200 >> macro.ttl
+echo wait #10 #13 >> macro.ttl
+echo closett >> macro.ttl
 for %%I in (macro.ttl) do set M=%%~fI
 for %%I in (tt_txcrlf.ini) do set INI=%%~fI
 C:\app\teraterm\ttpmacro.exe "%M%"
@@ -29,6 +44,4 @@ for %%I in (macro.ttl) do set M=%%~fI
 for %%I in (tt_txcrlf.ini) do set INI=%%~fI
 
 C:\app\teraterm\ttermpro.exe /BAUD=115200 /C=%COMPORT% /FD="%CD%" /M="%M%" /F="%INI%"
-:: C:\app\teraterm\ttpmacro.exe "%M%"
-
-:: start C:\app\teraterm\ttermpro.exe /BAUD=115200 /C=%COMPORT%
+goto :EOF
