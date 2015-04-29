@@ -35,8 +35,8 @@ for %%I in (tt_txcrlf.ini) do set INI=%%~fI
 
 
 :: echo callmenu 50310 >> macro.ttl
-echo sendln ' ' > macro.ttl
-:: echo sendln 'reset' > macro.ttl
+echo. > macro.ttl
+echo sendln 'reset' >> macro.ttl
 echo sendfile '%F%' 0 >> macro.ttl
 :: echo setsync 1 >> macro.ttl
 echo timeout=2 >> macro.ttl
