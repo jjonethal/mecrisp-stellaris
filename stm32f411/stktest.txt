@@ -44,7 +44,7 @@ base !           \ restore base
   systicks . ;
 
 : time-stamp        ( -- tsl tsh )
-  systicks syscounter @ systicks syscounter @ ( st1 sc1 st2 sc2 )
+  STK_VAL @ syscounter @ STK_VAL @ syscounter @ ( st1 sc1 st2 sc2 )
   rot                   ( st1 st2 sc2 sc1 )
   2dup                  ( st1 st2 sc2 sc1 sc2 sc1)
   = if                  ( st1 st2 sc2 sc1 ) 
