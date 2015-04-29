@@ -1,3 +1,5 @@
+:: mingw from       http://sourceforge.net/projects/mingw/files/latest/download?source=files
+:: stlink util from http://www.st.com/web/en/catalog/tools/PF258168
 SET STLINK="C:\Program Files (x86)\STMicroelectronics\STM32 ST-LINK Utility\ST-LINK Utility\ST-LINK_CLI.exe"
 
 if "%COMPUTERNAME%" == "BCHF6KOC" (
@@ -13,7 +15,8 @@ mingw32-make.exe clean all
 if ERRORLEVEL 0 (
   %STLINK% -P mecrisp-stellaris-stm32f411.bin 0x08000000
   %STLINK% -HardRst
+@ping -n 3 > nul:
 ) else (
 	echo build error
+	pause
 )
-pause
