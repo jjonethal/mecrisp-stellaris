@@ -12,10 +12,11 @@ set PATH=%GCC_BIN%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin;%PATH%
 
 mingw32-make.exe clean all
 
+:: flashing
 if ERRORLEVEL 0 (
   %STLINK% -P mecrisp-stellaris-stm32f411.bin 0x08000000
   %STLINK% -HardRst
-@ping -n 3 > nul:
+  @ping -n 3 127.0.0.1 > nul:
 ) else (
 	echo build error
 	pause
