@@ -1,3 +1,5 @@
+:: simple debug script
+set DBG_ELF=mecrisp-stellaris-stm32f411.elf
 
 if "%COMPUTERNAME%" == "BCHF6KOC" (
 	set OPEN_OCD_PATH=E:\stm\openocd\openocd-0.9.0-dev-150204220259\openocd-0.9.0-dev-150204220259
@@ -13,5 +15,5 @@ set OPEN_OCD_CMD=%OPEN_OCD_PATH%\bin-x64\%OPEN_OCD_EXE%
 
 set PATH=%GNU_ARM_BIN%;%PATH%
 start %OPEN_OCD_CMD% -f %OPEN_OCD_PATH%\scripts\board\st_nucleo_f4.cfg
-arm-none-eabi-gdb mecrisp-stellaris-stm32f411.elf -x .gdbinit
+arm-none-eabi-gdb %DBG_ELF% -x .gdbinit
 pause
