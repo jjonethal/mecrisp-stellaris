@@ -18,6 +18,8 @@ set OPEN_OCD_CMD=%OPEN_OCD_PATH%\bin-x64\%OPEN_OCD_EXE%
 
 
 set PATH=%GNU_ARM_BIN%;%PATH%
-start %OPEN_OCD_CMD% -f %OPEN_OCD_PATH%\scripts\board\st_nucleo_f4.cfg
+start /MIN %OPEN_OCD_CMD% -f %OPEN_OCD_PATH%\scripts\board\st_nucleo_f4.cfg
 arm-none-eabi-gdb %DBG_ELF% -x .gdbinit
-pause
+:: shutdown ocd
+arm-none-eabi-gdb < ocdshutdown.gdb
+:: pause
