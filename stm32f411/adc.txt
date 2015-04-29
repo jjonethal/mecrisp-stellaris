@@ -72,14 +72,25 @@ PORTC_BASE $00 + constant PORTC_MODER    \ Reset 0 Port Mode Register - 00=Input
 : sample-pc1 ( -- )
   init-analog \ Enable clock for ADC1
   %11 1 2* lshift portc_moder bis! \ Switch PC1 to analog mode
-  begin 
+  begin
     11 analog u. cr
-  key? until 
+  key? until
 ;
 
-: temp-sensor ( -- )
-  init-analog 
-  TSVREFE ADC_CCR bis! 
+\ temperature measurement
+
+$1FFF7A2A  constant VREFIN_CAL \ reference Voltage reading at 3.3V 30 C
+$1FFF7A2C  constant TS_CAL_30  \ temperature reading at 30 C 3.3V
+$1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
+
+: VREFIN_CAL_VAL VREFIN_CAL @ $FFF and ; \ return value of calibration
+: TS_CAL_30_VAL  TS_CAL_30  @ $FFF and ; \ return value of calibration
+: TS_CAL_110_VAL TS_CAL_110 @ $FFF and ; \ return value of calibration
+
+
+: temp-sensor ( -- )           \ temperature sensor readout demo
+  init-analog
+  TSVREFE ADC_CCR bis!
   begin
 	18 analog u. cr
   key? until ;
@@ -89,27 +100,18 @@ PORTC_BASE $00 + constant PORTC_MODER    \ Reset 0 Port Mode Register - 00=Input
 	TSVREFE ADC_CCR bis!
 	17 analog ;
 
-: temp-sensor-on ( -- )       \ turn on temperature sensor	
+: temp-sensor-on ( -- )       \ turn on temperature sensor
   init-analog
   TSVREFE ADC_CCR bis! ;
 
-: temp-sensor-off ( -- )       \ turn off temperature sensor	
+: temp-sensor-off ( -- )       \ turn off temperature sensor
   TSVREFE ADC_CCR bic! ;
-  
-  
+
+
 : adc-temp ( -- u )
   init-analog
   TSVREFE ADC_CCR bis!
   18 analog ;
-
-
-$1FFF7A2A  constant VREFIN_CAL \ reference Voltage reading at 3.3V 30 C
-$1FFF7A2C  constant TS_CAL_30  \ temperature reading at 30 C 3.3V
-$1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
-
-: VREFIN_CAL_VAL VREFIN_CAL @ $FFF and ; \ return value of calibration
-: TS_CAL_30_VAL  TS_CAL_30  @ $FFF and ; \ return value of calibration
-: TS_CAL_110_VAL TS_CAL_110 @ $FFF and ; \ return value of calibration
 
 
 : adc-scale-fix ( u -- u ) \ correct ADC reading scale to 3v3 actual voltage may differ
@@ -123,7 +125,7 @@ $1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
   adc-temp-scale TS_CAL_30_VAL - 8000 TS_CAL_110_VAL TS_CAL_30_VAL - */
   3000 + ;
 
-0 variable temp-filt  
+0 variable temp-filt       \ filter for testing
 
 : temp-sensor-cal ( -- )
   init-analog
