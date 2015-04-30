@@ -4,22 +4,27 @@ ARMGNU?=arm-none-eabi
 COPS = -Wall  -Os -nostdlib -nostartfiles -ffreestanding -save-temps
 AOPS = --warn --fatal-warnings
 
-all : mecrisp-stellaris-stm32f411.bin mecrisp-stellaris-stm32f411.hex
+TARGET = stm32f411
+PROJECT = mecrisp-stellaris-$(TARGET)
 
-mecrisp-stellaris-stm32f411.o : flash.s interrupts.s mecrisp-stellaris-stm32f411.s terminal.s vectors.s
-	$(ARMGNU)-as -g mecrisp-stellaris-stm32f411.s -o mecrisp-stellaris-stm32f411.o
+all : $(PROJECT).bin $(PROJECT).hex
+
+$(PROJECT).o : flash.s interrupts.s $(PROJECT).s terminal.s vectors.s
+	$(ARMGNU)-as -g $(PROJECT).s -o $(PROJECT).o
 
 # offset 0x08000000 to enable flash with st-link utility
-mecrisp-stellaris-stm32f411.hex : mecrisp-stellaris-stm32f411.bin
-	$(ARMGNU)-objcopy -I binary --change-addresses 0x08000000 mecrisp-stellaris-stm32f411.bin mecrisp-stellaris-stm32f411.hex  -O ihex 
+$(PROJECT).hex : $(PROJECT).bin
+	$(ARMGNU)-objcopy -I binary --change-addresses 0x08000000 $(PROJECT).bin $(PROJECT).hex  -O ihex 
 
-mecrisp-stellaris-stm32f411.bin : memmap mecrisp-stellaris-stm32f411.o
-	$(ARMGNU)-ld -o mecrisp-stellaris-stm32f411.elf -T memmap mecrisp-stellaris-stm32f411.o
-	$(ARMGNU)-objdump -D mecrisp-stellaris-stm32f411.elf > mecrisp-stellaris-stm32f411.list
-	$(ARMGNU)-objcopy mecrisp-stellaris-stm32f411.elf mecrisp-stellaris-stm32f411.bin -O binary
+$(PROJECT).bin : memmap $(PROJECT).o
+	$(ARMGNU)-ld -o $(PROJECT).elf -T memmap $(PROJECT).o
+	$(ARMGNU)-objdump -D $(PROJECT).elf > $(PROJECT).list
+	$(ARMGNU)-objcopy $(PROJECT).elf $(PROJECT).bin -O binary
 
 clean:
 	rm -f *.bin
 	rm -f *.o
 	rm -f *.elf
 	rm -f *.list
+	rm -f *.hex
+
