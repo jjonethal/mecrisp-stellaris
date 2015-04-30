@@ -14,7 +14,7 @@ $(PROJECT).o : flash.s interrupts.s $(PROJECT).s terminal.s vectors.s
 
 # offset 0x08000000 to enable flash with st-link utility
 $(PROJECT).hex : $(PROJECT).bin
-	$(ARMGNU)-objcopy -I binary --change-addresses 0x08000000 $(PROJECT).bin $(PROJECT).hex  -O ihex 
+	$(ARMGNU)-objcopy -I binary -O ihex --change-addresses 0x08000000 $(PROJECT).bin $(PROJECT).hex
 
 $(PROJECT).bin : memmap $(PROJECT).o
 	$(ARMGNU)-ld -o $(PROJECT).elf -T memmap $(PROJECT).o
