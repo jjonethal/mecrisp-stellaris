@@ -1,6 +1,6 @@
 \ DAS GEHT NOCH NICHT !!!
 \ THAT FILE doesn't work yet !!!
- 
+
 $40023C00 constant Flash_ACR \ Flash Access Control Register
 $40004408 constant USART2_BRR
 
@@ -22,28 +22,43 @@ RCC_Base $00 +  constant RCC_CR
     1 25 lshift constant PLLRDY
     1 26 lshift constant PLLI2SON
     1 27 lshift constant PLLI2SRDY
-  
+
 
 RCC_Base $04 +    constant RCC_PLLCFGR
-    $3F           constant PLLM    \ pll input predivider after pll source mux 1..2MHz
+   $03F           constant PLLM    \ pll input predivider after pll source mux 1..2MHz
    $1FF  6 lshift constant PLLN    \ pll multiplier after PLLM 100...432MHz
       3 16 lshift constant PLLP    \ divider after PLLN 0:/2 1:/4 2:/6 3:/8 <100MHz
       1 16 lshift constant PLLP0
       1 17 lshift constant PLLP1
       1 22 lshift constant PLLSRC  \ PLLCLK source for PLL and PLLI2S 0-HSI 1-HSE
-     $F 24 lshift constant PLLQ    \ pll divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN 
-      1 24 lshift constant PLLQ0   \ pll divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN 
+     $F 24 lshift constant PLLQ    \ pll divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN
+      1 24 lshift constant PLLQ0   \ pll divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN
       1 25 lshift constant PLLQ1   \ valid values 2..15
       1 26 lshift constant PLLQ2
       1 27 lshift constant PLLQ3
 
 
 RCC_Base $08 + constant RCC_CFGR
+      3 30 lshift constant MC02    \ 00: System clock (SYSCLK) selected 01: PLLI2S clock selected 10: HSE oscillator clock selected 11: PLL clock selected
+      7 27 lshift constant MCO2PRE \ MCO2 prescaler 0xx: /1 100: /2 101: /3 110:/4 111:/5
+	  7 24 lshift constant MCO1PRE \ MCO1 prescaler 0xx: /1 100: /2 101: /3 110:/4 111:/5
+	  1 23 lshift constant I2SSRC  \ I2S clock selection 0: PLLI2S 1: External clock on the I2S_CKIN pin
+	  
 
-: HSE_BYPASS ;
-: HSE_XTAL ;
 
-: 100Mhz
+: HSE_BYPASS  ( -- )  \ external clock source
+  HSEBYP HSEON RCC_CR BIS! ;
+
+: HSE_XTAL ( -- )     \ xtal
+  RCC_CR @ HSEBYP not and HSEON or RCC_CR ! ;
+
+:
+
+0 variable HSE_CLK
+
+: 100MHz ( -- )       \ switch clock to 100 MHz
+  pll-off 100 ?set-flash-ws if prefetch-on then 100 set-dividers pll-on ;
+
 
 : 120MHz ( -- )
 
@@ -52,7 +67,7 @@ RCC_Base $08 + constant RCC_CFGR
 
   PLLSRC          \ HSE clock as 8 MHz source
 
-  8  0 lshift or  \ PLLM Division factor for main PLL and audio PLL input clock 
+  8  0 lshift or  \ PLLM Division factor for main PLL and audio PLL input clock
                   \ 8 MHz / 8 =  1 MHz. Divider before VCO. Frequency entering VCO to be between 1 and 2 MHz.
 
 240  6 lshift or  \ PLLN Main PLL multiplication factor for VCO - between 192 and 432 MHz
@@ -62,7 +77,7 @@ RCC_Base $08 + constant RCC_CFGR
 
   0 16 lshift or  \ PLLP Division factor for main system clock
                   \ 0: /2  1: /4  2: /6  3: /8
-                  \ 240 MHz / 2 = 120 MHz 
+                  \ 240 MHz / 2 = 120 MHz
   RCC_PLLCFGR !
 
   PLLON RCC_CR bis!
