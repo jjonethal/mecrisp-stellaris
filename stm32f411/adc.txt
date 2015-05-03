@@ -127,9 +127,43 @@ $1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
 
 0 variable temp-filt       \ filter for testing
 
-: temp-sensor-cal ( -- )
+: temp-sensor-cal-filt ( -- ) \ do temperature readings with filtering
   init-analog
   temp-sensor-on
+  temp-cal temp-filt !        \ definite initial value
   begin
 	temp-cal temp-filt @ 127 * + 64 + 7 arshift dup temp-filt ! . cr
   key? until ;
+
+: temp-sensor-cal ( -- )      \ do temperature readings without filtering
+  init-analog
+  temp-sensor-on
+  begin
+	temp-cal . cr
+  key? until ;
+
+\ simple random number generator generating 64 bit random number from temperature sensor noise
+\ not usable for security applications
+  
+0 2variable seed
+
+: update-init-seed ( -- )
+  adc-temp 1 and 0 seed 2@ dshl
+  d+                      \ there is no dor word - only one bit to add with 0 - d+ is ok
+  seed 2! ;
+
+: random-init      ( -- )
+  64 0 do
+	update-init-seed
+  loop ;
+ 
+: next-random ( -- d ) \ slow 64 bit random
+  random-init seed 2@ ;
+  
+: random-test ( -- ) \
+  base @ hex   \ output in hex
+  begin
+	next-random ud.
+  key? until
+  base ! ;    \ restore base
+
