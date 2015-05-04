@@ -27,7 +27,7 @@ RCC_Base $00 +  constant RCC_CR
 RCC_Base $04 +    constant RCC_PLLCFGR
    $03F           constant PLLM    \ pll input predivider after pll source mux 1..2MHz
    $1FF  6 lshift constant PLLN    \ pll multiplier after PLLM 100...432MHz
-      3 16 lshift constant PLLP    \ divider after PLLN 0:/2 1:/4 2:/6 3:/8 <100MHz
+      3 16 lshift constant PLLP    \ divider after PLLN - 0: /2 1: /4 2: /6 3: /8 <100MHz
       1 16 lshift constant PLLP0
       1 17 lshift constant PLLP1
       1 22 lshift constant PLLSRC  \ PLLCLK source for PLL and PLLI2S 0-HSI 1-HSE
@@ -39,11 +39,18 @@ RCC_Base $04 +    constant RCC_PLLCFGR
 
 
 RCC_Base $08 + constant RCC_CFGR
-      3 30 lshift constant MC02    \ 00: System clock (SYSCLK) selected 01: PLLI2S clock selected 10: HSE oscillator clock selected 11: PLL clock selected
-      7 27 lshift constant MCO2PRE \ MCO2 prescaler 0xx: /1 100: /2 101: /3 110:/4 111:/5
-	  7 24 lshift constant MCO1PRE \ MCO1 prescaler 0xx: /1 100: /2 101: /3 110:/4 111:/5
-	  1 23 lshift constant I2SSRC  \ I2S clock selection 0: PLLI2S 1: External clock on the I2S_CKIN pin
-	  
+      3 30 lshift constant MC02    \ Microcontroller clock output 2 - 00: SYSCLK 01: PLLI2S 10: HSE 11: PLL
+      7 27 lshift constant MCO2PRE \ MCO2 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
+	  7 24 lshift constant MCO1PRE \ MCO1 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
+	  1 23 lshift constant I2SSRC  \ I2S clock selection - 0: PLLI2S 1: External clock on the I2S_CKIN pin
+	  3 21 lshift constant MCO1    \ Microcontroller clock output 1 - 00: HSI 01: LSE 10: HSE 11: PLL
+	 31 16 lshift constant RTCPRE  \ HSE division factor for RTC clock 0,1: no clock, 2..31: /2../31
+	  7 13 lshift constant PPRE2   \ APB high-speed prescaler (APB2) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 84Mhz
+	  7 10 lshift constant PPRE1   \ APB Low speed prescaler (APB1) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 42Mhz
+	  3  8 lshift constant RCC_CFGR_RES \ reserved
+	 15  4 lshift constant HPRE    \ AHB prescaler 0-7:/1 8:/2 9:/4 10:/8 11:/16 12:/64 13:/128 14:/256 15:/512 (>=25 for Ethernet)
+      3  2 lshift constant SWS     \ System clock switch status 0:HSI 1:HSE 2:PLL 3:not applicable
+      3           constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
 
 
 : HSE_BYPASS  ( -- )  \ external clock source
@@ -52,7 +59,7 @@ RCC_Base $08 + constant RCC_CFGR
 : HSE_XTAL ( -- )     \ xtal
   RCC_CR @ HSEBYP not and HSEON or RCC_CR ! ;
 
-:
+: pll-off
 
 0 variable HSE_CLK
 
