@@ -95,12 +95,12 @@ $1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
 	18 analog u. cr
   key? until ;
 
-: VREF-INT-VAL ( -- u )       \ read current vrefint value
+: VREF-INT-VAL ( -- u )        \ read current vrefint value
 	init-analog
 	TSVREFE ADC_CCR bis!
 	17 analog ;
 
-: temp-sensor-on ( -- )       \ turn on temperature sensor
+: temp-sensor-on ( -- )        \ turn on temperature sensor
   init-analog
   TSVREFE ADC_CCR bis! ;
 
@@ -108,7 +108,7 @@ $1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
   TSVREFE ADC_CCR bic! ;
 
 
-: adc-temp ( -- u )
+: adc-temp ( -- u )            \ readout temperature sensor channel
   init-analog
   TSVREFE ADC_CCR bis!
   18 analog ;
@@ -127,7 +127,7 @@ $1FFF7A2E  constant TS_CAL_110 \ temperature reading at 110 C 3.3V
 
 0 variable temp-filt       \ filter for testing
 
-: temp-sensor-cal ( -- )
+: temp-sensor-cal ( -- )   \ filtered temperature sensor demo
   init-analog
   temp-sensor-on
   begin
