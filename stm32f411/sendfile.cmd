@@ -3,7 +3,7 @@
 :: sendfile file1.txt file2.txt file3.txt 
 :: without parameter start teraterm on COMPORT
 :: select comport
-set COMPORT=16
+set COMPORT=15
 set TERA_TERM_DIR=C:\app\teraterm
 
 :: loop over file list ignore non-txt files
