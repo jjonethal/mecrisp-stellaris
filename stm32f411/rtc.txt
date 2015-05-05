@@ -28,21 +28,19 @@ PWR_BASE   constant PWR_CR
 : ?backup-protect    ( -- f ) \ query backup protect status
   PWR_CR @ DBP and 0= ;
 
-: shift-mask ( v m -- vv mm ) \ v : 00101000 m: 11000 -> 
+: shift-mask ( v m -- vv ) \ v : 00101000 m: 11000 -> 1
+  begin              ( v m )
   dup                ( v m m )
   0<>                ( v m f )
   over               ( v m f m )
   1 <>               ( v m f f )
   and                ( v m f )
-  if                 ( v m )
-    swap               ( m v )
-    2dup               ( m v m v )
-    and                ( m v v1 )
-    swap               ( m v1 v )
-    drop               ( m v1 )  
-    swap               ( v m )
-	dshr               ( vv mm )
-  then ;
+  while              ( v m )
+	shr              ( v m1 ) 
+	swap             ( m1 v )
+	shr              ( m1 v1 )
+	swap             ( v1 m1 )
+  repeat drop ;       ( v1 )
   
 : rget ( u a -- u ) \ get bits from word shifted to mask
   @ over and        \ mask bits 
