@@ -1,0 +1,56 @@
+\ rtc handling
+\ lse-on
+
+$40023800      constant RCC_Base
+
+RCC_Base $70 + constant RCC_BDCR
+  1 16 lshift constant BDRST  \ Backup domain software reset 0 : no reset 1 : reset
+  1 15 lshift constant RTCEN  \ RTC clock enable 0: RTC clock disabled 1: RTC clock enabled
+  3  8 lshift constant RTCSEL \ RTC clock source selection 0:no clk 1:LSE 2:LSI 3:HSE(RCC_CFGR.RTCPRE)
+  1  3 lshift constant LSEMOD \ External low-speed oscillator bypass 0:low power,        1:high drive
+  1  2 lshift constant LSEBYP \ External low-speed oscillator bypass
+  1  1 lshift constant LSERDY \ External low-speed oscillator ready  0:LSE clk not ready,1: LSE clk ready
+  1           constant LSEON  \ External low-speed oscillator enable 0: LSE clk OFF      1: LSE clk ON
+
+$40007000  constant PWR_BASE
+PWR_BASE   constant PWR_CR
+1 8 lshift constant DBP       \ disable backup protection
+
+: backup-protect-set ( f -- ) \ switch backup protection 1 on 0 off
+  not 1 and 8 lshift PWR_CR @ DBP not and or PWR_CR ! ;
+
+: backup-protect-on  ( -- )   \ switch on backup protection
+  DBP PWR_CR bic! ;
+
+: backup-protect-off ( -- )   \ switch off backup protection
+  DBP PWR_CR bis! ;
+
+: ?backup-protect    ( -- f ) \ query backup protect status
+  PWR_CR @ DBP and 0= ;
+
+: shift-mask ( v m -- vv mm ) \ v : 00101000 m: 11000 -> 
+  dup                ( v m m )
+  0<>                ( v m f )
+  over               ( v m f m )
+  1 <>               ( v m f f )
+  and                ( v m f )
+  if                 ( v m )
+    swap               ( m v )
+    2dup               ( m v m v )
+    and                ( m v v1 )
+    swap               ( m v1 v )
+    drop               ( m v1 )  
+    swap               ( v m )
+	dshr               ( vv mm )
+  then ;
+  
+: rget ( u a -- u ) \ get bits from word shifted to mask
+  @ over and        \ mask bits 
+  
+  
+: RCC_BDCR.
+ cr
+ ." BDRST:"  RCC_BDCR @ BDRST and 0<> 1 and . ;
+ ." RTCEN:"  RCC_BDCR @ RTCEN and 0<> 1 and . ;
+ ." RTCSEL:" RCC_BDCR @ RTCSEL and 8 rshift . ;
+ ." LSEMOD:" RCC_BDCR @ LSEMOD and 3 rshift . ;
