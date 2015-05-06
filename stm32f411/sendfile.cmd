@@ -3,7 +3,7 @@
 :: sendfile file1.txt file2.txt file3.txt 
 :: without parameter start teraterm on COMPORT
 :: select comport
-set COMPORT=15
+set COMPORT=16
 set TERA_TERM_DIR=C:\app\teraterm
 
 :: loop over file list ignore non-txt files
@@ -25,7 +25,7 @@ echo sending %1
 if not "%1" == "" set F=%~f1
 echo.   > macro.ttl
 echo connect '/C=16' >> macro.ttl
-echo timeout=2 >> macro.ttl
+echo timeout=10 >> macro.ttl
 echo callmenu 50200 >> macro.ttl
 echo wait #10 #13 >> macro.ttl
 echo closett >> macro.ttl
