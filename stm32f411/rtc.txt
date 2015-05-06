@@ -28,29 +28,35 @@ PWR_BASE   constant PWR_CR
 : ?backup-protect    ( -- f ) \ query backup protect status
   PWR_CR @ DBP and 0= ;
 
-: shift-mask ( v m -- vv ) \ v : 00111000 m: 11000 -> 11
+
+  
+\  we have the value v. we want to have the masked bits shown by m
+: shift-mask ( v m -- vv )         \ example v: 00111000 m: 11000 -> vv:11 so mask v by m and shift 3 bits right
   begin                ( v m )      \ debugging stuff below
     dup                ( v m m )    \ cr ." dup: " .s
     0<>                ( v m f )
     over               ( v m f m )
     1 and 0=           ( v m f f )  \ cr ." 1 and 0=: " .s
-    and                ( v m f )    \ cr ." and " .s
+    and                ( v m f )    \ cr ." and " .s        \ mask out all unrelated bits
   while                ( v m )
-    shr                ( v m1 )     \ cr ." shr: " .s cr
-    swap               ( m1 v )
-    shr                ( m1 v1 )
-    swap               ( v1 m1 )
-  repeat and ;         ( v1 )                                   \ mask out non related bits
+    dshr               ( v m1 )     \ cr ." dshr: " .s      \ shift right m and v inserting 0 from top
+  repeat and           ( v1 )       \ cr                    \ mask out non related bits
+  ;
 
-hex $700 $F00 shift-mask 7 = cr . cr                            \ test shift-mask
+\ hex $BFFFFFFF $C0000000 shift-mask 2 = .                            \ test shift-mask
+\ hex $DFFFFFFF $C0000000 shift-maskd 2 = cr . cr                            \ test shift-mask
 
-: rget ( u a -- u ) \ get bits from word shifted to mask
-  @ over and        \ mask bits
+: get-bits ( m a -- u ) \ get bits from word shifted to mask
+  @ swap shift-mask ;  \ mask bits
 
 
-: RCC_BDCR.
- cr
- ." BDRST:"  RCC_BDCR @ BDRST and 0<> 1 and . ;
- ." RTCEN:"  RCC_BDCR @ RTCEN and 0<> 1 and . ;
- ." RTCSEL:" RCC_BDCR @ RTCSEL and 8 rshift . ;
- ." LSEMOD:" RCC_BDCR @ LSEMOD and 3 rshift . ;
+: RCC_BDCR. ( -- )                  \ dump RCC_BDCR
+ cr ." RCC_BDCR:" cr
+ ."  BDRST : " BDRST  RCC_BDCR get-bits . cr
+ ."  RTCEN : " RTCEN  RCC_BDCR get-bits . cr
+ ."  RTCSEL: " RTCSEL RCC_BDCR get-bits . cr
+ ."  LSEMOD: " LSEMOD RCC_BDCR get-bits . cr
+ ."  LSEBYP: " LSEBYP RCC_BDCR get-bits . cr
+ ."  LSERDY: " LSERDY RCC_BDCR get-bits . cr
+ ."  LSEON : " LSEON  RCC_BDCR get-bits . cr
+ ;
