@@ -28,26 +28,26 @@ PWR_BASE   constant PWR_CR
 : ?backup-protect    ( -- f ) \ query backup protect status
   PWR_CR @ DBP and 0= ;
 
-: shift-mask ( v m -- vv ) \ v : 00101000 m: 11000 -> 1
-  begin                ( v m )
-  dup                  ( v m m )    \ cr ." dup: " .s 
-  0<>                  ( v m f )
-  over                 ( v m f m )
-  1 and 0=             ( v m f f )  \ cr ." 1 and 0=: " .s 
-  and                  ( v m f )    \ cr ." and " .s 
+: shift-mask ( v m -- vv ) \ v : 00111000 m: 11000 -> 11
+  begin                ( v m )      \ debugging stuff below
+    dup                ( v m m )    \ cr ." dup: " .s
+    0<>                ( v m f )
+    over               ( v m f m )
+    1 and 0=           ( v m f f )  \ cr ." 1 and 0=: " .s
+    and                ( v m f )    \ cr ." and " .s
   while                ( v m )
-	shr                ( v m1 )     \ cr ." shr: " .s cr  
-	swap               ( m1 v )
-	shr                ( m1 v1 )
-	swap               ( v1 m1 )
+    shr                ( v m1 )     \ cr ." shr: " .s cr
+    swap               ( m1 v )
+    shr                ( m1 v1 )
+    swap               ( v1 m1 )
   repeat drop ;        ( v1 )
 
 hex $700 $F00 shift-mask cr . cr
-  
+
 : rget ( u a -- u ) \ get bits from word shifted to mask
-  @ over and        \ mask bits 
-  
-  
+  @ over and        \ mask bits
+
+
 : RCC_BDCR.
  cr
  ." BDRST:"  RCC_BDCR @ BDRST and 0<> 1 and . ;
