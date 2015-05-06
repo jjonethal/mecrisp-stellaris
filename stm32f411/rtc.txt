@@ -40,9 +40,9 @@ PWR_BASE   constant PWR_CR
     swap               ( m1 v )
     shr                ( m1 v1 )
     swap               ( v1 m1 )
-  repeat drop ;        ( v1 )
+  repeat and ;         ( v1 )                                   \ mask out non related bits
 
-hex $700 $F00 shift-mask cr . cr
+hex $700 $F00 shift-mask 7 = cr . cr                            \ test shift-mask
 
 : rget ( u a -- u ) \ get bits from word shifted to mask
   @ over and        \ mask bits
