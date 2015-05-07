@@ -43,11 +43,11 @@ PWR_BASE   constant PWR_CR
   repeat and           ( v1 )       \ cr                    \ mask out non related bits
   ;
 
-\ hex $BFFFFFFF $C0000000 shift-mask 2 = .                            \ test shift-mask
-\ hex $DFFFFFFF $C0000000 shift-maskd 2 = cr . cr                            \ test shift-mask
+\ hex $BFFFFFFF $C0000000 shift-mask 2 = .                  \ test shift-mask
+\ hex $DFFFFFFF $C0000000 shift-maskd 2 = cr . cr           \ test shift-mask
 
-: get-bits ( m a -- u ) \ get bits from word shifted to mask
-  @ swap shift-mask ;  \ mask bits
+: get-bits ( m a -- u )                                     \ get bits from word shifted to mask
+  @ swap shift-mask ;                                       \ mask bits
 
 
 : RCC_BDCR. ( -- )                  \ dump RCC_BDCR
