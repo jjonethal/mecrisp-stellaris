@@ -52,4 +52,5 @@ for %%I in (%MACRO%) do set M=%%~fI
 for %%I in (%~dp0tt_txcrlf.ini) do set INI=%%~fI
 
 %TERA_TERM_DIR%\ttermpro.exe /BAUD=115200 /C=%COMPORT% /FD="%CD%" /M="%M%" /F="%INI%"
+del macro.ttl
 goto :EOF
