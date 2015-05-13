@@ -1,0 +1,40 @@
+\ ymodem
+
+\    /* update CRC */
+\    unsigned short
+\    updcrc(c, crc)
+\    register c;
+\    register unsigned crc;
+\    {
+\            register count;
+\
+\            for (count=8; --count>=0;) {
+\                    if (crc & 0x8000) {
+\                            crc <<= 1;
+\                            crc += (((c<<=1) & 0400)  !=  0);
+\                            crc ^= 0x1021;
+\                    }
+\                    else {
+\                            crc <<= 1;
+\                            crc += (((c<<=1) & 0400)  !=  0);
+\                    }
+\            }
+\            return crc;
+\    }
+\
+
+
+: update-crc ( c crc -- crc ) \ update the xmodem crc
+  8 0 do
+    dup $8000 and 
+    if
+      1 lshift dup
+      9 rshift 1 and +
+      $1021 xor
+    else
+      1 lshift dup
+      9 rshift 1 and +
+    then
+  loop
+  $ffff and
+  ;
