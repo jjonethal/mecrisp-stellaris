@@ -1,5 +1,13 @@
 \ ymodem
-
+\ **************
+\ xmodem block org proto
+\  +---+-----+------+-----------------+----+
+\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|  
+\  +---+-----+------+-----------------+----+
+\  SOH - start of head <$01>
+\  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BLKNR - <$FF - BLKNR>
+\
 \    /* update CRC */
 \    unsigned short
 \    updcrc(c, crc)
@@ -22,19 +30,63 @@
 \            return crc;
 \    }
 \
+\
 
+$01 constant <SOH>
+$02 constant <STX> \ start of 1k block
+$04 constant <EOT>
+$06 constant <ACK>
+$15 constant <NAK> 
+$18 constant <CAN>
+$43 constant <C>
 
-: update-crc ( c crc -- crc ) \ update the xmodem crc
+hex
+
+: crc1 ( crc c -- crc ) \ update the xmodem crc looped version
+  8 lshift   ( crc  c<<8 )
+  xor        ( crc' )
   8 0 do
-    dup $8000 and 
-    if
-      1 lshift dup
-      9 rshift 1 and +
-      $1021 xor
-    else
-      1 lshift dup
-      9 rshift 1 and +
+    2*  dup $10000 and ( crc' f )
+    if  $1021 xor      ( crc' )
     then
   loop
   $ffff and
   ;
+
+: crc2 ( crc c -- crc )     \ update xmodem crc 
+   swap dup                  ( c crc crc )
+   8 rshift swap 8 lshift OR ( c crc )
+   XOR                       ( crc )
+   dup $ff and 4 rshift xor
+   dup 12 lshift xor
+   dup $ff and 5 lshift xor
+   $ffff and 
+   ;
+
+: test-crc-data ( crc -- )
+  $100 0 do
+    i 2dup ( crc c crc c )
+	2dup ( crc c crc c crc c )
+	crc1 ( crc c crc c crc1 )
+	-rot  ( crc c crc1 crc c )
+	crc2 ( crc c crc1 crc2 )
+	<> if ." error char: " . ." crc: " dup . cr
+	else drop	
+	then	
+  loop
+;
+
+decimal
+: test-crc
+  $10000 0 do
+    i 1023 and
+	0= if
+       ." Run " i . cr
+    then    
+    i test-crc-data
+  loop 
+;
+
+: update-csum ( c csum -- csum ) \ 8 bit checksum
+  + $ff and
+  ;  
