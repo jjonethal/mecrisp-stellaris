@@ -1,0 +1,99 @@
+\ ymodem
+\ **************
+\ xmodem block org proto
+\  +---+-----+------+-----------------+----+
+\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|  
+\  +---+-----+------+-----------------+----+
+\  SOH - start of head <$01>
+\  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BLKNR - <$FF - BLKNR>
+\
+\    /* update CRC */
+\    unsigned short
+\    updcrc(c, crc)
+\    register c;
+\    register unsigned crc;
+\    {
+\            register count;
+\
+\            for (count=8; --count>=0;) {
+\                    if (crc & 0x8000) {
+\                            crc <<= 1;
+\                            crc += (((c<<=1) & 0400)  !=  0);
+\                            crc ^= 0x1021;
+\                    }
+\                    else {
+\                            crc <<= 1;
+\                            crc += (((c<<=1) & 0400)  !=  0);
+\                    }
+\            }
+\            return crc;
+\    }
+\
+\
+
+$01 constant <SOH>
+$02 constant <STX> \ start of 1k block
+$04 constant <EOT>
+$06 constant <ACK>
+$15 constant <NAK> 
+$18 constant <CAN>
+$43 constant <C>
+
+\ crc calculation functions
+decimal
+: crc1 ( crc c -- crc ) \ update the xmodem crc looped version
+  \ ." crc1< " .s
+  8 lshift   ( crc  c<<8 )
+  xor        ( crc' )
+  8 0 do
+    2*  dup $10000 and ( crc' f )
+    if  $1021 xor      ( crc' )
+    then
+  loop
+  $ffff and
+  \ ." crc1> " .s
+  ;
+
+decimal
+: crc2 ( crc c -- crc )     \ update xmodem crc 
+   \ ." crc2< " .s
+   swap dup                  ( c crc crc )
+   $8 rshift swap $8 lshift OR ( c crc )
+   XOR                       ( crc )
+   dup $ff and 4 rshift xor
+   dup $0c lshift xor
+   dup $ff and 5 lshift xor
+   $ffff and 
+   \ ." crc2> " .s
+   ;
+
+: test-crc-data ( crc -- )
+  $100 0 do
+    i 2dup ( crc c crc c )
+	2dup ( crc c crc c crc c )
+	crc1 ( crc c crc c crc1 )
+	-rot  ( crc c crc1 crc c )
+	crc2 ( crc c crc1 crc2 )
+	\ ." test " .s 
+	<> if ." error char: " . ." crc: " dup . cr
+	else drop	
+	then	
+  loop
+  drop
+;
+
+decimal
+: test-crc
+  $10000 0 do
+    i 1023 and
+	0= if
+       ." Run " i . cr
+    then    
+    i test-crc-data
+  loop 
+;
+
+: update-csum ( c csum -- csum ) \ 8 bit checksum
+  + $ff and
+  ;  

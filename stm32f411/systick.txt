@@ -1,4 +1,5 @@
-\ compiletoflash
+
+compiletoflash
 \ systick timer handling
 $E000E010 constant STK_CTRL
 1 16 lshift constant STK_CTRL_COUNTFLAG                \ Returns 1 if timer counted to 0 since last time this was read.

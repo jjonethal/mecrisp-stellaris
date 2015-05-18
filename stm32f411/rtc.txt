@@ -39,7 +39,7 @@ PWR_BASE   constant PWR_CR
     1 and 0=           ( v m f f )  \ cr ." 1 and 0=: " .s
     and                ( v m f )    \ cr ." and " .s        \ mask out all unrelated bits
   while                ( v m )
-    dshr               ( v m1 )     \ cr ." dshr: " .s      \ shift right m and v inserting 0 from top
+    dshr               ( v m1 )     \ cr ." dshr: " .s      \ shift right mask and value inserting 0 from top
   repeat and           ( v1 )       \ cr                    \ mask out non related bits
   ;
 
