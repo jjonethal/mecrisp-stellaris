@@ -40,9 +40,10 @@ $15 constant <NAK>
 $18 constant <CAN>
 $43 constant <C>
 
-hex
-
+\ crc calculation functions
+decimal
 : crc1 ( crc c -- crc ) \ update the xmodem crc looped version
+  \ ." crc1< " .s
   8 lshift   ( crc  c<<8 )
   xor        ( crc' )
   8 0 do
@@ -51,16 +52,20 @@ hex
     then
   loop
   $ffff and
+  \ ." crc1> " .s
   ;
 
+decimal
 : crc2 ( crc c -- crc )     \ update xmodem crc 
+   \ ." crc2< " .s
    swap dup                  ( c crc crc )
-   8 rshift swap 8 lshift OR ( c crc )
+   $8 rshift swap $8 lshift OR ( c crc )
    XOR                       ( crc )
    dup $ff and 4 rshift xor
-   dup 12 lshift xor
+   dup $0c lshift xor
    dup $ff and 5 lshift xor
    $ffff and 
+   \ ." crc2> " .s
    ;
 
 : test-crc-data ( crc -- )
@@ -70,10 +75,12 @@ hex
 	crc1 ( crc c crc c crc1 )
 	-rot  ( crc c crc1 crc c )
 	crc2 ( crc c crc1 crc2 )
+	\ ." test " .s 
 	<> if ." error char: " . ." crc: " dup . cr
 	else drop	
 	then	
   loop
+  drop
 ;
 
 decimal
