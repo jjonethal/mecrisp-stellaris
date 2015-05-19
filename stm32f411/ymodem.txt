@@ -8,27 +8,6 @@
 \  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
 \  #BLKNR - <$FF - BLKNR>
 \
-\    /* update CRC */
-\    unsigned short
-\    updcrc(c, crc)
-\    register c;
-\    register unsigned crc;
-\    {
-\            register count;
-\
-\            for (count=8; --count>=0;) {
-\                    if (crc & 0x8000) {
-\                            crc <<= 1;
-\                            crc += (((c<<=1) & 0400)  !=  0);
-\                            crc ^= 0x1021;
-\                    }
-\                    else {
-\                            crc <<= 1;
-\                            crc += (((c<<=1) & 0400)  !=  0);
-\                    }
-\            }
-\            return crc;
-\    }
 \
 \
 
@@ -43,7 +22,6 @@ $43 constant <C>
 \ crc calculation functions
 decimal
 : crc1 ( crc c -- crc ) \ update the xmodem crc looped version
-  \ ." crc1< " .s
   8 lshift   ( crc  c<<8 )
   xor        ( crc' )
   8 0 do
@@ -52,28 +30,38 @@ decimal
     then
   loop
   $ffff and
-  \ ." crc1> " .s
   ;
 
 decimal
 : crc2 ( crc c -- crc )     \ update xmodem crc 
-   \ ." crc2< " .s
-   swap dup                  ( c crc crc )
+   swap dup                    ( c crc crc )
    $8 rshift swap $8 lshift OR ( c crc )
-   XOR                       ( crc )
+   XOR                         ( crc )
    dup $ff and 4 rshift xor
    dup $0c lshift xor
    dup $ff and 5 lshift xor
    $ffff and 
-   \ ." crc2> " .s
    ;
 
+: test-crc-data ( crc -- )
+  $100 0 do
+    i 2dup ( crc c crc c )
+    2dup ( crc c crc c crc c )
+    crc1 ( crc c crc c crc1 )
+    -rot  ( crc c crc1 crc c )
+    crc2 ( crc c crc1 crc2 )
+    \ ." test " .s 
+    <> if ." error char: " . ." crc: " dup . cr
+    else drop   
+    then    
+  loop
+  drop
+;
 
-decimal
 : test-crc
   $10000 0 do
-    i 1023 and
-	0= if
+    i $3FF and
+    0= if
        ." Run " i . cr
     then    
     i test-crc-data
@@ -110,6 +98,137 @@ $FFFF constant CRC_TEST_START
   ['] crc2 perform-crc-test
   drop ;
 
-: update-csum ( c csum -- csum ) \ 8 bit checksum
+: update-csum ( csum c -- csum ) \ 8 bit checksum
   + $ff and
-  ;  
+  ;
+
+: xmit-crc ( adr len -- ) \ xmodem transmit using crc
+;
+
+: emit-blk-nr ( blk -- )
+  dup emit not $FF and emit
+;
+
+decimal 
+16000000 variable SYS_HZ
+: ms ( ms -- u )
+  SYS_HZ @ 1000 u*/
+;
+: seconds ( s -- d )
+  SYS_HZ @ m*
+;
+
+: wait-long ( tl th -- )
+  systick-run ( tl th -- )
+  STK_VAL @ ( tl th  t1 -- )
+  begin
+    STK_VAL @ ( tl th t1 t2 -- )
+    tuck      ( tl th t2 t1 t2 )
+    -         ( tl th t2 dt )
+    dup 0<    ( tl th t2 dt f )
+    if        ( tl th t2 dt )
+      STK_LOAD @ 1+ +
+    then      ( tl th t2 dt )
+    2swap     ( t2 dt tl th )
+    rot 0     ( t2 tl th dt 0 )
+    d-        ( t2 tl th )
+    2dup      ( t2 tl th tl th ) 2dup d. cr
+    d0<       ( t2 tl th f )
+    >r rot r> ( tl th t2 f )       
+  until       ( tl th t2 )
+  2drop drop
+;
+
+: wait ( t -- )
+  systick-run ( t -- )
+  STK_VAL @ ( t t1 -- )
+  begin
+    STK_VAL @ ( t t1 t2 -- )
+    tuck      ( t t2 t1 t2 )
+    -         ( t t2 dt )
+    dup 0<    ( t t2 dt f )
+    if        ( t t2 dt )
+      STK_LOAD @ 1+ +
+    then      ( t t2 dt )
+    .s
+    rot - negate ( t2 t )
+    tuck      ( t t2 t )
+  0< until       ( t t2 )
+  2drop
+;
+$80000000 variable dtmax
+$7FFFFFFF variable dtmin
+
+: stat ( v -- )
+  dup dtmax @ ( v v dtmax )
+  > if ( v )
+    dup dtmax ! ( v )
+  then ( v )
+  dup ( v v )
+  dtmin @ ( v v dtmin )
+  < if ( v )
+    dtmin ! ( -- )
+  else
+    drop  ( -- )
+  then
+;
+
+: wait-key        ( t -- key ) \ -1 if timeout
+  systick-run     ( t -- )
+  STK_VAL @       ( t t1 -- )
+  begin
+    STK_VAL @     ( t t1 t2 )
+    tuck          ( t t2 t1 t2 )
+    -             ( t t2 dt )
+    dup  0<       ( t t2 dt f )
+    if            ( t t2 dt )
+      STK_LOAD @  ( t t2 dt STK_LOAD@ )
+      1+ +        ( t t2 dt )
+    then          ( t t2 dt )
+    rot - negate  ( t2 t )
+    tuck          ( t t2 t )
+    0<            ( t t2 f )
+    if            ( t t2 ) .s
+      2drop -1 -1 ( -1 -1 )
+    else          ( t t2  )
+      key?        ( t t2 f )
+      if          ( t t2 )
+        2drop key -1 ( key -1 )
+      else 0      ( t t2 0 )
+      then        ( w w )
+    then          ( key -1 | t t2 0 )   
+  until           ( key | t t2 )
+;
+
+: send-block-csum ( adr len -- f )
+  over + swap   ( end start )
+  0 -rot        ( csum end start )
+  do            ( csum )
+    i c@        ( csum c )
+    dup emit    ( csum c )
+    update-csum ( csum )
+  loop
+  emit          ( )
+  key <ack> = 
+;
+
+: xmit-csum-blk ( adr len blk -- )
+  <SOH> emit             ( adr len blk )
+  dup emit-blk-nr        ( adr len blk )
+  -rot                   ( blk adr len )
+  2dup                   ( blk adr len adr len ) 
+  send-block-csum        ( blk adr len f )
+;
+  
+: xmit-csum ( adr len -- ) \ xmodem transmit using checksum
+<SOH> emit
+;
+
+
+: xmit ( adr len -- ) \ xmodem transmit
+  key
+  case 
+  <C>   of xmit-crc  endof
+  <nak> of xmit-csum endof
+  endcase
+  ;
