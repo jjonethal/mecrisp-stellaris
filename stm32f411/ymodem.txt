@@ -32,8 +32,8 @@
 \
 \
 
-$01 constant <SOH>
-$02 constant <STX> \ start of 1k block
+$01 constant <SOH> \ start of 128 byte block
+$02 constant <STX> \ start of 1024 byte block
 $04 constant <EOT>
 $06 constant <ACK>
 $15 constant <NAK> 
@@ -68,20 +68,6 @@ decimal
    \ ." crc2> " .s
    ;
 
-: test-crc-data ( crc -- )
-  $100 0 do
-    i 2dup ( crc c crc c )
-	2dup ( crc c crc c crc c )
-	crc1 ( crc c crc c crc1 )
-	-rot  ( crc c crc1 crc c )
-	crc2 ( crc c crc1 crc2 )
-	\ ." test " .s 
-	<> if ." error char: " . ." crc: " dup . cr
-	else drop	
-	then	
-  loop
-  drop
-;
 
 decimal
 : test-crc
@@ -93,6 +79,36 @@ decimal
     i test-crc-data
   loop 
 ;
+
+$E5CC constant CRC_TEST_RESULT
+$FFFF constant CRC_TEST_START
+: test-crc-0x1021
+	s" 123456789" ( cadr len -- )
+;
+
+: perform-crc-test ( fkt-adr -- f )
+	CRC_TEST_START  ( f -- f crc ) 
+	test-crc-0x1021 ( f crc -- f crc cstring len ) .s
+	over + swap     ( f crc cend cstart ) .s
+	do              ( f crc )
+		i c@        ( f crc c )
+		2 pick      ( f crc c f ) .s
+		execute     ( f crc )
+	loop
+	swap drop       ( crc ) .s
+	CRC_TEST_RESULT = dup
+	if   ." Test ok " cr
+	else ." Test failed " cr
+	then
+;
+
+: test-crc1 
+  ['] crc1 perform-crc-test
+  drop ;
+
+: test-crc2
+  ['] crc2 perform-crc-test
+  drop ;
 
 : update-csum ( c csum -- csum ) \ 8 bit checksum
   + $ff and
