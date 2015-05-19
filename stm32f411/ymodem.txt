@@ -127,6 +127,22 @@ decimal
   0< until       ( t t2 )
   2drop
 ;
+$80000000 variable dtmax
+$7FFFFFFF variable dtmin
+
+: stat ( v -- )
+  dup dtmax @ ( v v dtmax )
+  > if ( v )
+    dup dtmax ! ( v )
+  then ( v )
+  dup ( v v )
+  dtmin @ ( v v dtmin )
+  < if ( v )
+    dtmin ! ( -- )
+  else
+    drop  ( -- )
+  then
+;
 
 : wait-key        ( t -- key ) \ -1 if timeout
   systick-run     ( t -- )
