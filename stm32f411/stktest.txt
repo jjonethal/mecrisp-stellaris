@@ -104,3 +104,83 @@ systick-run
 bench
 tsb1
 tsb2
+
+: fill-stack1
+    stk_val @ .s \ 1
+    stk_val @ .s \ 1 2 
+    stk_val @ .s \ 1 2 3
+    stk_val @ .s \ 1 2 3 4
+    stk_val @ .s \ 1 2 3 4 5 
+    stk_val @ .s \ 1 2 3 4 5 6
+    stk_val @ .s \ 1 2 3 4 5 6 7
+    stk_val @ .s \ 1 2 3 4 5 6 7 8
+;
+
+: fill-stack2
+    stk_val @ \ 1
+    stk_val @ \ 1 2 
+    stk_val @ \ 1 2 3
+    stk_val @ \ 1 2 3 4
+    stk_val @ \ 1 2 3 4 5 
+    stk_val @ \ 1 2 3 4 5 6
+    stk_val @ \ 1 2 3 4 5 6 7
+    stk_val @ \ 1 2 3 4 5 6 7 8
+;
+
+
+: test-stk-val1
+  systick-run
+  hex 
+  begin
+    fill-stack1
+    1 pick    \ 1 2 3 4 5 6 7 8 7 
+    3 pick    \ 1 2 3 4 5 6 7 8 7 6
+    5 pick    \ 1 2 3 4 5 6 7 8 7 6 5 
+    7 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 
+    9 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 
+   11 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 
+   13 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 1 
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5
+    . cr      \ 1 2 3 4 5 6 7 8 7 6
+    . cr      \ 1 2 3 4 5 6 7 8 7
+    . cr      \ 1 2 3 4 5 6 7 8
+    . cr      \ 1 2 3 4 5 6 7
+    2drop     \ 1 2 3 4 5
+    2drop     \ 1 2 3
+    2drop     \ 1
+    drop      \ 
+    key?
+  until ;
+
+: test-stk-val2
+  systick-run
+  hex 
+  begin
+    fill-stack2
+    1 pick    \ 1 2 3 4 5 6 7 8 7 
+    3 pick    \ 1 2 3 4 5 6 7 8 7 6
+    5 pick    \ 1 2 3 4 5 6 7 8 7 6 5 
+    7 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 
+    9 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 
+   11 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 
+   13 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 1 
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5
+    . cr      \ 1 2 3 4 5 6 7 8 7 6
+    . cr      \ 1 2 3 4 5 6 7 8 7
+    . cr      \ 1 2 3 4 5 6 7 8
+    . cr      \ 1 2 3 4 5 6 7
+    2drop     \ 1 2 3 4 5
+    2drop     \ 1 2 3
+    2drop     \ 1
+    drop      \ 
+    key?
+  until ;
+  
+test-stk-val
+
