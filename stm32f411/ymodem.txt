@@ -2,7 +2,7 @@
 \ **************
 \ xmodem block org proto
 \  +---+-----+------+-----------------+----+
-\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|  
+\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|
 \  +---+-----+------+-----------------+----+
 \  SOH - start of head <$01>
 \  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
@@ -15,7 +15,7 @@ $01 constant <SOH> \ start of 128 byte block
 $02 constant <STX> \ start of 1024 byte block
 $04 constant <EOT>
 $06 constant <ACK>
-$15 constant <NAK> 
+$15 constant <NAK>
 $18 constant <CAN>
 $43 constant <C>
 
@@ -33,14 +33,14 @@ decimal
   ;
 
 decimal
-: crc2 ( crc c -- crc )     \ update xmodem crc 
+: crc2 ( crc c -- crc )     \ update xmodem crc
    swap dup                    ( c crc crc )
    $8 rshift swap $8 lshift OR ( c crc )
    XOR                         ( crc )
    dup $ff and 4 rshift xor
    dup $0c lshift xor
    dup $ff and 5 lshift xor
-   $ffff and 
+   $ffff and
    ;
 
 : test-crc-data ( crc -- )
@@ -50,10 +50,10 @@ decimal
     crc1 ( crc c crc c crc1 )
     -rot  ( crc c crc1 crc c )
     crc2 ( crc c crc1 crc2 )
-    \ ." test " .s 
+    \ ." test " .s
     <> if ." error char: " . ." crc: " dup . cr
-    else drop   
-    then    
+    else drop
+    then
   loop
   drop
 ;
@@ -63,34 +63,34 @@ decimal
     i $3FF and
     0= if
        ." Run " i . cr
-    then    
+    then
     i test-crc-data
-  loop 
+  loop
 ;
 
 $E5CC constant CRC_TEST_RESULT
 $FFFF constant CRC_TEST_START
 : test-crc-0x1021
-	s" 123456789" ( cadr len -- )
+  s" 123456789" ( cadr len -- )
 ;
 
 : perform-crc-test ( fkt-adr -- f )
-	CRC_TEST_START  ( f -- f crc ) 
-	test-crc-0x1021 ( f crc -- f crc cstring len ) .s
-	over + swap     ( f crc cend cstart ) .s
-	do              ( f crc )
-		i c@        ( f crc c )
-		2 pick      ( f crc c f ) .s
-		execute     ( f crc )
-	loop
-	swap drop       ( crc ) .s
-	CRC_TEST_RESULT = dup
-	if   ." Test ok " cr
-	else ." Test failed " cr
-	then
+  CRC_TEST_START  ( f -- f crc )
+  test-crc-0x1021 ( f crc -- f crc cstring len ) .s
+  over + swap     ( f crc cend cstart ) .s
+  do              ( f crc )
+    i c@        ( f crc c )
+    2 pick      ( f crc c f ) .s
+    execute     ( f crc )
+  loop
+  swap drop       ( crc ) .s
+  CRC_TEST_RESULT = dup
+  if   ." Test ok " cr
+  else ." Test failed " cr
+  then
 ;
 
-: test-crc1 
+: test-crc1
   ['] crc1 perform-crc-test
   drop ;
 
@@ -109,7 +109,7 @@ $FFFF constant CRC_TEST_START
   dup emit not $FF and emit
 ;
 
-decimal 
+decimal
 16000000 variable SYS_HZ
 : ms ( ms -- u )
   SYS_HZ @ 1000 u*/
@@ -134,7 +134,7 @@ decimal
     d-        ( t2 tl th )
     2dup      ( t2 tl th tl th ) 2dup d. cr
     d0<       ( t2 tl th f )
-    >r rot r> ( tl th t2 f )       
+    >r rot r> ( tl th t2 f )
   until       ( tl th t2 )
   2drop drop
 ;
@@ -173,11 +173,28 @@ $7FFFFFFF variable dtmin
   then
 ;
 
-: wait-key        ( t -- key ) \ -1 if timeout
+: time-step ( t t1 -- t' t2 )
+  STK_VAL @ ( t t1 t2 )
+  tuck      ( t t2 t1 t2 )
+  -         ( t t2 dt )
+  dup 0<    ( t t2 dt f )
+  if
+    STK_LOAD @ + 1+
+  then      ( t t2 dt )
+  rot       ( t2 dt t )
+  - negate swap
+;
+
+: get-stk-val
+  STK_VAL @
+;
+
+: wait-key        ( t -- key ) \ wait for keypress -1 if timeout
   systick-run     ( t -- )
   STK_VAL @       ( t t1 -- )
   begin
     STK_VAL @     ( t t1 t2 )
+    nop                         \ workaround some problems with timer register readback cause strange behavior
     tuck          ( t t2 t1 t2 )
     -             ( t t2 dt )
     dup  0<       ( t t2 dt f )
@@ -188,7 +205,7 @@ $7FFFFFFF variable dtmin
     rot - negate  ( t2 t )
     tuck          ( t t2 t )
     0<            ( t t2 f )
-    if            ( t t2 ) .s
+    if            ( t t2 )
       2drop -1 -1 ( -1 -1 )
     else          ( t t2  )
       key?        ( t t2 f )
@@ -196,9 +213,10 @@ $7FFFFFFF variable dtmin
         2drop key -1 ( key -1 )
       else 0      ( t t2 0 )
       then        ( w w )
-    then          ( key -1 | t t2 0 )   
+    then          ( key -1 | t t2 0 )
   until           ( key | t t2 )
 ;
+\ decimal 320000000 cr hex wait-key
 
 : send-block-csum ( adr len -- f )
   over + swap   ( end start )
@@ -209,17 +227,17 @@ $7FFFFFFF variable dtmin
     update-csum ( csum )
   loop
   emit          ( )
-  key <ack> = 
+  key <ack> =
 ;
 
 : xmit-csum-blk ( adr len blk -- )
   <SOH> emit             ( adr len blk )
   dup emit-blk-nr        ( adr len blk )
   -rot                   ( blk adr len )
-  2dup                   ( blk adr len adr len ) 
+  2dup                   ( blk adr len adr len )
   send-block-csum        ( blk adr len f )
 ;
-  
+
 : xmit-csum ( adr len -- ) \ xmodem transmit using checksum
 <SOH> emit
 ;
@@ -227,7 +245,7 @@ $7FFFFFFF variable dtmin
 
 : xmit ( adr len -- ) \ xmodem transmit
   key
-  case 
+  case
   <C>   of xmit-crc  endof
   <nak> of xmit-csum endof
   endcase
