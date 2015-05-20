@@ -31,6 +31,7 @@ STK_CTRL_CLK_DIV_1 STK_CTRL_TICKINT or constant SYSTICK_INIT_VAL
 				['] sys-tick-handler irq-systick   !
 				SYSTICK_INIT_VAL   STK_CTRL ! ;
 : systick-run   systick-init systick-start ;
+: ?systick-run STK_CTRL @ STK_CTRL_ENABLE AND 0= if systick-run then ;
 \ : systicks      STK_VAL @ SYSTICK_VAL_MASK and ;
 : systicks      STK_VAL @ ;
 : .systicks     systicks . ;
