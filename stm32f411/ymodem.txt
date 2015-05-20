@@ -113,12 +113,13 @@ decimal
 decimal
 16000000 variable SYS_HZ
 
+decimal
 : ms ( ms -- u )           \ calculate milliseconds
   SYS_HZ @ 1000 u*/        \  use SYS_HZ as time base
 ;
 
 : seconds ( s -- d )
-  SYS_HZ @ m*
+  SYS_HZ @ *
 ;
 
 : wait-long ( tl th -- )         \ wait for a long time - depends on timer frequency
@@ -182,7 +183,7 @@ $7FFFFFFF variable dtmin
 \ must be invoked during within one complete timer period
 : time-step      ( t1 t -- t2 t')
   swap           ( t t1 )
-  STK_VAL @      ( t t1 t2 )
+  STK_VAL @      ( t t1 t2 ) \ ." time-step stk_val " .s
   tuck           ( t t2 t1 t2 )
   -              ( t t2 dt )               \ dt = 0 means timer not yet increased for low sysclock frequency
   dup 0<         ( t t2 dt f )             \ handle timer wrap around
@@ -202,7 +203,7 @@ $7FFFFFFF variable dtmin
   STK_VAL @          ( t t1    )
   swap               ( t1 t    )
   begin
-    time-step        ( t2  t   ) 
+    time-step        ( t2  t   ) \ .s 
     dup 0< if        ( t2  t   )
       2drop -1 -1    ( -1 -1   )         \ timeout
     else             ( t2  t   )
@@ -222,7 +223,7 @@ decimal
 ;
 
 
-: send-block-csum ( adr len -- f )
+: send-block-csum ( adr len -- k )    \ return receiver response or -1 on 60s timeout
   over + swap     ( end start )
   0 -rot          ( csum end start )
   do              ( csum )
@@ -231,7 +232,7 @@ decimal
     update-csum   ( csum )
   loop
   emit            ( )                 \ transmit checksum
-  key <ack> =
+  wait-key-60s
 ;
 
 : xmit-csum-blk          ( adr len blk -- )
