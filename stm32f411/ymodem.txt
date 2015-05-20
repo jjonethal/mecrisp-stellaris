@@ -248,4 +248,4 @@ $7FFFFFFF variable dtmin
   <C>   of xmit-crc  endof
   <nak> of xmit-csum endof
   endcase
-  ;
+;
