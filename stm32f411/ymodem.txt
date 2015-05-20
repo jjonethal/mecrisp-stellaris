@@ -105,8 +105,9 @@ $FFFF constant CRC_TEST_START
 : xmit-crc ( adr len -- ) \ xmodem transmit using crc
 ;
 
+decimal
 : emit-blk-nr ( blk -- )
-  dup emit not $FF and emit
+  dup emit -255 + emit
 ;
 
 decimal
@@ -215,20 +216,25 @@ $7FFFFFFF variable dtmin
 ;
 
 \ decimal 320000000 cr hex wait-key
+decimal 
+: wait-key-60s
+  60000 ms wait-key
+;
+
 
 : send-block-csum ( adr len -- f )
   over + swap     ( end start )
   0 -rot          ( csum end start )
   do              ( csum )
-    i c@          ( csum c )
-    dup emit      ( csum c )
+    i c@          ( csum c )          \ fetch next char to transmit
+    dup emit      ( csum c )          \ send next char
     update-csum   ( csum )
   loop
-  emit            ( )
+  emit            ( )                 \ transmit checksum
   key <ack> =
 ;
 
-: xmit-csum-blk ( adr len blk -- )
+: xmit-csum-blk          ( adr len blk -- )
   <SOH> emit             ( adr len blk )
   dup emit-blk-nr        ( adr len blk )
   -rot                   ( blk adr len )
