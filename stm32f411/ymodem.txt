@@ -203,7 +203,7 @@ $7FFFFFFF variable dtmin
 \ busy wait for keypress with timeout in systick timer units
 : wait-key           ( t -- key|-1 )           \ wait for keypress with timeout return keykode or -1 if timeout
   ?systick-run        ( t       )
-  STK_VAL @          ( t t1    ) .s key drop
+  STK_VAL @          ( t t1    ) \ .s key drop
   swap               ( t1 t    )
   begin
     time-step        ( t2  t   ) \ .s 
