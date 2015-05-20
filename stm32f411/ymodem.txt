@@ -195,31 +195,25 @@ $7FFFFFFF variable dtmin
   STK_VAL @
 ;
 
-: wait-key        ( t -- key )         \ wait for keypress with timeout return keykode or -1 if timeout
-  systick-run     ( t -- )
-  STK_VAL @       ( t t1 -- )
+\ busy wait for keypress with timeout in systick timer units
+: wait-key           ( t -- key|-1 )           \ wait for keypress with timeout return keykode or -1 if timeout
+  systick-run        ( t       )
+  STK_VAL @          ( t t1    )
+  swap               ( t1 t    )
   begin
-    STK_VAL @     ( t t1 t2 )
-    nop                                \ workaround some problems with timer register readback cause strange behavior
-    tuck          ( t t2 t1 t2 )
-    -             ( t t2 dt )
-    dup  0<       ( t t2 dt f )        \ check for timer wrap
-    STK_LOAD @ 1+ ( t t2 dt f STK_LOAD@++ )
-    and +         ( t t2 dt )          \ when dt < 0 add timer period else add 0
-    rot - negate  ( t2 t )
-    tuck          ( t t2 t )
-    0<            ( t t2 f )
-    if            ( t t2 )
-      2drop -1 -1 ( -1 -1 )            \ timeout
-    else          ( t t2  )
-      key?        ( t t2 f )
-      if          ( t t2 )             \ keypress detected
-        2drop key -1 ( key -1 )
-      else 0      ( t t2 0 )
-      then        ( w w )
-    then          ( key -1 | t t2 0 )
-  until           ( key | t t2 )
+    time-step        ( t2  t   ) 
+    dup 0< if        ( t2  t   )
+      2drop -1 -1    ( -1 -1   )         \ timeout
+    else             ( t2  t   )
+      key?           ( t2  t f )
+      if             ( t2  t   )         \ keypress detected
+        2drop key -1 ( key -1  )         \ adjust stack for exit
+      else 0         ( t2 t 0  )         \ no key next loop
+      then           ( key -1 | t2 t 0 ) 
+    then             ( key -1 | t2 t 0 )
+  until              ( key    | t2 t   )
 ;
+
 \ decimal 320000000 cr hex wait-key
 
 : send-block-csum ( adr len -- f )
@@ -240,6 +234,7 @@ $7FFFFFFF variable dtmin
   -rot                   ( blk adr len )
   2dup                   ( blk adr len adr len )
   send-block-csum        ( blk adr len f )
+  \ TODO
 ;
 
 : xmit-csum ( adr len -- ) \ xmodem transmit using checksum
