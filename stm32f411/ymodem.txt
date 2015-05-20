@@ -19,6 +19,11 @@ $15 constant <NAK>
 $18 constant <CAN>
 $43 constant <C>
 
+: get-stk-val
+  STK_VAL @
+;
+
+
 \ crc calculation functions
 decimal
 : crc1 ( crc c -- crc ) \ update the xmodem crc looped version
@@ -184,6 +189,7 @@ $7FFFFFFF variable dtmin
 : time-step      ( t1 t -- t2 t')
   swap           ( t t1 )
   STK_VAL @      ( t t1 t2 ) \ ." time-step stk_val " .s
+  nop
   tuck           ( t t2 t1 t2 )
   -              ( t t2 dt )               \ dt = 0 means timer not yet increased for low sysclock frequency
   dup 0<         ( t t2 dt f )             \ handle timer wrap around
@@ -193,14 +199,11 @@ $7FFFFFFF variable dtmin
   - negate       ( t2 t' )
 ;
 
-: get-stk-val
-  STK_VAL @
-;
 
 \ busy wait for keypress with timeout in systick timer units
 : wait-key           ( t -- key|-1 )           \ wait for keypress with timeout return keykode or -1 if timeout
   ?systick-run        ( t       )
-  STK_VAL @          ( t t1    )
+  STK_VAL @          ( t t1    ) .s key drop
   swap               ( t1 t    )
   begin
     time-step        ( t2  t   ) \ .s 
