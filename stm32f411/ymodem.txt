@@ -189,7 +189,7 @@ $7FFFFFFF variable dtmin
 : time-step      ( t1 t -- t2 t')
   swap           ( t t1 )
   STK_VAL @      ( t t1 t2 ) \ ." time-step stk_val " .s
-  nop
+  nop            ( t t1 t2 )               \ workaround for wrong readout
   tuck           ( t t2 t1 t2 )
   -              ( t t2 dt )               \ dt = 0 means timer not yet increased for low sysclock frequency
   dup 0<         ( t t2 dt f )             \ handle timer wrap around
