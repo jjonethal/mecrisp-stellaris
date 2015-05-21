@@ -1,16 +1,61 @@
 \ ymodem
 \ **************
-\ xmodem block org proto
+\  xmodem 128 byte block csum
 \  +---+-----+------+-----------------+----+
 \  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|
 \  +---+-----+------+-----------------+----+
 \  SOH - start of head <$01>
 \  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
 \  #BLKNR - <$FF - BLKNR>
+\  CSUM   - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA128) % 256
+\
+\  xmodem 1024 byte clock csum
+\  +---+-----+------+------------------+----+
+\  |STX|BLKNR|#BLKNR|DATA1 ... DATA1024|CSUM|
+\  +---+-----+------+------------------+----+
+\  STX    - start of text <$02>
+\  BLKNR  - block number start at <$01> wraps at <$FF> to <$00>
+\  #BLKNR - <$FF - BLKNR>
+\  CSUM   - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA1024) % 256
+\
+\  xmodem 128 byte block crc16
+\  +---+-----+------+-----------------+------+------+
+\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CRC HI|CRC LO|
+\  +---+-----+------+-----------------+------+------+
+\  SOH    - start of head <$01>
+\  BLKNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BLKNR - <$FF - BLKNR>
+\  CRC HI - Crc-16 high byte crc16(DATA1, ... , DATA128)
+\  CRC LO - Crc-16 low byte crc16(DATA1, ... , DATA128)
+\
+\  xmodem 1024 byte block crc16
+\  +---+-----+------+-----------------+------+------+
+\  |STX|BLKNR|#BLKNR|DATA1 ... DATA128|CRC HI|CRC LO|
+\  +---+-----+------+-----------------+------+------+
+\  STX    - start of text <$02>
+\  BLKNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BLKNR - <$FF - BLKNR>
+\  CRC HI - Crc-16 high byte crc16(DATA1, ... , DATA128)
+\  CRC LO - Crc-16 low byte crc16(DATA1, ... , DATA128)
+\
+\    RECEIVER                  SENDER ( old csum mode )
+\       |------------<C>-------->|
+\       |     3 Seconds          |
+\       |------------<C>-------->|
+\       |     3 Seconds          |
+\       |------------<C>-------->|
+\       |     3 Seconds          |
+\       |------------<C>-------->|
+\       |     3 Seconds          |
+\       |----------<NAK>-------->|
+\       |
 \
 \
+\    Receiver : Negotiate Validity Check
+\       send 'C', wait 3 seconds , 3 retries 
+\         response from Sender SOH or STX -> crc mode
+\         no response from Sender         -> csum mode
 \
-
 $01 constant <SOH> \ start of 128 byte block
 $02 constant <STX> \ start of 1024 byte block
 $04 constant <EOT>
@@ -238,13 +283,18 @@ decimal
   wait-key-60s
 ;
 
-: xmit-csum-blk          ( adr len blk -- )
+: xmit-csum-blk          ( adr len blk -- adr len blk resp )
+  10 0 do
   <SOH> emit             ( adr len blk )
   dup emit-blk-nr        ( adr len blk )
   -rot                   ( blk adr len )
   2dup                   ( blk adr len adr len )
-  send-block-csum        ( blk adr len f )
-  \ TODO
+  send-block-csum        ( blk adr len resp )
+  dup <ack> <> while     ( blk adr len resp ) \ ok transfer next block
+  dup -1    <> while     ( blk adr len resp ) \ abort no response for 1 minute
+  \ try again
+  loop
+  drop -1                ( blk adr len resp ) \ 10 retries
 ;
 
 : xmit-csum ( adr len -- ) \ xmodem transmit using checksum
