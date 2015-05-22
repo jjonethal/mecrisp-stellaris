@@ -1,55 +1,67 @@
 \ ymodem
 \ **************
 \  xmodem 128 byte block csum
-\  +---+-----+------+-----------------+----+
-\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|
-\  +---+-----+------+-----------------+----+
-\  SOH - start of head <$01>
-\  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
-\  #BLKNR - <$FF - BLKNR>
-\  CSUM   - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA128) % 256
+\  +---+---+----+-----------+----+
+\  |SOH|BNR|#BNR|D00 ... D7F|CSUM|
+\  +---+---+----+-----------+----+
+\  SOH  - start of head <$01>
+\  BNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BNR - <$FF - BNR>
+\  CSUM - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA128) % 256
 \
 \  xmodem 1024 byte clock csum
-\  +---+-----+------+------------------+----+
-\  |STX|BLKNR|#BLKNR|DATA1 ... DATA1024|CSUM|
-\  +---+-----+------+------------------+----+
-\  STX    - start of text <$02>
-\  BLKNR  - block number start at <$01> wraps at <$FF> to <$00>
-\  #BLKNR - <$FF - BLKNR>
-\  CSUM   - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA1024) % 256
+\  +---+---+----+-------------+----+
+\  |STX|BNR|#BNR|D000 ... D3FF|CSUM|
+\  +---+---+----+-------------+----+
+\  STX  - start of text <$02>
+\  BNR  - block number start at <$01> wraps at <$FF> to <$00>
+\  #BNR - <$FF - BNR>
+\  CSUM - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA1024) % 256
 \
 \  xmodem 128 byte block crc16
-\  +---+-----+------+-----------------+------+------+
-\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CRC HI|CRC LO|
-\  +---+-----+------+-----------------+------+------+
-\  SOH    - start of head <$01>
-\  BLKNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
-\  #BLKNR - <$FF - BLKNR>
-\  CRC HI - Crc-16 high byte crc16(DATA1, ... , DATA128)
-\  CRC LO - Crc-16 low byte crc16(DATA1, ... , DATA128)
+\  +---+---+----+-----------+----+----+
+\  |SOH|BNR|#BNR|D00 ... D7F|CRCH|CRCL|
+\  +---+---+----+-----------+----+----+
+\  SOH  - start of head <$01>
+\  BNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BNR - <$FF - BLKNR>
+\  CRCH - Crc-16 high byte crc16(DATA1, ... , DATA128)
+\  CRCL - Crc-16 low byte crc16(DATA1, ... , DATA128)
 \
 \  xmodem 1024 byte block crc16
-\  +---+-----+------+-----------------+------+------+
-\  |STX|BLKNR|#BLKNR|DATA1 ... DATA128|CRC HI|CRC LO|
-\  +---+-----+------+-----------------+------+------+
+\  +---+---+----+-------------+----+----+
+\  |STX|BNR|#BNR|D000 ... D3FF|CRCH|CRCL|
+\  +---+---+----+-------------+----+----+
 \  STX    - start of text <$02>
 \  BLKNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
 \  #BLKNR - <$FF - BLKNR>
 \  CRC HI - Crc-16 high byte crc16(DATA1, ... , DATA128)
 \  CRC LO - Crc-16 low byte crc16(DATA1, ... , DATA128)
 \
+\  Negotiate packet check : receiver Capabilities
+\  
 \    RECEIVER                  SENDER ( old csum mode )
-\       |------------<C>-------->|
-\       |     3 Seconds          |
-\       |------------<C>-------->|
-\       |     3 Seconds          |
-\       |------------<C>-------->|
-\       |     3 Seconds          |
-\       |------------<C>-------->|
-\       |     3 Seconds          |
-\       |----------<NAK>-------->|
-\       |
-\
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<NAK>------------->+
+\       |   +---+---+----+--------+----+   |
+\       +<--|SOH|BNR|#BNR|D00..D7F|CSUM|<--+
+\       |   +---+---+----+--------+----+   |
+\       |   |$01|$01|$FE |$XX..$XX|$XX |   |
+\       |   +---+---+----+--------+----+   |
+\       +---------------<ACK>------------->+
+\       |   +---+---+----+--------+----+   |
+\       +<--|SOH|BNR|#BNR|D00..D7F|CSUM|<--+
+\       |   +---+---+----+--------+----+   |
+\       V   |$01|$02|$FD |$XX..$XX|$XX |   V
+\       |   +---+---+----+--------+----+   |
+\       |                                  |
 \
 \    Receiver : Negotiate Validity Check
 \       send 'C', wait 3 seconds , 3 retries 
