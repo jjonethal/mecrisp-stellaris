@@ -87,7 +87,7 @@ decimal
   8 lshift   ( crc  c<<8 )
   xor        ( crc' )
   8 0 do
-    2*  dup $10000 and ( crc' f )
+    2*  dup   $10000 and ( crc' f )
     if  $1021 xor      ( crc' )
     then
   loop
@@ -95,7 +95,7 @@ decimal
   ;
 
 decimal
-: crc2 ( crc c -- crc )     \ update xmodem crc
+: crc2 ( crc c -- crc )   \ update xmodem crc somewhat faster 
    swap dup                    ( c crc crc )
    $8 rshift swap $8 lshift OR ( c crc )
    XOR                         ( crc )
@@ -184,7 +184,7 @@ decimal
   SYS_HZ @ *
 ;
 
-: wait-long ( tl th -- )         \ wait for a long time - depends on timer frequency
+: wait-long ( tl th -- )         \ wait for a long time - depends on systick timer frequency
   systick-run ( tl th -- )
   STK_VAL @ ( tl th  t1 -- )
   begin
@@ -259,7 +259,7 @@ $7FFFFFFF variable dtmin
 
 \ busy wait for keypress with timeout in systick timer units
 : wait-key           ( t -- key|-1 )           \ wait for keypress with timeout return keykode or -1 if timeout
-  ?systick-run        ( t       )
+  ?systick-run       ( t       )
   STK_VAL @          ( t t1    ) \ .s key drop
   swap               ( t1 t    )
   begin
@@ -295,29 +295,44 @@ decimal
   wait-key-60s
 ;
 
+128 variable xmit-block-size  \ current blocksize of xmodem
+
+: block-head ( -- <SOH>/<STX> ) \ ouput block start <stx> of <SOH> depending on block length
+  xmit-block-size @ 128 ==
+  if <SOH> else <STX> then
+  emit
+;
+
 : xmit-csum-blk          ( adr len blk -- adr len blk resp )
-  10 0 do
-  <SOH> emit             ( adr len blk )
-  dup emit-blk-nr        ( adr len blk )
-  -rot                   ( blk adr len )
-  2dup                   ( blk adr len adr len )
-  send-block-csum        ( blk adr len resp )
-  dup <ack> <> while     ( blk adr len resp ) \ ok transfer next block
-  dup -1    <> while     ( blk adr len resp ) \ abort no response for 1 minute
-  \ try again
+  10 0 do                 ( resp can be <ACK> <NAK>)
+    block-head             ( adr len blk )
+    dup emit-blk-nr        ( adr len blk )
+    -rot                   ( blk adr len )
+    2dup                   ( blk adr len adr len )
+    send-block-csum        ( blk adr len resp )
+    dup <ack> <> while     ( blk adr len resp ) \ ok transfer next block
+    dup -1    <> while     ( blk adr len resp ) \ abort no response for 1 minute
+    \ try again
   loop
   drop -1                ( blk adr len resp ) \ 10 retries
 ;
 
-: xmit-csum ( adr len -- ) \ xmodem transmit using checksum
-<SOH> emit
+: next-block ( adr len blk )
+
+: xmit-csum ( end-adr start -- ) \ xmodem transmit using checksum
+  2dup - 1 ( end-adr start len 1 ) 
+  begin
+    xmit-csum-blk case
+     <ACK> of next-block endof
+     -1    of xmit-abort endof
+    endcase
+  repeat  
 ;
 
-
-: xmit ( adr len -- ) \ xmodem transmit
-  key
-  case
-  <C>   of xmit-crc  endof
-  <nak> of xmit-csum endof
+: xmit ( end-adr start-adr -- ) \ xmodem transmit
+  10 seconds wait-key case
+    <C>   of xmit-crc         endof
+    <nak> of xmit-csum        endof
+    -1    of xmit-no-response endof
   endcase
 ;
