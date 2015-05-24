@@ -70,9 +70,9 @@
 \
 $01 constant <SOH> \ start of 128 byte block
 $02 constant <STX> \ start of 1024 byte block
-$04 constant <EOT>
-$06 constant <ACK>
-$15 constant <NAK>
+$04 constant <EOT> \ transmission complete
+$06 constant <ACK> \ receiver sends ack when packet ok
+$15 constant <NAK> \ on transmission start indicate old checksum 
 $18 constant <CAN>
 $43 constant <C>
 
