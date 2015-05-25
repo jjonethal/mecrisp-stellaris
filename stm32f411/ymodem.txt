@@ -282,6 +282,8 @@ decimal
   60000 ms wait-key
 ;
 
+128 variable xmit-block-size  \ current blocksize of xmodem
+
 
 : send-block-csum ( adr len -- k )    \ return receiver response or -1 on 60s timeout
   over + swap     ( end start )
@@ -295,7 +297,7 @@ decimal
   wait-key-60s
 ;
 
-128 variable xmit-block-size  \ current blocksize of xmodem
+: adjust-block-length
 
 : block-head ( -- <SOH>/<STX> ) \ ouput block start <stx> of <SOH> depending on block length
   xmit-block-size @ 128 >
@@ -303,8 +305,8 @@ decimal
   emit
 ;
 
-: xmit-csum-blk          ( adr len blk -- adr len blk resp )
-  10 0 do                 ( resp can be <ACK> <NAK>)
+: xmit-csum-blk            ( adr len blk -- adr len blk resp )
+  10 0 do                  ( resp can be <ACK> <NAK>)
     block-head             ( adr len blk )
     dup emit-blk-nr        ( adr len blk )
     -rot                   ( blk adr len )
@@ -329,19 +331,22 @@ decimal
   2dup < ?swap-drop
 ;
 
-
-: next-block ( end-adr adr len blk )
-  >r + 2dup - dup > 0 if
-    r> 1+ 
+\ calc next adress block start, length and block number
+: next-block ( end-adr adr len blk -- end-adr adr len blk f )
+  >r +                \ save old block length to return stack calc new start adress
+  2dup -              \ calc new transmission length
+  dup 0>              \ f = -1 there are some bytes to transmit 
+  r> 1+ $ff and swap  \ f =  0 transmission complete , restore block number and update, fix stack
 ;
 
 : xmit-csum ( end-adr start -- ) \ xmodem transmit using checksum
-  2dup - xmit-block-size @ min 1 ( end-adr start len 1 ) 
+  2dup - xmit-block-size @ min 1 ( end-adr start len blkNr=1 ) 
   begin
     xmit-csum-blk case
      <ACK> of next-block endof
-     -1    of xmit-abort endof
+     -1    of 0          endof
     endcase
+    while
   repeat  
 ;
 
