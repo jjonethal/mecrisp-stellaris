@@ -298,8 +298,8 @@ decimal
 128 variable xmit-block-size  \ current blocksize of xmodem
 
 : block-head ( -- <SOH>/<STX> ) \ ouput block start <stx> of <SOH> depending on block length
-  xmit-block-size @ 128 ==
-  if <SOH> else <STX> then
+  xmit-block-size @ 128 >
+  if <STX> else <SOH> then
   emit
 ;
 
@@ -317,10 +317,26 @@ decimal
   drop -1                ( blk adr len resp ) \ 10 retries
 ;
 
-: next-block ( adr len blk )
+: ?swap-drop ( a b f -- if(f) b else a )
+  if swap then drop
+;
+
+: min ( a b -- min(a,b) )
+  2dup > ?swap-drop
+;
+
+: max ( a b -- max(a,b) )
+  2dup < ?swap-drop
+;
+
+
+: next-block ( end-adr adr len blk )
+  >r + 2dup - dup > 0 if
+    r> 1+ 
+;
 
 : xmit-csum ( end-adr start -- ) \ xmodem transmit using checksum
-  2dup - 1 ( end-adr start len 1 ) 
+  2dup - xmit-block-size @ min 1 ( end-adr start len 1 ) 
   begin
     xmit-csum-blk case
      <ACK> of next-block endof
