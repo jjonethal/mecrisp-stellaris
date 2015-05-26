@@ -299,20 +299,22 @@ decimal
 ;
 
 
-: send-blk-csum    ( adr blklen len -- k ) 
+: send-blk-csum    ( adr blklen len -- k|-1 ) 
   calc-blk-bounds
   0 -rot           ( pad 0 mlen+adr adr ) \ initial csum
   do
-    i c@           ( csum c )          \ fetch next char to transmit
-    dup emit       ( csum c )          \ send next char
-    update-csum    ( csum )
+    i c@           ( pad csum c )          \ fetch next char to transmit
+    dup emit       ( pad csum c )          \ send next char
+    update-csum    ( pad csum )
   loop
-  -rot
+  swap
   0 ?do
-    <CPMEOF> emit \ output pad byte
+    <CPMEOF>
+    dup emit        ( csum <EOF> )         \ output pad byte
+    update-csum     ( csum )
   loop
-  emit \ output checksum
-  wait-key-60s
+  emit              ( )                    \ output checksum
+  wait-key-60s      ( k|-1 )
 ;
 
 
