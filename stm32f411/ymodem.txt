@@ -74,6 +74,7 @@ $04 constant <EOT> \ transmission complete
 $06 constant <ACK> \ receiver sends ack when packet ok
 $15 constant <NAK> \ on transmission start indicate old checksum 
 $18 constant <CAN>
+$1A constant <CPMEOF> \ padding char to fill last block
 $43 constant <C>
 
 : get-stk-val
@@ -282,67 +283,88 @@ decimal
   60000 ms wait-key
 ;
 
-128 variable xmit-block-size  \ current blocksize of xmodem
-
-
-: send-block-csum ( adr len -- k )    \ return receiver response or -1 on 60s timeout
-  over + swap     ( end start )
-  0 -rot          ( csum end start )
-  do              ( csum )
-    i c@          ( csum c )          \ fetch next char to transmit
-    dup emit      ( csum c )          \ send next char
-    update-csum   ( csum )
-  loop
-  emit            ( )                 \ transmit checksum
-  wait-key-60s
-;
-
-: adjust-block-length
-
-: block-head ( -- <SOH>/<STX> ) \ ouput block start <stx> of <SOH> depending on block length
-  xmit-block-size @ 128 >
-  if <STX> else <SOH> then
-  emit
-;
-
-: xmit-csum-blk            ( adr len blk -- adr len blk resp )
-  10 0 do                  ( resp can be <ACK> <NAK>)
-    block-head             ( adr len blk )
-    dup emit-blk-nr        ( adr len blk )
-    -rot                   ( blk adr len )
-    2dup                   ( blk adr len adr len )
-    send-block-csum        ( blk adr len resp )
-    dup <ack> <> while     ( blk adr len resp ) \ ok transfer next block
-    dup -1    <> while     ( blk adr len resp ) \ abort no response for 1 minute
-    \ try again
-  loop
-  drop -1                ( blk adr len resp ) \ 10 retries
-;
-
 : ?swap-drop ( a b f -- if(f) b else a )
   if swap then drop
 ;
 
-: min ( a b -- min(a,b) )
-  2dup > ?swap-drop
+
+128 variable xmit-block-size  \ current blocksize of xmodem
+
+: calc-blk-bounds    ( blklen len adr -- padcount adr+mlen adr ) 
+  >R                 ( blklen len ) ( R: -- adr )
+  over min           ( blklen mlen )
+  dup R@ + >R        ( blklen mlen ) ( R: adr -- adr mlen+adr )
+  -                  ( padcount )
+  R> R>              ( padcount mlen+adr adr ) ( R: adr -- )
 ;
 
-: max ( a b -- max(a,b) )
-  2dup < ?swap-drop
+: calc-blk-bounds    ( blklen len adr -- padcount adr+mlen adr )
+  >R
+  over min           ( blklen mlen )
+  tuck - swap        ( pad mlen )
+  R@ + R>            ( pad mlen+adr adr )   
 ;
+
+: calc-blk-bounds    ( adr blklen len -- padcount adr+mlen adr )
+  over min           ( adr blklen mlen )
+  tuck -             ( adr mlen   pad  )
+  -rot over          ( pad adr mlen adr )
+  + swap             ( pad adr+mlen adr )
+;
+
+
+: send-blk-csum    ( adr blklen len -- k ) 
+  calc-blk-bounds
+  0 -rot           ( pad 0 mlen+adr adr ) \ initial csum
+  do
+    i c@           ( csum c )          \ fetch next char to transmit
+    dup emit       ( csum c )          \ send next char
+    update-csum    ( csum )
+  loop
+  -rot
+  0 ?do
+    <CPMEOF> emit \ output pad byte
+  loop
+  emit \ output checksum
+  wait-key-60s
+;
+
+
+: block-head ( blklen --  ) \ ouput block start <STX> or <SOH> depending on block length
+  128 <> negate <SOH> + emit
+;
+
+: xmit-csum-blk            (  blk adr blklen len -- blk adr blklen len resp )
+  10 0 do                  \ resp can be <ACK> <NAK>
+    over block-head        ( blk adr blklen len )
+    3 pick emit-blk-nr     ( blk adr blklen len )
+    2 pick 2 pick 2 pick   ( blk adr blklen len adr blklen len )
+    send-block-csum        ( blk adr blklen len resp )
+    dup <ack> <> while     ( blk adr blklen len resp ) \ ok transfer next block
+    dup -1    <> while     ( blk adr blklen len resp ) \ abort no response for 1 minute
+    \ try again
+  loop
+  drop -1                ( blk adr blklen len resp ) \ 10 retries
+;
+
 
 \ calc next adress block start, length and block number
-: next-block ( end-adr adr len blk -- end-adr adr len blk f )
-  >r +                \ save old block length to return stack calc new start adress
-  2dup -              \ calc new transmission length
-  dup 0>              \ f = -1 there are some bytes to transmit 
-  r> 1+ $ff and swap  \ f =  0 transmission complete , restore block number and update, fix stack
+: next-block           ( blk adr blklen len -- blk adr blklen len f )
+  swap over min        ( blk adr len mlen )
+  tuck                 ( blk adr mlen len mlen )
+  - >R +               ( blk adr+mlen )          ( R:  -- len-mlen )
+  swap 1+ $ff and swap ( blk+1 adr' )
+  xmit-block-size @    ( blk' adr' blklen' )
+  R>                   ( blk' adr' blklen' len' ) ( R: len-mlen -- )
+  dup                  ( blk' adr' blklen' len' len')
 ;
 
-: xmit-csum ( end-adr start -- ) \ xmodem transmit using checksum
-  2dup - xmit-block-size @ min 1 ( end-adr start len blkNr=1 ) 
+: xmit-csum ( adr len   -- ) \ xmodem transmit using checksum
+  1 -rot over            ( blk adr len  )
+  xmit-block-size @ swap ( blk adr blklen len )
   begin
-    xmit-csum-blk case
+    xmit-csum-blk        ( blk adr blklen len resp )
+    case
      <ACK> of next-block endof
      -1    of 0          endof
     endcase
@@ -350,7 +372,7 @@ decimal
   repeat  
 ;
 
-: xmit ( end-adr start-adr -- ) \ xmodem transmit
+: xmit ( start-adr len  -- ) \ xmodem transmit
   10 seconds wait-key case
     <C>   of xmit-crc         endof
     <nak> of xmit-csum        endof
