@@ -142,9 +142,9 @@ $FFFF constant CRC_TEST_START
   test-crc-0x1021 ( f crc -- f crc cstring len ) .s
   over + swap     ( f crc cend cstart ) .s
   do              ( f crc )
-    i c@        ( f crc c )
-    2 pick      ( f crc c f ) .s
-    execute     ( f crc )
+    i c@          ( f crc c )
+    2 pick        ( f crc c f ) .s
+    execute       ( f crc )
   loop
   swap drop       ( crc ) .s
   CRC_TEST_RESULT = dup
@@ -290,20 +290,6 @@ decimal
 
 128 variable xmit-block-size  \ current blocksize of xmodem
 
-: calc-blk-bounds    ( blklen len adr -- padcount adr+mlen adr ) 
-  >R                 ( blklen len ) ( R: -- adr )
-  over min           ( blklen mlen )
-  dup R@ + >R        ( blklen mlen ) ( R: adr -- adr mlen+adr )
-  -                  ( padcount )
-  R> R>              ( padcount mlen+adr adr ) ( R: adr -- )
-;
-
-: calc-blk-bounds    ( blklen len adr -- padcount adr+mlen adr )
-  >R
-  over min           ( blklen mlen )
-  tuck - swap        ( pad mlen )
-  R@ + R>            ( pad mlen+adr adr )   
-;
 
 : calc-blk-bounds    ( adr blklen len -- padcount adr+mlen adr )
   over min           ( adr blklen mlen )
