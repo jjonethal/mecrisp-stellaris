@@ -322,18 +322,48 @@ decimal
   128 <> negate <SOH> + emit
 ;
 
-: xmit-csum-blk            (  blk adr blklen len -- blk adr blklen len resp )
-  10 0 do                  \ resp can be <ACK> <NAK>
+ 
+\ emit block head and number copy block parameter
+: initiate-sendblock ( blk adr blklen len -- blk adr blklen len adr blklen len )
     over block-head        ( blk adr blklen len )
     3 pick emit-blk-nr     ( blk adr blklen len )
     2 pick 2 pick 2 pick   ( blk adr blklen len adr blklen len )
-    send-block-csum        ( blk adr blklen len resp )
-    dup <ack> <> while     ( blk adr blklen len resp ) \ ok transfer next block
-    dup -1    <> while     ( blk adr blklen len resp ) \ abort no response for 1 minute
-    \ try again
-  loop
-  drop -1                ( blk adr blklen len resp ) \ 10 retries
 ;
+
+\ check if block must be retransmitted
+: ?block-repeat ( resp -- resp f )
+  case
+    <NAK> of -1 endof \ repeat
+    <ACK> of  0 endof \ finished
+    -1    of  0 endof \ finished 1 minute timeout
+             -1       \ other char ( defect ) retry
+  endcase
+;
+
+: xmit-csum-blk            (  blk adr blklen len -- blk adr blklen len resp )
+                           \ resp can be <ACK> <NAK>
+  0                        \ loop exit code
+  10 0 do                  
+    drop
+    initiate-sendblock     ( blk adr blklen len adr blklen len )
+    send-block-csum        ( blk adr blklen len resp )
+    ?block-repeat while    ( blk adr blklen len resp ) \ transfer again ?
+    -1                     \ default exit code
+  loop
+;
+
+: xmit-crc-blk             (  blk adr blklen len -- blk adr blklen len resp )
+                           \ resp can be <ACK> <NAK>
+  0                        \ loop exit code
+  10 0 do                  
+    initiate-sendblock     ( blk adr blklen len adr blklen len )
+    send-block-crc         ( blk adr blklen len resp )
+    ?block-repeat while    ( blk adr blklen len resp ) \ transfer again ?
+    -1                     \ default exit code
+  loop
+  drop -1                  ( blk adr blklen len resp ) \ 10 retries
+;
+
 
 
 \ calc next adress block start, length and block number
@@ -359,6 +389,20 @@ decimal
     while
   repeat  
 ;
+
+: xmit-crc ( adr len   -- ) \ xmodem transmit using crc
+  1 -rot over            ( blk adr len  )
+  xmit-block-size @ swap ( blk adr blklen len )
+  begin
+    xmit-crc-blk        ( blk adr blklen len resp )
+    case
+     <ACK> of next-block endof
+     -1    of 0          endof
+    endcase
+    while
+  repeat  
+;
+
 
 : xmit ( start-adr len  -- ) \ xmodem transmit
   10 seconds wait-key case
