@@ -33,65 +33,24 @@
   .equ GPIOA_AFRH      ,   GPIOA_BASE + 0x24
 
   .equ RCC_BASE        ,   0x40023800
-  .equ RCC_CR          ,   RCC_BASE + 0x00
-  .equ RCC_CFGR        ,   RCC_BASE + 0x08
   .equ RCC_AHB1ENR     ,   RCC_BASE + 0x30
   .equ RCC_APB1ENR     ,   RCC_BASE + 0x40
-
-  .equ HSERDY          ,   BIT17
-  .equ HSEON           ,   BIT16
 
   .equ Terminal_USART_Base, 0x40004400 @ USART 2
   .include "../common/stm-terminal.s"  @ Common STM terminal code for emit, key and key?
 
 @ -----------------------------------------------------------------------------
-Setup_Clocks:
-@ -----------------------------------------------------------------------------
-        @ Initialize STM32 Clocks
-
-        @ Ideally, we would just take the defaults to begin with and
-        @ do nothing.  Because it is possible that HSI is not
-        @ accurate enough for the serial communication (USART2), we
-        @ will switch from the internal 8 MHz clock (HSI) to the
-        @ external 8 MHz clock (HSE).
-
-        ldr r1, = RCC_CR
-        mov r0, HSEON
-        str r0, [r1]            @ turn on the external clock
-
-awaitHSE:
-        ldr r0, [r1]
-        ands r0, #HSERDY
-        beq.n awaitHSE            @ hang here until external clock is stable
-
-        @ at this point, the HSE is running and stable but I suppose we have not yet
-        @ switched Sysclk to use it.
-
-        ldr r1, = RCC_CFGR
-        mov r0, # 1
-        str r0, [r1]            @ switch to the external clock
-        
-        @ Turn off the HSION bit
-        ldr r1, = RCC_CR
-        ldr r0, [r1]
-        and r0, 0xFFFFFFFE      @ Zero the 0th bit
-        str r0, [r1]
-
-        bx lr
-
-@ -----------------------------------------------------------------------------
-Setup_UART:
+uart_init: @ ( -- )
 @ -----------------------------------------------------------------------------
 
-        @ Enable the CCM RAM and all GPIO peripheral clock
+        @ Enable all GPIO peripheral clocks
         ldr r1, = RCC_AHB1ENR
-        ldr r0, = BIT20+0x1FF
+        movs r0, #0x9F
         str r0, [r1]
 
         @ Set PORTA pins in alternate function mode
         ldr r1, = GPIOA_MODER
         ldr r0, [r1]
-        and r0, 0xFFFFFF0F      @ Zero the bits 4-7
         orrs r0, #0xA0
         str r0, [r1]
 
@@ -106,18 +65,17 @@ Setup_UART:
         ldr r0, = BIT17
         str r0, [r1]
 
-        Set_Terminal_USART_Baudrate
+    @ Configure BRR by deviding the bus clock with the baud rate
+
+    ldr r1, =Terminal_USART_BRR
+    movs r0, #0x8B  @ 115200 bps / 16 MHz HSI
+    str r0, [r1]
+
+    @ Enable the USART, TX, and RX circuit
+    ldr r1, =Terminal_USART_CR1
+    ldr r0, =BIT13+BIT3+BIT2 @ USART_CR1_UE | USART_CR1_TE | USART_CR1_RE
+    str r0, [r1]
 
         bx lr
-
-@ -----------------------------------------------------------------------------
-uart_init: @ ( -- )
-@ -----------------------------------------------------------------------------
-  push {lr}
-
-  bl Setup_Clocks
-  bl Setup_UART
-
-  pop {pc}
 
   .ltorg @ Hier werden viele spezielle Hardwarestellenkonstanten gebraucht, schreibe sie gleich !

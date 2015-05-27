@@ -72,6 +72,10 @@ cd stm32f407
 make clean
 cd ..
 
+cd stm32f411
+make clean
+cd ..
+
 cd stm32f429
 make clean
 cd ..

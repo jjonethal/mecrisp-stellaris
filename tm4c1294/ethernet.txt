@@ -34,39 +34,52 @@ $400FC028 constant HIBRTCSS   \ Hibernation RTC Sub Seconds
 : setseconds ( seconds -- ) RTC-Wait HIBRTCLD ! RTC-Wait ;
 : seconds    ( -- seconds ) HIBRTCC @ inline ;
 
-\ -------------------------------------------
-\  Compatibility layer for ANS standard code
-\ -------------------------------------------
-
-: variable> ( x -- ) variable ;  \ Initialised Variable
-: variable  ( -- ) 0 variable ;   \ Uninitialised Variable
-
-: 2variable> ( xd -- ) 2variable ;  \ Initialised Variable
-: 2variable  ( -- ) 0. 2variable ;   \ Uninitialised Variable
-
 \ -----------------------------------------------------------
-\  Multitasking, Catch and Throw
+\   Cooperative Multitasking
 \ -----------------------------------------------------------
 
-0 0 flashvar-here 3 cells - 3 nvariable boot-task \ boot task has no extra stackspace
-boot-task boot-task ! \ for compilation into RAM
+\ Configuration:
 
-boot-task variable> up \ user pointer
-: next-task ( -- task )  up @ inline ;
-: save-task ( -- save )  up @ cell+ inline ;
-: handler ( -- handler ) up @ cell+ cell+ inline ;
+128 cells constant stackspace \ 128 stack elements for every task
 
-: (pause) [ $B430 h, ]  \ push { r4  r5 } to save I and I'
-    rp@ sp@ save-task ! \ save return stack and stack pointer
-    next-task @ up ! eint \ switch to next task
-    save-task @ sp! rp! \ restore pointers
-    unloop ;            \ pop { r4  r5 } to restore the loop registers
+\ Internal stucture of task memory:
+\  0: Pointer to next task
+\  4: Task currently active ?
+\  8: Saved stack pointer
+\ 12: Handler for Catch/Throw
+\  Parameter stack space
+\  Return    stack space
 
-128 cells Constant stackspace \ 128 stack elements for a background task
+false 0 true flashvar-here 4 cells - 4 nvariable boot-task \ Boot task is active, without handler and has no extra stackspace.
+boot-task boot-task ! \ For compilation into RAM only
 
-: task: ( "name" -- )  stackspace cell+ 2* cell+ buffer: ;
+boot-task variable up \ User Pointer
+: next-task  ( -- task )    up @ inline ;
+: task-state ( -- state )   up @ 1 cells + inline ;
+: save-task  ( -- save )    up @ 2 cells + inline ;
+: handler    ( -- handler ) up @ 3 cells + inline ;
 
-: active? ( task -- ? ) \ Checks if a task is currently inside of round-robin list
+: (pause) ( stacks fly around )
+    [ $B430 h, ]        \ push { r4  r5 } to save I and I'
+    rp@ sp@ save-task !  \ save return stack and stack pointer
+    begin
+      next-task @ up !     \ switch to next running task
+    task-state @ until
+    save-task @ sp! rp!  \ restore pointers
+    unloop ;              \ pop { r4  r5 } to restore the loop registers
+
+: wake ( task -- ) 1 cells +  true swap ! ; \ Wake a random task (IRQ save)
+: idle ( task -- ) 1 cells + false swap ! ;  \ Idle a random task (IRQ save)
+
+\ -------------------------------------------------------
+\  Round-robin list task handling - do not use in IRQ !
+\ -------------------------------------------------------
+
+: stop ( -- ) false task-state ! pause ; \ Stop current task
+: multitask  ( -- ) ['] (pause) hook-pause ! ;
+: singletask ( -- ) [']  nop    hook-pause ! ;
+
+: task-in-list? ( task -- ? ) \ Checks if a task is currently inside of round-robin list (do not use in IRQ)
   next-task
   begin
     ( Task-Address )
@@ -76,49 +89,56 @@ boot-task variable> up \ user pointer
   2drop false
 ;
 
-: (wake) ( task -- ) \ wake a task
-    dup active? IF  drop  exit  THEN
-    next-task @ over ! next-task ! ;
-
-: wake ( task -- ) dint (wake) eint ;
-
-: activate ( task r:continue -- )
-    r> swap >r 0 r@ cell+ cell+ ! \ no handler
-    r@ stackspace cell+ cell+ + dup r@ cell+ !
-    dup stackspace + tuck 2 cells - swap ! !
-    r> wake ;
-
-: multitask ( -- ) ['] (pause) hook-pause ! ;
-: singletask ( -- ) ['] nop hook-pause ! ;
-
-: prev-task ( -- addr )
-  \ Find the task that has the currently running one in its next field
-  next-task begin dup @ up @ <> while @ repeat ;
-
-: sleep [ $BF30 h, ] inline ; \ WFI Opcode, Wait For Interrupt, enters sleep mode
-
-task: lowpower-task
-
-: lowpower& ( -- )
-    lowpower-task activate
-    begin
-	dint next-task dup @ = if eint sleep then
-	\ Is this task the only one remaining in round-robin list ?
-	pause
-    again
+: previous ( task -- addr-of-task-before )
+  \ Find the task that has the desired one in its next field
+  >r next-task begin dup @ r@ <> while @ repeat rdrop
 ;
 
-: stop ( -- ) \ Remove current task from round robin list
-    \ Store the "next" of the current task into the "next" field of the previous task
-    \ which short-circuits and unlinks the currently running one.
-    dint next-task @ prev-task !
-
-    \ Do final task switch out of the current task
-    \ which is not linked in anymore in round-robin list.
-    pause \ pause contains an eint
+: insert ( task -- ) \ Insert a task into the round-robin list
+  dup task-in-list?  \ Is the desired task currently linked into ?
+  if drop else next-task @ over ! next-task ! then
 ;
 
-: kill ( task -- ) activate stop ;
+: remove ( task -- ) \ Remove a task from the round-robin list
+  dup task-in-list?  \ Is the desired task currently linked into ?
+  if dup @ ( task next )
+     swap previous ( next previous ) !
+  else drop then
+;
+
+\ -----------------------------------------
+\ Create a new task - do not use in IRQ !
+\ -----------------------------------------
+
+: task: ( "name" -- )  stackspace cell+ 2*  4 cells +  buffer: ;
+
+: preparetask ( task continue -- )
+  swap >r ( continue R: task )
+
+    \ true  r@ 1 cells + ! \ Currently running
+      false r@ 3 cells + ! \ No handler
+
+    r@ 4 cells + stackspace + ( continue start-of-parameter-stack )
+      dup   r@ 2 cells + ! \ Start of parameter stack
+
+    dup stackspace + ( continue start-of-parameter-stack start-of-return-stack )
+    tuck      ( continue start-of-return-stack start-of-parameter-stack start-of-return-stack )
+    2 cells - ( continue start-of-return-stack start-of-parameter-stack start-of-return-stack* ) \ Adjust for saved loop index and limit
+    swap  !   ( continue start-of-return-stack ) \ Store the adjusted return stack pointer into the parameter stack
+    !         \ Store the desired entry address at top of the tasks return stack
+
+  r> insert
+;
+
+: activate ( task --   R: continue -- )
+  true over 1 cells + ! \ Currently running
+  r> preparetask
+;
+
+: background ( task --   R: continue -- )
+  false over 1 cells + ! \ Currently idling
+  r> preparetask
+;
 
 \ --------------------------------------------------
 \  Multitasking insight
@@ -134,8 +154,9 @@ task: lowpower-task
     ( Task-Address )
     dup             ." Task Address: " hex.
     dup           @ ." Next Task: " hex.
-    dup 1 cells + @ ." Stack: " hex.
-    dup 2 cells + @ ." Handler: " hex. cr
+    dup 1 cells + @ ." State: " hex.
+    dup 2 cells + @ ." Stack: " hex.
+    dup 3 cells + @ ." Handler: " hex. cr
 
     @ dup next-task = \ Stop when end of circular list is reached
   until
@@ -152,27 +173,12 @@ task: lowpower-task
     [ $B430 h, ]  \ push { r4  r5 } to save I and I'
     sp@ >r handler @ >r rp@ handler !  execute
     r> handler !  rdrop  0 unloop ;
+
 : throw ( throwcode -- )  dup IF
-	handler @ 0= IF  stop  THEN \ unhandled error: stop task
-	handler @ rp! r> handler ! r> swap >r sp! drop r>
-	UNLOOP  EXIT
+        handler @ 0= IF false task-state ! THEN \ unhandled error: stop task
+        handler @ rp! r> handler ! r> swap >r sp! drop r>
+        UNLOOP  EXIT
     ELSE  drop  THEN ;
-
-' nop variable> flush-hook
-: term-flush flush-hook @ execute ;
-: quit-loop ( -- )  BEGIN  term-flush query interpret ."  ok." cr  AGAIN ;
-: quit-catch ( -- )  BEGIN  ['] quit-loop catch
-	dup IF  ." Throw: " . cr  ELSE  drop  THEN  AGAIN ;
-
-: sysfault ( -- ) -9 throw ;
-
-: init ( -- )
-    init  multitask
-    ['] quit-catch hook-quit !
-    ['] sysfault irq-fault ! ;
-
-init
-quit \ Activate Multitasking and new Catch/Throw mechanism
 
 \ --------------------------------------------------
 \  Ethernet drivers
@@ -315,9 +321,9 @@ TDES0 own or Constant TDES0:own
 
 2 29 lshift constant SAIC:RS \ replace source
 
-Variable rx-head \ descriptor to add new buffers
-Variable rx-tail \ descriptor to receive buffers
-Variable tx-head \ descriptor to send new buffers
+0 Variable rx-head \ descriptor to add new buffers
+0 Variable rx-tail \ descriptor to receive buffers
+0 Variable tx-head \ descriptor to send new buffers
 
 desc-size descs# * buffer: RX-Descriptors
 desc-size txdescs# * buffer: TX-Descriptors
@@ -443,7 +449,7 @@ $00 c,
 $80 c,  \ use unique ID
 
 mymac 5 + c@ 24 lshift 10 +
-Variable> myip \ in network byte order   
+Variable myip \ in network byte order   
 
 3 cells buffer: routing \ router addr, subnet mask, broadcast address
 
@@ -512,7 +518,7 @@ task: ethernet-task
 10 constant /arp
 16 constant arp-cache#
 /arp arp-cache# * buffer: arp-cache
-Variable arp#
+0 Variable arp#
 : arp-cache+ ( addr u -- )
     arp-cache arp# @ + swap move
     /arp arp# @ + dup /arp arp-cache# * u< and arp# ! ;
@@ -606,7 +612,7 @@ $45 c, $00 c, $00 c, $00 c, \ ip-version, ip-tos, ip-len
 $00 c, $00 c, $40 c, $00 c, \ ip-id, ip-frag
 $40 c, $00 c, $00 c, $00 c, \ ip-ttl, ip-protocol, ip-checksum
 
-$8000 variable> udp-myport# \ user-specified ports...
+$8000 variable udp-myport# \ user-specified ports...
 
 : ip-socket ( ip addr -- ) >r
     ip-hdr-template r@ 6 +  20 move \ default flags
@@ -684,6 +690,9 @@ udp-header# aligned buffer: data-hdr
 \  UDP Terminal
 \ -----------------------------------------------
 
+' nop variable flush-hook
+: term-flush flush-hook @ execute ;
+
 \ inject strings into terminal
 
 : /string ( addr1 u1 n -- addr2 u2 )
@@ -693,16 +702,16 @@ udp-header# aligned buffer: data-hdr
 
 udp-max# buffer: inject-buffer
 udp-max# buffer: emit-buffer
-2Variable inject-keys
-Variable emit-chars
+0. 2Variable inject-keys
+0 Variable emit-chars
 
 : term-type ( addr u -- ) \ unbuffered type
     term-hdr @ IF  term-hdr sendv  ELSE  2drop  THEN ;
 : (term-flush) ( -- )
     emit-chars @ IF  emit-buffer emit-chars @ term-type  0 emit-chars !  THEN ;
 
-true variable> serial?
-true variable> flush-key?
+true variable serial?
+true variable flush-key?
 
 : udp-key? ( -- flag ) serial-key? inject-keys @ 0<> or ;
 : udp-key ( -- key )
@@ -752,7 +761,7 @@ true variable> flush-key?
 : chars, ( addr u -- )  bounds ?do  I c@ c,  LOOP ;
 
 $63825363 Constant dhcp-magic \ DHCP magic
-mymac 2@ xor Variable> dhcp-xid
+mymac 2@ xor Variable dhcp-xid
 Create dhcp-head
 $45 c, $10 c, $00 c, $00 c,
 $00 c, $00 c, $40 c, $00 c,
@@ -786,7 +795,7 @@ here dhcp-discover - Constant dhcp-discover#
     dhcp-discover dhcp-discover# t$,
     TX-Puffer udp-header# + tuck - TX-Puffer sendv ;
 
-Variable dhcp-server-ip
+0 Variable dhcp-server-ip
 
 : dhcp-request ( ip -- ) >r \ generate a dhcp request
     TX-Puffer dhcp-part-1
@@ -799,10 +808,10 @@ Variable dhcp-server-ip
     $FF tc,
     TX-Puffer udp-header# + tuck - TX-Puffer sendv ;
 
--1 variable> last-tick
-Variable lease-time
-10 Variable> lease-threshold
-Variable dhcp-type
+-1 variable last-tick
+0 Variable lease-time
+10 Variable lease-threshold
+0 Variable dhcp-type
 
 : next-dhcp ( addr u -- addr' u' )
     over 1+ c@ 2 + /string ;
@@ -1071,6 +1080,21 @@ PORTF_BASE $52C + constant PORTF_PCTL   ( Pin Control )
 \  Activate everything on startup
 \ -----------------------------------------------
 
+: quit-loop ( -- )  BEGIN  term-flush query interpret ."  ok." cr  AGAIN ;
+: quit-catch ( -- )  BEGIN  ['] quit-loop catch
+        dup IF  ." Throw: " . cr  ELSE  drop  THEN  AGAIN ;
+
+: sysfault ( -- ) -9 throw ;
+
+: init ( -- )
+    init  multitask
+    ['] quit-catch hook-quit !
+    ['] sysfault irq-fault ! ;
+
+init
+quit \ Activate Multitasking and new Catch/Throw mechanism
+
+
 \ D3: Link-OK LED
 \ D4: RX/TX   LED
 
@@ -1084,13 +1108,7 @@ PORTF_BASE $52C + constant PORTF_PCTL   ( Pin Control )
     ." Mecrisp-Stellaris ethernet terminal ready" cr
 ;
 
-\ -----------------------------------------------
-\  Switch back to initialised variables
-\ -----------------------------------------------
-
-: variable variable> ; \ Define variable back to initialised mode
-: 2variable 2variable> ;
-
-\ cornerstone rewind-to-ethernet
 compiletoram
 init
+
+

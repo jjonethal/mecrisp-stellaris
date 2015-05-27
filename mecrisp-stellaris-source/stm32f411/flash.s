@@ -181,7 +181,7 @@ eraseflashsector:  @ Löscht einen Flash-Sektor
 
   cmp tos, #1   @ Nicht den Kern in Sektor 0 löschen
   blo 2f
-  cmp tos, #12  @ Es gibt nur 12 Sektoren
+  cmp tos, #8   @ Es gibt nur 8 Sektoren
   bhs 2f
 
   ldr r2, =FLASH_KEYR
@@ -233,7 +233,6 @@ eraseflashsector:  @ Löscht einen Flash-Sektor
 3:@ Diesen Sektor fertig durchkämmt
 .endm
 
-  @ Agenda: SRAM-Block 2 aktivieren ? Löschen des RAMs zu Beginn scheitert komischerweise.
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "eraseflash" @ ( -- )
   @ Löscht den gesamten Inhalt des Flashdictionaries.
