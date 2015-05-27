@@ -1,0 +1,34 @@
+$00 constant <NUL>
+$01 constant <SOH>
+$02 constant <STX>
+$03 constant <ETX> 
+$04 constant <EOT>
+$05 constant <ENQ>
+$06 constant <ACK>
+$07 constant <BEL>
+$08 constant <BS>
+$09 constant <HT>
+$0A constant <LF>
+$0B constant <VT>
+$0C constant <FF>
+$0D constant <CR>
+$0E constant <SO>
+$0F constant <SI>
+$10 constant <DLE>
+$11 constant <DC1>
+$12 constant <DC2>
+$13 constant <DC3>
+$14 constant <DC4>
+$15 constant <NAK>
+$16 constant <SYN>
+$17 constant <ETB>
+$18 constant <CAN>
+$19 constant <EM>
+$1A constant <SUB>
+$1B constant <ESC>
+$1C constant <FS>
+$1D constant <GS>
+$1E constant <RS>
+$1F constant <US>
+
+
