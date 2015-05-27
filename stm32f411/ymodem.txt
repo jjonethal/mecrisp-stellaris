@@ -1,22 +1,80 @@
 \ ymodem
 \ **************
-\ xmodem block org proto
-\  +---+-----+------+-----------------+----+
-\  |SOH|BLKNR|#BLKNR|DATA1 ... DATA128|CSUM|
-\  +---+-----+------+-----------------+----+
-\  SOH - start of head <$01>
-\  BLKNR - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  xmodem 128 byte block csum
+\  +---+---+----+-----------+----+
+\  |SOH|BNR|#BNR|D00 ... D7F|CSUM|
+\  +---+---+----+-----------+----+
+\  SOH  - start of head <$01>
+\  BNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BNR - <$FF - BNR>
+\  CSUM - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA128) % 256
+\
+\  xmodem 1024 byte clock csum
+\  +---+---+----+-------------+----+
+\  |STX|BNR|#BNR|D000 ... D3FF|CSUM|
+\  +---+---+----+-------------+----+
+\  STX  - start of text <$02>
+\  BNR  - block number start at <$01> wraps at <$FF> to <$00>
+\  #BNR - <$FF - BNR>
+\  CSUM - arithmetic sum of data bytes modulo 256 (DATA1 + ... + DATA1024) % 256
+\
+\  xmodem 128 byte block crc16
+\  +---+---+----+-----------+----+----+
+\  |SOH|BNR|#BNR|D00 ... D7F|CRCH|CRCL|
+\  +---+---+----+-----------+----+----+
+\  SOH  - start of head <$01>
+\  BNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
+\  #BNR - <$FF - BLKNR>
+\  CRCH - Crc-16 high byte crc16(DATA1, ... , DATA128)
+\  CRCL - Crc-16 low byte crc16(DATA1, ... , DATA128)
+\
+\  xmodem 1024 byte block crc16
+\  +---+---+----+-------------+----+----+
+\  |STX|BNR|#BNR|D000 ... D3FF|CRCH|CRCL|
+\  +---+---+----+-------------+----+----+
+\  STX    - start of text <$02>
+\  BLKNR  - Blocknumber starts at <$01> wraps at <$FF> to <$00> not to 1
 \  #BLKNR - <$FF - BLKNR>
+\  CRC HI - Crc-16 high byte crc16(DATA1, ... , DATA128)
+\  CRC LO - Crc-16 low byte crc16(DATA1, ... , DATA128)
 \
+\  Negotiate packet check : receiver Capabilities
+\  
+\    RECEIVER                  SENDER ( old csum mode )
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<C>--------------->+
+\       |     3 Seconds                    |
+\       +---------------<NAK>------------->+
+\       |   +---+---+----+--------+----+   |
+\       +<--|SOH|BNR|#BNR|D00..D7F|CSUM|<--+
+\       |   +---+---+----+--------+----+   |
+\       |   |$01|$01|$FE |$XX..$XX|$XX |   |
+\       |   +---+---+----+--------+----+   |
+\       +---------------<ACK>------------->+
+\       |   +---+---+----+--------+----+   |
+\       +<--|SOH|BNR|#BNR|D00..D7F|CSUM|<--+
+\       |   +---+---+----+--------+----+   |
+\       V   |$01|$02|$FD |$XX..$XX|$XX |   V
+\       |   +---+---+----+--------+----+   |
+\       |                                  |
 \
+\    Receiver : Negotiate Validity Check
+\       send 'C', wait 3 seconds , 3 retries 
+\         response from Sender SOH or STX -> crc mode
+\         no response from Sender         -> csum mode
 \
-
 $01 constant <SOH> \ start of 128 byte block
 $02 constant <STX> \ start of 1024 byte block
-$04 constant <EOT>
-$06 constant <ACK>
-$15 constant <NAK>
+$04 constant <EOT> \ transmission complete
+$06 constant <ACK> \ receiver sends ack when packet ok
+$15 constant <NAK> \ on transmission start indicate old checksum 
 $18 constant <CAN>
+$1A constant <CPMEOF> \ padding char to fill last block
 $43 constant <C>
 
 : get-stk-val
@@ -30,7 +88,7 @@ decimal
   8 lshift   ( crc  c<<8 )
   xor        ( crc' )
   8 0 do
-    2*  dup $10000 and ( crc' f )
+    2*  dup   $10000 and ( crc' f )
     if  $1021 xor      ( crc' )
     then
   loop
@@ -38,7 +96,7 @@ decimal
   ;
 
 decimal
-: crc2 ( crc c -- crc )     \ update xmodem crc
+: crc2 ( crc c -- crc )   \ update xmodem crc somewhat faster 
    swap dup                    ( c crc crc )
    $8 rshift swap $8 lshift OR ( c crc )
    XOR                         ( crc )
@@ -84,9 +142,9 @@ $FFFF constant CRC_TEST_START
   test-crc-0x1021 ( f crc -- f crc cstring len ) .s
   over + swap     ( f crc cend cstart ) .s
   do              ( f crc )
-    i c@        ( f crc c )
-    2 pick      ( f crc c f ) .s
-    execute     ( f crc )
+    i c@          ( f crc c )
+    2 pick        ( f crc c f ) .s
+    execute       ( f crc )
   loop
   swap drop       ( crc ) .s
   CRC_TEST_RESULT = dup
@@ -127,7 +185,7 @@ decimal
   SYS_HZ @ *
 ;
 
-: wait-long ( tl th -- )         \ wait for a long time - depends on timer frequency
+: wait-long ( tl th -- )         \ wait for a long time - depends on systick timer frequency
   systick-run ( tl th -- )
   STK_VAL @ ( tl th  t1 -- )
   begin
@@ -202,7 +260,7 @@ $7FFFFFFF variable dtmin
 
 \ busy wait for keypress with timeout in systick timer units
 : wait-key           ( t -- key|-1 )           \ wait for keypress with timeout return keykode or -1 if timeout
-  ?systick-run        ( t       )
+  ?systick-run       ( t       )
   STK_VAL @          ( t t1    ) \ .s key drop
   swap               ( t1 t    )
   begin
@@ -225,37 +283,131 @@ decimal
   60000 ms wait-key
 ;
 
+: ?swap-drop ( a b f -- if(f) b else a )
+  if swap then drop
+;
 
-: send-block-csum ( adr len -- k )    \ return receiver response or -1 on 60s timeout
-  over + swap     ( end start )
-  0 -rot          ( csum end start )
-  do              ( csum )
-    i c@          ( csum c )          \ fetch next char to transmit
-    dup emit      ( csum c )          \ send next char
-    update-csum   ( csum )
+
+128 variable xmit-block-size  \ current blocksize of xmodem
+
+
+: calc-blk-bounds    ( adr blklen len -- padcount adr+mlen adr )
+  over min           ( adr blklen mlen )
+  tuck -             ( adr mlen   pad  )
+  -rot over          ( pad adr mlen adr )
+  + swap             ( pad adr+mlen adr )
+;
+
+
+: send-blk-csum    ( adr blklen len -- k|-1 ) 
+  calc-blk-bounds
+  0 -rot           ( pad 0 mlen+adr adr ) \ initial csum
+  do
+    i c@           ( pad csum c )          \ fetch next char to transmit
+    dup emit       ( pad csum c )          \ send next char
+    update-csum    ( pad csum )
   loop
-  emit            ( )                 \ transmit checksum
-  wait-key-60s
-;
-
-: xmit-csum-blk          ( adr len blk -- )
-  <SOH> emit             ( adr len blk )
-  dup emit-blk-nr        ( adr len blk )
-  -rot                   ( blk adr len )
-  2dup                   ( blk adr len adr len )
-  send-block-csum        ( blk adr len f )
-  \ TODO
-;
-
-: xmit-csum ( adr len -- ) \ xmodem transmit using checksum
-<SOH> emit
+  swap
+  0 ?do
+    <CPMEOF>
+    dup emit        ( csum <EOF> )         \ output pad byte
+    update-csum     ( csum )
+  loop
+  emit              ( )                    \ output checksum
+  wait-key-60s      ( k|-1 )
 ;
 
 
-: xmit ( adr len -- ) \ xmodem transmit
-  key
+: block-head ( blklen --  ) \ ouput block start <STX> or <SOH> depending on block length
+  128 <> negate <SOH> + emit
+;
+
+ 
+\ emit block head and number copy block parameter
+: initiate-sendblock ( blk adr blklen len -- blk adr blklen len adr blklen len )
+    over block-head        ( blk adr blklen len )
+    3 pick emit-blk-nr     ( blk adr blklen len )
+    2 pick 2 pick 2 pick   ( blk adr blklen len adr blklen len )
+;
+
+\ check if block must be retransmitted
+: ?block-repeat ( resp -- resp f )
   case
-  <C>   of xmit-crc  endof
-  <nak> of xmit-csum endof
+    <NAK> of -1 endof \ repeat
+    <ACK> of  0 endof \ finished
+    -1    of  0 endof \ finished 1 minute timeout
+             -1       \ other char ( defect ) retry
+  endcase
+;
+
+: xmit-csum-blk            (  blk adr blklen len -- blk adr blklen len resp )
+                           \ resp can be <ACK> <NAK>
+  0                        \ loop exit code
+  10 0 do                  
+    drop
+    initiate-sendblock     ( blk adr blklen len adr blklen len )
+    send-block-csum        ( blk adr blklen len resp )
+    ?block-repeat while    ( blk adr blklen len resp ) \ transfer again ?
+    -1                     \ default exit code
+  loop
+;
+
+: xmit-crc-blk             (  blk adr blklen len -- blk adr blklen len resp )
+                           \ resp can be <ACK> <NAK>
+  0                        \ loop exit code
+  10 0 do                  
+    initiate-sendblock     ( blk adr blklen len adr blklen len )
+    send-block-crc         ( blk adr blklen len resp )
+    ?block-repeat while    ( blk adr blklen len resp ) \ transfer again ?
+    -1                     \ default exit code
+  loop
+  drop -1                  ( blk adr blklen len resp ) \ 10 retries
+;
+
+
+
+\ calc next adress block start, length and block number
+: next-block           ( blk adr blklen len -- blk adr blklen len f )
+  swap over min        ( blk adr len mlen )
+  tuck                 ( blk adr mlen len mlen )
+  - >R +               ( blk adr+mlen )          ( R:  -- len-mlen )
+  swap 1+ $ff and swap ( blk+1 adr' )
+  xmit-block-size @    ( blk' adr' blklen' )
+  R>                   ( blk' adr' blklen' len' ) ( R: len-mlen -- )
+  dup                  ( blk' adr' blklen' len' len')
+;
+
+: xmit-csum ( adr len   -- ) \ xmodem transmit using checksum
+  1 -rot over            ( blk adr len  )
+  xmit-block-size @ swap ( blk adr blklen len )
+  begin
+    xmit-csum-blk        ( blk adr blklen len resp )
+    case
+     <ACK> of next-block endof
+     -1    of 0          endof
+    endcase
+    while
+  repeat  
+;
+
+: xmit-crc ( adr len   -- ) \ xmodem transmit using crc
+  1 -rot over            ( blk adr len  )
+  xmit-block-size @ swap ( blk adr blklen len )
+  begin
+    xmit-crc-blk        ( blk adr blklen len resp )
+    case
+     <ACK> of next-block endof
+     -1    of 0          endof
+    endcase
+    while
+  repeat  
+;
+
+
+: xmit ( start-adr len  -- ) \ xmodem transmit
+  10 seconds wait-key case
+    <C>   of xmit-crc         endof
+    <nak> of xmit-csum        endof
+    -1    of xmit-no-response endof
   endcase
 ;
