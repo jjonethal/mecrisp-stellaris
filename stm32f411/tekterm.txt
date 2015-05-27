@@ -30,5 +30,39 @@ $1C constant <FS>
 $1D constant <GS>
 $1E constant <RS>
 $1F constant <US>
+$20 constant <SP>
+$7F constant <DEL>
 
 
+: [Y] ( y -- ) \ output y coord
+  dup 5 rshift <SP> + emit
+  $1F AND 96 + emit ;
+
+: [X] ( x -- ) \ output x coord
+  dup 5 rshift <SP> + emit
+  $1F AND 64 + emit ;
+
+
+: COORD ( x y -- ) \ output coordinate as TEK ascii
+  [Y] [X] ;
+
+
+: BEL    <BEL> emit ;
+: CR     <CR>  emit ;
+: DEL    <DEL> emit ;
+: ENQ    <ENQ> emit ; 
+: ESC    <ESC> emit ;
+: FF     <FF>  emit ;
+: GS     <GS>  emit ;
+: RETURN <CR>  emit ;
+: RUBOUT <DEL> emit ;
+: SPACE  <SP>  emit ;
+: SUB    <SUB> emit ;
+
+: PLOT [CHAR] @ emit ;
+: ADR ESC ENQ ;  \ in graphic mode Graph mode beam address or text mode cursor adress
+: CLS ESC FF ;
+: GRAPHICMODE GS ;
+: DEMO CLS GRAPHICMODE 512 390 COORD PLOT ;
+: LINE ( x1 y1 x2 y2 -- )
+  2swap COORD PLOT COORD PLOT ;
