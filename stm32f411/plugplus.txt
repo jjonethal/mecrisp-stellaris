@@ -1,0 +1,174 @@
+\ Gigaset Plugplus Monitor Tools
+\ Chip stm32f411CEU6 48 pins
+\ HSE-Clock 26MHz
+\
+\ Documents:
+\ **********
+\ schematic HighVoltage:      "\\bchdata.giga.gigaset.com\PWF\00_Projects\2593_REEF_Plug\03_Hardware\02_Portable_part\05_Runs\1st_Run_Plug_Plus_Main\2015_03_24\cd-BOM-333491-0-1.pdf"
+\ schematic Radio/Control:    "\\bchdata.giga.gigaset.com\PWF\00_Projects\2593_REEF_Plug\03_Hardware\02_Portable_part\05_Runs\1st_Run_Plug_Plus_HF\2015_03_25\cd-BOM-333380-0-1.pdf"
+\ stm32F411 Reference Manual  "E:\stm\DM00119316  RM0383 STM32F411xC_E advanced ARM-based 32-bit MCUs .pdf"
+\ stm32F411 Datasheet         "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
+\ stm32F411 Programmer Manual "E:\stm\DM00046982 PM0214 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
+\ TMP112    datasheet         "C:\Users\jonethal_j\Downloads\ti\tmp112.pdf"
+\
+\ Peripherals
+\ **********
+\
+\ GPIO
+\ **********
+\ BT_RSTn    - PA4  - Output????     - CSR8311A08 ( /RST ) 
+\ BUTTON     - PA8  - Input/PU       - pulls down to GND
+\ DECT_ACT   - PB10 - Input/PU       - Open collector
+\ DECT_ULP   - PB1  - Output/PP      - Wakeup DECT ULE
+\ GKO_BOOT   - PB9  - Input/PU       - Open collector
+\ GKO_RST    - NRST - Input          - Reboot stm32f411
+\ GND        - PB2
+\ LED        - PB3  - Output/PP      - High Active Led On     
+\ RELAY_CTRL - PB5  - Output/PP      - High Active
+\ SYN        - PB0  - Output         - Connect to /MAINS ADC STPM32TR ( SYN input )
+\ WAKE_UP    - PC13 - Input          - request from DECT-ULE modul
+\ ZCR        - PB4  - Input          - zero cross interrupt STPM32TR ( ZCR output )
+
+\ SPI
+\ **********
+\ MISO       - PA6  - Input          - STPM32TR (MISO/TXD output)
+\ MOSI       - PA7  - Output/PP      - STPM32TR (MOSI/RXD input)
+\ SCS        - PA15 - Output/PP      - STPM32TR (SCS input)
+\ SCK        - PA5  - Output/PP      - STPM32TR (SCL input)
+
+\ I2C
+\ **********
+\ SCL        - PB6  - OpenDrain      - TMP112 ( SCL )
+\ SDA        - PB7  - OpenDrain      - TMP112 ( SDA )
+
+\ UART - DECT
+\ **********
+\ DECT_RXD   - PA11 - Output/UART TX - MD50 ( DECT_RXD input )
+\ DECT_TXD   - PA12 - Input/UART RX  - FXLP34 ( Y output )
+
+\ UART - FTEST
+\ **********
+\ PUARTRX    - PA10 - Input          - PUARTRX
+\ PUARTTX    - PA9  - Output         - PUARTTX
+
+\ UART - Bluetooth
+\ **********
+\ BT_CTS     - PA0  - Output         - CSR8311A08 ( UART_RTS input )
+\ BT_RTS     - PA1  - Input          - CSR8311A08 ( UART_CTS output )
+\ BT_RXD     - PA3  - Input          - CSR8311A08 ( UART_TX output )
+\ BT_TXD     - PA2  - Output         - CSR8311A08 ( UART_RX input )
+
+\ Pin configuration
+\ *****************
+\ PA0 - AF07  - USART2_CTS - BT_CTS
+\ PA1 - AF07  - USART2_RTS - BT_RTS
+\ PA2 - AF07  - USART2_TX  - BT_TXD
+\ PA3 - AF07  - USART2_RX  - BT_RXD
+\ PA4 - GPIO Input
+\ PB6 - AF04  - I2C1_SCL
+\ PB7 - AF04  - I2C1_SDA
+
+\ I2C Driver
+\ I2C-ON
+\ I2C-OFF
+\ I2C-SEND
+\ I2C-RECEIVE
+
+\ I2C register definitions
+decimal \ shift values in decimal
+$40005000       constant I2C_RANGE
+$40005400       constant I2C1_BASE
+$40005800       constant I2C2_BASE
+$40005C00       constant I2C3_BASE
+
+  $00           constant I2C_CR1             \ I2C Control register 1
+    1 15 lshift constant I2C_CR1_SWRST       \ Software reset 0: I2C no reset 1: I2C reset
+    1 14 lshift constant I2C_CR1_RES14       \ Reserved, must be kept at reset value
+    1 13 lshift constant I2C_CR1_ALERT       \ SMBus alert 0: Releases SMBA pin high. 1: Drives SMBA pin low. Alert Response Address Header followed by ACK.
+    1 12 lshift constant I2C_CR1_PEC         \ Packet error checking 0: No PEC transfer 1: PEC transfer
+    1 11 lshift constant I2C_CR1_POS         \ Acknowledge/PEC Position (for data reception)
+    1 10 lshift constant I2C_CR1_ACK         \ Acknowledge enable 0: No acknowledge returned 1: Acknowledge returned after a byte is received (matched address or data)
+    1  9 lshift constant I2C_CR1_STOP        \ Stop generation
+    1  8 lshift constant I2C_CR1_START       \ Start generation
+    1  7 lshift constant I2C_CR1_NOSTRETCH   \ Clock stretching disable (Slave mode) 0: Clock stretching enabled 1: Clock stretching disabled
+    1  6 lshift constant I2C_CR1_ENGC        \ General call enable 0: General call disabled. Address 00h is NACKed. 1: General call enabled. Address 00h is ACKed.
+    1  5 lshift constant I2C_CR1_ENPEC       \ PEC enable 0: PEC calculation disabled 1: PEC calculation enabled
+    1  4 lshift constant I2C_CR1_ENARP       \ ARP enable 0: ARP disable 1: ARP enable (SMBUS)
+    1  3 lshift constant I2C_CR1_SMBTYPE     \ SMBus type 0: SMBus Device 1: SMBus Host
+    1  2 lshift constant I2C_CR1_RES2        \ Reserved, must be kept at reset value
+    1  1 lshift constant I2C_CR1_SMBUS       \ SMBus mode 0: I2C mode 1: SMBus mode
+    1  0 lshift constant I2C_CR1_PE          \ Peripheral enable 0: Peripheral disable 1: Peripheral enable
+
+  $04           constant I2C_CR2             \ I2C Control register 2
+    1 12 lshift constant I2C_CR2_LAST        \ DMA last transfer 0: Next DMA EOT is not the last transfer 1: Next DMA EOT is the last transfer
+    1 11 lshift constant I2C_CR2_DMAEN       \ DMA requests enable 0: DMA requests disabled 1: DMA request enabled when TxE=1 or RxNE =1
+    1 10 lshift constant I2C_CR2_ITBUFEN     \ Buffer interrupt enable 0: TxE = 1 or RxNE = 1 does not generate any interrupt. 1: TxE = 1 or RxNE = 1 generates Event Interrupt
+    1  9 lshift constant I2C_CR2_ITEVTEN     \ Event interrupt enable 0: Event interrupt disabled 1: Event interrupt enabled
+    1  8 lshift constant I2C_CR2_ITERREN     \ Error interrupt enable 0: Error interrupt disabled 1: Error interrupt enabled
+    $1F         constant I2C_CR2_FREQ        \ Peripheral clock frequency (MHZ) allowed values: 2-42
+
+$40023800       constant RCC_BASE
+$20 RCC_BASE +  constant RCC_APB1RSTR        \ RCC APB1 peripheral reset register
+$40 RCC_BASE +  constant RCC_APB1ENR         \ RCC APB1 peripheral clock enable register
+
+: sort ( a b -- n n ) \ if a > b return  ( b a )
+  2dup > if swap then ;
+;
+
+\ test if  low <= test < high
+: WITHIN  ( test low high -- flag )   OVER - >R - R>  U<  ;
+
+
+: mask-set ( mask  adr -- )
+  dup @ rot or swap !
+;
+
+: mask-clear ( mask  adr -- )
+  dup >R @ swap not and r> !
+;
+
+
+: gpio-base ( portNr -- adr )
+  1 swap 10 lshift $40020000 or
+;
+
+: pin-mode ( mode pin portNr -- )
+  0x40020000
+;
+
+: i2c-base ( nr -- adr )      \ calculate i2c base adr from number ( nr : 1..3 )
+  10 lshift I2C_RANGE or
+;
+
+: i2c-rcc-mask ( nr -- mask ) \ calculate RCC_APB1 mask for i2c ports
+  dup 1 4 WITHIN swap $14 + 1 swap lshift and ;
+
+: i2c-nr ( i2c_base -- i2c_nr )
+  $A rshift 3 and
+;
+  
+: i2c-rcc-on ( nr -- ) \ turn on i2c clock for i2c port num ( nr: 1..3 )
+  i2c-rcc-mask
+  dup RCC_APB1RSTR mask-set
+  dup RCC_APB1ENR  mask-set
+      RCC_APB1RSTR mask-clear
+;  
+
+: i2c1-pin-on
+  GPIOBEN  RCC_AHB1ENR  mask-set
+  GPIOBRST RCC_AHB1RSTR mask-clear
+  3 6 2 * lshift GPIOB_MODER 
+  PB6 AF04 
+;
+
+: i2c-pin-on ( nr -- ) \ turn on i2c pins
+  case
+    1 of i2c1-pin-on endof
+\    2 of i2c2-pin-on endof
+\    3 of i2c3-pin-on endof
+  endcase
+;
+
+: i2c-on ( nr -- ) \ switch on i2c port
+  dup i2c-rcc-on dup i2c-pin-cfg i2c-ena ;
+  
