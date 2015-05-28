@@ -233,7 +233,6 @@ eraseflashsector:  @ Löscht einen Flash-Sektor
 3:@ Diesen Sektor fertig durchkämmt
 .endm
 
-  @ Agenda: SRAM-Block 2 aktivieren ? Löschen des RAMs zu Beginn scheitert komischerweise.
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "eraseflash" @ ( -- )
   @ Löscht den gesamten Inhalt des Flashdictionaries.
