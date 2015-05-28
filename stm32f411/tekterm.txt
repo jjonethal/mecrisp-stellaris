@@ -35,8 +35,9 @@ $7F constant <DEL>
 
 
 : [Y] ( y -- ) \ output y coord
-  dup 5 rshift <SP> + emit
+  dup
   $1F AND 96 + emit ;
+  5 rshift <SP> + emit
 
 : [X] ( x -- ) \ output x coord
   dup 5 rshift <SP> + emit
@@ -66,3 +67,20 @@ $7F constant <DEL>
 : DEMO CLS GRAPHICMODE 512 390 COORD PLOT ;
 : LINE ( x1 y1 x2 y2 -- )
   2swap COORD PLOT COORD PLOT ;
+: TEST-LINE CLS GRAPHICMODE 40 50 COORD PLOT 100 100 coord plot
+  200 200 COORD PLOT 300 300 COORD PLOT
+;
+
+: TEST-SQR CLS GRAPHICMODE 40 50 COORD PLOT 80 50 coord plot
+  80 100 coord plot 40 100 coord plot 40 50 coord plot ;
+
+: TT CLS GS ." ,f0@" ." @" CR  GS ." f @f0@"
+  ."  ` @" GS ." ,f?_" ." _" ESC FF GS
+;  
+: H-LINE ( X -- )
+ [X] plot ;
+: SQUARE ( x1 y1 w h )
+  2over 2dup coord 2dup coord plot plot   
+;
+
+
