@@ -68,6 +68,13 @@
 \ PB6 - AF04  - I2C1_SCL
 \ PB7 - AF04  - I2C1_SDA
 
+\ ******* Save base **********
+base @
+decimal \ shift values in decimal
+\ ****************************
+
+
+
 \ I2C Driver
 \ I2C-ON
 \ I2C-OFF
@@ -75,49 +82,85 @@
 \ I2C-RECEIVE
 
 \ I2C register definitions
-decimal \ shift values in decimal
-$40005000       constant I2C_RANGE
-$40005400       constant I2C1_BASE
-$40005800       constant I2C2_BASE
-$40005C00       constant I2C3_BASE
 
-  $00           constant I2C_CR1             \ I2C Control register 1
-    1 15 lshift constant I2C_CR1_SWRST       \ Software reset 0: I2C no reset 1: I2C reset
-    1 14 lshift constant I2C_CR1_RES14       \ Reserved, must be kept at reset value
-    1 13 lshift constant I2C_CR1_ALERT       \ SMBus alert 0: Releases SMBA pin high. 1: Drives SMBA pin low. Alert Response Address Header followed by ACK.
-    1 12 lshift constant I2C_CR1_PEC         \ Packet error checking 0: No PEC transfer 1: PEC transfer
-    1 11 lshift constant I2C_CR1_POS         \ Acknowledge/PEC Position (for data reception)
-    1 10 lshift constant I2C_CR1_ACK         \ Acknowledge enable 0: No acknowledge returned 1: Acknowledge returned after a byte is received (matched address or data)
-    1  9 lshift constant I2C_CR1_STOP        \ Stop generation
-    1  8 lshift constant I2C_CR1_START       \ Start generation
-    1  7 lshift constant I2C_CR1_NOSTRETCH   \ Clock stretching disable (Slave mode) 0: Clock stretching enabled 1: Clock stretching disabled
-    1  6 lshift constant I2C_CR1_ENGC        \ General call enable 0: General call disabled. Address 00h is NACKed. 1: General call enabled. Address 00h is ACKed.
-    1  5 lshift constant I2C_CR1_ENPEC       \ PEC enable 0: PEC calculation disabled 1: PEC calculation enabled
-    1  4 lshift constant I2C_CR1_ENARP       \ ARP enable 0: ARP disable 1: ARP enable (SMBUS)
-    1  3 lshift constant I2C_CR1_SMBTYPE     \ SMBus type 0: SMBus Device 1: SMBus Host
-    1  2 lshift constant I2C_CR1_RES2        \ Reserved, must be kept at reset value
-    1  1 lshift constant I2C_CR1_SMBUS       \ SMBus mode 0: I2C mode 1: SMBus mode
-    1  0 lshift constant I2C_CR1_PE          \ Peripheral enable 0: Peripheral disable 1: Peripheral enable
+$40005000        constant I2C_RANGE
+$40005400        constant I2C1_BASE
+$40005800        constant I2C2_BASE
+$40005C00        constant I2C3_BASE
 
-  $04           constant I2C_CR2             \ I2C Control register 2
-    1 12 lshift constant I2C_CR2_LAST        \ DMA last transfer 0: Next DMA EOT is not the last transfer 1: Next DMA EOT is the last transfer
-    1 11 lshift constant I2C_CR2_DMAEN       \ DMA requests enable 0: DMA requests disabled 1: DMA request enabled when TxE=1 or RxNE =1
-    1 10 lshift constant I2C_CR2_ITBUFEN     \ Buffer interrupt enable 0: TxE = 1 or RxNE = 1 does not generate any interrupt. 1: TxE = 1 or RxNE = 1 generates Event Interrupt
-    1  9 lshift constant I2C_CR2_ITEVTEN     \ Event interrupt enable 0: Event interrupt disabled 1: Event interrupt enabled
-    1  8 lshift constant I2C_CR2_ITERREN     \ Error interrupt enable 0: Error interrupt disabled 1: Error interrupt enabled
-    $1F         constant I2C_CR2_FREQ        \ Peripheral clock frequency (MHZ) allowed values: 2-42
+  $00            constant I2C_CR1             \ I2C Control register 1 offset to base 
+    1 15 lshift  constant I2C_CR1_SWRST       \ Software reset 0: I2C no reset 1: I2C reset
+    1 14 lshift  constant I2C_CR1_RES14       \ Reserved, must be kept at reset value
+    1 13 lshift  constant I2C_CR1_ALERT       \ SMBus alert 0: Releases SMBA pin high. 1: Drives SMBA pin low. Alert Response Address Header followed by ACK.
+    1 12 lshift  constant I2C_CR1_PEC         \ Packet error checking 0: No PEC transfer 1: PEC transfer
+    1 11 lshift  constant I2C_CR1_POS         \ Acknowledge/PEC Position (for data reception)
+    1 10 lshift  constant I2C_CR1_ACK         \ Acknowledge enable 0: No acknowledge returned 1: Acknowledge returned after a byte is received (matched address or data)
+    1  9 lshift  constant I2C_CR1_STOP        \ Stop generation
+    1  8 lshift  constant I2C_CR1_START       \ Start generation
+    1  7 lshift  constant I2C_CR1_NOSTRETCH   \ Clock stretching disable (Slave mode) 0: Clock stretching enabled 1: Clock stretching disabled
+    1  6 lshift  constant I2C_CR1_ENGC        \ General call enable 0: General call disabled. Address 00h is NACKed. 1: General call enabled. Address 00h is ACKed.
+    1  5 lshift  constant I2C_CR1_ENPEC       \ PEC enable 0: PEC calculation disabled 1: PEC calculation enabled
+    1  4 lshift  constant I2C_CR1_ENARP       \ ARP enable 0: ARP disable 1: ARP enable (SMBUS)
+    1  3 lshift  constant I2C_CR1_SMBTYPE     \ SMBus type 0: SMBus Device 1: SMBus Host
+    1  2 lshift  constant I2C_CR1_RES2        \ Reserved, must be kept at reset value
+    1  1 lshift  constant I2C_CR1_SMBUS       \ SMBus mode 0: I2C mode 1: SMBus mode
+    1  0 lshift  constant I2C_CR1_PE          \ Peripheral enable 0: Peripheral disable 1: Peripheral enable
 
-$40023800       constant RCC_BASE
-$20 RCC_BASE +  constant RCC_APB1RSTR        \ RCC APB1 peripheral reset register
-$40 RCC_BASE +  constant RCC_APB1ENR         \ RCC APB1 peripheral clock enable register
+  $04            constant I2C_CR2             \ I2C Control register 2 offset to base 
+    1 12 lshift  constant I2C_CR2_LAST        \ DMA last transfer 0: Next DMA EOT is not the last transfer 1: Next DMA EOT is the last transfer
+    1 11 lshift  constant I2C_CR2_DMAEN       \ DMA requests enable 0: DMA requests disabled 1: DMA request enabled when TxE=1 or RxNE =1
+    1 10 lshift  constant I2C_CR2_ITBUFEN     \ Buffer interrupt enable 0: TxE = 1 or RxNE = 1 does not generate any interrupt. 1: TxE = 1 or RxNE = 1 generates Event Interrupt
+    1  9 lshift  constant I2C_CR2_ITEVTEN     \ Event interrupt enable 0: Event interrupt disabled 1: Event interrupt enabled
+    1  8 lshift  constant I2C_CR2_ITERREN     \ Error interrupt enable 0: Error interrupt disabled 1: Error interrupt enabled
+    $1F          constant I2C_CR2_FREQ        \ Peripheral clock frequency (MHZ) allowed values: 2-42
+
+
+\ ********* RCC constants *******************
+
+$40023800        constant RCC_BASE
+$20 RCC_BASE +   constant RCC_APB1RSTR        \ RCC APB1 peripheral reset register
+1 1 lshift       constant RCC_AHB1RSTR_GPIOBRST
+$40 RCC_BASE +   constant RCC_APB1ENR         \ RCC APB1 peripheral clock enable register
+1 1 lshift       constant RCC_AHB1ENR_GPIOBEN
+
+\ ********* GPIO constants ******************
+
+: gpio-base ( portNr -- adr )
+  #10 lshift $40020000 or
+;
+
+$0 gpio-base     constant GPIOA_BASE
+$1 gpio-base     constant GPIOB_BASE
+$00 GPIOB_BASE + constant GPIOB_MODER
+$04 GPIOB_BASE + constant GPIOB_OTYPER
+$20 GPIOB_BASE + constant GPIOB_AFRL
+$24 GPIOB_BASE + constant GPIOB_AFRH
+
+\ ********* Utility functions ***************
 
 : sort ( a b -- n n ) \ if a > b return  ( b a )
   2dup > if swap then ;
 ;
 
 \ test if  low <= test < high
-: WITHIN  ( test low high -- flag )   OVER - >R - R>  U<  ;
+: WITHIN  ( test low high -- flag )   OVER - >R - R>  U<
+;
 
+: nbits ( n -- n ) set number of bits \
+  1 swap rshift 1-
+;
+
+: gen-mask ( shift bits -- mask )
+  nbits swap lshift
+;
+
+: set-mask-value (  val shift width adr -- ) \ set bit masked value var =
+  >R                    \ save adr
+  over swap gen-mask >R \ save mask
+  rshift                \ shift the value
+  R>                    \ restore mask
+  R@ @ and or R> !
+;
 
 : mask-set ( mask  adr -- )
   dup @ rot or swap !
@@ -127,24 +170,76 @@ $40 RCC_BASE +  constant RCC_APB1ENR         \ RCC APB1 peripheral clock enable 
   dup >R @ swap not and r> !
 ;
 
+\ ********* GPIO functions ******************
 
-: gpio-base ( portNr -- adr )
-  1 swap 10 lshift $40020000 or
+: gpio-base-adr ( portnr -- GPIOX_BASE )
+  $A lshift GPIOA_BASE +
 ;
 
-: pin-mode ( mode pin portNr -- )
-  0x40020000
+: gpio-mode-reg-adr ( portNr -- GPIOx_MODER ) \ GPIOA(0) -> $40020000
+  gpio-base-adr
 ;
 
-: i2c-base ( nr -- adr )      \ calculate i2c base adr from number ( nr : 1..3 )
-  10 lshift I2C_RANGE or
+: gpio-mode-mask ( pinr -- mask ) \ calc GPIOx_MODER mask from pin number 
+  3 swap shl lshift
+;
+
+: gpio-mode-pin-val ( mode pin -- val ) \ shift pin mode by pinnr * 2
+  shl lshift
+;
+
+: gpio-pin-mode ( pin mode portNr -- ) \ set pin mode for GPIO_PIN 
+  gpio-mode-reg-adr >R      \ save GPIOx_MODER adr
+  over gpio-mode-pin-val    \ shift mode to proper bit positions
+  swap gpio-mode-mask not   \ mask for 0 out mode bits
+  r@ @                      \ retrieve mode register
+  and or                    \ mask out and set mode
+  r> !                      \ put back mode
+;
+
+: gpio-af-adr ( portNr pinNr -- adr )  \ get adress of GPIOx_AFRX
+  #7 > #4 and
+  swap
+  gpio-mode-reg-adr $20 +
+  +
+;
+
+: gpio-af-mask ( pin -- mask )         \ alternate function mask for pin
+  $7 and 2 lshift
+  $F swap lshift
+;
+
+: gpio-af-mode ( mode pin -- modeval ) \ shift mode to proper place
+  $7 and 2 lshift lshift
+;
+
+: gpio-set-af ( af pin port -- )       \ set alternate function for port pin
+  over gpio-af-adr >R
+  dup  gpio-af-mask not >R
+  gpio-af-mode
+  R> R@ @ and or R> !
+;
+
+: gpio-set-pupd ( pupd pin port -- )   \ set port pullup/down
+  gpio-mode-reg-adr $0C + >R           \ GPIOx_PUPDR adr
+  shl                                  \ calc shift val
+  dup $3 swap lshift >R                \ generate pin mask
+  lshift                               \ shift pupd to proper place
+  R> R@ and or R> !                    \ restore pin mask get register mask out and set new value store new value
+;
+
+\ ********* i2c functions *******************
+
+
+: i2c-base ( nr -- adr ) \ calculate i2c base adr from number ( nr : 1..3 )
+  #10 lshift I2C_RANGE or
 ;
 
 : i2c-rcc-mask ( nr -- mask ) \ calculate RCC_APB1 mask for i2c ports
-  dup 1 4 WITHIN swap $14 + 1 swap lshift and ;
+  dup #1 #4 WITHIN swap $14 + 1 swap lshift and ;
 
-: i2c-nr ( i2c_base -- i2c_nr )
-  $A rshift 3 and
+: i2c-nr ( i2c_base -- i2c_nr ) \ get i2c port number (1..3) from a register adress
+  $A rshift #3 and
 ;
   
 : i2c-rcc-on ( nr -- ) \ turn on i2c clock for i2c port num ( nr: 1..3 )
@@ -154,11 +249,24 @@ $40 RCC_BASE +  constant RCC_APB1ENR         \ RCC APB1 peripheral clock enable 
       RCC_APB1RSTR mask-clear
 ;  
 
-: i2c1-pin-on
-  GPIOBEN  RCC_AHB1ENR  mask-set
-  GPIOBRST RCC_AHB1RSTR mask-clear
-  3 6 2 * lshift GPIOB_MODER 
-  PB6 AF04 
+\ ********* i2c project specific ************
+
+%1111 #12 lshift constant PB6_PB7_MODE_MASK     \ binary 1111 - gpio_moder
+%1010 #12 lshift constant PB6_PB7_MODE          \ alternate function mode
+
+: i2c1-pin-on ( -- )                            \ PB6 and PB7 to alternate function mode AF04
+  RCC_AHB1ENR_GPIOBEN   RCC_AHB1ENR  mask-set   \ enable gpio b
+  RCC_AHB1RSTR_GPIOBRST RCC_AHB1RSTR mask-clear \ unreset gpio b
+  GPIOB_MODER @ PB6_PB7_MODE_MASK not and
+  PB6_PB7_MODE or GPIOB_MODER !                 \ set alternate function mode
+  GPIOB_OTYPER @ %1100000 or GPIOB_OTYPER !     \ set output type for pb6 and pb7 to open drain
+  GPIOB_AFRL @ $FF000000 not and
+  $44000000 or GPIOB_AFRL !                     \ set alternate function AF04 for PB6,PB7
+;
+
+: i2c1-pin-off ( -- )                           \ turn i2c pins PB6 and PB7 to input mode
+  GPIOB_MODER @ PB6_PB7_MODE_MASK not and
+  GPIOB_MODER !
 ;
 
 : i2c-pin-on ( nr -- ) \ turn on i2c pins
@@ -170,5 +278,12 @@ $40 RCC_BASE +  constant RCC_APB1ENR         \ RCC APB1 peripheral clock enable 
 ;
 
 : i2c-on ( nr -- ) \ switch on i2c port
-  dup i2c-rcc-on dup i2c-pin-cfg i2c-ena ;
-  
+  dup i2c-rcc-on
+  dup i2c-pin-on
+  i2c-ena
+;
+
+\ ******* Restore Base *******
+base !
+\ ****************************
+
