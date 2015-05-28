@@ -162,6 +162,10 @@ $24 GPIOB_BASE + constant GPIOB_AFRH
   R@ @ and or R> !
 ;
 
+: mask-set-val ( adr val mask -- )
+  not 2 pick @ and or swap !
+;
+
 : mask-set ( mask  adr -- )
   dup @ rot or swap !
 ;
