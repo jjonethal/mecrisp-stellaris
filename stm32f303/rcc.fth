@@ -16,6 +16,11 @@ $F  #4 lshift  constant HSITRIM
 #1  #1 lshift  constant HSIRDY
 #1             constant HSION
 
+
+: ux.8 ( u -- ) base @ hex
+ 0 <# # # # # # # # # #> type
+ base ! ;
+ 
 : set-mask ( m adr -- ) dup >R @ or R> ! ;
 : clr-mask ( m adr -- ) >R not R@ @ and R> ! ;
 
@@ -38,20 +43,18 @@ decimal
 : hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR set-mask hse-on ;
 : ?hse-ready ( -- f ) RCC_CR @ HSERDY and 0<> ;
 
-: RCC_CR. cr
-
-  ." PLLRDY  " PLLRDY RCC_CR getbits . cr
-  ." PLLON   " PLLON  RCC_CR getbits . cr
-  ." CSSON   " CSSON   RCC_CR getbits . cr
-  ." HSEBYP  " HSEBYP  RCC_CR getbits . cr
-  ." HSERDY  " HSERDY  RCC_CR getbits . cr
-  ." HSE_ON  " HSE_ON  RCC_CR getbits . cr
-  ." HSICAL  " HSICAL  RCC_CR getbits . cr
-  ." HSITRIM " HSITRIM RCC_CR getbits . cr
-  ." HSITRIM " HSITRIM RCC_CR getbits . cr
-  ." HSIRDY  " HSIRDY  RCC_CR getbits . cr
-  ." HSION   " HSION   RCC_CR getbits . cr
-
+: RCC_CR. hex cr
+  ." RCC_CR " RCC_CR @ ux.8 cr
+  ."  PLLRDY  " PLLRDY  RCC_CR getbits . cr
+  ."  PLLON   " PLLON   RCC_CR getbits . cr
+  ."  CSSON   " CSSON   RCC_CR getbits . cr
+  ."  HSEBYP  " HSEBYP  RCC_CR getbits . cr
+  ."  HSERDY  " HSERDY  RCC_CR getbits . cr
+  ."  HSE_ON  " HSE_ON  RCC_CR getbits . cr
+  ."  HSICAL  " HSICAL  RCC_CR getbits . cr
+  ."  HSITRIM " HSITRIM RCC_CR getbits . cr
+  ."  HSIRDY  " HSIRDY  RCC_CR getbits . cr
+  ."  HSION   " HSION   RCC_CR getbits . cr
   ;
 
 
