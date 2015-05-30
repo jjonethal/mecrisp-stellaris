@@ -10,7 +10,7 @@ PROJECT = mecrisp-stellaris-$(TARGET)
 all : $(PROJECT).bin $(PROJECT).hex
 
 $(PROJECT).o : flash.s interrupts.s $(PROJECT).s terminal.s vectors.s
-	$(ARMGNU)-as $(AOPS) $(PROJECT).s -o $(PROJECT).o
+	$(ARMGNU)-as -g $(PROJECT).s -o $(PROJECT).o
 
 # offset 0x08000000 to enable flash with st-link utility
 $(PROJECT).hex : $(PROJECT).bin
