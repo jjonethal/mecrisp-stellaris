@@ -39,9 +39,9 @@ $f  #4 lshift  constant HPRE
 : set-mask ( m adr -- ) dup >R @ or R> ! ;
 : clr-mask ( m adr -- ) >R not R@ @ and R> ! ;
 
-: dw ( a -- a ) dup 6 + ctype ; 
-: ds ( -- a )   dictionarystart dup . SPACE dw ;
-: dn ( a -- a ) dictionarynext . dup . dw ;
+: dw ( a -- a ) dup 6 + ctype ;                   \ dictionary word
+: ds ( -- a )   dictionarystart dup . SPACE dw ;  \ dictionary start 
+: dn ( a -- a ) dictionarynext . dup . dw ;       \ dictionary next
 
 decimal
 : cnt0 ( m -- b ) \ count trailing zeros without clz
@@ -55,9 +55,7 @@ decimal
   #32 + + + + + +
 ;
 
-: cnt0 ( m -- b ) \ count trailing zeros with hw support
-  dup negate and 1- clz negate 32 +
-;
+: cnt0 ( m -- b ) dup negate and 1- clz negate 32 + ; \ count trailing zeros with hw support
 
 : getbits ( m adr -- b ) @ over and swap cnt0 rshift ;
 : setval  ( v m adr -- ) 
@@ -86,4 +84,36 @@ decimal
   ."  HSION   " HSION   RCC_CR getbits . cr
 ;
 
+: RCC_CFGR. hex cr
+  ." RCC_CFGR " RCC_CFGR @ ux.8 cr
+  ."  PLLNODIV " PLLNODIV RCC_CFGR getbits . cr 
+  ."  MCOPRE   " MCOPRE   RCC_CFGR getbits . cr
+  ."  MCOF     " MCOF     RCC_CFGR getbits . cr
+  ."  MCO      " MCO      RCC_CFGR getbits . cr
+  ."  I2SSRC   " I2SSRC   RCC_CFGR getbits . cr
+  ."  USBPRE   " USBPRE   RCC_CFGR getbits . cr
+  ."  PLLMUL   " PLLMUL   RCC_CFGR getbits . cr
+  ."  PLLXTPRE " PLLXTPRE RCC_CFGR getbits . cr
+  ."  PLLSRC   " PLLSRC   RCC_CFGR getbits . cr
+  ."  PPRE2    " PPRE2    RCC_CFGR getbits . cr
+  ."  PPRE1    " PPRE1    RCC_CFGR getbits . cr
+  ."  HPRE     " HPRE     RCC_CFGR getbits . cr
+  ."  SWS      " SWS      RCC_CFGR getbits . cr
+  ."  SW       " SW       RCC_CFGR getbits . cr
+;
 
+\ calculate link adress from token length and code adress 
+: c-adr>link ( token-len c-adr -- link-adr ) \ return 0 when c-adr is 0
+  dup 0<> -rot                               \ check for 0 adr
+\ link-adr = code-adr - len(token) -1 (length byte) - pad(1/0) - 6(4link+2flags)
+  swap - 1- -2 and 6 - and                   \ -2 and -> clear lowest bit
+;
+
+\ find link adress of next token
+: >LINK ( -- ) token 2dup find ( tadr tlen c-adr flags -- )
+  drop ( tadr tlen c-adr ) \ we only need token length and c-adr
+  rot drop ( tlen c-adr )
+  c-adr>link \ find link adress
+;
+
+: genDump create do token loop ; 
