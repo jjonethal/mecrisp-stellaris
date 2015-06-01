@@ -37,12 +37,11 @@
   .equ RCC_CFGR        ,   RCC_BASE + 0x08
   .equ RCC_AHB1ENR     ,   RCC_BASE + 0x30
   .equ RCC_APB1ENR     ,   RCC_BASE + 0x40
-  .equ RCC_APB2ENR     ,   RCC_BASE + 0x44
 
   .equ HSERDY          ,   BIT17
   .equ HSEON           ,   BIT16
 
-  .equ Terminal_USART_Base, 0x40011000 @ USART 1
+  .equ Terminal_USART_Base, 0x40004400 @ USART 2
   .include "../common/stm-terminal.s"  @ Common STM terminal code for emit, key and key?
 
 @ -----------------------------------------------------------------------------
@@ -91,22 +90,22 @@ Setup_UART:
         orrs r0, 1              @ GPIOAEN
         str r0, [r1]
 
-        @ Set PORTA pins in alternate function mode Uart
+        @ Set PORTA pins in alternate function mode
         ldr r1, = GPIOA_MODER
         ldr r0, [r1]
-        and r0, 0xFFC3FFFF      @ Zero the bits 18-21
-        orrs r0, #0x00280000
+        and r0, 0xFFFFFF0F      @ Zero the bits 4-7
+        orrs r0, #0xA0
         str r0, [r1]
 
-        @ Set alternate function 7 to enable USART1 pins on Port A
-        ldr  r1, = GPIOA_AFRH
-        and  r0, 0xFFFFF00F      @ Zero the bits 4-11
-        orrs r0, #0x770          @ Alternate function 7 for TX and RX pins of USART1 on PORTA(9,10)
+        @ Set alternate function 7 to enable USART2 pins on Port A
+        ldr  r1, = GPIOA_AFRL
+        and  r0, 0xFFFF00FF      @ Zero the bits 8-15
+        orrs r0, #0x7700         @ Alternate function 7 for TX and RX pins of USART2 on PORTA(2,3)
         str  r0, [r1]
 
-        @ Enable the USART1 peripheral clock by setting bit 4
-        ldr r1, = RCC_APB2ENR
-        ldr r0, = BIT4
+        @ Enable the USART2 peripheral clock by setting bit 17
+        ldr r1, = RCC_APB1ENR
+        ldr r0, = BIT17
         str r0, [r1]
 
         @Set_Terminal_USART_Baudrate
