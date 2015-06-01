@@ -101,11 +101,84 @@ $14 RCC_BASE + constant RCC_AHBENR
 #1  #1 lshift constant DMA2EN
 #1  #0 lshift constant DMA1EN
 
+$18 RCC_BASE + constant RCC_APB2ENR
+#1 #18 lshift constant TIM17EN
+#1 #17 lshift constant TIM16EN
+#1 #16 lshift constant TIM15EN
+#1 #14 lshift constant USART1EN
+#1 #13 lshift constant TIM8EN
+#1 #12 lshift constant SPI1EN
+#1 #11 lshift constant TIM1EN
+#1            constant SYSCFGEN
+
+$1C RCC_BASE + constant RCC_APB1ENR
+#1 #29 lshift constant DAC1EN
+#1 #28 lshift constant PWREN
+#1 #26 lshift constant DAC2EN
+#1 #25 lshift constant CANEN
+#1 #23 lshift constant USBEN
+#1 #22 lshift constant I2C2EN
+#1 #21 lshift constant I2C1EN
+#1 #20 lshift constant UART5EN
+#1 #19 lshift constant UART4EN
+#1 #18 lshift constant USART3EN
+#1 #17 lshift constant USART2EN
+#1 #15 lshift constant SPI3EN
+#1 #14 lshift constant SPI2EN
+#1 #11 lshift constant WWDGEN
+#1 #5  lshift constant TIM7EN
+#1 #4  lshift constant TIM6EN
+#1 #2  lshift constant TIM4EN
+#1 #1  lshift constant TIM3EN
+#1 #0  lshift constant TIM2EN
+
+$20 RCC_BASE + constant RCC_BDCR
+#1 #16 lshift constant BDRST
+#1 #15 lshift constant RTCEN
+#3  #8 lshift constant RTCSEL
+#3  #3 lshift constant LSEDRV
+#1  #2 lshift constant LSEBYP
+#1  #1 lshift constant LSERDY
+#1  #0 lshift constant LSEON
+
+$24 RCC_BASE + constant RCC_CSR
+#1 #31 lshift constant LPWRSTF
+#1 #30 lshift constant WWDGRSTF
+#1 #29 lshift constant IWDGRSTF
+#1 #28 lshift constant SFTRSTF
+#1 #27 lshift constant PORRSTF
+#1 #26 lshift constant PINRSTF
+#1 #25 lshift constant OBLRSTF
+#1 #24 lshift constant RMVF
+#1  #1 lshift constant LSIRDY
+#1  #0 lshift constant LSION
+
+$28 RCC_BASE + constant RCC_AHBRSTR
+#1 #29 lshift constant ADC34RST
+#1 #28 lshift constant ADC12RST
+#1 #24 lshift constant TSCRST
+#1 #22 lshift constant IOPFRST
+#1 #21 lshift constant IOPERST
+#1 #20 lshift constant IOPDRST
+#1 #19 lshift constant IOPCRST
+#1 #18 lshift constant IOPBRST
+#1 #17 lshift constant IOPARST
+
 $2C RCC_BASE + constant RCC_CFGR2
 $1F #9 lshift constant ADC34PRES
 $1F #4 lshift constant ADC12PRES
 $F            constant PREDIV
 
+$30 RCC_BASE + constant RCC_CFGR3
+#3 #22 lshift constant UART5SW
+#3 #20 lshift constant UART4SW
+#3 #18 lshift constant USART3SW
+#3 #16 lshift constant USART2SW
+#1  #9 lshift constant TIM8SW
+#1  #8 lshift constant TIM1SW
+#1  #5 lshift constant I2C2SW
+#1  #4 lshift constant I2C1SW
+#3  #0 lshift constant USART1SW
 
 : ux.8 ( u -- ) base @ >R hex 
  0 <# # # # # # # # # #> type
@@ -141,14 +214,15 @@ decimal
   R> not R@ @ and           \ invert bitmask and makout new bits
   or r> !                   \ apply value and store back
 ;
+
 : mask-shift ( m v -- m v )
-  over and
   over cnt0 lshift
+  over and
 ;
 
 : setbits ( m v adr -- )
-  >R over and over cnt0 lshift
-  swap R@ and or R> ! 
+  >R over cnt0 lshift over and
+  swap R@ @ and or R> !
 ;
 
 : hse-on     ( -- ) HSE_ON RCC_CR set-mask ;
