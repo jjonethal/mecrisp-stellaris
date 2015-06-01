@@ -3,7 +3,7 @@
 \ ref man    "C:\Users\jeanjo\Downloads\stm\DM00043574 STM32F303xB_C STM32F303x6_8 STM32F328x8 and STM32F358xC advanced ARM-based 32-bit MCUs.pdf"
 \ prog man   "C:\Users\jeanjo\Downloads\stm\DM00046982 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
 \ data sheet "C:\Users\jeanjo\Downloads\stm\DM00058181 STM32F303VC.pdf"
-
+\ "http://graphics.stanford.edu/~seander/bithacks.html"
 8000000 constant HSE_CLOCK
 
 $40021000 constant RCC_BASE
