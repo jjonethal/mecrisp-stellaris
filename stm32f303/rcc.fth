@@ -4,7 +4,10 @@
 \ prog man   "C:\Users\jeanjo\Downloads\stm\DM00046982 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
 \ data sheet "C:\Users\jeanjo\Downloads\stm\DM00058181 STM32F303VC.pdf"
 \ "http://graphics.stanford.edu/~seander/bithacks.html"
+
+\ project specific value
 #8000000 constant HSE_CLOCK
+
 #8000000 constant HSI_CLOCK
 
 $40021000 constant RCC_BASE
@@ -231,7 +234,8 @@ decimal
 : hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR set-mask hse-on ;
 : ?hse-ready ( -- f ) RCC_CR @ HSERDY and 0<> ;
 : set-prediv ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ; 
-: RCC_CR. hex cr
+
+: RCC_CR. BASE >R hex cr
   ." RCC_CR " RCC_CR @ ux.8 cr
   ."  PLLRDY  " PLLRDY  RCC_CR getbits . cr
   ."  PLLON   " PLLON   RCC_CR getbits . cr
@@ -243,6 +247,7 @@ decimal
   ."  HSITRIM " HSITRIM RCC_CR getbits . cr
   ."  HSIRDY  " HSIRDY  RCC_CR getbits . cr
   ."  HSION   " HSION   RCC_CR getbits . cr
+  R> BASE !
 ;
 
 : RCC_CFGR. hex cr
@@ -316,7 +321,7 @@ decimal
 ;
 
 : pll-set-system-speed-hsi ( hz -- )
-  
+  hsi-on clk-source-hsi
   #2 HSI_CLOCK */ #4 max 16 min
   set-pll-mul  
 ;
