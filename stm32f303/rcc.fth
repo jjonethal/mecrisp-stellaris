@@ -4,7 +4,8 @@
 \ prog man   "C:\Users\jeanjo\Downloads\stm\DM00046982 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
 \ data sheet "C:\Users\jeanjo\Downloads\stm\DM00058181 STM32F303VC.pdf"
 \ "http://graphics.stanford.edu/~seander/bithacks.html"
-8000000 constant HSE_CLOCK
+#8000000 constant HSE_CLOCK
+#8000000 constant HSI_CLOCK
 
 $40021000 constant RCC_BASE
 $00 RCC_BASE + constant RCC_CR
@@ -274,5 +275,49 @@ decimal
   drop ( tadr tlen c-adr ) \ we only need token length and c-adr
   rot drop ( tlen c-adr )
   c-adr>link \ find link adress
+;
+
+: flash-prefetch-enable ( -- )
+  $10 FLASH_ACR BIS! 
+;
+
+: flash-prefetch-disable ( -- )
+  $10 FLASH_ACR BIC! 
+;
+
+: flash-half-cycle-enable ( -- )
+  $8 FLASH_ACR BIS!
+;
+
+: flash-half-cycle-disable ( -- )
+  $8 FLASH_ACR BIC!
+;
+
+: flash-set-latency ( n -- )
+  FLASH_ACR @ [ 7 not literal, ] and or FLASH_ACR !
+;
+
+: set-pll-mul ( n -- )
+ 1- #18 lshift rcc_cfgr @
+ [ $f #18 lshift not literal, ]
+ and or rcc_cfgr !
+;
+
+
+: get-clk-sw RCC_CFGR @ 3 and ;
+
+: clk-source-hsi?
+   get-clk-sw
+   case 
+     0 of -1 endof                           \ hsi 
+     2 of RCC_CFGR_PLLSRC RCC_CFGR 0= endof  \ pll get pll source
+     0                                       \ probably HSE
+   endcase
+;
+
+: pll-set-system-speed-hsi ( hz -- )
+  
+  #2 HSI_CLOCK */ #4 max 16 min
+  set-pll-mul  
 ;
 
