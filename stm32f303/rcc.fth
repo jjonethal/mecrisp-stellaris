@@ -10,6 +10,17 @@
 
 #8000000 constant HSI_CLOCK
 
+$40022000 constant FLASH_BASE
+$00 FLASH_BASE or constant FLASH_ACR
+$04 FLASH_BASE or constant FLASH_KEYR
+$08 FLASH_BASE or constant FLASH_OPTKEYR
+$0C FLASH_BASE or constant FLASH_SR
+$10 FLASH_BASE or constant FLASH_CR
+$14 FLASH_BASE or constant FLASH_AR
+$1C FLASH_BASE or constant FLASH_OBR
+$20 FLASH_BASE or constant FLASH_WRPR
+
+
 $40021000 constant RCC_BASE
 $00 RCC_BASE + constant RCC_CR
 #1 #25 lshift  constant PLLRDY
@@ -208,12 +219,12 @@ decimal
 ;
 
 : cnt0 ( m -- b )  \ count trailing zeros with hw support
-  dup negate and 1- clz negate 32 +
+  dup negate and 1- clz negate #32 +
 ;
 
 : getbits ( m adr -- b ) @ over and swap cnt0 rshift ;
 : setbits  ( v m adr -- ) 
-  >R dup R> cnt0 lshift     \ shift value to proper pos
+  >R dup >R cnt0 lshift     \ shift value to proper pos
   R@ and                    \ mask out unrelated bits
   R> not R@ @ and           \ invert bitmask and makout new bits
   or r> !                   \ apply value and store back
@@ -224,10 +235,10 @@ decimal
   over and
 ;
 
-: setbits ( m v adr -- )
-  >R over cnt0 lshift over and
-  swap R@ @ and or R> !
-;
+\ : setbits ( m v adr -- )
+\   >R over cnt0 lshift over and
+\   swap R@ @ and or R> !
+\ ;
 
 : hse-on     ( -- ) HSE_ON RCC_CR set-mask ;
 : hse-off    ( -- ) HSE_ON RCC_CR clr-mask ;
@@ -303,9 +314,7 @@ decimal
 ;
 
 : set-pll-mul ( n -- )
- 1- #18 lshift rcc_cfgr @
- [ $f #18 lshift not literal, ]
- and or rcc_cfgr !
+ 1- PLLMUL rcc_cfgr setbits 
 ;
 
 
