@@ -4,7 +4,22 @@
 \ prog man   "C:\Users\jeanjo\Downloads\stm\DM00046982 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
 \ data sheet "C:\Users\jeanjo\Downloads\stm\DM00058181 STM32F303VC.pdf"
 \ "http://graphics.stanford.edu/~seander/bithacks.html"
-8000000 constant HSE_CLOCK
+
+\ project specific value
+#8000000 constant HSE_CLOCK
+
+#8000000 constant HSI_CLOCK
+
+$40022000 constant FLASH_BASE
+$00 FLASH_BASE or constant FLASH_ACR
+$04 FLASH_BASE or constant FLASH_KEYR
+$08 FLASH_BASE or constant FLASH_OPTKEYR
+$0C FLASH_BASE or constant FLASH_SR
+$10 FLASH_BASE or constant FLASH_CR
+$14 FLASH_BASE or constant FLASH_AR
+$1C FLASH_BASE or constant FLASH_OBR
+$20 FLASH_BASE or constant FLASH_WRPR
+
 
 $40021000 constant RCC_BASE
 $00 RCC_BASE + constant RCC_CR
@@ -101,11 +116,84 @@ $14 RCC_BASE + constant RCC_AHBENR
 #1  #1 lshift constant DMA2EN
 #1  #0 lshift constant DMA1EN
 
+$18 RCC_BASE + constant RCC_APB2ENR
+#1 #18 lshift constant TIM17EN
+#1 #17 lshift constant TIM16EN
+#1 #16 lshift constant TIM15EN
+#1 #14 lshift constant USART1EN
+#1 #13 lshift constant TIM8EN
+#1 #12 lshift constant SPI1EN
+#1 #11 lshift constant TIM1EN
+#1            constant SYSCFGEN
+
+$1C RCC_BASE + constant RCC_APB1ENR
+#1 #29 lshift constant DAC1EN
+#1 #28 lshift constant PWREN
+#1 #26 lshift constant DAC2EN
+#1 #25 lshift constant CANEN
+#1 #23 lshift constant USBEN
+#1 #22 lshift constant I2C2EN
+#1 #21 lshift constant I2C1EN
+#1 #20 lshift constant UART5EN
+#1 #19 lshift constant UART4EN
+#1 #18 lshift constant USART3EN
+#1 #17 lshift constant USART2EN
+#1 #15 lshift constant SPI3EN
+#1 #14 lshift constant SPI2EN
+#1 #11 lshift constant WWDGEN
+#1 #5  lshift constant TIM7EN
+#1 #4  lshift constant TIM6EN
+#1 #2  lshift constant TIM4EN
+#1 #1  lshift constant TIM3EN
+#1 #0  lshift constant TIM2EN
+
+$20 RCC_BASE + constant RCC_BDCR
+#1 #16 lshift constant BDRST
+#1 #15 lshift constant RTCEN
+#3  #8 lshift constant RTCSEL
+#3  #3 lshift constant LSEDRV
+#1  #2 lshift constant LSEBYP
+#1  #1 lshift constant LSERDY
+#1  #0 lshift constant LSEON
+
+$24 RCC_BASE + constant RCC_CSR
+#1 #31 lshift constant LPWRSTF
+#1 #30 lshift constant WWDGRSTF
+#1 #29 lshift constant IWDGRSTF
+#1 #28 lshift constant SFTRSTF
+#1 #27 lshift constant PORRSTF
+#1 #26 lshift constant PINRSTF
+#1 #25 lshift constant OBLRSTF
+#1 #24 lshift constant RMVF
+#1  #1 lshift constant LSIRDY
+#1  #0 lshift constant LSION
+
+$28 RCC_BASE + constant RCC_AHBRSTR
+#1 #29 lshift constant ADC34RST
+#1 #28 lshift constant ADC12RST
+#1 #24 lshift constant TSCRST
+#1 #22 lshift constant IOPFRST
+#1 #21 lshift constant IOPERST
+#1 #20 lshift constant IOPDRST
+#1 #19 lshift constant IOPCRST
+#1 #18 lshift constant IOPBRST
+#1 #17 lshift constant IOPARST
+
 $2C RCC_BASE + constant RCC_CFGR2
 $1F #9 lshift constant ADC34PRES
 $1F #4 lshift constant ADC12PRES
 $F            constant PREDIV
 
+$30 RCC_BASE + constant RCC_CFGR3
+#3 #22 lshift constant UART5SW
+#3 #20 lshift constant UART4SW
+#3 #18 lshift constant USART3SW
+#3 #16 lshift constant USART2SW
+#1  #9 lshift constant TIM8SW
+#1  #8 lshift constant TIM1SW
+#1  #5 lshift constant I2C2SW
+#1  #4 lshift constant I2C1SW
+#3  #0 lshift constant USART1SW
 
 : ux.8 ( u -- ) base @ >R hex 
  0 <# # # # # # # # # #> type
@@ -131,32 +219,34 @@ decimal
 ;
 
 : cnt0 ( m -- b )  \ count trailing zeros with hw support
-  dup negate and 1- clz negate 32 +
+  dup negate and 1- clz negate #32 +
 ;
 
 : getbits ( m adr -- b ) @ over and swap cnt0 rshift ;
 : setbits  ( v m adr -- ) 
-  >R dup R> cnt0 lshift     \ shift value to proper pos
+  >R dup >R cnt0 lshift     \ shift value to proper pos
   R@ and                    \ mask out unrelated bits
   R> not R@ @ and           \ invert bitmask and makout new bits
   or r> !                   \ apply value and store back
 ;
+
 : mask-shift ( m v -- m v )
-  over and
   over cnt0 lshift
+  over and
 ;
 
-: setbits ( m v adr -- )
-  >R over and over cnt0 lshift
-  swap R@ and or R> ! 
-;
+\ : setbits ( m v adr -- )
+\   >R over cnt0 lshift over and
+\   swap R@ @ and or R> !
+\ ;
 
 : hse-on     ( -- ) HSE_ON RCC_CR set-mask ;
 : hse-off    ( -- ) HSE_ON RCC_CR clr-mask ;
 : hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR set-mask hse-on ;
 : ?hse-ready ( -- f ) RCC_CR @ HSERDY and 0<> ;
 : set-prediv ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ; 
-: RCC_CR. hex cr
+
+: RCC_CR. BASE >R hex cr
   ." RCC_CR " RCC_CR @ ux.8 cr
   ."  PLLRDY  " PLLRDY  RCC_CR getbits . cr
   ."  PLLON   " PLLON   RCC_CR getbits . cr
@@ -168,6 +258,7 @@ decimal
   ."  HSITRIM " HSITRIM RCC_CR getbits . cr
   ."  HSIRDY  " HSIRDY  RCC_CR getbits . cr
   ."  HSION   " HSION   RCC_CR getbits . cr
+  R> BASE !
 ;
 
 : RCC_CFGR. hex cr
@@ -200,5 +291,47 @@ decimal
   drop ( tadr tlen c-adr ) \ we only need token length and c-adr
   rot drop ( tlen c-adr )
   c-adr>link \ find link adress
+;
+
+: flash-prefetch-enable ( -- )
+  $10 FLASH_ACR BIS! 
+;
+
+: flash-prefetch-disable ( -- )
+  $10 FLASH_ACR BIC! 
+;
+
+: flash-half-cycle-enable ( -- )
+  $8 FLASH_ACR BIS!
+;
+
+: flash-half-cycle-disable ( -- )
+  $8 FLASH_ACR BIC!
+;
+
+: flash-set-latency ( n -- )
+  FLASH_ACR @ [ 7 not literal, ] and or FLASH_ACR !
+;
+
+: set-pll-mul ( n -- )
+ 1- PLLMUL rcc_cfgr setbits 
+;
+
+
+: get-clk-sw RCC_CFGR @ 3 and ;
+
+: clk-source-hsi?
+   get-clk-sw
+   case 
+     0 of -1 endof                           \ hsi 
+     2 of RCC_CFGR_PLLSRC RCC_CFGR 0= endof  \ pll get pll source
+     0                                       \ probably HSE
+   endcase
+;
+
+: pll-set-system-speed-hsi ( hz -- )
+  hsi-on clk-source-hsi
+  #2 HSI_CLOCK */ #4 max 16 min
+  set-pll-mul  
 ;
 
