@@ -93,7 +93,7 @@ Setup_UART:
         @ Set PORTA pins in alternate function mode
         ldr r1, = GPIOA_MODER
         ldr r0, [r1]
-        and r0, 0xFFFFFF0F      @ Zero the bits 4-7
+        and r0, 0xFFFFFF0F      @ Zero the bits 4-7 config for nucleo
         orrs r0, #0xA0
         str r0, [r1]
 
