@@ -310,15 +310,14 @@ decimal
 ;
 
 : flash-set-latency ( n -- )
-  FLASH_ACR @ [ #7 not literal, ] and or FLASH_ACR !
+  #3 and FLASH_ACR @ [ #7 not literal, ] and or FLASH_ACR !
 ;
 
 : set-pll-mul ( n -- )
  1- PLLMUL rcc_cfgr setbits 
 ;
 
-
-: get-clk-sw RCC_CFGR @ #3 and ;
+: get-clk-sw ( -- n ) RCC_CFGR @ #3 and ;
 
 : clk-source-hsi?
    get-clk-sw
@@ -329,7 +328,7 @@ decimal
    endcase
 ;
 
-: hsi-rdy?     ( -- f ) HSIRDY RCC_CR @ and 0<> ;
+: hsi-rdy?     ( -- f ) HSIRDY RCC_CR BIT@ ;
 : hsi-on       ( -- )   HSION RCC_CR BIS! ;
 : wait-hsi-rdy ( -- )   begin hsi-rdy? not while hsi-on repeat ;
 
@@ -337,7 +336,7 @@ decimal
 
 : pll-set-system-speed-hsi ( mhz -- )
   hsi-on clk-source-hsi
-  #2 HSI_CLOCK */ #4 max 16 min
-  set-pll-mul  
+  #2 HSI_CLOCK */ #4 max 16 min set-pll-mul
+    
 ;
 
