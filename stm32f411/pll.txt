@@ -1,6 +1,7 @@
 \ DAS GEHT NOCH NICHT !!!
 \ THAT FILE doesn't work yet !!!
 
+decimal
 $40023C00 constant Flash_ACR \ Flash Access Control Register
 $40004408 constant USART2_BRR
 
@@ -41,14 +42,14 @@ RCC_Base $04 +    constant RCC_PLLCFGR
 RCC_Base $08 + constant RCC_CFGR
       3 30 lshift constant MC02    \ Microcontroller clock output 2 - 00: SYSCLK 01: PLLI2S 10: HSE 11: PLL
       7 27 lshift constant MCO2PRE \ MCO2 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
-	  7 24 lshift constant MCO1PRE \ MCO1 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
-	  1 23 lshift constant I2SSRC  \ I2S clock selection - 0: PLLI2S 1: External clock on the I2S_CKIN pin
-	  3 21 lshift constant MCO1    \ Microcontroller clock output 1 - 00: HSI 01: LSE 10: HSE 11: PLL
-	 31 16 lshift constant RTCPRE  \ HSE division factor for RTC clock 0,1: no clock, 2..31: /2../31
-	  7 13 lshift constant PPRE2   \ APB high-speed prescaler (APB2) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 84Mhz
-	  7 10 lshift constant PPRE1   \ APB Low speed prescaler (APB1) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 42Mhz
-	  3  8 lshift constant RCC_CFGR_RES \ reserved
-	 15  4 lshift constant HPRE    \ AHB prescaler 0-7:/1 8:/2 9:/4 10:/8 11:/16 12:/64 13:/128 14:/256 15:/512 (>=25 for Ethernet)
+      7 24 lshift constant MCO1PRE \ MCO1 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
+      1 23 lshift constant I2SSRC  \ I2S clock selection - 0: PLLI2S 1: External clock on the I2S_CKIN pin
+      3 21 lshift constant MCO1    \ Microcontroller clock output 1 - 00: HSI 01: LSE 10: HSE 11: PLL
+     31 16 lshift constant RTCPRE  \ HSE division factor for RTC clock 0,1: no clock, 2..31: /2../31
+      7 13 lshift constant PPRE2   \ APB high-speed prescaler (APB2) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 84Mhz
+      7 10 lshift constant PPRE1   \ APB Low speed prescaler (APB1) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 42Mhz
+      3  8 lshift constant RCC_CFGR_RES \ reserved
+     15  4 lshift constant HPRE    \ AHB prescaler 0-7:/1 8:/2 9:/4 10:/8 11:/16 12:/64 13:/128 14:/256 15:/512 (>=25 for Ethernet)
       3  2 lshift constant SWS     \ System clock switch status 0:HSI 1:HSE 2:PLL 3:not applicable
       3           constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
 
