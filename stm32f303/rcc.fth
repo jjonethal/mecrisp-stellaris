@@ -51,149 +51,149 @@ $f  #4 lshift  constant HPRE
 #3             constant SW
 
 $08 RCC_BASE + constant RCC_CIR
-#1 #23 lshift constant CSSC
-#1 #20 lshift constant PLLRDYC
-#1 #19 lshift constant HSERDYC
-#1 #18 lshift constant HSIRDYC
-#1 #17 lshift constant LSERDYC
-#1 #16 lshift constant LSIRDYC
-#1 #12 lshift constant PLLRDYIE
-#1 #11 lshift constant HSERDYIE
-#1 #10 lshift constant HSIRDYIE
-#1  #9 lshift constant LSERDYIE
-#1  #8 lshift constant LSIRDYIE
-#1  #7 lshift constant CSSF
-#1  #4 lshift constant PLLRDYF
-#1  #3 lshift constant HSERDYF
-#1  #2 lshift constant HSIRDYF
-#1  #1 lshift constant LSERDYF
-#1            constant LSIRDYF
+#1 #23 lshift  constant CSSC
+#1 #20 lshift  constant PLLRDYC
+#1 #19 lshift  constant HSERDYC
+#1 #18 lshift  constant HSIRDYC
+#1 #17 lshift  constant LSERDYC
+#1 #16 lshift  constant LSIRDYC
+#1 #12 lshift  constant PLLRDYIE
+#1 #11 lshift  constant HSERDYIE
+#1 #10 lshift  constant HSIRDYIE
+#1  #9 lshift  constant LSERDYIE
+#1  #8 lshift  constant LSIRDYIE
+#1  #7 lshift  constant CSSF
+#1  #4 lshift  constant PLLRDYF
+#1  #3 lshift  constant HSERDYF
+#1  #2 lshift  constant HSIRDYF
+#1  #1 lshift  constant LSERDYF
+#1             constant LSIRDYF
 
 $0C RCC_BASE + constant RCC_APB2RSTR
-#1 #18 lshift constant TIM17RST
-#1 #17 lshift constant TIM16RST
-#1 #16 lshift constant TIM15RST
-#1 #14 lshift constant USART1RST
-#1 #13 lshift constant TIM8RST
-#1 #12 lshift constant SPI1RST
-#1 #11 lshift constant TIM1RST
-#1            constant SYSCFGRST
+#1 #18 lshift  constant TIM17RST
+#1 #17 lshift  constant TIM16RST
+#1 #16 lshift  constant TIM15RST
+#1 #14 lshift  constant USART1RST
+#1 #13 lshift  constant TIM8RST
+#1 #12 lshift  constant SPI1RST
+#1 #11 lshift  constant TIM1RST
+#1             constant SYSCFGRST
 
 $10 RCC_BASE + constant RCC_APB1RSTR
-#1 #29 lshift constant DAC1RST
-#1 #28 lshift constant PWRRST
-#1 #26 lshift constant DAC2RST
-#1 #25 lshift constant CANRST
-#1 #23 lshift constant USBRST
-#1 #22 lshift constant I2C2RST
-#1 #21 lshift constant I2C1RST
-#1 #20 lshift constant UART5RST
-#1 #19 lshift constant UART4RST
-#1 #18 lshift constant USART3RST
-#1 #17 lshift constant USART2RST
-#1 #15 lshift constant SPI3RST
-#1 #14 lshift constant SPI2RST
-#1 #11 lshift constant WWDGRST
-#1 #5  lshift constant TIM7RST
-#1 #4  lshift constant TIM6RST
-#1 #2  lshift constant TIM4RST
-#1 #1  lshift constant TIM3RST
-#1 #0  lshift constant TIM2RST
+#1 #29 lshift  constant DAC1RST
+#1 #28 lshift  constant PWRRST
+#1 #26 lshift  constant DAC2RST
+#1 #25 lshift  constant CANRST
+#1 #23 lshift  constant USBRST
+#1 #22 lshift  constant I2C2RST
+#1 #21 lshift  constant I2C1RST
+#1 #20 lshift  constant UART5RST
+#1 #19 lshift  constant UART4RST
+#1 #18 lshift  constant USART3RST
+#1 #17 lshift  constant USART2RST
+#1 #15 lshift  constant SPI3RST
+#1 #14 lshift  constant SPI2RST
+#1 #11 lshift  constant WWDGRST
+#1 #5  lshift  constant TIM7RST
+#1 #4  lshift  constant TIM6RST
+#1 #2  lshift  constant TIM4RST
+#1 #1  lshift  constant TIM3RST
+#1 #0  lshift  constant TIM2RST
 
 $14 RCC_BASE + constant RCC_AHBENR
-#1 #29 lshift constant ADC34EN
-#1 #28 lshift constant ADC12EN
-#1 #24 lshift constant TSCEN
-#1 #22 lshift constant IOPFEN
-#1 #21 lshift constant IOPEEN
-#1 #20 lshift constant IOPDEN
-#1 #19 lshift constant IOPCEN
-#1 #18 lshift constant IOPBEN
-#1 #17 lshift constant IOPAEN
-#1  #6 lshift constant CRCEN
-#1  #4 lshift constant FLITFEN
-#1  #2 lshift constant SRAMEN
-#1  #1 lshift constant DMA2EN
-#1  #0 lshift constant DMA1EN
+#1 #29 lshift  constant ADC34EN
+#1 #28 lshift  constant ADC12EN
+#1 #24 lshift  constant TSCEN
+#1 #22 lshift  constant IOPFEN
+#1 #21 lshift  constant IOPEEN
+#1 #20 lshift  constant IOPDEN
+#1 #19 lshift  constant IOPCEN
+#1 #18 lshift  constant IOPBEN
+#1 #17 lshift  constant IOPAEN
+#1  #6 lshift  constant CRCEN
+#1  #4 lshift  constant FLITFEN
+#1  #2 lshift  constant SRAMEN
+#1  #1 lshift  constant DMA2EN
+#1  #0 lshift  constant DMA1EN
 
 $18 RCC_BASE + constant RCC_APB2ENR
-#1 #18 lshift constant TIM17EN
-#1 #17 lshift constant TIM16EN
-#1 #16 lshift constant TIM15EN
-#1 #14 lshift constant USART1EN
-#1 #13 lshift constant TIM8EN
-#1 #12 lshift constant SPI1EN
-#1 #11 lshift constant TIM1EN
-#1            constant SYSCFGEN
+#1 #18 lshift  constant TIM17EN
+#1 #17 lshift  constant TIM16EN
+#1 #16 lshift  constant TIM15EN
+#1 #14 lshift  constant USART1EN
+#1 #13 lshift  constant TIM8EN
+#1 #12 lshift  constant SPI1EN
+#1 #11 lshift  constant TIM1EN
+#1             constant SYSCFGEN
 
 $1C RCC_BASE + constant RCC_APB1ENR
-#1 #29 lshift constant DAC1EN
-#1 #28 lshift constant PWREN
-#1 #26 lshift constant DAC2EN
-#1 #25 lshift constant CANEN
-#1 #23 lshift constant USBEN
-#1 #22 lshift constant I2C2EN
-#1 #21 lshift constant I2C1EN
-#1 #20 lshift constant UART5EN
-#1 #19 lshift constant UART4EN
-#1 #18 lshift constant USART3EN
-#1 #17 lshift constant USART2EN
-#1 #15 lshift constant SPI3EN
-#1 #14 lshift constant SPI2EN
-#1 #11 lshift constant WWDGEN
-#1 #5  lshift constant TIM7EN
-#1 #4  lshift constant TIM6EN
-#1 #2  lshift constant TIM4EN
-#1 #1  lshift constant TIM3EN
-#1 #0  lshift constant TIM2EN
+#1 #29 lshift  constant DAC1EN
+#1 #28 lshift  constant PWREN
+#1 #26 lshift  constant DAC2EN
+#1 #25 lshift  constant CANEN
+#1 #23 lshift  constant USBEN
+#1 #22 lshift  constant I2C2EN
+#1 #21 lshift  constant I2C1EN
+#1 #20 lshift  constant UART5EN
+#1 #19 lshift  constant UART4EN
+#1 #18 lshift  constant USART3EN
+#1 #17 lshift  constant USART2EN
+#1 #15 lshift  constant SPI3EN
+#1 #14 lshift  constant SPI2EN
+#1 #11 lshift  constant WWDGEN
+#1 #5  lshift  constant TIM7EN
+#1 #4  lshift  constant TIM6EN
+#1 #2  lshift  constant TIM4EN
+#1 #1  lshift  constant TIM3EN
+#1 #0  lshift  constant TIM2EN
 
 $20 RCC_BASE + constant RCC_BDCR
-#1 #16 lshift constant BDRST
-#1 #15 lshift constant RTCEN
-#3  #8 lshift constant RTCSEL
-#3  #3 lshift constant LSEDRV
-#1  #2 lshift constant LSEBYP
-#1  #1 lshift constant LSERDY
-#1  #0 lshift constant LSEON
+#1 #16 lshift  constant BDRST
+#1 #15 lshift  constant RTCEN
+#3  #8 lshift  constant RTCSEL
+#3  #3 lshift  constant LSEDRV
+#1  #2 lshift  constant LSEBYP
+#1  #1 lshift  constant LSERDY
+#1  #0 lshift  constant LSEON
 
 $24 RCC_BASE + constant RCC_CSR
-#1 #31 lshift constant LPWRSTF
-#1 #30 lshift constant WWDGRSTF
-#1 #29 lshift constant IWDGRSTF
-#1 #28 lshift constant SFTRSTF
-#1 #27 lshift constant PORRSTF
-#1 #26 lshift constant PINRSTF
-#1 #25 lshift constant OBLRSTF
-#1 #24 lshift constant RMVF
-#1  #1 lshift constant LSIRDY
-#1  #0 lshift constant LSION
+#1 #31 lshift  constant LPWRSTF
+#1 #30 lshift  constant WWDGRSTF
+#1 #29 lshift  constant IWDGRSTF
+#1 #28 lshift  constant SFTRSTF
+#1 #27 lshift  constant PORRSTF
+#1 #26 lshift  constant PINRSTF
+#1 #25 lshift  constant OBLRSTF
+#1 #24 lshift  constant RMVF
+#1  #1 lshift  constant LSIRDY
+#1  #0 lshift  constant LSION
 
 $28 RCC_BASE + constant RCC_AHBRSTR
-#1 #29 lshift constant ADC34RST
-#1 #28 lshift constant ADC12RST
-#1 #24 lshift constant TSCRST
-#1 #22 lshift constant IOPFRST
-#1 #21 lshift constant IOPERST
-#1 #20 lshift constant IOPDRST
-#1 #19 lshift constant IOPCRST
-#1 #18 lshift constant IOPBRST
-#1 #17 lshift constant IOPARST
+#1 #29 lshift  constant ADC34RST
+#1 #28 lshift  constant ADC12RST
+#1 #24 lshift  constant TSCRST
+#1 #22 lshift  constant IOPFRST
+#1 #21 lshift  constant IOPERST
+#1 #20 lshift  constant IOPDRST
+#1 #19 lshift  constant IOPCRST
+#1 #18 lshift  constant IOPBRST
+#1 #17 lshift  constant IOPARST
 
 $2C RCC_BASE + constant RCC_CFGR2
-$1F #9 lshift constant ADC34PRES
-$1F #4 lshift constant ADC12PRES
-$F            constant PREDIV
+$1F #9 lshift  constant ADC34PRES
+$1F #4 lshift  constant ADC12PRES
+$F             constant PREDIV
 
 $30 RCC_BASE + constant RCC_CFGR3
-#3 #22 lshift constant UART5SW
-#3 #20 lshift constant UART4SW
-#3 #18 lshift constant USART3SW
-#3 #16 lshift constant USART2SW
-#1  #9 lshift constant TIM8SW
-#1  #8 lshift constant TIM1SW
-#1  #5 lshift constant I2C2SW
-#1  #4 lshift constant I2C1SW
-#3  #0 lshift constant USART1SW
+#3 #22 lshift  constant UART5SW
+#3 #20 lshift  constant UART4SW
+#3 #18 lshift  constant USART3SW
+#3 #16 lshift  constant USART2SW
+#1  #9 lshift  constant TIM8SW
+#1  #8 lshift  constant TIM1SW
+#1  #5 lshift  constant I2C2SW
+#1  #4 lshift  constant I2C1SW
+#3  #0 lshift  constant USART1SW
 
 : ux.8 ( u -- ) base @ >R hex 
  0 <# # # # # # # # # #> type
@@ -209,7 +209,7 @@ $30 RCC_BASE + constant RCC_CFGR3
 decimal
 : cnt0 ( m -- b ) \ count trailing zeros without clz
   dup negate and dup >R
-  0<>                           ( -- -1 )
+  0<>                            ( -- -1 )
   $ffff     R@ and 0<> #-16 and  ( -- -1 -16 )
   $FF00FF   R@ and 0<>  #-8 and  ( -- -1 -16 -8 )
   $F0F0F0F  R@ and 0<>  #-4 and  ( -- -1 -16 -8 -4 )
@@ -329,7 +329,13 @@ decimal
    endcase
 ;
 
-: pll-set-system-speed-hsi ( hz -- )
+: hsi-rdy?     ( -- f ) HSIRDY RCC_CR @ and 0<> ;
+: hsi-on       ( -- )   HSION RCC_CR BIS! ;
+: wait-hsi-rdy ( -- )   begin hsi-rdy? not while hsi-on repeat ;
+
+: clk-source-hsi wait-hsi-rdy flash-clk-fix SW RCC_CR bic! ; 
+
+: pll-set-system-speed-hsi ( mhz -- )
   hsi-on clk-source-hsi
   #2 HSI_CLOCK */ #4 max 16 min
   set-pll-mul  
