@@ -202,12 +202,12 @@ $30 RCC_BASE + constant RCC_CFGR3
 : set-mask ( m adr -- ) dup >R @ or R> ! ;
 : clr-mask ( m adr -- ) >R not R@ @ and R> ! ;
 
-: dw ( a -- a ) dup 6 + ctype ;                   \ dictionary word
+: dw ( a -- a ) dup #6 + ctype ;                  \ dictionary word
 : ds ( -- a )   dictionarystart dup . SPACE dw ;  \ dictionary start 
 : dn ( a -- a ) dictionarynext . dup . dw ;       \ dictionary next
 
 decimal
-: cnt0 ( m -- b ) \ count trailing zeros without clz
+: cnt0-slow ( m -- b ) \ count trailing zeros without clz
   dup negate and dup >R
   0<>                            ( -- -1 )
   $ffff     R@ and 0<> #-16 and  ( -- -1 -16 )
@@ -240,10 +240,10 @@ decimal
 \   swap R@ @ and or R> !
 \ ;
 
-: hse-on     ( -- ) HSE_ON RCC_CR set-mask ;
-: hse-off    ( -- ) HSE_ON RCC_CR clr-mask ;
-: hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR set-mask hse-on ;
-: ?hse-ready ( -- f ) RCC_CR @ HSERDY and 0<> ;
+: hse-on     ( -- ) HSE_ON RCC_CR bis! ;
+: hse-off    ( -- ) HSE_ON RCC_CR bic! ;
+: hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR bis! hse-on ;
+: ?hse-ready ( -- f ) HSERDY RCC_CR bit@ ;
 : set-prediv ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ; 
 
 : RCC_CR. BASE >R hex cr
@@ -310,7 +310,7 @@ decimal
 ;
 
 : flash-set-latency ( n -- )
-  FLASH_ACR @ [ 7 not literal, ] and or FLASH_ACR !
+  FLASH_ACR @ [ #7 not literal, ] and or FLASH_ACR !
 ;
 
 : set-pll-mul ( n -- )
@@ -318,14 +318,14 @@ decimal
 ;
 
 
-: get-clk-sw RCC_CFGR @ 3 and ;
+: get-clk-sw RCC_CFGR @ #3 and ;
 
 : clk-source-hsi?
    get-clk-sw
    case 
-     0 of -1 endof                           \ hsi 
-     2 of RCC_CFGR_PLLSRC RCC_CFGR 0= endof  \ pll get pll source
-     0                                       \ probably HSE
+     #0 of #-1 endof                          \ hsi 
+     #2 of RCC_CFGR_PLLSRC RCC_CFGR 0= endof  \ pll get pll source
+     #0                                       \ probably HSE
    endcase
 ;
 
