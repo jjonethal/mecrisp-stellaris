@@ -28,9 +28,9 @@ $00 RCC_BASE + constant RCC_CR
 #1 #19 lshift  constant CSSON
 #1 #18 lshift  constant HSEBYP
 #1 #17 lshift  constant HSERDY
-#1 #16 lshift  constant HSE_ON
+#1 #16 lshift  constant HSEON
 $FF #8 lshift  constant HSICAL
-$F  #4 lshift  constant HSITRIM
+$1F #3 lshift  constant HSITRIM
 #1  #1 lshift  constant HSIRDY
 #1             constant HSION
 
@@ -313,30 +313,42 @@ decimal
   #3 and FLASH_ACR @ [ #7 not literal, ] and or FLASH_ACR !
 ;
 
+: flash-clk-hsi ( -- )
+  flash-half-cycle-disable
+  0 flash-set-latency
+  flash-prefetch-enable  
+;
+
 : set-pll-mul ( n -- )
  1- PLLMUL rcc_cfgr setbits 
 ;
 
-: get-clk-sw ( -- n ) RCC_CFGR @ #3 and ;
+: clk-sw@ ( -- n ) RCC_CFGR @ #3 and ;
 
-: clk-source-hsi?
-   get-clk-sw
-   case 
-     #0 of #-1 endof                          \ hsi 
-     #2 of RCC_CFGR_PLLSRC RCC_CFGR 0= endof  \ pll get pll source
-     #0                                       \ probably HSE
-   endcase
-;
+: pll-src@ ( -- f ) #16 RCC_CFGR BIT@ ;
+
+: clk-source-hsi? ( -- f )
+  clk-sw@ dup 0= if 0= else #2 == pll-src@ not and then ;
+  
 
 : hsi-rdy?     ( -- f ) HSIRDY RCC_CR BIT@ ;
-: hsi-on       ( -- )   HSION RCC_CR BIS! ;
-: wait-hsi-rdy ( -- )   begin hsi-rdy? not while hsi-on repeat ;
+: hsi-on!      ( -- )   HSION  RCC_CR BIS! ;
+: hsi-off!     ( -- )   HSION  RCC_CR BIC! ;
+: wait-hsi-rdy ( -- )   begin  hsi-rdy? not while hsi-on repeat ;
 
-: clk-source-hsi wait-hsi-rdy flash-clk-fix SW RCC_CR bic! ; 
+: clk-source-hsi wait-hsi-rdy flash-clk-hsi SW RCC_CR bic! ; 
+
+: pll-hsi-setup ( mhz -- )
+  clk-source-hsi
+  pll-off!
+  #2 HSI_CLOCK */ #4 max 16 min set-pll-mul
+  pll-on!
+;
 
 : pll-set-system-speed-hsi ( mhz -- )
-  hsi-on clk-source-hsi
-  #2 HSI_CLOCK */ #4 max 16 min set-pll-mul
+  dup pll-hsi-setup
+  1 ahb-prescaler!
+  1 apb1
     
 ;
 
