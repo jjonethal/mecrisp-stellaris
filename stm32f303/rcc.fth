@@ -293,6 +293,24 @@ decimal
   c-adr>link \ find link adress
 ;
 
+\ create list of links on stack from input buffer. number of items on top of stack.
+: LINKLIST ( -- ? ? ? n ) \ e.g: linklist word word word ;
+  0 BEGIN \ init counter
+    >LINK                        \ get link adr
+	dup 0<>                      \ item valid ?
+	over [ >LINK ; literal, ] <> \ semicolon found ?
+	and while                    \ check for list end
+	swap 1+                      \ increment list counter
+  repeat
+  drop                           \ last element ( ; or invalid entry )  
+;
+
+: [LINKLIST] ( x1 x2 x3 .. xn n -- ) \ compile linklist
+
+;
+
+: .REG <BUILDS  >LINK
+
 : flash-prefetch-enable ( -- )
   $10 FLASH_ACR BIS! 
 ;
