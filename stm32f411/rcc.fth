@@ -1,5 +1,7 @@
 \ stm32F411 rcc clock control
-\ 
+\ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
+\ progman "E:\stm\DM00046982 PM0214 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
+\ ref man "E:\stm\DM00119316  RM0383 STM32F411xC_E advanced ARM-based 32-bit MCUs .pdf"
 
 #8000000      constant hse-base-clock
 #1 #18 lshift constant hse-byp-mode
@@ -41,39 +43,54 @@ $08 RCC_BASE or constant RCC_CFGR
   or r> !                   \ apply value and store back
 ;
 
-: get-ws-2v1 ( mhz -- ws ) \ waitstates for 1.71-2.1V
-  dup #96 <=
-  if 1- #4 rshift
-  else drop #6
-  then
+: -1>=0! ( n -- 0|n-1 ) \ n-1 or 0 if negative
+  1- dup 0< not and
 ;
 
-: get-ws-2v4 ( mhz -- ws ) \ waitstates for 2.1-2.4V
-  dup #90 <=
-  if 1- #18 /
-  else drop #5
-  then
+: ws-2v1 ( mhz -- ws ) \ waitstates for 1.71-2.1V
+  -1>=0! #4 rshift
 ;
 
-: get-ws-2v7 ( mhz -- ws ) \ waitstates for 2.4-2.7V
-  dup #96 <=
-  if 1- #24 /
-  else drop #4
-  then
+: c18/ ( c -- c/18 ) \ for values 0..255
+  #455 * #64 + #13 rshift
 ;
 
-: get-ws-3v6 ( mhz -- ws ) \ waitstates for 2.7-3.6V
-  dup #30 <= if drop #0 exit then
-  dup #64 <= if drop #1 exit then
-      #90 <= if drop #2 exit then
-  3 
+: ws-2v4 ( mhz -- ws ) \ waitstates for 2.1-2.4V
+  -1>=0! c18/
 ;
+
+: c24/ ( c -- c/24 ) \ for values 0..255
+  #1365 * #128 + #15 rshift
+;
+
+: ws-2v7 ( mhz -- ws ) \ waitstates for 2.4-2.7V 1..100 mhz
+  -1>=0! c24/
+;
+
+: ws-3v6 ( mhz -- ws ) \ waitstates for 2.7-3.6V
+  dup      30 >
+  swap dup 64 >
+  swap     90 >
+  + + negate
+;
+
+: ws-v-range ( mvolt -- r ) \ calc range from millivolt
+  dup       2100 >
+  swap dup  2400 >
+  swap      2700 >
+  + + negate 
+;
+
+: ftab <BUILDS DOES> swap 2 lshift + @ execute ;
+
+ftab ws-ftab
+' ws-2v1 ,
+' ws-2v4 ,
+' ws-2v7 ,
+' ws-3v6 ,
 
 : flash-ws ( mhz mvolt -- ws ) \ flash ws depending on Mhz and milliVolt
-  dup #2100 <= if drop get-ws-2v1 exit then
-  dup #2400 <= if drop get-ws-2v4 exit then
-      #2700 <= if      get-ws-2v7
-               else    get-ws-3v6      then
+  ws-v-range ws-ftab
 ;
 
 : sys-clk-get ( -- clksrc ) \ #0:HSI #1:HSE #2:PLL #3:not used
