@@ -243,7 +243,7 @@ decimal
 : hse-on     ( -- ) HSE_ON RCC_CR bis! ;
 : hse-off    ( -- ) HSE_ON RCC_CR bic! ;
 : hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR bis! hse-on ;
-: ?hse-ready ( -- f ) HSERDY RCC_CR bit@ ;
+: hse-ready? ( -- f ) HSERDY RCC_CR bit@ ;
 : set-prediv ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ; 
 
 : RCC_CR. BASE >R hex cr
@@ -357,7 +357,7 @@ decimal
 : hsi-rdy?     ( -- f ) HSIRDY RCC_CR BIT@ ;
 : hsi-on!      ( -- )   HSION  RCC_CR BIS! ;
 : hsi-off!     ( -- )   HSION  RCC_CR BIC! ;
-: wait-hsi-rdy ( -- )   begin  hsi-rdy? not while hsi-on repeat ;
+: wait-hsi-rdy ( -- )   hsi-on! begin  hsi-rdy? until ;
 
 : clk-source-hsi wait-hsi-rdy flash-clk-hsi SW RCC_CR bic! ; 
 
