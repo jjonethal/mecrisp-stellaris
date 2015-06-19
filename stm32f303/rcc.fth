@@ -305,8 +305,13 @@ decimal
   drop                           \ last element ( ; or invalid entry )  
 ;
 
-: [LINKLIST] ( x1 x2 x3 .. xn n -- ) \ compile linklist
+\ todo test LINKLIST , [LINKLIST]
 
+: [LINKLIST] ( x1 x2 x3 .. xn n -- ) \ compile linklist
+  dup >R
+  dup ,
+  0 do i pick , loop
+  R> 0 do drop loop 
 ;
 
 : .REG <BUILDS  >LINK
