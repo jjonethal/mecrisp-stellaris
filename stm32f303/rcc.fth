@@ -302,16 +302,55 @@ decimal
 \ todo test LINKLIST , reverse-list,
 
 : reverse-list, ( x1 x2 x3 .. xn n -- ) \ write list in reverse order to here ( n x1 x2 x3 .. xn )
-  dup >R    .s            \ save list length on return stack
-  dup ,     .s            \ store list length to memory
-  1-        .s
-  0 swap    .s            \ backward loop
-  ?do i .s pick .s , -1 +loop \ write list to memory in reverse order
-  R> 0 ?do drop loop    \ clean stack
+  dup >R                                \ save list length on return stack
+  dup ,                                 \ store list length to memory
+  1-        
+  0 swap                                \ backward loop
+  ?do i .s pick .s , -1 +loop           \ write list to memory in reverse order
+  R> 0 ?do drop loop                    \ clean stack
+;
+
+: align2 ( adr -- adr )
+  1+ $FFFFFFFE and \ align
+;
+
+: >CFA ( adr -- cfa )
+  align2 \ align
+  6 + dup c@ + align2
+;
+
+: token. ( linkadr -- )
+  align2 6 +
+  ctype 
+;
+
+: reg-name. ( adr -- cfa-reg last-adr first-adr )
+  dup @ 
+;
+
+: field. ( reg-cfa field-link -- reg-cfa )
+  dup token. >CFA execute
+  over execute bits@ ." " .
+;
+
+: max-token-len ( adr ) \ n , t1 , t2 , tn ,
+;
+
+: reg-dump ( adr -- ) \ dump register list n , reg-adr , f1 , f2 , f3 ,
+  dup >R                 ( adr -- ) ( R: -- adr )
+  4 + @                  ( reg-link ) \ link of reg
+  dup token.             ( reg-link )
+  >CFA                   ( reg-cfa )
+  R@ @ 1+ 2 lshift R@ +  ( reg-cfa end-adr )
+  R> 8 +                 ( reg-cfa end-adr start-adr )
+  ?do i @ dup field. cr 4 +loop
+  drop
 ;
 
 : .REG <BUILDS  LINKLIST reverse-list, >LINK
-\ TODO dump the registers
+  dup >R \ TODO dump the registers
+  @ R@ 1+ + R@ 1+
+  dup 
 ;
 
 : flash-prefetch-enable ( -- )
@@ -360,7 +399,7 @@ decimal
 : hse-off!    ( -- )   HSE_ON RCC_CR bic! ;
 : hse-byp-on! ( -- )   hse-off! HSEBYP CSSON or RCC_CR bis! hse-on ;
 : hse-ready?  ( -- f ) HSERDY RCC_CR bit@ ;
-: set-prediv  ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ;
+: prediv!     ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ; \ set hse predivider
 
 
 
