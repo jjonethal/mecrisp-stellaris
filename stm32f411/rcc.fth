@@ -9,21 +9,39 @@
 
 $40023800 constant RCC_BASE
 $00 RCC_BASE or constant RCC_CR
-   #1 #18 lshift constant HSEBYP
-   #1 #17 lshift constant HSERDY
-   #1 #16 lshift constant HSEON 
+   $1 #27 lshift constant PLLI2SRDY
+   $1 #26 lshift constant PLLI2SON
+   $1 #25 lshift constant PLLRDY
+   $1 #24 lshift constant PLLON
+   $1 #19 lshift constant CSSON
+   $1 #18 lshift constant HSEBYP
+   $1 #17 lshift constant HSERDY
+   $1 #16 lshift constant HSEON
+  $FF  #8 lshift constant HSICAL
+  $1F  #3 lshift constant HSITRIM
+   $1  #1 lshift constant HSIRDY
+   $1            constant HSION
+  
+
+$04 RCC_BASE or constant RCC_PLLCFGR
+   $F #24 lshift constant PLLQ    \ 2.. 15
+   $1 #22 lshift constant PLLSRC
+   $3 #16 lshift constant PllP
+ $1FF  #6 lshift constant PLLN
+ $3F             constant PLLM
+   
 
 $08 RCC_BASE or constant RCC_CFGR
-   #3 #30 lshift constant MC02    \ Microcontroller clock output 2 - 00: SYSCLK 01: PLLI2S 10: HSE 11: PLL
-   #7 #27 lshift constant MCO2PRE \ MCO2 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
-   #7 #24 lshift constant MCO1PRE \ MCO1 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
-   #1 #23 lshift constant I2SSRC  \ I2S clock selection - 0: PLLI2S 1: External clock on the I2S_CKIN pin
-   #3 #21 lshift constant MCO1    \ Microcontroller clock output 1 - 00: HSI 01: LSE 10: HSE 11: PLL
-  #31 #16 lshift constant RTCPRE  \ HSE division factor for RTC clock 0,1: no clock, 2..31: /2../31
-   #7 #13 lshift constant PPRE2   \ APB high-speed prescaler (APB2) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 84Mhz
-   #7 #10 lshift constant PPRE1   \ APB Low speed prescaler (APB1) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 42Mhz
-   #3  #8 lshift constant RCC_CFGR_RES \ reserved
-  #15  #4 lshift constant HPRE    \ AHB prescaler 0-7:/1 8:/2 9:/4 10:/8 11:/16 12:/64 13:/128 14:/256 15:/512 (>=25 for Ethernet)
+   $3 #30 lshift constant MC02    \ Microcontroller clock output 2 - 00: SYSCLK 01: PLLI2S 10: HSE 11: PLL
+   $7 #27 lshift constant MCO2PRE \ MCO2 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
+   $7 #24 lshift constant MCO1PRE \ MCO1 prescaler - 0xx: /1 100: /2 101: /3 110: /4 111: /5
+   $1 #23 lshift constant I2SSRC  \ I2S clock selection - 0: PLLI2S 1: External clock on the I2S_CKIN pin
+   $3 #21 lshift constant MCO1    \ Microcontroller clock output 1 - 00: HSI 01: LSE 10: HSE 11: PLL
+  $1F #16 lshift constant RTCPRE  \ HSE division factor for RTC clock 0,1: no clock, 2..31: /2../31
+   $7 #13 lshift constant PPRE2   \ APB high-speed prescaler (APB2) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 84Mhz
+   $7 #10 lshift constant PPRE1   \ APB Low speed prescaler (APB1) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 42Mhz
+   $3  #8 lshift constant RCC_CFGR_RES \ reserved
+   $F  #4 lshift constant HPRE    \ AHB prescaler 0-7:/1 8:/2 9:/4 10:/8 11:/16 12:/64 13:/128 14:/256 15:/512 (>=25 for Ethernet)
    #3  #2 lshift constant SWS     \ System clock switch status 0:HSI 1:HSE 2:PLL 3:not applicable
    #3            constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
 
@@ -51,7 +69,7 @@ $08 RCC_BASE or constant RCC_CFGR
   -1>=0! #4 rshift
 ;
 
-: c18/ ( c -- c/18 ) \ for values 0..255
+: c18/ ( c -- c/18 ) \ divide a value by 18 for values 0..255
   #455 * #64 + #13 rshift
 ;
 
@@ -59,7 +77,7 @@ $08 RCC_BASE or constant RCC_CFGR
   -1>=0! c18/
 ;
 
-: c24/ ( c -- c/24 ) \ for values 0..255
+: c24/ ( c -- c/24 ) \ divide a value by 24 for values 0..255
   #1365 * #128 + #15 rshift
 ;
 
@@ -93,13 +111,13 @@ ftab ws-ftab
   ws-v-range ws-ftab
 ;
 
-: sys-clk-get ( -- clksrc ) \ #0:HSI #1:HSE #2:PLL #3:not used
+: RCC_CFGR.SWS@ ( -- clksrc ) \ System clock switch status #0:HSI #1:HSE #2:PLL #3:not used
   RCC_CFGR @ #2 rshift #3 and
 ;
 
-sys-clk-set ( clksrc -- ) \ #0:HSI #1:HSE #2:PLL #3:not used
+: RCC_CFGR.SW! ( clksrc -- ) \ System clock switch #0:HSI #1:HSE #2:PLL #3:not used
   RCC_CFGR @ [ 3 not literal, ] and or RCC_CFGR !
-:
+;
 
 
 
@@ -110,16 +128,16 @@ sys-clk-set ( clksrc -- ) \ #0:HSI #1:HSE #2:PLL #3:not used
 decimal
 
 
-: set-hse-on  ( -- ) HSEON RCC_CR bis! ;
-: set-hse-off ( -- ) HSEON RCC_CR bic! ;
+: hse-on!  ( -- ) HSEON RCC_CR bis! ;
+: hse-off! ( -- ) HSEON RCC_CR bic! ;
 
-: hse-on? ( -- f ) RCC_CR @ HSEON and 0<> ;
+: hse-on? ( -- f ) HSEON RCC_CR bit@ ;
 
-: hse-ready? ( -- f ) RCC_CR @ HSERDY and 0<> ;
+: hse-ready? ( -- f ) HSERDY RCC_CR bit@ ;
 
 : wait-hse-stable
   begin 
-    set-hse-on
+    hse-on!
     hse-ready?  
   until
 ;
@@ -134,7 +152,7 @@ decimal
   clk-pll-off
 ; 
 
-: switch-clk-source-hse 
+: switch-clk-source-hse ( -- )
   current-mhz hse-base-clock < if hse-base-clock cfg-flash then
   clk-source-hse
   pll-off
