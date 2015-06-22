@@ -195,15 +195,15 @@ $30 RCC_BASE + constant RCC_CFGR3
 #1  #4 lshift  constant I2C1SW
 #3  #0 lshift  constant USART1SW
 
-: ux.8 ( u -- ) base @ >R hex 
+: ux.8 ( u -- ) base @ >R hex
  0 <# # # # # # # # # #> type
  R> base ! ;
- 
+
 : set-mask ( m adr -- ) dup >R @ or R> ! ;
 : clr-mask ( m adr -- ) >R not R@ @ and R> ! ;
 
 : dw ( a -- a ) dup #6 + ctype ;                  \ dictionary word
-: ds ( -- a )   dictionarystart dup . SPACE dw ;  \ dictionary start 
+: ds ( -- a )   dictionarystart dup . SPACE dw ;  \ dictionary start
 : dn ( a -- a ) dictionarynext . dup . dw ;       \ dictionary next
 
 decimal
@@ -223,7 +223,7 @@ decimal
 ;
 
 : bits@ ( m adr -- b ) @ over and swap cnt0 rshift ;
-: bits! ( v m adr -- ) 
+: bits! ( v m adr -- )
   >R dup >R cnt0 lshift     \ shift value to proper pos
   R@ and                    \ mask out unrelated bits
   R> not R@ @ and           \ invert bitmask and makout new bits
@@ -239,12 +239,6 @@ decimal
 \   >R over cnt0 lshift over and
 \   swap R@ @ and or R> !
 \ ;
-
-: hse-on     ( -- ) HSE_ON RCC_CR bis! ;
-: hse-off    ( -- ) HSE_ON RCC_CR bic! ;
-: hse-byp-on ( -- ) hse-off HSEBYP CSSON or RCC_CR bis! hse-on ;
-: hse-ready? ( -- f ) HSERDY RCC_CR bit@ ;
-: set-prediv ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ; 
 
 : RCC_CR. BASE >R hex cr
   ." RCC_CR " RCC_CR @ ux.8 cr
@@ -263,7 +257,7 @@ decimal
 
 : RCC_CFGR. hex cr
   ." RCC_CFGR " RCC_CFGR @ ux.8 cr
-  ."  PLLNODIV " PLLNODIV RCC_CFGR getbits . cr 
+  ."  PLLNODIV " PLLNODIV RCC_CFGR getbits . cr
   ."  MCOPRE   " MCOPRE   RCC_CFGR getbits . cr
   ."  MCOF     " MCOF     RCC_CFGR getbits . cr
   ."  MCO      " MCO      RCC_CFGR getbits . cr
@@ -279,7 +273,7 @@ decimal
   ."  SW       " SW       RCC_CFGR getbits . cr
 ;
 
-\ calculate link adress from token length and code adress 
+\ calculate link adress from token length and code adress
 : c-adr>link ( token-len c-adr -- link-adr ) \ return 0 when c-adr is 0
   dup 0<> -rot                               \ check for 0 adr
 \ link-adr = code-adr - len(token) -1 (length byte) - pad(1/0) - 6(4link+2flags)
@@ -302,7 +296,7 @@ decimal
 	and while                    \ check for list end
 	swap 1+                      \ increment list counter
   repeat
-  drop                           \ last element ( ; or invalid entry )  
+  drop                           \ last element ( ; or invalid entry )
 ;
 
 \ todo test LINKLIST , reverse-list,
@@ -321,11 +315,11 @@ decimal
 ;
 
 : flash-prefetch-enable ( -- )
-  $10 FLASH_ACR BIS! 
+  $10 FLASH_ACR BIS!
 ;
 
 : flash-prefetch-disable ( -- )
-  $10 FLASH_ACR BIC! 
+  $10 FLASH_ACR BIC!
 ;
 
 : flash-half-cycle-enable ( -- )
@@ -343,27 +337,39 @@ decimal
 : flash-clk-hsi ( -- )
   flash-half-cycle-disable
   0 flash-set-latency
-  flash-prefetch-enable  
+  flash-prefetch-enable
 ;
 
 : set-pll-mul ( n -- )
- 1- PLLMUL rcc_cfgr setbits 
+ 1- PLLMUL rcc_cfgr setbits
 ;
 
-: clk-sw@ ( -- n ) RCC_CFGR @ #3 and ;
+: clk-sws@ ( -- n ) SWS RCC_CFGR bits@ ;
 
 : pll-src@ ( -- f ) #16 RCC_CFGR BIT@ ;
 
-: clk-source-hsi? ( -- f )
-  clk-sw@ dup 0= if 0= else #2 == pll-src@ not and then ;
-  
+: clk-source-hsi? ( -- f ) \ clock is hsi or pll-hsi/2
+  clk-sws@ dup 0= swap 3 = pll-src@ not and or  ;
+
+: clk-source-hse? ( -- f ) \ clock is hse or pll-hse
+  clk-sws@ dup 1 = swap 3 = pll-src@ and or ;
+;
+
+
+: hse-on!     ( -- )   HSE_ON RCC_CR bis! ;
+: hse-off!    ( -- )   HSE_ON RCC_CR bic! ;
+: hse-byp-on! ( -- )   hse-off! HSEBYP CSSON or RCC_CR bis! hse-on ;
+: hse-ready?  ( -- f ) HSERDY RCC_CR bit@ ;
+: set-prediv  ( v -- ) RCC_CFGR2 @ PREDIV not and or RCC_CFGR2 ! ;
+
+
 
 : hsi-rdy?     ( -- f ) HSIRDY RCC_CR BIT@ ;
 : hsi-on!      ( -- )   HSION  RCC_CR BIS! ;
 : hsi-off!     ( -- )   HSION  RCC_CR BIC! ;
 : wait-hsi-rdy ( -- )   hsi-on! begin  hsi-rdy? until ;
 
-: clk-source-hsi wait-hsi-rdy flash-clk-hsi SW RCC_CR bic! ; 
+: clk-source-hsi wait-hsi-rdy flash-clk-hsi SW RCC_CR bic! ;
 
 : pll-hsi-setup ( mhz -- )
   clk-source-hsi
