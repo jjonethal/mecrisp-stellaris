@@ -222,8 +222,8 @@ decimal
   dup negate and 1- clz negate #32 +
 ;
 
-: getbits ( m adr -- b ) @ over and swap cnt0 rshift ;
-: setbits  ( v m adr -- ) 
+: bits@ ( m adr -- b ) @ over and swap cnt0 rshift ;
+: bits! ( v m adr -- ) 
   >R dup >R cnt0 lshift     \ shift value to proper pos
   R@ and                    \ mask out unrelated bits
   R> not R@ @ and           \ invert bitmask and makout new bits
@@ -305,16 +305,20 @@ decimal
   drop                           \ last element ( ; or invalid entry )  
 ;
 
-\ todo test LINKLIST , [LINKLIST]
+\ todo test LINKLIST , reverse-list,
 
-: [LINKLIST] ( x1 x2 x3 .. xn n -- ) \ compile linklist
-  dup >R
-  dup ,
-  0 do i pick , loop
-  R> 0 do drop loop 
+: reverse-list, ( x1 x2 x3 .. xn n -- ) \ write list in reverse order to here ( n x1 x2 x3 .. xn )
+  dup >R    .s            \ save list length on return stack
+  dup ,     .s            \ store list length to memory
+  1-        .s
+  0 swap    .s            \ backward loop
+  ?do i .s pick .s , -1 +loop \ write list to memory in reverse order
+  R> 0 ?do drop loop    \ clean stack
 ;
 
-: .REG <BUILDS  >LINK
+: .REG <BUILDS  LINKLIST reverse-list, >LINK
+\ TODO dump the registers
+;
 
 : flash-prefetch-enable ( -- )
   $10 FLASH_ACR BIS! 
@@ -372,6 +376,5 @@ decimal
   dup pll-hsi-setup
   1 ahb-prescaler!
   1 apb1
-    
 ;
 
