@@ -242,35 +242,35 @@ decimal
 
 : RCC_CR. BASE >R hex cr
   ." RCC_CR " RCC_CR @ ux.8 cr
-  ."  PLLRDY  " PLLRDY  RCC_CR getbits . cr
-  ."  PLLON   " PLLON   RCC_CR getbits . cr
-  ."  CSSON   " CSSON   RCC_CR getbits . cr
-  ."  HSEBYP  " HSEBYP  RCC_CR getbits . cr
-  ."  HSERDY  " HSERDY  RCC_CR getbits . cr
-  ."  HSE_ON  " HSE_ON  RCC_CR getbits . cr
-  ."  HSICAL  " HSICAL  RCC_CR getbits . cr
-  ."  HSITRIM " HSITRIM RCC_CR getbits . cr
-  ."  HSIRDY  " HSIRDY  RCC_CR getbits . cr
-  ."  HSION   " HSION   RCC_CR getbits . cr
+  ."  PLLRDY  " PLLRDY  RCC_CR bits@ . cr
+  ."  PLLON   " PLLON   RCC_CR bits@ . cr
+  ."  CSSON   " CSSON   RCC_CR bits@ . cr
+  ."  HSEBYP  " HSEBYP  RCC_CR bits@ . cr
+  ."  HSERDY  " HSERDY  RCC_CR bits@ . cr
+  ."  HSE_ON  " HSE_ON  RCC_CR bits@ . cr
+  ."  HSICAL  " HSICAL  RCC_CR bits@ . cr
+  ."  HSITRIM " HSITRIM RCC_CR bits@ . cr
+  ."  HSIRDY  " HSIRDY  RCC_CR bits@ . cr
+  ."  HSION   " HSION   RCC_CR bits@ . cr
   R> BASE !
 ;
 
 : RCC_CFGR. hex cr
   ." RCC_CFGR " RCC_CFGR @ ux.8 cr
-  ."  PLLNODIV " PLLNODIV RCC_CFGR getbits . cr
-  ."  MCOPRE   " MCOPRE   RCC_CFGR getbits . cr
-  ."  MCOF     " MCOF     RCC_CFGR getbits . cr
-  ."  MCO      " MCO      RCC_CFGR getbits . cr
-  ."  I2SSRC   " I2SSRC   RCC_CFGR getbits . cr
-  ."  USBPRE   " USBPRE   RCC_CFGR getbits . cr
-  ."  PLLMUL   " PLLMUL   RCC_CFGR getbits . cr
-  ."  PLLXTPRE " PLLXTPRE RCC_CFGR getbits . cr
-  ."  PLLSRC   " PLLSRC   RCC_CFGR getbits . cr
-  ."  PPRE2    " PPRE2    RCC_CFGR getbits . cr
-  ."  PPRE1    " PPRE1    RCC_CFGR getbits . cr
-  ."  HPRE     " HPRE     RCC_CFGR getbits . cr
-  ."  SWS      " SWS      RCC_CFGR getbits . cr
-  ."  SW       " SW       RCC_CFGR getbits . cr
+  ."  PLLNODIV " PLLNODIV RCC_CFGR bits@ . cr
+  ."  MCOPRE   " MCOPRE   RCC_CFGR bits@ . cr
+  ."  MCOF     " MCOF     RCC_CFGR bits@ . cr
+  ."  MCO      " MCO      RCC_CFGR bits@ . cr
+  ."  I2SSRC   " I2SSRC   RCC_CFGR bits@ . cr
+  ."  USBPRE   " USBPRE   RCC_CFGR bits@ . cr
+  ."  PLLMUL   " PLLMUL   RCC_CFGR bits@ . cr
+  ."  PLLXTPRE " PLLXTPRE RCC_CFGR bits@ . cr
+  ."  PLLSRC   " PLLSRC   RCC_CFGR bits@ . cr
+  ."  PPRE2    " PPRE2    RCC_CFGR bits@ . cr
+  ."  PPRE1    " PPRE1    RCC_CFGR bits@ . cr
+  ."  HPRE     " HPRE     RCC_CFGR bits@ . cr
+  ."  SWS      " SWS      RCC_CFGR bits@ . cr
+  ."  SW       " SW       RCC_CFGR bits@ . cr
 ;
 
 \ calculate link adress from token length and code adress
@@ -380,7 +380,7 @@ decimal
 ;
 
 : set-pll-mul ( n -- )
- 1- PLLMUL rcc_cfgr setbits
+  1- PLLMUL rcc_cfgr setbits
 ;
 
 : clk-sws@ ( -- n ) SWS RCC_CFGR bits@ ;
@@ -388,7 +388,8 @@ decimal
 : pll-src@ ( -- f ) #16 RCC_CFGR BIT@ ;
 
 : clk-source-hsi? ( -- f ) \ clock is hsi or pll-hsi/2
-  clk-sws@ dup 0= swap 3 = pll-src@ not and or  ;
+  clk-sws@ dup 0= swap 3 = pll-src@ not and or
+;
 
 : clk-source-hse? ( -- f ) \ clock is hse or pll-hse
   clk-sws@ dup 1 = swap 3 = pll-src@ and or ;
@@ -417,9 +418,19 @@ decimal
   pll-on!
 ;
 
+: hsi-pll-64-mhz ( -- )
+  clk-source-hsi
+  pll-off!
+  PLLSRC RCC_CFGR bic!        \ pll source HSI/2
+  #15 PLLMUL RCC_CFGR bits!   \ pll * 16 hsi/2 * 16 = 64 Mhz
+  pll-on!
+  PPRE2      RCC_CFGR bic!    \ apb2 clock 64 mhz
+  %100 PPRE1 RCC_CFGR bits!   \ apb1 = 32 Mhz
+;
+
 : pll-set-system-speed-hsi ( mhz -- )
   dup pll-hsi-setup
   1 ahb-prescaler!
-  1 apb1
+  2 apb1
 ;
 
