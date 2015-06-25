@@ -419,13 +419,14 @@ decimal
 ;
 
 : hsi-pll-64-mhz ( -- )
-  clk-source-hsi
-  pll-off!
+  clk-source-hsi              \ switch system clock to hsi
+  pll-off!                    \ turn pll off
   PLLSRC RCC_CFGR bic!        \ pll source HSI/2
   #15 PLLMUL RCC_CFGR bits!   \ pll * 16 hsi/2 * 16 = 64 Mhz
   pll-on!
   PPRE2      RCC_CFGR bic!    \ apb2 clock 64 mhz
   %100 PPRE1 RCC_CFGR bits!   \ apb1 = 32 Mhz
+  \ flash 
 ;
 
 : pll-set-system-speed-hsi ( mhz -- )
