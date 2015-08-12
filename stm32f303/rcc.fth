@@ -195,7 +195,7 @@ $30 RCC_BASE + constant RCC_CFGR3
 #1  #4 lshift  constant I2C1SW
 #3  #0 lshift  constant USART1SW
 
-: ux.8 ( u -- ) base @ >R hex
+: ux.8 ( u -- ) base @ >R hex                     \ print number on stack as 8 digit hex value
  0 <# # # # # # # # # #> type
  R> base ! ;
 
