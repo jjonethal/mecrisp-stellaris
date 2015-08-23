@@ -7,6 +7,7 @@
 \ data sheet "C:\Users\jeanjo\Downloads\stm\DM00058181 STM32F303VC.pdf"
 \ L3GD20     "C:\Users\jeanjo\Downloads\stm\DM00036465 L3GD20.pdf"
 \ LSM303DLHC "C:\Users\jeanjo\Downloads\stm\DM00027543-LSM303DLHC.pdf"
+\ i2c spec   "http://www.nxp.com/documents/user_manual/UM10204.pdf"
 
 
 \ board specification
@@ -111,8 +112,19 @@ $7F #1  lshift constant SADD[7:1] \ Slave address bit 7:1 ( master mode )
  $1            constant SADD0     \ Slave address bit 0 ( master mode )
 $3FF           constant SADD      \ Slave address bit 9:0 ( master mode )
 
-$08 constant I2Cx_OAR1
-$0C constant I2Cx_OAR2
+$08 constant I2Cx_OAR1            \ Own address 1 register
+ $1 #15 lshift constant OA1EN     \ Own Address 1 enable
+ $1 #10 lshift constant OA1MODE   \ Own Address 1 10-bit mode
+ $3  #8 lshift constant OA1[9:8]  \ Interface address
+$7F  #1 lshift constant OA1[7:1]  \ Interface address
+ $1            constant OA1[0]    \ Interface address
+$3ff           constant OA1       \ Interface address [9:0]
+
+$0C constant I2Cx_OAR2            \ Own address 2 register
+ $1 #15 lshift constant OA2EN     \ Own Address 2 enable
+ $7 #15 lshift constant OA2MSK    \ Own Address 2 masks
+$7F #1  lshift constant OA2[7:1]  \ Interface address ( bits 7:1 of address )
+
 $10 constant I2Cx_TIMINGR
 $14 constant I2Cx_TIMEOUTR
 $18 constant I2Cx_ISR
