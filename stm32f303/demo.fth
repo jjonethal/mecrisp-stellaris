@@ -125,7 +125,8 @@ $0C constant I2Cx_OAR2            \ Own address 2 register
  $7 #15 lshift constant OA2MSK    \ Own Address 2 masks
 $7F #1  lshift constant OA2[7:1]  \ Interface address ( bits 7:1 of address )
 
-$10 constant I2Cx_TIMINGR
+$10 constant I2Cx_TIMINGR         \ Timing register
+ $F #28 lshift constant	PRESC     \ Timing prescaler
 $14 constant I2Cx_TIMEOUTR
 $18 constant I2Cx_ISR
 $1C constant I2Cx_ICR
