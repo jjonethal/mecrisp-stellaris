@@ -6,9 +6,9 @@
 \ "http://graphics.stanford.edu/~seander/bithacks.html"
 
 \ project specific value
-#8000000 constant HSE_CLOCK
+#8000000 constant HSE_CLOCK_HZ \ provided from 
 
-#8000000 constant HSI_CLOCK
+#8000000 constant HSI_CLOCK_HZ
 
 $40022000 constant FLASH_BASE
 $00 FLASH_BASE or constant FLASH_ACR
@@ -199,8 +199,8 @@ $30 RCC_BASE + constant RCC_CFGR3
  0 <# # # # # # # # # #> type
  R> base ! ;
 
-: set-mask ( m adr -- ) dup >R @ or R> ! ;
-: clr-mask ( m adr -- ) >R not R@ @ and R> ! ;
+: set-mask ( m adr -- ) dup >R @ or R> ! ;        \ same as bis!
+: clr-mask ( m adr -- ) >R not R@ @ and R> ! ;    \ same as bic!
 
 : dw ( a -- a ) dup #6 + ctype ;                  \ dictionary word
 : ds ( -- a )   dictionarystart dup . SPACE dw ;  \ dictionary start
@@ -218,11 +218,11 @@ decimal
   #32 + + + + + +
 ;
 
-: cnt0 ( m -- b )  \ count trailing zeros with hw support
-  dup negate and 1- clz negate #32 +
+: cnt0 ( m -- b )           \ count trailing zeros with hw support
+  dup negate and 1-   clz negate #32 +
 ;
 
-: bits@ ( m adr -- b ) @ over and swap cnt0 rshift ;
+: bits@ ( m adr -- b )  @ over and swap cnt0 rshift ;
 : bits! ( v m adr -- )
   >R dup >R cnt0 lshift     \ shift value to proper pos
   R@ and                    \ mask out unrelated bits
@@ -230,7 +230,7 @@ decimal
   or r> !                   \ apply value and store back
 ;
 
-: mask-shift ( m v -- m v )
+: mask-shift ( m v -- m v ) \ shift v left by number of trailing zeros in m and mask out unrelated bits
   over cnt0 lshift
   over and
 ;
@@ -414,7 +414,7 @@ decimal
 : pll-hsi-setup ( mhz -- )
   clk-source-hsi
   pll-off!
-  #2 HSI_CLOCK */ #4 max 16 min set-pll-mul
+  #2 HSI_CLOCK_HZ */ #4 max 16 min set-pll-mul
   pll-on!
 ;
 
