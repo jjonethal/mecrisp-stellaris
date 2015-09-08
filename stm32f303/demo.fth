@@ -70,31 +70,41 @@
 \ USART1_TX - PE0   ( MEMS_INT1 )
 \ USART1_RX - PE1   ( MEMS_INT2 )
 
+\ Cornerstone for 2 kb Flash pages
+
+: cornerstone ( Name ) ( -- )
+  <builds begin here $7FF and while 0 h, repeat
+  does>   begin dup  $7FF and while 2+   repeat 
+          eraseflashfrom
+;
+
+
+
 \ Register definitions
 
 $40005400 constant I2C1_BASE
 $40005800 constant I2C2_BASE
-$00 constant I2Cx_CR1            \ Control register 1
-$1 #23 lshift constant PECEN     \ PEC enable
-$1 #22 lshift constant ALERTEN   \ SMBus alert enable
-$1 #21 lshift constant SMBDEN    \ SMBus Device Default address enable
-$1 #20 lshift constant SMBHEN    \ SMBus Host address enable
-$1 #19 lshift constant GCEN      \ General call enable
-$1 #18 lshift constant WUPEN     \ Wakeup from Stop mode enable
-$1 #17 lshift constant NOSTRETCH \ Clock stretching disable
-$1 #16 lshift constant SBC       \ Slave byte control
-$1 #15 lshift constant RXDMAEN   \ DMA reception requests enable
-$1 #14 lshift constant TXDMAEN   \ DMA transmission requests enable
-$1 #12 lshift constant ANFOFF    \ Analog noise filter OFF
-$f  #8 lshift constant DNF       \ Digital noise filter
-$1  #7 lshift constant ERRIE     \ Error interrupts enable
-$1  #6 lshift constant TCIE      \ Transfer Complete interrupt enable
-$1  #5 lshift constant STOPIE    \ STOP detection Interrupt enable
-$1  #4 lshift constant NACKIE    \ Not acknowledge received Interrupt enable
-$1  #3 lshift constant ADDRIE    \ Address match Interrupt enable ( slave only )
-$1  #2 lshift constant RXIE      \ RX Interrupt enable
-$1  #1 lshift constant TXIE      \ TX Interrupt enable
-$1                     PE        \ Peripheral enable
+$00 constant I2Cx_CR1             \ Control register 1
+$1 #23 lshift constant PECEN      \ PEC enable
+$1 #22 lshift constant ALERTEN    \ SMBus alert enable
+$1 #21 lshift constant SMBDEN     \ SMBus Device Default address enable
+$1 #20 lshift constant SMBHEN     \ SMBus Host address enable
+$1 #19 lshift constant GCEN       \ General call enable
+$1 #18 lshift constant WUPEN      \ Wakeup from Stop mode enable
+$1 #17 lshift constant NOSTRETCH  \ Clock stretching disable
+$1 #16 lshift constant SBC        \ Slave byte control
+$1 #15 lshift constant RXDMAEN    \ DMA reception requests enable
+$1 #14 lshift constant TXDMAEN    \ DMA transmission requests enable
+$1 #12 lshift constant ANFOFF     \ Analog noise filter OFF
+$f  #8 lshift constant DNF        \ Digital noise filter
+$1  #7 lshift constant ERRIE      \ Error interrupts enable
+$1  #6 lshift constant TCIE       \ Transfer Complete interrupt enable
+$1  #5 lshift constant STOPIE     \ STOP detection Interrupt enable
+$1  #4 lshift constant NACKIE     \ Not acknowledge received Interrupt enable
+$1  #3 lshift constant ADDRIE     \ Address match Interrupt enable ( slave only )
+$1  #2 lshift constant RXIE       \ RX Interrupt enable
+$1  #1 lshift constant TXIE       \ TX Interrupt enable
+$1                     PE         \ Peripheral enable
 
 $04 constant I2Cx_CR2             \ Control register 2
  $1 #26 lshift constant PECBYTE   \ Packet error checking byte
@@ -127,6 +137,11 @@ $7F #1  lshift constant OA2[7:1]  \ Interface address ( bits 7:1 of address )
 
 $10 constant I2Cx_TIMINGR         \ Timing register
  $F #28 lshift constant	PRESC     \ Timing prescaler
+ $F #20 lshift constant SCLDEL    \ Data setup time
+ $F #16 lshift constant SDADEL    \ Data hold time
+$FF  #8 lshift constant SCLH      \ SCL high period
+$FF            constant SCLL      \ SCL low period
+ 
 $14 constant I2Cx_TIMEOUTR
 $18 constant I2Cx_ISR
 $1C constant I2Cx_ICR
@@ -136,6 +151,11 @@ $28 constant I2Cx_TXDR
 
 $40022000 constant FLASH_BASE
 $00 FLASH_BASE or constant FLASH_ACR
+$1 #5 lshift constant PRFTBS
+$1 #4 lshift constant PRFTBE
+$1 #3 lshift constant HLFCYA
+$7           constant LATENCY
+
 $04 FLASH_BASE or constant FLASH_KEYR
 $08 FLASH_BASE or constant FLASH_OPTKEYR
 $0C FLASH_BASE or constant FLASH_SR
@@ -166,9 +186,9 @@ $04 RCC_BASE or constant RCC_CFGR
 #1 #22 lshift  constant USBPRE
 $F #18 lshift  constant PLLMUL
 #1 #17 lshift  constant PLLXTPRE
-#1 #16 lshift  constant PLLSRC
-#7 #11 lshift  constant PPRE2
-#7  #8 lshift  constant PPRE1
+#1 #16 lshift  constant PLLSRC                \ PLL entry clock source 0:HSI/2 1:HSE/PREDIV
+#7 #11 lshift  constant PPRE2                 \ APB high-speed prescaler (APB2) 0xx:HCLK/1 100:HCLK/2 101:HCLK/4 110:HCLK/8 111:HCLK/16
+#7  #8 lshift  constant PPRE1                 \ APB Low-speed prescaler (APB2) 0xx:HCLK/1 100:HCLK/2 101:HCLK/4 110:HCLK/8 111:HCLK/16
 $f  #4 lshift  constant HPRE
 #3  #2 lshift  constant SWS
 #3             constant SW
@@ -308,10 +328,10 @@ $1F #4 lshift  constant ADC12PRES
 $F             constant PREDIV
 
 $30 RCC_BASE or constant RCC_CFGR3
-#3 #22 lshift  constant UART5SW
-#3 #20 lshift  constant UART4SW
-#3 #18 lshift  constant USART3SW
-#3 #16 lshift  constant USART2SW
+#3 #22 lshift  constant UART5SW               \ UART5 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#3 #20 lshift  constant UART4SW               \ UART4 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#3 #18 lshift  constant USART3SW              \ USART3 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#3 #16 lshift  constant USART2SW              \ USART2 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
 #1  #9 lshift  constant TIM8SW
 #1  #8 lshift  constant TIM1SW
 #1  #5 lshift  constant I2C2SW
@@ -319,15 +339,92 @@ $30 RCC_BASE or constant RCC_CFGR3
 #3  #0 lshift  constant USART1SW
 
 \ utility functions 
-: cnt0   ( m -- b )          \ count trailing zeros with hw support
+: cnt0   ( m -- b )                           \ count trailing zeros with hw support
    dup negate and 1-
    clz negate #32 + ;
-: bits@  ( m adr -- b )      \ get bits a masked position
+: bits@  ( m adr -- b )                       \ get bits a masked position
    @ over and swap cnt0 rshift ;
-: bits!  ( n m adr -- )      \ set masked bits at position
-   >R dup >R cnt0 lshift     \ shift value to proper pos
-   R@ and                    \ mask out unrelated bits
-   R> not R@ @ and           \ invert bitmask and makout new bits
-   or r> ! ;                 \ apply value and store back
-: 
+: bits!  ( n m adr -- )                       \ set masked bits at position
+   >R dup >R cnt0 lshift                      \ shift value to proper pos
+   R@ and                                     \ mask out unrelated bits
+   R> not R@ @ and                            \ invert bitmask and makout new bits
+   or r> ! ;                                  \ apply value and store back
 
+\ flash functions
+: flash-ws!  ( n -- )  LATENCY FLASH_ACR bits! ;
+: flash-ws-mhz!  ( n -- )  #24 / flash-ws! ;
+: flash-prefetch-on ( -- )  PRFTBE FLASH_ACR bis! ;
+
+\ clock functions
+: hse-on?  ( -- f )  hseon rcc_cr bit@ ;
+: hse-rdy?  ( -- f )  HSERDY rcc_cr bit@ ;
+: hsi-rdy?  ( -- f )  HSIRDY rcc_cr bit@ ;
+: hsebyp-on  ( -- )  hsebyp rcc_cr bis! ;
+: hsebyp-on?  ( -- f )  hsebyp rcc_cr bit@ ;
+: hse-on  ( -- )  \ turn hse on with oscillator bypass external clock source
+   hsebyp-on hseon rcc_cr bis! ;
+: hsi-on  ( -- )  hsion rcc_cr bis! ;
+: wait-hse  ( -- )  begin hse-on hse-rdy? until ;
+: wait-hsi  ( -- )  begin hsi-on hsi-rdy? until ;
+: pll-on  ( -- )  PLLON RCC_CR bis! ;
+: pll-on?  ( -- f )  PLLON RCC_CR bit@ ;
+: pll-off ( -- )  PLLON RCC_CR bic! ;
+: pll-rdy?  ( -- f )  PLLRDY RCC_CR bit@ ;
+: wait-pllrdy ( -- )  begin pll-on pll-rdy? until ;
+: pll-src-hse  ( -- )  PLLSRC RCC_CFGR bis! ; 
+: pll-src-hsi  ( -- )  PLLSRC RCC_CFGR bic! ; 
+: pll-src-hse?  ( -- f )  PLLSRC RCC_CFGR bit@ ; 
+: pll-src-hsi?  ( -- f )  pll-src-hse? not ;
+: prediv!  ( n -- )  PREDIV RCC_CFGR2 bits! ;
+: pllmul!  ( n -- ) pllmul RCC_CFGR bits! ;
+: hpre!  ( n -- )  hpre RCC_CFGR bits! ;
+: ppre1!  ( n -- )  ppre1 RCC_CFGR bits! ;
+: ppre2!  ( n -- )  ppre2 RCC_CFGR bits! ;
+: ppre-bbb->div  ( u -- u )  \ ppre1,2 reg val to divider (1,2,4,8,16)
+   dup #4 and shr swap #3 and lshift dup 0= 1 and or ;
+: ppre-div->bbb  ( u -- u )  \ ppre1,2 reg val to divider (1,2,4,8,16)
+   clz negate #31 + dup 0< #4 and or ;
+: clk-src-hsi  ( -- )  wait-hsi SW RCC_CFGR bic! ;
+: clk-src-hse  ( -- )  hse-on $1 SW RCC_CFGR bits! ;
+: clk-src-pll  ( -- )  $2 SW RCC_CFGR bits! ;
+: clk-src?  ( -- u )  sws RCC_CFGR bits@ ;
+: usart1-clksrc!  ( u -- )  USART1SW rcc_cfgr3 bits! ;
+: clk-72M  ( -- )  wait-hsi clk-src-hsi pll-off
+   flash-prefetch-on #72 flash-ws-mhz!
+   #3 usart1-clksrc! \ attach usart1 to hsi \ 8mhz
+   0 ppre2! #4 ppre1! 0 hpre!
+   0 prediv! #9 pllmul!
+   wait-hse pll-src-hse
+   wait-pllrdy clk-src-pll ; 
+
+\ gpio functions
+: gpio-port  ( n -- )  \ base address of gpio port a:0 b:1 c:2 d:3 e:4 f:5
+   #10 lshift $48000000 or ;
+: gpio-rcc-ena-msk  ( n -- n )  \ port A:0 .. F:5
+   17 + 1 swap lshift $007e0000 and ;
+: gpio-port-ena  ( n -- )  \ enable clock for port
+   gpio-rcc-ena-msk RCC_AHBENR bis! ;
+: gpio-port-dis  ( adr -- )  \ enable clock for port
+   gpio-rcc-ena-msk RCC_AHBENR bic! ;
+: MODER ( -- ) ;
+: gpio-mode  ( mode pin port -- ) \ 00:input 01:output 10:alternate function 11:analog
+   gpio-port >R 3 swap 2* lshift R> bits! ;
+: gpio-bsrr  ( n -- )  gpio-port $18 + ;
+
+\ user leds
+: led-init  ( -- )  4 gpio-port-ena $5555 $ffff0000 [ 4 gpio-port literal, ] bits! ;
+: led-on ( n -- ) \ turn user led on 1..8
+   1- 7 and 8 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
+: led-off ( n -- ) \ turn user led off 1..8
+   1- 7 and 24 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
+
+\ timer 16 system cycle counter
+$40014400 constant TIM16_BASE
+0             constant TIMx_CR1
+#1 #11 lshift constant UIFREMAP  \ UIF status bit remapping to TIMxCNT[31]
+#3  #8 lshift constant CKD       \ Clock division ratio CK_INT and dead-time and sampling clock 00:/1 01:/2 10:/4 11:reserved
+#1  #7 lshift constant ARPE      \ Auto-reload preload enable
+#1  #3 lshift constant OPM       \ One pulse mode
+#1  #2 lshift constant URS       \ Update request source
+1   #1 lshift constant UDIS      \ Update disable
+1             constant CEN       \ Counter enable   
