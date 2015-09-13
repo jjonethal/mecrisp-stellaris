@@ -8,6 +8,7 @@
 \ L3GD20     "C:\Users\jeanjo\Downloads\stm\DM00036465 L3GD20.pdf"
 \ LSM303DLHC "C:\Users\jeanjo\Downloads\stm\DM00027543-LSM303DLHC.pdf"
 \ i2c spec   "http://www.nxp.com/documents/user_manual/UM10204.pdf"
+\ board man  "C:\Users\jeanjo\Downloads\stm\DM00063382 STM32F3DISCOVERY user manual.pdf"
 
 
 \ board specification
@@ -33,9 +34,16 @@
 \ SPI1_SCK          - PA5 ( SPI1 AF5 )
 \ SPI1_MOSI         - PA7 ( SPI1 AF5 )
 \ SPI1_MISO         - PA6 ( SPI1 AF5 )
-\ CS_I2C_SPI        - PE3
+\ CS_I2C_SPI        - PE3 0:spi mode 1:i2c mode
 \ MEMS_INT2         - PE1
 \ MEMS_INT1         - PE0
+\                T      CS SPC SDI SDO            
+\ Idle           0      H   X   X   X
+\ before start  +Thcs   H   H   X   X  
+\ on start      +Thcs   L   H   X   X  setup SDI
+\ c1 start      +Tsucs  L   L  DIH  X  setup SDI
+\ wait-Tsu(cs)  CS - L SPC - H SDI-X SDO-X
+\ after-Tsu(cs) CS - L SPC - L SDI-X SDO-X
 
 \ LSM303DLHC 3D accelerometer and 3D magnetometer
 \ SCL               - PB6 ( I2C1 AF4 ) 
@@ -349,7 +357,9 @@ $30 RCC_BASE or constant RCC_CFGR3
    R@ and                                     \ mask out unrelated bits
    R> not R@ @ and                            \ invert bitmask and makout new bits
    or r> ! ;                                  \ apply value and store back
-
+: bit-mask! ( v m adr -- )                    \ set bit masked value at 
+   >R dup >R and R> not R@ @ and or R> ! ; 
+   
 \ flash functions
 : flash-ws!  ( n -- )  LATENCY FLASH_ACR bits! ;
 : flash-ws-mhz!  ( n -- )  #24 / flash-ws! ;
@@ -398,28 +408,37 @@ $30 RCC_BASE or constant RCC_CFGR3
    wait-pllrdy clk-src-pll ; 
 
 \ gpio functions
-: gpio-port  ( n -- )  \ base address of gpio port a:0 b:1 c:2 d:3 e:4 f:5
-   #10 lshift $48000000 or ;
+: gpio-port  ( n -- n )  \ base address of gpio port a:0 b:1 c:2 d:3 e:4 f:5
+   #10 lshift $48000000 or 1-foldable ;
 : gpio-rcc-ena-msk  ( n -- n )  \ port A:0 .. F:5
-   17 + 1 swap lshift $007e0000 and ;
+   #17 + 1 swap lshift $007e0000 and ;
 : gpio-port-ena  ( n -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bis! ;
 : gpio-port-dis  ( adr -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bic! ;
-: MODER ( -- ) ;
 : gpio-mode  ( mode pin port -- ) \ 00:input 01:output 10:alternate function 11:analog
    gpio-port >R 3 swap 2* lshift R> bits! ;
 : gpio-bsrr  ( n -- )  gpio-port $18 + ;
 
+#4 gpio-port $20 + constant GPIOE_AFRL
+#4 gpio-port       constant GPIOE_MODER
+
 \ user leds
 : led-init  ( -- )  4 gpio-port-ena $5555 $ffff0000 [ 4 gpio-port literal, ] bits! ;
-: led-on ( n -- ) \ turn user led on 1..8
-   1- 7 and 8 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
-: led-off ( n -- ) \ turn user led off 1..8
-   1- 7 and 24 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
+: led-on ( n -- )  \ turn user led on 0..7
+   7 and 8 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
+: led-off ( n -- )  \ turn user led off 0..7
+   7 and 24 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
+: led-test begin 8 0 do i dup led-off 3 + led-on 100000 0 do loop loop key? until ;
+: leds-on  ( m -- )  \ turn on bitmask leds 
+   $ff and 8 lshift [ 4 gpio-bsrr literal, ] ! ;
+: leds-off  ( m -- )  \ turn on bitmask leds 
+   $ff and 24 lshift [ 4 gpio-bsrr literal, ] ! ;
 
+   
 \ timer 16 system cycle counter
 $40014400 constant TIM16_BASE
+$40014800 constant TIM17_BASE
 0             constant TIMx_CR1
 #1 #11 lshift constant UIFREMAP  \ UIF status bit remapping to TIMxCNT[31]
 #3  #8 lshift constant CKD       \ Clock division ratio CK_INT and dead-time and sampling clock 00:/1 01:/2 10:/4 11:reserved
@@ -428,3 +447,73 @@ $40014400 constant TIM16_BASE
 #1  #2 lshift constant URS       \ Update request source
 1   #1 lshift constant UDIS      \ Update disable
 1             constant CEN       \ Counter enable   
+
+\ application variables
+0 variable gyro-x
+0 variable gyro-y
+0 variable gyro-z
+0 variable accel-x
+0 variable accel-y
+0 variable accel-z
+0 variable compass-x
+0 variable compass-y
+0 variable compass-z
+
+\ port definitions 
+#0 gpio-port constant port-a
+#1 gpio-port constant port-b
+#2 gpio-port constant port-d
+#3 gpio-port constant port-d
+#4 gpio-port constant port-e
+
+\ pin definitions
+#5 port-e or constant PE5
+#6 port-e or constant PE6
+#7 port-e or constant PE7
+
+: display-draw-mask draw-border 
+\  "          1         2         3         5      "
+\  "01234567890123456789012345678901234567890123456"
+\  "***********************************************"
+\  "*  Accel X:##### Gyro X:##### Compass X:##### *"
+\  "*  Accel Y:##### Gyro Y:##### Compass Y:##### *"
+\  "*  Accel Z:##### Gyro Z:##### Compass Z:##### *"
+\  "***********************************************"
+   3 3 AT-YX ." Accel X:"
+   3 3 AT-YX ." Accel Y:"
+   3 3 AT-YX ." Accel Z:"
+   ;
+: display-draw-values ;
+: display-draw-curve ;
+: gpio-adr ( pin -- gpio-base )
+   $F not and inline 1-foldable ;
+: gpio-af-adr ( pin -- gpio-af-adr ) \ alternate function reg adr
+   dup $8 and 0<> $4 and swap gpio-adr $20 + + 1-foldable ; \ TODO gpio-modereg-af
+: set-af  ( af pin -- )
+   dup gpio-af-adr >R
+   $7 and $2 lshift $F swap lshift
+   R> bits! ;
+: aquire-gyro-data ;
+: aquire-compass-data ;
+: aquire-accel-data ;
+: init-i2c ;
+: init-spi ;
+: init-usb ;
+: init-gyro-pins ( -- )
+   $A840 $FCC0         GPIOE_MODER bit-mask!     \ PE5-7 AF mode PE3 gpio output
+   $55500000 $FFF00000 GPIOE_AFRL  bit-mask! ;   \ PE5-7 AF5 spi1
+: init-gyro ( -- )
+   \ AF5 PE5 set-af
+   \ AF5 PE6 set-af
+   \ AF5 PE7 set-af
+   \ PE3 gpio-out
+   init-gyro-pins
+   init-spi1 ;
+: init-accel ;
+: init-compass ;
+: init-timer ;
+: init-clock ;
+
+: main 
+   init start-tasks ;
+   
