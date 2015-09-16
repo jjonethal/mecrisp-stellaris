@@ -1,6 +1,6 @@
 \ demo.fth
 \ STM32F303VCT6 F3Discovery Board demo
-
+\ copyrights (c) 2015 by Jean Jonethal
 \ Documents
 \ ref man    "C:\Users\jeanjo\Downloads\stm\DM00043574 STM32F303xB_C STM32F303x6_8 STM32F328x8 and STM32F358xC advanced ARM-based 32-bit MCUs.pdf"
 \ prog man   "C:\Users\jeanjo\Downloads\stm\DM00046982 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
@@ -401,14 +401,14 @@ $30 RCC_BASE or constant RCC_CFGR3
 : usart1-clksrc!  ( u -- )  USART1SW rcc_cfgr3 bits! ;
 : clk-72M  ( -- )  wait-hsi clk-src-hsi pll-off
    flash-prefetch-on #72 flash-ws-mhz!
-   #3 usart1-clksrc! \ attach usart1 to hsi \ 8mhz
+   #3 usart1-clksrc! \ attach usart1 to hsi -> 8mhz
    0 ppre2! #4 ppre1! 0 hpre!
    0 prediv! #9 pllmul!
    wait-hse pll-src-hse
    wait-pllrdy clk-src-pll ; 
 
 \ gpio functions
-: gpio-port  ( n -- n )  \ base address of gpio port a:0 b:1 c:2 d:3 e:4 f:5
+: gpio-port  ( n -- adr )  \ base address of gpio port nr a:0 b:1 c:2 d:3 e:4 f:5
    #10 lshift $48000000 or 1-foldable ;
 : gpio-rcc-ena-msk  ( n -- n )  \ port A:0 .. F:5
    #17 + 1 swap lshift $007e0000 and ;
@@ -416,24 +416,24 @@ $30 RCC_BASE or constant RCC_CFGR3
    gpio-rcc-ena-msk RCC_AHBENR bis! ;
 : gpio-port-dis  ( adr -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bic! ;
-: gpio-mode  ( mode pin port -- ) \ 00:input 01:output 10:alternate function 11:analog
-   gpio-port >R 3 swap 2* lshift R> bits! ;
+: gpio-mode!  ( mode pin port -- ) \ 00:input 01:output 10:alternate function 11:analog
+   gpio-port >R #3 swap 2* lshift R> bits! ;
 : gpio-bsrr  ( n -- )  gpio-port $18 + ;
 
 #4 gpio-port $20 + constant GPIOE_AFRL
 #4 gpio-port       constant GPIOE_MODER
 
 \ user leds
-: led-init  ( -- )  4 gpio-port-ena $5555 $ffff0000 [ 4 gpio-port literal, ] bits! ;
-: led-on ( n -- )  \ turn user led on 0..7
-   7 and 8 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
-: led-off ( n -- )  \ turn user led off 0..7
-   7 and 24 + 1 swap lshift [ 4 gpio-bsrr literal, ] ! ;
-: led-test begin 8 0 do i dup led-off 3 + led-on 100000 0 do loop loop key? until ;
+: led-init  ( -- )  #4 gpio-port-ena $5555 $ffff0000 [ 4 gpio-port literal, ] bits! ;
+: led-on  ( n -- )  \ turn user led on 0..7
+   #7 and #8 + 1 swap lshift [ #4 gpio-bsrr literal, ] ! ;
+: led-off  ( n -- )  \ turn user led off 0..7
+   #7 and #24 + 1 swap lshift [ #4 gpio-bsrr literal, ] ! ;
+: led-test  ( -- )  led-init begin #8 0 do i dup led-off #3 + led-on #100000 0 do loop loop key? until ;
 : leds-on  ( m -- )  \ turn on bitmask leds 
-   $ff and 8 lshift [ 4 gpio-bsrr literal, ] ! ;
+   $ff and #8 lshift [ #4 gpio-bsrr literal, ] ! ;
 : leds-off  ( m -- )  \ turn on bitmask leds 
-   $ff and 24 lshift [ 4 gpio-bsrr literal, ] ! ;
+   $ff and #24 lshift [ #4 gpio-bsrr literal, ] ! ;
 
    
 \ timer 16 system cycle counter
@@ -467,6 +467,11 @@ $40014800 constant TIM17_BASE
 #4 gpio-port constant port-e
 
 \ pin definitions
+#5 port-a or constant PA5
+#6 port-a or constant PA6
+#7 port-a or constant PA7
+#0 port-e or constant PE0
+#1 port-e or constant PE1
 #5 port-e or constant PE5
 #6 port-e or constant PE6
 #7 port-e or constant PE7
@@ -485,28 +490,41 @@ $40014800 constant TIM17_BASE
    ;
 : display-draw-values ;
 : display-draw-curve ;
-: gpio-adr ( pin -- gpio-base )
+
+\ *** pin functions  
+\ **** pin = GPIOx_BASE + PinNr e.g.: Pin PE1 = $48001001 = $48001000(GPIOE) + 1(PIN1)
+: pin-gpio-adr  ( pin -- gpio-base )  \ mask gpio base from pin-id    
    $F not and inline 1-foldable ;
-: gpio-af-adr ( pin -- gpio-af-adr ) \ alternate function reg adr
-   dup $8 and 0<> $4 and swap gpio-adr $20 + + 1-foldable ; \ TODO gpio-modereg-af
-: set-af  ( af pin -- )
-   dup gpio-af-adr >R
-   $7 and $2 lshift $F swap lshift
+: pin-af-adr ( pin -- gpio-af-adr ) \ alternate function reg adr
+   dup $8 and 0<> $4 and swap pin-gpio-adr $20 + + 1-foldable ; \ TODO gpio-modereg-af
+: pin-af!  ( af pin -- )  \ set alternate function for pin
+   dup pin-af-adr >R  \ store AFRL/H
+   $7 and $2 lshift $F swap lshift \ generate mask
    R> bits! ;
-: aquire-gyro-data ;
-: aquire-compass-data ;
-: aquire-accel-data ;
+: pin-mode!  ( mode pin -- )  \ set pin mode 00:input 01:output 10:alternate function 11:analog
+   dup $f and swap $f not and gpio-mode! ; 
+
+\ *** gyro handler
+: aquire-gyro-data  ( -- x y z )  0 0 0 ;
+
+\ *** compass handler
+: aquire-compass-data  ( -- x y z )  0 0 0 ;
+
+\ *** acceleration handler
+: aquire-accel-data  ( -- x y z )  0 0 0 ;
+
 : init-i2c ;
 : init-spi ;
 : init-usb ;
-: init-gyro-pins ( -- )
-   $A840 $FCC0         GPIOE_MODER bit-mask!     \ PE5-7 AF mode PE3 gpio output
-   $55500000 $FFF00000 GPIOE_AFRL  bit-mask! ;   \ PE5-7 AF5 spi1
+
+: init-gyro-pins  ( -- )  \ initialize pins for gyro
+   #3 PA5 pin-mode!	#5 PA5 pin-af! \ SPI1_SCK
+   #3 PA6 pin-mode!	#5 PA6 pin-af! \ SPI1_MISO
+   #3 PA7 pin-mode!	#5 PA7 pin-af! \ SPI1_MOSI
+   #1 PE3 pin-mode!                \ cs-output
+   #0 PE0 pin-mode!                \ MEMS_INT1
+   #0 PE1 pin-mode! ;              \ MEMS_INT2
 : init-gyro ( -- )
-   \ AF5 PE5 set-af
-   \ AF5 PE6 set-af
-   \ AF5 PE7 set-af
-   \ PE3 gpio-out
    init-gyro-pins
    init-spi1 ;
 : init-accel ;
@@ -516,4 +534,3 @@ $40014800 constant TIM17_BASE
 
 : main 
    init start-tasks ;
-   
