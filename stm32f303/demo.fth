@@ -1,4 +1,5 @@
-\ demo.fth
+\ file:demo.fth
+\ This is free software under GNU General Public License v3.
 \ STM32F303VCT6 F3Discovery Board demo
 \ copyrights (c) 2015 by Jean Jonethal
 \ Documents
