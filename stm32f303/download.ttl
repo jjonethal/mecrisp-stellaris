@@ -32,7 +32,7 @@
 ; global definitions
 MAXLEVEL        =  20                         ; max nesting level up to 65536 levels might be supported by tera term
 MAX_LINE_LENGTH = 511                         ; max string/line length supported by tera term
-INCLUDE_PATTERN = "include\s+([\.\w/\\-:]+)"  ; this pattern marks our include file
+INCLUDE_PATTERN = "include\s+([\.\w/:\\-]+)"  ; this pattern marks our include file
 timeout         = 0
 mtimeout        = 500                         ; wait 500 ms for "ok." response
 infilehandle    =  -1                         ; current file handle
