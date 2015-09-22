@@ -1,5 +1,5 @@
 ;
-;    tera term mecrisp-stellaris forth download helper
+;    tera term mecrisp-stellaris forth upload helper
 ;    Copyright (C) 2015  Jean Jonethal
 ;
 ;    This program is free software: you can redistribute it and/or modify
@@ -15,11 +15,11 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-; small download macro for downloading forth source via tera term tested with version 4.88
+; small upload macro for uploading forth source via tera term tested with version 4.88
 ; Tera Term website http://ttssh2.osdn.jp/index.html.en
 ; tera term supports call stack up to 10 levels on my laptop so using iterative approach here
 
-; download source file to target line by line and waits for "ok." after transmission of line.
+; upload source file to target line by line and waits for "ok." after transmission of line.
 ; supports nesting include with pathname
 ; line containing include directive is not sent to target
 ; max source line length is 511
@@ -28,6 +28,7 @@
 ; example project.txt :
 ; include dump.txt
 ; include ..\common\disassembler-m3.txt
+; include demo2.fth
 
 ; global definitions
 MAXLEVEL        =  20                         ; max nesting level up to 65536 levels might be supported by tera term
@@ -56,10 +57,10 @@ if result = 0 then                            ; if there is no valid parameter o
 	fname = inputstr
 endif
 
-call downloading
+call uploading
 goto ende
 
-:downloading
+:uploading
   fileopen infilehandle fname 0 1
   if infilehandle <> -1 then                  ; if file open successful
     level = 1                                 ; we start at level 1
