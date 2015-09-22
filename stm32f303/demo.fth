@@ -79,7 +79,8 @@
 \ USART1_TX - PE0   ( MEMS_INT1 )
 \ USART1_RX - PE1   ( MEMS_INT2 )
 
-\ Cornerstone for 2 kb Flash pages
+
+\ Cornerstone for 2 kb Flash pages grabbed from MK basisdeninitions.txt
 
 : cornerstone ( Name ) ( -- )
   <builds begin here $7FF and while 0 h, repeat
@@ -350,7 +351,7 @@ $30 RCC_BASE or constant RCC_CFGR3
 \ utility functions 
 : cnt0   ( m -- b )                           \ count trailing zeros with hw support
    dup negate and 1-
-   clz negate #32 + ;
+   clz negate #32 + 1-foldable ;
 : bits@  ( m adr -- b )                       \ get bits a masked position
    @ over and swap cnt0 rshift ;
 : bits!  ( n m adr -- )                       \ set masked bits at position
@@ -370,20 +371,20 @@ $30 RCC_BASE or constant RCC_CFGR3
 : hse-on?  ( -- f )  hseon rcc_cr bit@ ;
 : hse-rdy?  ( -- f )  HSERDY rcc_cr bit@ ;
 : hsi-rdy?  ( -- f )  HSIRDY rcc_cr bit@ ;
-: hsebyp-on  ( -- )  hsebyp rcc_cr bis! ;
+: hsebyp-on!  ( -- )  hsebyp rcc_cr bis! ;
 : hsebyp-on?  ( -- f )  hsebyp rcc_cr bit@ ;
-: hse-on  ( -- )  \ turn hse on with oscillator bypass external clock source
-   hsebyp-on hseon rcc_cr bis! ;
-: hsi-on  ( -- )  hsion rcc_cr bis! ;
-: wait-hse  ( -- )  begin hse-on hse-rdy? until ;
-: wait-hsi  ( -- )  begin hsi-on hsi-rdy? until ;
-: pll-on  ( -- )  PLLON RCC_CR bis! ;
+: hse-on!  ( -- )  \ turn hse on with oscillator bypass external clock source
+   hsebyp-on! hseon rcc_cr bis! ;
+: hsi-on!  ( -- )  hsion rcc_cr bis! ;
+: wait-hse  ( -- )  begin hse-on! hse-rdy? until ;
+: wait-hsi  ( -- )  begin hsi-on! hsi-rdy? until ;
+: pll-on!  ( -- )  PLLON RCC_CR bis! ;
 : pll-on?  ( -- f )  PLLON RCC_CR bit@ ;
-: pll-off ( -- )  PLLON RCC_CR bic! ;
+: pll-off! ( -- )  PLLON RCC_CR bic! ;
 : pll-rdy?  ( -- f )  PLLRDY RCC_CR bit@ ;
-: wait-pllrdy ( -- )  begin pll-on pll-rdy? until ;
-: pll-src-hse  ( -- )  PLLSRC RCC_CFGR bis! ; 
-: pll-src-hsi  ( -- )  PLLSRC RCC_CFGR bic! ; 
+: wait-pllrdy ( -- )  begin pll-on! pll-rdy? until ;
+: pll-src-hse!  ( -- )  PLLSRC RCC_CFGR bis! ; 
+: pll-src-hsi!  ( -- )  PLLSRC RCC_CFGR bic! ; 
 : pll-src-hse?  ( -- f )  PLLSRC RCC_CFGR bit@ ; 
 : pll-src-hsi?  ( -- f )  pll-src-hse? not ;
 : prediv!  ( n -- )  PREDIV RCC_CFGR2 bits! ;
@@ -396,59 +397,120 @@ $30 RCC_BASE or constant RCC_CFGR3
 : ppre-div->bbb  ( u -- u )  \ ppre1,2 reg val to divider (1,2,4,8,16)
    clz negate #31 + dup 0< #4 and or ;
 : clk-src-hsi  ( -- )  wait-hsi SW RCC_CFGR bic! ;
-: clk-src-hse  ( -- )  hse-on $1 SW RCC_CFGR bits! ;
+: clk-src-hse  ( -- )  hse-on! $1 SW RCC_CFGR bits! ;
 : clk-src-pll  ( -- )  $2 SW RCC_CFGR bits! ;
 : clk-src?  ( -- u )  sws RCC_CFGR bits@ ;
 : usart1-clksrc!  ( u -- )  USART1SW rcc_cfgr3 bits! ;
-: clk-72M  ( -- )  wait-hsi clk-src-hsi pll-off
+: clk-72M  ( -- )  wait-hsi clk-src-hsi pll-off!
    flash-prefetch-on #72 flash-ws-mhz!
    #3 usart1-clksrc! \ attach usart1 to hsi -> 8mhz
    0 ppre2! #4 ppre1! 0 hpre!
    0 prediv! #9 pllmul!
-   wait-hse pll-src-hse
+   wait-hse pll-src-hse!
    wait-pllrdy clk-src-pll ; 
 
 \ gpio functions
 : gpio-port  ( n -- adr )  \ base address of gpio port nr a:0 b:1 c:2 d:3 e:4 f:5
    #10 lshift $48000000 or 1-foldable ;
 : gpio-rcc-ena-msk  ( n -- n )  \ port A:0 .. F:5
-   #17 + 1 swap lshift $007e0000 and ;
+   #17 + 1 swap lshift $007e0000 and 1-foldable ;
 : gpio-port-ena  ( n -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bis! ;
 : gpio-port-dis  ( adr -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bic! ;
 : gpio-mode!  ( mode pin port -- ) \ 00:input 01:output 10:alternate function 11:analog
    gpio-port >R #3 swap 2* lshift R> bits! ;
-: gpio-bsrr  ( n -- )  gpio-port $18 + ;
-
+: gpio-bsrr  ( n -- adr )  gpio-port $18 + 1-foldable ; \ calc gpio_bsrr address
+: gpio-odr  ( n -- adr )  gpio-port $14 + 1-foldable ; \ calc gpio_odr address
 #4 gpio-port $20 + constant GPIOE_AFRL
 #4 gpio-port       constant GPIOE_MODER
+#4 gpio-odr        constant GPIOE_ODR
 
 \ user leds
-: led-init  ( -- )  #4 gpio-port-ena $5555 $ffff0000 [ 4 gpio-port literal, ] bits! ;
+: led-init  ( -- )  #4 gpio-port-ena $5555 $ffff0000 4 gpio-port bits! ;
 : led-on  ( n -- )  \ turn user led on 0..7
-   #7 and #8 + 1 swap lshift [ #4 gpio-bsrr literal, ] ! ;
+   #7 and #8 + 1 swap lshift #4 gpio-bsrr ! ;
 : led-off  ( n -- )  \ turn user led off 0..7
-   #7 and #24 + 1 swap lshift [ #4 gpio-bsrr literal, ] ! ;
+   #7 and #24 + 1 swap lshift #4 gpio-bsrr ! ;
 : led-test  ( -- )  led-init begin #8 0 do i dup led-off #3 + led-on #100000 0 do loop loop key? until ;
 : leds-on  ( m -- )  \ turn on bitmask leds 
-   $ff and #8 lshift [ #4 gpio-bsrr literal, ] ! ;
+   $ff and #8 lshift #4 gpio-bsrr ! ;
 : leds-off  ( m -- )  \ turn on bitmask leds 
-   $ff and #24 lshift [ #4 gpio-bsrr literal, ] ! ;
-
+   $ff and #24 lshift #4 gpio-bsrr ! ;
+: leds-on-mask  ( n -- n )  \ led-on mask for gpioe_bsrr
+   #7 and  #8 + 1 swap lshift 1-foldable ; 
+: leds-off-mask  ( n -- n )  \ led-off mask for gpioe_bsrr
+   #7 and #24 + 1 swap lshift 1-foldable ;
+: leds-set-mask  ( n -- n )  \ led-on-off mask for gpioe_bsrr
+   $FF and #8 lshift dup #16 lshift not $FF000000 and or 1-foldable ;
+: leds-set  ( n -- )  \ set leds depending on bit position led0 - bit0 ... led7 - bit7
+   leds-set-mask #4 gpio-bsrr ! ;
+: leds-toggle  ( m -- )  \ toggle masked leds
+   $ff and $8 lshift dup #16 lshift or \ expand mask ( -- $mm00mm00 )
+   GPIOE_ODR @ $ff00 and dup #16 lshift
+   swap not $ff00 and
+   or and #4 gpio-bsrr ! ;
    
 \ timer 16 system cycle counter
 $40014400 constant TIM16_BASE
+$40014400 constant TIM16_CR1
 $40014800 constant TIM17_BASE
 0             constant TIMx_CR1
-#1 #11 lshift constant UIFREMAP  \ UIF status bit remapping to TIMxCNT[31]
-#3  #8 lshift constant CKD       \ Clock division ratio CK_INT and dead-time and sampling clock 00:/1 01:/2 10:/4 11:reserved
-#1  #7 lshift constant ARPE      \ Auto-reload preload enable
-#1  #3 lshift constant OPM       \ One pulse mode
-#1  #2 lshift constant URS       \ Update request source
-1   #1 lshift constant UDIS      \ Update disable
-1             constant CEN       \ Counter enable   
+#1 #11 lshift constant UIFREMAP               \ UIF status bit remapping to TIMxCNT[31]
+#3  #8 lshift constant CKD                    \ Clock division ratio CK_INT and dead-time and sampling clock 00:/1 01:/2 10:/4 11:reserved
+#1  #7 lshift constant ARPE                   \ Auto-reload preload enable
+#1  #3 lshift constant OPM                    \ One pulse mode
+#1  #2 lshift constant URS                    \ Update request source
+1   #1 lshift constant UDIS                   \ Update disable
+1             constant CEN                    \ Counter enable   
+$24 TIM16_BASE + constant TIM16_CNT           \ TIM16 counter (TIMx_CNT)
+$28 TIM16_BASE + constant TIM16_PSC           \ TIM16 prescaler (TIMx_PSC)
+$2C TIM16_BASE + constant TIM16_ARR           \ TIM16 auto-reload register
+$34 TIM16_BASE + constant TIM16_CCR1          \ TIM16 capture/compare register 1
+0 0 2variable tim16-long-time                 \ accumulated time
+0   variable  tim16-last-time
+0 0 2variable tim16-trigger-time
+0   variable  tim16-irq-org-handler
 
+: tim16-off  ( -- ) 0 TIM16_BASE ! ;
+: tim16-reset  ( -- )                         \ reset timer 16
+   1 #17 lshift RCC_APB2RSTR bis! ;
+: tim16-unreset  ( -- )                       \ unreset timer 16
+   1 #17 lshift RCC_APB2RSTR bic! ;
+: tim16-clk-ena  ( -- )                       \ enable clock for timer 16
+   1 #17 lshift RCC_APB2ENR bis! ;
+: tim16-clk-dis  ( -- )                       \ disable clock for timer 16
+   1 #17 lshift RCC_APB2ENR bic! ;
+: tim16-ena ( -- )
+   1 tim16_cr1 bis! ;
+: tim16-dis ( -- )
+   1 tim16_cr1 bic! ;
+: tim16-ccr-update ( -- )
+: tim16-expire ( -- )
+   tim16-trigger-time 2@ tim16-long-time 2@ d-
+   0< 
+: tim16-handler  ( -- )                       \ handle timer 16 interrupt
+   TIM16_CNT @ dup tim16-last-time @ -        \ delta T
+   dup 0< #65536 and +                        \ wrap around is 65536
+   0 tim16-long-time 2@ d+ tim16-long-time 2! \ update long time
+   dup tim16-last-time !                      \ store last counter value
+   tim16-ccr-update ;                         \ set ccr forward 
+: tim16-irq-dispatch ( -- )                   \ run int 20 on tim16-handler others on chain
+   ipsr @ #20 = dup ['] tim16-handler and
+   swap not tim16-irq-org-handler @ and or
+   execute ;
+: tim16-install-irq-handler  ( -- )
+   ['] tim16-irq-dispatch irq-collection dup @ tim16-irq-org-handler ! ! ;
+
+: timer16-init  ( -- )                        \ initialize timer 16
+   tim16-reset
+   tim16-clk-ena
+   tim16-unreset
+   #7200 TIM16_PSC !                          \ 10 khz timer resolution
+   $FFFF TIM16_ARR !                          \ auto-reload value $ffff
+   $7FFF TIM16_CCR1 !                         \ set capture interrupt to half of range
+   tim16-ena ;
+   
 \ application variables
 0 variable gyro-x
 0 variable gyro-y
