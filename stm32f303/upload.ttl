@@ -40,6 +40,9 @@
 MAXLEVEL        =  20                         ; max nesting level up to 65536 levels might be supported by tera term
 MAX_LINE_LENGTH = 511                         ; max string/line length supported by tera term
 INCLUDE_PATTERN = "include\s+([\.\w/:\\-]+)"  ; this pattern marks our include file
+REQUIRE_PATTERN = "require\s+([\.\w/:\\-]+)"  ; this pattern marks our include file
+PATH_SEP        = "\"                         ; path separator "\" in windows os
+regexoption "IGNORECASE"                      ; ignore lower uppercase for "include" and "require"
 timeout         = 0                           ; you might tune this for longer response times
 mtimeout        = 500                         ; wait 500 ms for "ok." response
 infilehandle    =  -1                         ; current file handle
@@ -51,7 +54,10 @@ intdim cfh MAXLEVEL                           ; file handle stack
 intdim clp MAXLEVEL                           ; line position stack - unused at the moment
 strdim cln MAXLEVEL                           ; line stack - unused at the moment
 strdim cfn MAXLEVEL                           ; filename stack
-
+MAX_INCLUDE_HIST = 1000                       ; maximum number of include files to memoize
+strdim rfnbase MAX_INCLUDE_HIST               ; memoize up MAX_INCLUDE_HIST include file names in lower case
+strdim rfndir MAX_INCLUDE_HIST                ; memoize up MAX_INCLUDE_HIST include file directories
+rfnbaseSize      = 0                          ; current size of include file list
 
 ; check for macro parameter
 if paramcnt = 2 then                          ; if there is a macro parameter use it as input file name
@@ -114,9 +120,97 @@ return
     fname = groupmatchstr1                    ; found new include line
     call openNewFile
   else
-    send line #10
-    wait "ok."
+    strmatch line REQUIRE_PATTERN
+    if result > 0 then
+      fname = groupmatchstr1                 ; found new require line
+      call requireFile
+    else
+      send line #10
+      wait "ok."
+    endif
   endif
+return
+
+:insertFileName
+; insert fname to rfnbase
+; insertPos - position where to insert filename
+; fname - filename to insert
+  if insertPos < 0 then     ; append
+    insertPos = rfnbaseSize
+  elseif insertPos > rfnbaseSize then ; append
+    insertPos = rfnbaseSize
+  endif
+  if insertPos < rfnbaseSize then  ; make space for new filename
+    for i rfnbaseSize insertPos
+      rfnbase[i] = rfnbase[i-1]
+    next
+  endif
+  rfnbase[insertPos] = fname ; insert new filename
+return
+
+; "CCC"
+; "BBB"  "BAA"
+; "AAA"
+
+:findInsertPos
+; linear search in rfnbase for fname
+; return new insert pos of fname in rfnbase or -1 if already exists
+  tolower fnamelc fname
+  pos = rfnbaseSize
+  for i 0 rfnbaseSize - 1
+    strcompare rfnbase[i] fnamelc 
+    if result = 0 then
+      pos = -1
+      break
+    elseif result < 0 then
+      pos = i
+      break
+    endif
+  next
+return
+
+:tryAddFname
+; try to add fname or skip if already exists
+; pos return insert position or -1 if entry exists
+  findInsertPos
+  if pos >= 0 then
+    insertPos = pos
+    call insertFileName
+  end
+return
+
+:absoluteFileName
+; make fname absolut
+; change to directory of file for relative path resolution 
+; return absolute fname 
+  dirname dir fname
+  basename bn fname
+  setdir dir 
+  getdir dir
+  strconcat dir PATH_SEP
+  strconcat dir bn
+  fname = dir
+  tolower fnamelc fname
+return
+
+
+:requireFile
+; check for reqired files
+; keep track of all included and required files
+  call absoluteFileName
+  call tryAddFname
+  if pos >= 0 then
+    call openNewFile
+  else
+    fname = cfn[level]
+    call absoluteFileName
+  end
+return
+
+:includeFile
+  call absoluteFileName
+  call tryAddFname
+  call openNewFile
 return
 
 :openNewFile
