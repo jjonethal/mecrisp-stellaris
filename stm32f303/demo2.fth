@@ -154,6 +154,26 @@ $14 RCC_BASE or constant RCC_AHBENR
 #1  #1 lshift  constant DMA2EN
 #1  #0 lshift  constant DMA1EN
 
+$1C RCC_BASE or constant RCC_APB1ENR
+#1 #29 lshift  constant DAC1EN
+#1 #28 lshift  constant PWREN
+#1 #26 lshift  constant DAC2EN
+#1 #25 lshift  constant CANEN
+#1 #23 lshift  constant USBEN
+#1 #22 lshift  constant I2C2EN
+#1 #21 lshift  constant I2C1EN
+#1 #20 lshift  constant UART5EN
+#1 #19 lshift  constant UART4EN
+#1 #18 lshift  constant USART3EN
+#1 #17 lshift  constant USART2EN
+#1 #15 lshift  constant SPI3EN
+#1 #14 lshift  constant SPI2EN
+#1 #11 lshift  constant WWDGEN
+#1 #5  lshift  constant TIM7EN
+#1 #4  lshift  constant TIM6EN
+#1 #2  lshift  constant TIM4EN
+#1 #1  lshift  constant TIM3EN
+#1 #0  lshift  constant TIM2EN
 
 
 $2C RCC_BASE or constant RCC_CFGR2
@@ -206,34 +226,41 @@ $30 RCC_BASE or constant RCC_CFGR3
    wait-pllrdy clk-src-pll ; 
 
 \ gpio functions
-: gpio-port  ( n -- adr )  \ base address of gpio port nr a:0 b:1 c:2 d:3 e:4 f:5
-   #10 lshift $48000000 or 1-foldable ;
-: gpio-rcc-ena-msk  ( n -- n )  \ port A:0 .. F:5
-   #17 + 1 swap lshift $007e0000 and 1-foldable ;
-: gpio-port-ena  ( n -- )  \ enable clock for port
+: gpio-port-adr  ( n -- adr )  \ base address of gpio port nr a:0 b:1 c:2 d:3 e:4 f:5
+   #10 lshift $48000000 or 1-foldable inline ;
+: port-nr ( pinAdr -- nr )  #10 rshift $7 and 1-foldable inline ;
+: gpio-port  ( pin -- adr )  $f not and 1-foldable inline ;
+: gpio-rcc-ena-msk  ( adr -- n )  \ port_a .. port_f
+   port-nr #17 + 1 swap lshift 1-foldable ;
+: gpio-port-ena  ( adr -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bis! ;
 : gpio-port-dis  ( adr -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bic! ;
-: gpio-mode!  ( mode pin port -- ) \ 00:input 01:output 10:alternate function 11:analog
-   gpio-port >R #3 swap 2* lshift R> bits! ;
-: gpio-bsrr  ( n -- adr )  gpio-port $18 + 1-foldable ; \ calc gpio_bsrr address
-: gpio-odr  ( n -- adr )  gpio-port $14 + 1-foldable ; \ calc gpio_odr address
-#4 gpio-port $20 + constant GPIOE_AFRL
-#4 gpio-port       constant GPIOE_MODER
-#4 gpio-odr        constant GPIOE_ODR
-   
+: gpio-mode!  ( mode pin -- ) \ 00:input 01:output 10:alternate function 11:analog
+   dup gpio-port >R $f and 2* #3 swap lshift R> bits! ;
+: gpio-bsrr  ( pinAdr -- adr )  gpio-port $18 + 1-foldable inline ; \ calc gpio_bsrr address
+: gpio-odr  ( pinAdr -- adr )  gpio-port $14 + 1-foldable inline ; \ calc gpio_odr address
+: gpio-af   ( pinAdr -- adr ) dup gpio-port $20 + swap $8 and shr + 1-foldable ; 
+: gpio-af-msk  ( pinAdr -- m ) $7 and $f swap lshift 1-foldable ;
+: gpio-af!  ( afmode pin -- )   dup gpio-af-msk swap gpio-af bits! ;
+
+#4 gpio-port-adr $20 +    constant GPIOE_AFRL
+#4 gpio-port-adr          constant GPIOE_MODER
+#4 gpio-port-adr gpio-odr constant GPIOE_ODR
+#4 gpio-port-adr          constant PORT_E   
+#1 gpio-port-adr          constant PORT_B
 
 \ user leds
-: led-init  ( -- )  #4 gpio-port-ena $5555 $ffff0000 4 gpio-port bits! ;
+: led-init  ( -- )  PORT_E gpio-port-ena $5555 $ffff0000 PORT_E bits! ;
 : led-on  ( n -- )  \ turn user led on 0..7
-   #7 and #8 + 1 swap lshift #4 gpio-bsrr ! ;
+   #7 and #8 + 1 swap lshift PORT_E gpio-bsrr ! ;
 : led-off  ( n -- )  \ turn user led off 0..7
-   #7 and #24 + 1 swap lshift #4 gpio-bsrr ! ;
+   #7 and #24 + 1 swap lshift PORT_E gpio-bsrr ! ;
 : led-test  ( -- )  led-init begin #8 0 do i dup led-off #3 + led-on #100000 0 do loop loop key? until ;
 : leds-on  ( m -- )  \ turn on bitmask leds 
-   $ff and #8 lshift #4 gpio-bsrr ! ;
+   $ff and #8 lshift PORT_E gpio-bsrr ! ;
 : leds-off  ( m -- )  \ turn on bitmask leds 
-   $ff and #24 lshift #4 gpio-bsrr ! ;
+   $ff and #24 lshift PORT_E gpio-bsrr ! ;
 : leds-on-mask  ( n -- n )  \ led-on mask for gpioe_bsrr
    #7 and  #8 + 1 swap lshift 1-foldable ; 
 : leds-off-mask  ( n -- n )  \ led-off mask for gpioe_bsrr
@@ -241,14 +268,88 @@ $30 RCC_BASE or constant RCC_CFGR3
 : leds-set-mask  ( n -- n )  \ led-on-off mask for gpioe_bsrr
    $FF and #8 lshift dup #16 lshift not $FF000000 and or 1-foldable ;
 : leds-set  ( n -- )  \ set leds depending on bit position led0 - bit0 ... led7 - bit7
-   leds-set-mask #4 gpio-bsrr ! ;
+   leds-set-mask PORT_E gpio-bsrr ! ;
 : leds-toggle  ( m -- )  \ toggle masked leds
    $ff and $8 lshift dup #16 lshift or \ expand mask ( -- $mm00mm00 )
    GPIOE_ODR @ $ff00 and dup #16 lshift
    swap not $ff00 and
-   or and #4 gpio-bsrr ! ;
+   or and PORT_E gpio-bsrr ! ;
 
+cornerstone accelfunc
+\  acceleration sensor on i2c1 
+\ SCL               - PB6 ( I2C1 AF4 ) 
+\ SDA               - PB7 ( I2C1 AF4 )
+\ INT2              - PE5 
+\ INT1              - PE4
+#6 PORT_B + constant PB6
+#7 PORT_B + constant PB7
+#4 PORT_E + constant PE4
+#5 PORT_E + constant PE5
 
-\ : read-accel ( vadr -- ) \ store acceleration data to vector   
+: accel-init  ( -- )  \ initialize acceleration sensor
+   PORT_B gpio-port-ena
+   PORT_E gpio-port-ena                     \ port e enable
+   #2 PB6 gpio-mode!                        \ PB6 af mode
+   #2 PB7 gpio-mode!                        \ PB7 af mode
+   #0 PE4 gpio-mode!                        \ PE4 input mode
+   #0 PE5 gpio-mode!                        \ PB7 input mode
+   #4 PB6 gpio-af!
+   #4 PB7 gpio-af!
+   $200000 RCC_APB1ENR bis!                 \ enable i2c1
+   ;
+\ : accel-x  ( -- n )  \ return accel sensor x value
+\   0 ; 
+\ : accel-y  ( -- n )  \ return accel sensor y value
+\   0 ; 
+\ : accel-z  ( -- n )  \ return accel sensor z value
+\   0 ; 
 
+\ : read-accel  ( vadr -- )  \ store acceleration data to vector   
+\   accel-x over ! accel-y over 4 + ! accel-z swap 8 + ! ;
 
+: bits! ( v m a -- )
+   >r dup >r cnt0 lshift r@ and
+   r> not r@ @ and or r> ! ;
+: bits2! ( v m a -- )
+   over not  ( -- v m a /m )
+   over @ and ( -- v m a rm )
+   2swap ( -- a rm v m )
+   tuck ( -- a rm m v m )
+   cnt0 lshift and or
+   swap ! ;
+: bits3! ( v m a -- )
+   -rot swap
+   over cnt0 lshift over and  ( -- a m vm )
+   swap not ( -- a vm /m )
+   2 pick @ and   ( -- )
+   or swap ! ;
+   
+   
+   
+: b0 ( n -- n ) 1 and 1-foldable inline ;
+: b3_0 ( n -- n ) $f and 1-foldable inline ;
+: b7_0 ( n -- n ) $ff and 1-foldable inline ;
+\ 
+: LDRD_IMM ( imm8 rt rt2 rn p u w -- ) \ A7.7.49 LDRD (immediate)
+   $E850   swap         \ opcode
+   b0 #5 lshift or      \ w
+   swap b0 #7 lshift or \ u
+   swap b0 #8 lshift or \ p 
+   b3_0 or              \ rn
+   h,
+   b3_0 #8 lshift           \ rt2
+   swap b3_0 #12 lshift or  \ rt
+   swap b7_0 or             \ imm8
+   h, ;  
+
+\ systick.update
+
+\ state = ready
+\ state = update_entry
+\ read Count_flag
+\ state = countflag_read
+\ state = read timer val
+\ read timer val
+\ state write timer-val
+\ write-timer
+\ state = ready
