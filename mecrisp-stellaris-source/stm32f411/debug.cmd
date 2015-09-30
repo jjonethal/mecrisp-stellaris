@@ -1,9 +1,12 @@
 :: simple debug script
 setlocal
-set DBG_ELF=mecrisp-stellaris-stm32f411.elf
+:: set DBG_ELF=mecrisp-stellaris-stm32f411.elf
+set DBG_ELF=%*
+
 :: don't omit .exe
 set GDB=arm-none-eabi-gdb.exe
-set OPEN_OCD_EXE=openocd-x64-0.9.0-dev-150204220259.exe
+::set OPEN_OCD_EXE=openocd-x64-0.9.0-dev-150204220259.exe
+set OPEN_OCD_EXE=openocd.exe
 
 SET P=E:\stm\openocd\openocd-0.9.0-dev-150204220259\openocd-0.9.0-dev-150204220259
 if exist %P%\nul set OPEN_OCD_PATH=%P%
