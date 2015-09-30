@@ -386,9 +386,18 @@ I2C1 variable i2c1_base
 0    variable i2c1-state                      \ here is the i2c state number   
 0    variable i2c1-num-bytes                  \ number of bytes for transfer
 
-
+#47 constant I2C1_EV                          \ i2c event interrupd
+#48 constant I2C1_ER                          \ i2c error interrupd
+#49 constant I2C2_EV                          \ i2c event interrupd
+#50 constant I2C2_ER                          \ i2c error interrupd
 : i2c-idle ( -- ) ;                           \ i2c idle function
-: i2c1-irq-handler   ( -- )                   \ interrupt handler for i2c1 must not change stack
+: i2c-task-buffer ( -- a )                    \ active i2c task-buffer
+   ipsr I2C1_EV = ipsr I2C1_ER = or
+   i2c1-task-struct and
+   ipsr I2C2_EV = ipsr I2C2_ER = or
+   i2c2-task-struct and
+   or ;
+: i2c-irq-handler   ( -- )                    \ interrupt handler for i2c1 must not change stack
    i2c1-state @ dup 0<> dup not
    ' i2c-idle and or execute ;
 : i2c1-state-master-tx-start      ( -- ) ;    \ start write transfer
