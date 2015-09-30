@@ -286,6 +286,54 @@ cornerstone accelfunc
 #4 PORT_E + constant PE4
 #5 PORT_E + constant PE5
 
+$40005400 constant I2C1_BASE
+$40005400 constant I2C1
+$00           constant I2Cx_CR1   \ Control register 1
+$1 #23 lshift constant PECEN      \ PEC enable
+$1 #22 lshift constant ALERTEN    \ SMBus alert enable
+$1 #21 lshift constant SMBDEN     \ SMBus Device Default address enable
+$1 #20 lshift constant SMBHEN     \ SMBus Host address enable
+$1 #19 lshift constant GCEN       \ General call enable
+$1 #18 lshift constant WUPEN      \ Wakeup from Stop mode enable
+$1 #17 lshift constant NOSTRETCH  \ Clock stretching disable
+$1 #16 lshift constant SBC        \ Slave byte control
+$1 #15 lshift constant RXDMAEN    \ DMA reception requests enable
+$1 #14 lshift constant TXDMAEN    \ DMA transmission requests enable
+$1 #12 lshift constant ANFOFF     \ Analog noise filter OFF
+$f  #8 lshift constant DNF        \ Digital noise filter
+$1  #7 lshift constant ERRIE      \ Error interrupts enable
+$1  #6 lshift constant TCIE       \ Transfer Complete interrupt enable
+$1  #5 lshift constant STOPIE     \ STOP detection Interrupt enable
+$1  #4 lshift constant NACKIE     \ Not acknowledge received Interrupt enable
+$1  #3 lshift constant ADDRIE     \ Address match Interrupt enable ( slave only )
+$1  #2 lshift constant RXIE       \ RX Interrupt enable
+$1  #1 lshift constant TXIE       \ TX Interrupt enable
+$1            constant PE         \ Peripheral enable
+
+
+$10 constant I2Cx_TIMINGR         \ Timing register
+ $F #28 lshift constant	PRESC     \ Timing prescaler
+ $F #20 lshift constant SCLDEL    \ Data setup time
+ $F #16 lshift constant SDADEL    \ Data hold time
+$FF  #8 lshift constant SCLH      \ SCL high period
+$FF            constant SCLL      \ SCL low period
+
+I2C1 I2Cx_TIMINGR or constant I2C1_TIMINGR
+
+\ : i2c-presc!  ( i2c-port )
+: i2c-clk-hsi-100khz  ( -- )                  \ i2c timing for HSI @ 100 kHz
+   $200000 RCC_APB1ENR bis!                   \ enable i2c1
+   I2C1SW RCC_CFGR3 bic!                      \ i2c1 on hsi clock
+   1 PRESC  I2C1_TIMINGR bits!
+   $13 SCLL I2C1_TIMINGR bits!
+   $0F SCLH I2C1_TIMINGR bits!
+   $02 SDADEL I2C1_TIMINGR bits!
+   $04 SCLDEL I2C1_TIMINGR bits! ;
+
+: i2c1-init ( -- ) \ i2c 100 khz 8 Mhz HSI
+   i2c-clk-hsi-100khz ;
+
+
 : accel-init  ( -- )  \ initialize acceleration sensor
    PORT_B gpio-port-ena
    PORT_E gpio-port-ena                     \ port e enable
@@ -295,7 +343,6 @@ cornerstone accelfunc
    #0 PE5 gpio-mode!                        \ PB7 input mode
    #4 PB6 gpio-af!
    #4 PB7 gpio-af!
-   $200000 RCC_APB1ENR bis!                 \ enable i2c1
    ;
 \ : accel-x  ( -- n )  \ return accel sensor x value
 \   0 ; 
@@ -329,7 +376,7 @@ cornerstone accelfunc
 : b0 ( n -- n ) 1 and 1-foldable inline ;
 : b3_0 ( n -- n ) $f and 1-foldable inline ;
 : b7_0 ( n -- n ) $ff and 1-foldable inline ;
-\ 
+\ u 1:+imm8 0:-imm8 p:0-[pn] p:1-[pn+/-imm8] rt=mem[adr] rt2=mem[adr+4]
 : LDRD_IMM ( imm8 rt rt2 rn p u w -- ) \ A7.7.49 LDRD (immediate)
    $E850   swap         \ opcode
    b0 #5 lshift or      \ w
