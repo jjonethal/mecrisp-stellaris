@@ -96,6 +96,15 @@
 : bit-mask! ( v m adr -- )                    \ set bit masked value at 
    >R dup >R and R> not R@ @ and or R> ! ; 
 
+: enum  ( n -- n+1 ) dup constant 1+ ;        \ next enum id 
+
+: struct{  ( -- 0 ) 0 ;                       \ start structure def
+: field  ( n1 n2 -- n1+n2 )  ( token: name )  \ reserve n byte with constant name
+   over constant + ;
+: }struct  ( n -- ) ( token: name) constant ; \ end of structure, assign size of structure to constant
+
+   
+   
 $40022000 constant FLASH_BASE
 $00 FLASH_BASE or constant FLASH_ACR
 $1 #5 lshift constant PRFTBS
@@ -286,6 +295,8 @@ cornerstone accelfunc
 #4 PORT_E + constant PE4
 #5 PORT_E + constant PE5
 
+\ i2c functions
+
 $40005400 constant I2C1_BASE
 $40005400 constant I2C1
 $00           constant I2Cx_CR1   \ Control register 1
@@ -322,15 +333,75 @@ I2C1 I2Cx_TIMINGR or constant I2C1_TIMINGR
 
 \ : i2c-presc!  ( i2c-port )
 : i2c-clk-hsi-100khz  ( -- )                  \ i2c timing for HSI @ 100 kHz
-   $200000 RCC_APB1ENR bis!                   \ enable i2c1
    I2C1SW RCC_CFGR3 bic!                      \ i2c1 on hsi clock
-   1 PRESC  I2C1_TIMINGR bits!
+   1 PRESC  I2C1_TIMINGR bits!                \ timings from DM00043574.pdf: 26.4.9  I2Cx_TIMINGR register configuration examples
    $13 SCLL I2C1_TIMINGR bits!
    $0F SCLH I2C1_TIMINGR bits!
    $02 SDADEL I2C1_TIMINGR bits!
    $04 SCLDEL I2C1_TIMINGR bits! ;
 
+\ i2c driver supports master write / read with subaddress and multibyte read/write support
+\ i2c state constants
+0 
+enum     i2c-state-id-idle                  \ nothing to do here
+enum     i2c-state-id-master-tx-start       \ initiate i2c - send start adress
+enum     i2c-state-id-master-tx-sub         \ adress started - now transmit sub adress
+enum     i2c-state-id-master-tx-data        \ transmit data bytes
+enum     i2c-state-id-master-tx-wait-idle   \ when arbitration lost wait for stop and retry 
+enum     i2c-state-id-master-rx-start       \ initiate i2c - send start adress
+constant i2c-state-num-states               \ number of i2c states
+
+\ i2c task structure in RAM
+
+struct{
+  #4 field i2c-task-base                           \ 4 byte i2c base address
+  #1 field i2c-task-state                          \ 1 byte for state
+  #1 field i2c-task-slave-adr                      \ 1 byte for slave address
+  #1 field i2c-task-sub-adr                        \ 1 byte for i2c sub address
+  #1 field i2c-task-num-bytes                      \ 1 byte for number of bytes to transfer
+ #32 field i2c-task-xfer-buffer                    \ 32 byte transfer buffer 
+}struct i2c-task-struct
+
+i2c-task-struct buffer: i2c1-task-struct
+
+: i2c-task-base@  ( tadr -- tadr a )  dup @ ;     \ return i2c-base adr of task ( i2c1, i2c2 or i2c3 )
+: i2c-task-state@  ( tadr -- tadr c )             \ get state of i2c task
+   dup i2c-task-state + c@ ;
+: i2c-task-state!  ( tadr c -- tadr )             \ store state of i2c task
+   over i2c-task-state + c! ;
+: i2c-task-slave-adr@  ( tadr -- tadr c )         \ get slave address of i2c task
+   dup i2c-task-slave-adr + c@ ;
+: i2c-task-slave-adr!  ( tadr c -- tadr )         \ store slave address of i2c task
+   over i2c-task-slave-adr + c! ;
+: i2c-task-sub-adr@  ( tadr -- tadr c )           \ get slave sub address ( parameter address )
+   dup i2c-task-sub-adr + c@ ;
+: i2c-task-sub-adr!  ( tadr c -- tadr )           \ store slave sub address of i2c task
+   over i2c-task-sub-adr + c! ;
+: i2c-task-num-bytes@  ( tadr -- tadr c )         \ number of bytes to be transfered
+   dup i2c-task-num-bytes + c@ ;
+: i2c-task-xfer-buffer-adr  ( tadr -- tadr a )    \ get buffer address of i2c buffer
+   dup i2c-task-xfer-buffer + ;
+
+I2C1 variable i2c1_base 
+0    variable i2c1-state                      \ here is the i2c state number   
+0    variable i2c1-num-bytes                  \ number of bytes for transfer
+
+
+: i2c-idle ( -- ) ;                           \ i2c idle function
+: i2c1-irq-handler   ( -- )                   \ interrupt handler for i2c1 must not change stack
+   i2c1-state @ dup 0<> dup not
+   ' i2c-idle and or execute ;
+: i2c1-state-master-tx-start      ( -- ) ;    \ start write transfer
+   i2c-adr-mode-7-bit
+   i2c-xfer-mode-write
+   i2c1-num-bytes @ i2c1-set-num-bytes
+   ['] i2c1-state-master-tx-wait-start i2c1-state !
+   i2c1-set-start ;
+: i2c1-state-master-tx-wait-start ( -- ) ;    \ wait for start complete
+: i2c1-state-master-tx-wait-start ( -- ) ;    \ wait for start complete
+
 : i2c1-init ( -- ) \ i2c 100 khz 8 Mhz HSI
+   $200000 RCC_APB1ENR bis!                   \ enable i2c1
    i2c-clk-hsi-100khz ;
 
 
@@ -354,16 +425,6 @@ I2C1 I2Cx_TIMINGR or constant I2C1_TIMINGR
 \ : read-accel  ( vadr -- )  \ store acceleration data to vector   
 \   accel-x over ! accel-y over 4 + ! accel-z swap 8 + ! ;
 
-: bits! ( v m a -- )
-   >r dup >r cnt0 lshift r@ and
-   r> not r@ @ and or r> ! ;
-: bits2! ( v m a -- )
-   over not  ( -- v m a /m )
-   over @ and ( -- v m a rm )
-   2swap ( -- a rm v m )
-   tuck ( -- a rm m v m )
-   cnt0 lshift and or
-   swap ! ;
 : bits3! ( v m a -- )
    -rot swap
    over cnt0 lshift over and  ( -- a m vm )
@@ -372,22 +433,6 @@ I2C1 I2Cx_TIMINGR or constant I2C1_TIMINGR
    or swap ! ;
    
    
-   
-: b0 ( n -- n ) 1 and 1-foldable inline ;
-: b3_0 ( n -- n ) $f and 1-foldable inline ;
-: b7_0 ( n -- n ) $ff and 1-foldable inline ;
-\ u 1:+imm8 0:-imm8 p:0-[pn] p:1-[pn+/-imm8] rt=mem[adr] rt2=mem[adr+4]
-: LDRD_IMM ( imm8 rt rt2 rn p u w -- ) \ A7.7.49 LDRD (immediate)
-   $E850   swap         \ opcode
-   b0 #5 lshift or      \ w
-   swap b0 #7 lshift or \ u
-   swap b0 #8 lshift or \ p 
-   b3_0 or              \ rn
-   h,
-   b3_0 #8 lshift           \ rt2
-   swap b3_0 #12 lshift or  \ rt
-   swap b7_0 or             \ imm8
-   h, ;  
 
 \ systick.update
 
