@@ -102,7 +102,8 @@
 : field  ( n1 n2 -- n1+n2 )  ( token: name )  \ reserve n byte with constant name
    over constant + ;
 : }struct  ( n -- ) ( token: name) constant ; \ end of structure, assign size of structure to constant
-
+: ftab: ( "name" -- )                         \ build function table
+   <BUILDS DOES> swap 2 lshift + @ execute ;
    
    
 $40022000 constant FLASH_BASE
@@ -391,15 +392,6 @@ I2C1 variable i2c1_base
 #49 constant I2C2_EV                          \ i2c event interrupd
 #50 constant I2C2_ER                          \ i2c error interrupd
 : i2c-idle ( -- ) ;                           \ i2c idle function
-: i2c-task-buffer ( -- a )                    \ active i2c task-buffer
-   ipsr I2C1_EV = ipsr I2C1_ER = or
-   i2c1-task-struct and
-   ipsr I2C2_EV = ipsr I2C2_ER = or
-   i2c2-task-struct and
-   or ;
-: i2c-irq-handler   ( -- )                    \ interrupt handler for i2c1 must not change stack
-   i2c1-state @ dup 0<> dup not
-   ' i2c-idle and or execute ;
 : i2c1-state-master-tx-start      ( -- ) ;    \ start write transfer
    i2c-adr-mode-7-bit
    i2c-xfer-mode-write
@@ -408,6 +400,27 @@ I2C1 variable i2c1_base
    i2c1-set-start ;
 : i2c1-state-master-tx-wait-start ( -- ) ;    \ wait for start complete
 : i2c1-state-master-tx-wait-start ( -- ) ;    \ wait for start complete
+: i2c-active-task-struct  ( -- a )            \ active i2c task-buffer or 0
+   ipsr I2C1_EV = ipsr I2C1_ER = or           \ i2c1 event or error
+   i2c1-task-struct and
+   ipsr I2C2_EV = ipsr I2C2_ER = or           \ i2c2 event or error
+   i2c2-task-struct and
+   or ;
+ftab: i2c-state-table
+   ' i2c-state-idle ,                         \ nothing to do here
+   ' i2c-state-master-tx-start ,              \ initiate i2c - send start adress
+   ' i2c-state-master-tx-sub ,                \ adress started - now transmit sub adress
+   ' i2c-state-master-tx-data ,               \ transmit data bytes
+   ' i2c-state-master-tx-wait-idle ,          \ when arbitration lost wait for stop and retry 
+   ' i2c-state-master-rx-start ,              \ initiate i2c - send start adress
+: i2c-state-dispatch ( tadr -- )              \ dispatch to state
+   i2c-task-state@ i2c-state-table ;
+: i2c-state-leave ( n -- ) drop  ;            \ clean up stack 
+: i2c-irq-handler   ( -- )                    \ interrupt handler for i2c1 must not change stack
+   i2c-active-task-struct dup 0<>             \ if valid interrupt
+   dup ['] i2c-state-dispatch and             \ perform dispatch
+   swap not ['] i2c-state-leave and           \ else leave isr
+   or execute ;
 
 : i2c1-init ( -- ) \ i2c 100 khz 8 Mhz HSI
    $200000 RCC_APB1ENR bis!                   \ enable i2c1
