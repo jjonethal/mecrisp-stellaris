@@ -99,9 +99,9 @@ $08 RCC_BASE or constant RCC_CFGR
   + + negate 
 ;
 
-: ftab <BUILDS DOES> swap 2 lshift + @ execute ;
+: ftab: <BUILDS DOES> swap 2 lshift + @ execute ;
 
-ftab ws-ftab
+ftab: ws-ftab
 ' ws-2v1 ,
 ' ws-2v4 ,
 ' ws-2v7 ,
