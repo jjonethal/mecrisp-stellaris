@@ -403,7 +403,9 @@ i2c-task-struct-size buffer:  i2c-task-struct \ task handler for i2c
    RD_WRN I2Cx_CR2 I2C + bic! inline ;
 : i2c-task-state!  ( n -- )
    i2c-task-struct i2c-task-state + ! inline ;
-: i2c-set-start ( -- )
+: i2c-task-state@  ( -- )
+   i2c-task-struct i2c-task-state + @ inline ;
+: i2c-set-start ( -- )                        \ initiate transfer start 
    PE I2C bis !
    START I2Cx_CR2 I2C + bit! inline ;
 : i2c-state-idle ( -- ) ;                     \ i2c idle function
@@ -413,11 +415,8 @@ i2c-task-struct-size buffer:  i2c-task-struct \ task handler for i2c
    i2c-set-slave-adr
    i2c-state-id-master-tx-sub i2c-task-state!
    i2c-set-start ;
-: i2c-state-master-tx-wait-start ( -- ) ;     \ wait for start complete
-: i2c-state-master-tx-wait-start ( -- ) ;     \ wait for start complete
-: i2c-active-task-struct  ( -- a )            \ active i2c task-buffer or 0
-   ipsr I2C_EV = ipsr I2C_ER = or             \ i2c1 event or error
-   i2c-task-struct and   or ;
+: i2c-state-master-tx-sub ( -- ) ;            \ wait for start complete send sub adress
+: i2c-state-master-tx-data ( -- ) ;           \ wait for sub ard tx send data
 ftab: i2c-state-table                         \ state id to function translation
    ' i2c-state-idle ,                         \ nothing to do here
    ' i2c-state-master-tx-start ,              \ initiate i2c - send start adress
@@ -433,11 +432,13 @@ ftab: i2c-state-table                         \ state id to function translation
     i2c-old-int-handler @
     dup 0<> if execute then ;
 : i2c-irq-handler  ( -- )                     \ interrupt handler for i2c1 must not change stack
-   i2c-active-task-struct dup 0<>             \ if valid interrupt
-   if i2c-state-dispatch                      \ perform dispatch
-   else drop i2c-irq-chain then ;             \ else leave isr
+   ipsr I2C_EV - $FE and 0=                   \ 2 valid interrupts i2c_ev and i2c_err
+   if i2c-task-struct i2c-state-dispatch      \ if valid interrupt
+   else i2c-irq-chain then ;                  \ else leave isr
 : i2c-irq-handler-install  ( -- )             \ install i2c irq handler
-   irq-collection @ i2c-old-int-handler !     \ save old irq handler
+   i2c-old-int-handler @ dup 0=               \ avoid double overwrite of old int handler
+   irq-collection @ and or                    \ 
+   i2c-old-int-handler !                      \ save old irq handler
    ['] i2c-irq-handler irq-collection ! ;     \ install i2c handler
 : i2c1-init  ( -- )                           \ i2c 100 khz 8 Mhz HSI
    $200000 RCC_APB1ENR bis!                   \ enable i2c1
