@@ -304,12 +304,16 @@ cornerstone accelfunc
 #50       constant I2C2_ER                    \ i2c error interrupd
 $40005400 constant I2C1_BASE
 $40005400 constant I2C1
+\ following definitions my be used for defining driver usage for port 1 or 2
+\ when both ports shall be supported the driver might be double included for both ports
+\ support interrupt handling has to be adapted for dual port support
 
 \ i2c configuration
 I2C1      constant I2C_BASE
 I2C1SW    constant I2CSW
-I2C1_EV constant I2C_EV
-I2C1_ER constant I2C_ER
+I2C1_EV   constant I2C_EV
+I2C1_ER   constant I2C_ER
+I2C1      constant I2C
 
 $00           constant I2Cx_CR1   \ Control register 1
 $1 #23 lshift constant PECEN      \ PEC enable
@@ -356,8 +360,10 @@ $10 constant I2Cx_TIMINGR         \ Timing register
 $FF  #8 lshift constant SCLH      \ SCL high period
 $FF            constant SCLL      \ SCL low period
 
-I2C I2Cx_TIMINGR or constant I2C_TIMINGR
+$24 constant I2Cx_RXDR
+$28 constant I2Cx_TXDR
 
+I2C I2Cx_TIMINGR or constant I2C_TIMINGR
 
 \ i2c driver supports master write / read with subaddress and multibyte read/write support
 \ i2c state constants
@@ -370,7 +376,7 @@ I2C I2Cx_TIMINGR or constant I2C_TIMINGR
 enum     i2c-state-id-master-tx-start         \ initiate i2c - send start adress
 enum     i2c-state-id-master-tx-sub           \ adress started - now transmit sub adress
 enum     i2c-state-id-master-tx-data          \ transmit data bytes
-enum     i2c-state-id-master-tx-wait-idle     \ when arbitration lost wait for stop and retry 
+enum     i2c-state-id-master-tx-complete      \ tx finished 
 enum     i2c-state-id-master-rx-start         \ initiate i2c - send start adress
 constant i2c-state-num-states                 \ number of i2c states
 
@@ -380,6 +386,7 @@ struct{
   #2 field i2c-task-slave-adr                 \ 2 byte for slave address
   #1 field i2c-task-sub-adr                   \ 1 byte for i2c sub address
   #1 field i2c-task-num-bytes                 \ 1 byte for number of bytes to transfer
+  #1 field i2c-task-tx-bytes                  \ 1 byte for number of bytes currently transfered
  #32 field i2c-task-xfer-buffer               \ 32 byte transfer buffer 
 }struct i2c-task-struct-size
 
@@ -397,32 +404,68 @@ i2c-task-struct-size buffer:  i2c-task-struct \ task handler for i2c
 : i2c-set-slave-adr  ( -- )                   \ set i2c1 slave address
    i2c-task-struct i2c-task-slave-adr + h@ 
    SADD I2Cx_CR2 I2C + bits! ;
+: i2c-send-data ( c -- )
+   $FF I2Cx_TXDR I2C + bits! ;
+: i2c-set-sub-adr  ( -- )                     \ set i2c sub adress address
+   i2c-task-struct i2c-task-sub-adr + c@ 
+   i2c-send-data ;
 : i2c-adr-mode-7-bit ( -- )
    ADD10 I2Cx_CR2 I2C + bic! inline ;
 : i2c-xfer-mode-write ( -- )
    RD_WRN I2Cx_CR2 I2C + bic! inline ;
 : i2c-task-state!  ( n -- )
    i2c-task-struct i2c-task-state + ! inline ;
-: i2c-task-state@  ( -- )
-   i2c-task-struct i2c-task-state + @ inline ;
-: i2c-set-start ( -- )                        \ initiate transfer start 
-   PE I2C bis !
-   START I2Cx_CR2 I2C + bit! inline ;
-: i2c-state-idle ( -- ) ;                     \ i2c idle function
-: i2c-state-master-tx-start  ( tadr -- tadr ) \ start write transfer
+: i2c-task-state@  ( -- n )  \ current i2c state 
+   i2c-task-struct i2c-task-state + c@ inline ;
+: i2c-task-num-bytes@  ( -- c )  \ number of byte to transfer
+   i2c-task-struct i2c-task-num-bytes + c@ inline ;
+: i2c-task-tx-bytes@  ( -- c )
+   i2c-task-struct i2c-task-tx-bytes + c@ inline ;
+: i2c-task-tx-bytes!  ( c -- )
+   i2c-task-struct i2c-task-tx-bytes + c! inline ;
+: i2c-pe?  ( -- f )
+   PE I2C bit@ ;
+: i2c-off-on  ( -- )                          \ turn i2c off and on - softreset
+   begin PE I2C bic!
+    i2c-pe? not 
+   until
+   PE I2C bis! ; 
+: i2c-set-start  ( -- )                       \ initiate transfer start 
+   i2c-off-on
+   START I2Cx_CR2 I2C + bis! inline ;
+: i2c-tx-next-byte  ( -- b )                  \ next i2c byte to be transmitted
+   i2c-task-tx-bytes@
+   dup 1+ i2c-task-tx-bytes!
+   i2c-task-xfer-buffer +
+   i2c-task-struct + c@ ;
+: i2c-tx-complete?  ( -- f )                  \ i2c transfer complete ?
+   i2c-task-tx-bytes@ i2c-task-num-bytes@ >= ;
+: i2c-state-idle  ( -- ) ;                    \ i2c idle function
+: i2c-state-master-tx-start  (  -- )          \ start write transfer
+   ERRIE  TCIE or NACKIE or STOPIE or TXIE or
+   i2c I2Cx_CR1 + bis!                        \ enable interrupts
    i2c-adr-mode-7-bit
    i2c-xfer-mode-write
    i2c-set-slave-adr
+   i2c-task-num-bytes@ 1+                     \ sub adr length + data length
+   NBYTES I2Cx_CR2 i2c + bits!
    i2c-state-id-master-tx-sub i2c-task-state!
    i2c-set-start ;
-: i2c-state-master-tx-sub ( -- ) ;            \ wait for start complete send sub adress
-: i2c-state-master-tx-data ( -- ) ;           \ wait for sub ard tx send data
+: i2c-state-master-tx-sub  ( -- )             \ wait for start complete send sub adress
+   i2c-state-id-master-tx-data i2c-task-state!
+   i2c-set-sub-adr ;
+: i2c-state-master-tx-data  ( -- )            \ transmit i2c data
+   i2c-tx-complete?
+   if i2c-state-id-master-tx-complete i2c-task-state!
+   else i2c-tx-next-byte i2c-send-data
+   then ;
+: i2c-state-master-tx-complete ( -- ) ;
 ftab: i2c-state-table                         \ state id to function translation
    ' i2c-state-idle ,                         \ nothing to do here
    ' i2c-state-master-tx-start ,              \ initiate i2c - send start adress
    ' i2c-state-master-tx-sub ,                \ adress started - now transmit sub adress
    ' i2c-state-master-tx-data ,               \ transmit data bytes
-   ' i2c-state-master-tx-wait-idle ,          \ when arbitration lost wait for stop and retry 
+   ' i2c-state-master-tx-complete ,           \ transmission complete 
    ' i2c-state-master-rx-start ,              \ initiate i2c - send start adress
 : i2c-state-dispatch ( tadr -- )              \ dispatch to state
    i2c-task-state@
@@ -440,7 +483,7 @@ ftab: i2c-state-table                         \ state id to function translation
    irq-collection @ and or                    \ 
    i2c-old-int-handler !                      \ save old irq handler
    ['] i2c-irq-handler irq-collection ! ;     \ install i2c handler
-: i2c1-init  ( -- )                           \ i2c 100 khz 8 Mhz HSI
+: i2c-init  ( -- )                            \ i2c 100 khz 8 Mhz HSI
    $200000 RCC_APB1ENR bis!                   \ enable i2c1
    i2c-clk-hsi-100khz
    i2c-irq-handler-install ;
@@ -454,8 +497,7 @@ ftab: i2c-state-table                         \ state id to function translation
    #0 PE4 gpio-mode!                        \ PE4 input mode
    #0 PE5 gpio-mode!                        \ PB7 input mode
    #4 PB6 gpio-af!
-   #4 PB7 gpio-af!
-   ;
+   #4 PB7 gpio-af! ;
 \ : accel-x  ( -- n )  \ return accel sensor x value
 \   0 ; 
 \ : accel-y  ( -- n )  \ return accel sensor y value
