@@ -238,10 +238,10 @@ $30 RCC_BASE or constant RCC_CFGR3
 \ gpio functions
 : gpio-port-adr  ( n -- adr )  \ base address of gpio port nr a:0 b:1 c:2 d:3 e:4 f:5
    #10 lshift $48000000 or 1-foldable inline ;
-: port-nr ( pinAdr -- nr )  #10 rshift $7 and 1-foldable inline ;
+: gpio-port-nr ( pinAdr -- nr )  #10 rshift $7 and 1-foldable inline ;
 : gpio-port  ( pin -- adr )  $f not and 1-foldable inline ;
 : gpio-rcc-ena-msk  ( adr -- n )  \ port_a .. port_f
-   port-nr #17 + 1 swap lshift 1-foldable ;
+   gpio-port-nr #17 + 1 swap lshift 1-foldable ;
 : gpio-port-ena  ( adr -- )  \ enable clock for port
    gpio-rcc-ena-msk RCC_AHBENR bis! ;
 : gpio-port-dis  ( adr -- )  \ enable clock for port
@@ -314,6 +314,7 @@ I2C1SW    constant I2CSW
 I2C1_EV   constant I2C_EV
 I2C1_ER   constant I2C_ER
 I2C1      constant I2C
+I2C1EN    constant I2CEN
 
 $00           constant I2Cx_CR1   \ Control register 1
 $1 #23 lshift constant PECEN      \ PEC enable
@@ -484,18 +485,17 @@ ftab: i2c-state-table                         \ state id to function translation
    i2c-old-int-handler !                      \ save old irq handler
    ['] i2c-irq-handler irq-collection ! ;     \ install i2c handler
 : i2c-init  ( -- )                            \ i2c 100 khz 8 Mhz HSI
-   $200000 RCC_APB1ENR bis!                   \ enable i2c1
-   i2c-clk-hsi-100khz
-   i2c-irq-handler-install ;
+   I2CEN RCC_APB1ENR bis!                     \ enable i2c1
+   i2c-clk-hsi-100khz ;
 
 
-: accel-init  ( -- )  \ initialize acceleration sensor
+: accel-port-init  ( -- )  \ initialize acceleration sensor
    PORT_B gpio-port-ena
    PORT_E gpio-port-ena                     \ port e enable
    #2 PB6 gpio-mode!                        \ PB6 af mode
    #2 PB7 gpio-mode!                        \ PB7 af mode
    #0 PE4 gpio-mode!                        \ PE4 input mode
-   #0 PE5 gpio-mode!                        \ PB7 input mode
+   #0 PE5 gpio-mode!                        \ PE5 input mode
    #4 PB6 gpio-af!
    #4 PB7 gpio-af! ;
 \ : accel-x  ( -- n )  \ return accel sensor x value
@@ -507,14 +507,6 @@ ftab: i2c-state-table                         \ state id to function translation
 
 \ : read-accel  ( vadr -- )  \ store acceleration data to vector   
 \   accel-x over ! accel-y over 4 + ! accel-z swap 8 + ! ;
-
-: bits3! ( v m a -- )
-   -rot swap
-   over cnt0 lshift over and  ( -- a m vm )
-   swap not ( -- a vm /m )
-   2 pick @ and   ( -- )
-   or swap ! ;
-   
    
 
 \ systick.update
