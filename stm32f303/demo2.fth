@@ -248,6 +248,10 @@ $30 RCC_BASE or constant RCC_CFGR3
    gpio-rcc-ena-msk RCC_AHBENR bic! ;
 : gpio-mode!  ( mode pin -- ) \ 00:input 01:output 10:alternate function 11:analog
    dup gpio-port >R $f and 2* #3 swap lshift R> bits! ;
+: gpio-otype!  ( mode pin -- ) \ set ouput type 0: push-pull 1:open drain
+   dup gpio-port 4+ >R $f and #1 swap lshift R> bits! ;
+: gpio-pupd!  ( mode pin -- ) \ 00:no pupd 01:pu 10:pd 11:reserved
+   dup gpio-port >R $f and 2* #3 swap lshift R> bits! ;
 : gpio-bsrr  ( pinAdr -- adr )  gpio-port $18 + 1-foldable inline ; \ calc gpio_bsrr address
 : gpio-odr  ( pinAdr -- adr )  gpio-port $14 + 1-foldable inline ; \ calc gpio_odr address
 : gpio-af   ( pinAdr -- adr ) dup gpio-port $20 + swap $8 and shr + 1-foldable ; 
@@ -488,16 +492,23 @@ ftab: i2c-state-table                         \ state id to function translation
    I2CEN RCC_APB1ENR bis!                     \ enable i2c1
    i2c-clk-hsi-100khz ;
 
-
+pb6 constant acc-scl
+pb7 constant acc-sda
 : accel-port-init  ( -- )  \ initialize acceleration sensor
-   PORT_B gpio-port-ena
+   acc-scl gpio-port-ena
+   acc-sda gpio-port-ena
    PORT_E gpio-port-ena                     \ port e enable
-   #2 PB6 gpio-mode!                        \ PB6 af mode
-   #2 PB7 gpio-mode!                        \ PB7 af mode
+   #2 acc-scl gpio-mode!                    \ PB6 af mode
+   #2 acc-sda gpio-mode!                    \ PB7 af mode
    #0 PE4 gpio-mode!                        \ PE4 input mode
    #0 PE5 gpio-mode!                        \ PE5 input mode
-   #4 PB6 gpio-af!
-   #4 PB7 gpio-af! ;
+   #4 acc-scl gpio-af!
+   #4 acc-sda gpio-af!
+   #1 acc-scl gpio-otype!
+   #1 acc-sda gpio-otype!
+   #0 acc-scl gpio-pupd!
+   #0 acc-sda gpio-pupd! ;
+
 \ : accel-x  ( -- n )  \ return accel sensor x value
 \   0 ; 
 \ : accel-y  ( -- n )  \ return accel sensor y value
