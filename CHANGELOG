@@ -380,3 +380,14 @@
   - Added graphics library for lines, circles, ellipses and bitmap font
   - Contribution by Jean Jonethal:
       New target: Nucleo STM32F411
+  - Contribution by Glen Worstell:
+      An example for a custom prompt
+
+27.09.2015, Matthias Koch, Mecrisp-Stellaris 2.1.4
+
+  - New experimental target: ARM-Linux and Android
+  - Faster implementation of abs function
+  - Jean Jonethal fixed UART blocking on overrun for STM32F303
+  - Added early experimental bignum implementation
+  - Contribution by Ulrich Hoffman:
+      Examples for syscall usage in ARM Linux

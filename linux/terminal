@@ -1,0 +1,2 @@
+#!/bin/bash
+stty -icanon -echo && ./mecrisp-stellaris-linux && stty sane 
