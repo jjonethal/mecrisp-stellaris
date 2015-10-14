@@ -17,7 +17,17 @@
 @
 
 .syntax unified
-.cpu cortex-m4
+
+@ -----------------------------------------------------------------------------
+@ A Thumb mode entry sequence instead of a vector table
+@ -----------------------------------------------------------------------------
+.text
+  .global _start
+_start:
+  ldr r0, =Reset+1
+  bx r0 @ Switch to thumb mode
+
+.data
 .thumb
 
 @ -----------------------------------------------------------------------------
@@ -25,37 +35,13 @@
 @ -----------------------------------------------------------------------------
 
 .equ charkommaavailable, 1
+.equ within_os, 1
 
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions
 @ -----------------------------------------------------------------------------
 
 .include "../common/datastackandmacros.s"
-
-@ -----------------------------------------------------------------------------
-@ Speicherkarte für Flash und RAM
-@ Memory map for Flash and RAM
-@ -----------------------------------------------------------------------------
-
-@ Konstanten für die Größe des Ram-Speichers
-
-.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20020000 @ End   of RAM. 128 kb. Porting: Change this !
-
-@ Konstanten für die Größe und Aufteilung des Flash-Speichers
-
-.equ Kernschutzadresse,     0x00004000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
-.equ FlashDictionaryAnfang, 0x00004000 @ 16  kb für den Kern reserviert...         16  kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x00080000 @ 496 kb Platz für das Flash-Dictionary     496 kb Flash available. Porting: Change this !
-.equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
-
-
-@ -----------------------------------------------------------------------------
-@ Anfang im Flash - Interruptvektortabelle ganz zu Beginn
-@ Flash start - Vector table has to be placed here
-@ -----------------------------------------------------------------------------
-.text    @ Hier beginnt das Vergnügen mit der Stackadresse und der Einsprungadresse
-.include "vectors.s" @ You have to change vectors for Porting !
 
 @ -----------------------------------------------------------------------------
 @ Include the Forth core of Mecrisp-Stellaris
@@ -66,14 +52,39 @@
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn
 @ -----------------------------------------------------------------------------
-   @ Initialisierungen der Hardware, habe und brauche noch keinen Datenstack dafür
-   @ Initialisations for Terminal hardware, without Datastack.
-   bl uart_init
+   @ No initialisation necessary, as we are not running bare metal.
 
-   @ Catch the pointers for Flash dictionary
+   @ Catch the pointers for "Flash" dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " for STM32F411 by Matthias Koch"
+   welcome " for Linux by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
+   
+@ -----------------------------------------------------------------------------
+@ Special memory map for "Flash" and RAM sections within target RAM.
+@ -----------------------------------------------------------------------------
+
+.p2align 2         @ Auf 4 gerade Adressen ausrichten  Align to 4-even locations
+
+.equ Kernschutzadresse,     . @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
+.equ FlashDictionaryAnfang, . @ Ein bisschen Platz für den Kern reserviert... Some space reserved for core.
+
+  .rept 32768      @ 32768*4 = 128 kb for "Flash" dictionary
+  .word 0xFFFFFFFF
+  .endr
+
+.equ FlashDictionaryEnde,   .  @ 128 kb Platz für das Flash-Dictionary     128 kb Flash available. Porting: Change this !
+.equ Backlinkgrenze,        .  @ Ab dem Ram-Start.
+   
+@ Konstanten für die Größe des Ram-Speichers
+
+.equ RamAnfang, . @ Start of RAM
+
+  .rept 32768      @ 32768*4 = 128 kb for RAM dictionary
+  .word 0xFFFFFFFF
+  .endr
+  
+.equ RamEnde,   . @ End   of RAM.
+

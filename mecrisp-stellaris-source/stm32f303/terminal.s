@@ -88,6 +88,11 @@ uart_init: @ ( -- ) A few bits are different to STM32F051
   movs r0, #0x46  @ 115200 bps, ein ganz kleines bisschen langsamer...
   str r0, [r1]
 
+  @ disable overrun detection before UE to avoid USART blocking on overflow
+  ldr r1, =USART1_CR3
+  ldr r0, =BIT12 @ USART_CR3_OVRDIS
+  str r0, [r1]
+
   @ Enable the USART, TX, and RX circuit
   ldr r1, =USART1_CR1
   ldr r0, =BIT3+BIT2+BIT0 @ USART_CR1_UE | USART_CR1_TE | USART_CR1_RE

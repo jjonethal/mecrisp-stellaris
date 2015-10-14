@@ -27,6 +27,7 @@ It runs out of the box on:
   - STM L053 Discovery           with STM32L053C8T6
   - STM Nucleo L152RE            with STM32L152RE
   - STM Nucleo 401RE             with STM32F401RE
+  - STM Nucleo 411RE             with STM32F411RET6
   - STM F0 Discovery             with STM32F051R8
   - STM VL Discovery             with STM32F100RB
   - Shenzhen LC Technology board with STM32F103C8T6
@@ -70,6 +71,7 @@ Communication is via serial 115200 baud 8N1 over
   - USART1 in STM32L053C8 (TX on PA9, RX on PA10)
   - USART2 in STM32L152 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
   - USART2 in STM32F401 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32F411 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
   - USART2 in STM32F407 (TX on PA2, RX on PA3)
   - USART1 in STM32F429 (TX on PA9, RX on PA10)
   - UART0  in KL25Z128  (connected to USB-serial bridge on Freedom board)
@@ -177,7 +179,7 @@ Hardware and configuration for STM32L152:
   On startup, this runs with internal 16 MHz HSI clock.
 
 ;------------------------------------------------------------------------------
-Hardware and configuration for STM32F401:
+Hardware and configuration for STM32F401 and STM32F411:
 ;------------------------------------------------------------------------------
   Connect USB cable to ST-Link USB port.
   Terminal is included into the debug section on Nucleo boards.
@@ -190,6 +192,7 @@ Hardware and configuration for STM32F401:
   for flashing the binary, you have to use the "true address" $08000000.
   st-flash erase
   st-flash write mecrisp-stellaris-stm32f401.bin 0x08000000
+  st-flash write mecrisp-stellaris-stm32f411.bin 0x08000000
 
   On startup, this runs with internal 16 MHz HSI clock.
 
@@ -788,7 +791,7 @@ Counted string routines:
 Pictured numerical output:
 
         .digit          ( u -- char ) Converts a digit to a char
-        digit           ( char -- u ) Converts a char to a digit
+        digit           ( char -- u true | false ) Converts a char to a digit
 
         [char] *        Compiles code of following char
                         ( -- char ) when executed
@@ -1381,7 +1384,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
 
 ;------------------------------------------------------------------------------
-; Specials for STM32F401, STM32F407 and STM32F429:
+; Specials for STM32F401, STM32F411, STM32F407 and STM32F429:
 ;------------------------------------------------------------------------------
 
 Flash:

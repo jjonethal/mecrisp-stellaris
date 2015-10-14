@@ -1,0 +1,82 @@
+
+\ LED and button example
+\ LED on PA5
+\ Button on PC13
+$40020000 constant PORTA_Base
+$40020400 constant PORTB_Base
+$40020800 constant PORTC_Base
+$40020C00 constant PORTD_Base
+$40021000 constant PORTE_Base
+$40021C00 constant PORTH_Base
+
+
+PORTA_BASE $00 + constant PORTA_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+PORTA_BASE $04 + constant PORTA_OTYPER   \ Reset 0 Port Output type register - (0) Push/Pull vs. (1) Open Drain
+PORTA_BASE $08 + constant PORTA_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+PORTA_BASE $0C + constant PORTA_PUPDR    \ Reset 0 Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+PORTA_BASE $10 + constant PORTA_IDR      \ RO      Input Data Register
+PORTA_BASE $14 + constant PORTA_ODR      \ Reset 0 Output Data Register
+PORTA_BASE $18 + constant PORTA_BSRR     \ WO      Bit set/reset register   31:16 Reset 15:0 Set
+        \ +$1C                                     ... is Lock Register, unused
+PORTA_BASE $20 + constant PORTA_AFRL     \ Reset 0 Alternate function  low register
+PORTA_BASE $24 + constant PORTA_AFRH     \ Reset 0 Alternate function high register
+
+
+PORTB_BASE $00 + constant PORTB_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+PORTB_BASE $04 + constant PORTB_OTYPER   \ Reset 0 Port Output type register - (0) Push/Pull vs. (1) Open Drain
+PORTB_BASE $08 + constant PORTB_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+PORTB_BASE $0C + constant PORTB_PUPDR    \ Reset 0 Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+PORTB_BASE $10 + constant PORTB_IDR      \ RO      Input Data Register
+PORTB_BASE $14 + constant PORTB_ODR      \ Reset 0 Output Data Register
+PORTB_BASE $18 + constant PORTB_BSRR     \ WO      Bit set/reset register   31:16 Reset 15:0 Set
+        \ +$1C                                     ... is Lock Register, unused
+PORTB_BASE $20 + constant PORTB_AFRL     \ Reset 0 Alternate function  low register
+PORTB_BASE $24 + constant PORTB_AFRH     \ Reset 0 Alternate function high register
+
+
+PORTC_BASE $00 + constant PORTC_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+PORTC_BASE $04 + constant PORTC_OTYPER   \ Reset 0 Port Output type register - (0) Push/Pull vs. (1) Open Drain
+PORTC_BASE $08 + constant PORTC_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+PORTC_BASE $0C + constant PORTC_PUPDR    \ Reset 0 Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+PORTC_BASE $10 + constant PORTC_IDR      \ RO      Input Data Register
+PORTC_BASE $14 + constant PORTC_ODR      \ Reset 0 Output Data Register
+PORTC_BASE $18 + constant PORTC_BSRR     \ WO      Bit set/reset register   31:16 Reset 15:0 Set
+        \ +$1C                                     ... is Lock Register, unused
+PORTC_BASE $20 + constant PORTC_AFRL     \ Reset 0 Alternate function  low register
+PORTC_BASE $24 + constant PORTC_AFRH     \ Reset 0 Alternate function high register
+
+$40023800      constant RCC_Base
+RCC_Base $30 + constant RCC_AHB1ENR
+
+1          constant GPIOAEN
+1 1 lshift constant GPIOBEN
+1 2 lshift constant GPIOCEN
+1 3 lshift constant GPIODEN
+1 4 lshift constant GPIOEEN
+1 7 lshift constant GPIOHEN
+
+\ User LD2: the green LED is a user LED connected to Arduino signal D13 corresponding to
+\ MCU I/O PA5 (pin 21) or PB13 (pin 34) depending on the STM32 target.
+\ On the Nucleo 411RE, this is PA5.
+
+\ B1 USER: the user button is connected to the I/O PC13 (pin 2) of the STM32
+\ microcontroller.
+
+: enable-gpioa-clk ( -- ) RCC_AHB1ENR @ GPIOAEN or RCC_AHB1ENR ! ;
+: enable-gpioc-clk ( -- ) RCC_AHB1ENR @ GPIOCEN or RCC_AHB1ENR ! ;
+
+: blinky-init ( -- )    enable-gpioa-clk enable-gpioc-clk ;
+: button?     ( -- ? )  1 13 lshift PORTC_IDR bit@ not ;
+: led         ( ? -- )  if 1 5 lshift porta_bsrr ! else 1 5 lshift 16 lshift porta_bsrr ! then ;
+
+: blinky ( -- )
+
+  blinky-init
+  %01 5 2* lshift porta_moder bis!  \ Set LED Pin mode to output
+
+  begin
+    button? if    true led  500000 0 do loop false led  500000 0 do loop
+            else  true led 1000000 0 do loop false led 1000000 0 do loop
+            then
+  key? until
+;

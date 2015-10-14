@@ -72,6 +72,10 @@ cd stm32f407
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407
 cd ..
 
+cd stm32f411
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f411
+cd ..
+
 cd stm32f429
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f429
 cd ..
@@ -86,6 +90,10 @@ cd ..
 
 cd stm32f051
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f051.bin mecrisp-stellaris-stm32f051.hex
+cd ..
+
+cd stm32l053c8
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l053c8.bin mecrisp-stellaris-stm32l053c8.hex
 cd ..
 
 cd stm32l152
@@ -112,6 +120,17 @@ cd stm32f407
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
 cd ..
 
+cd stm32f411
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f411.bin mecrisp-stellaris-stm32f411.hex
+cd ..
+
 cd stm32f429
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f429.bin mecrisp-stellaris-stm32f429.hex
+cd ..
+
+# Special target for running on ARM Linux and Android:
+
+cd mecrisp-stellaris-source/linux
+./assemble
+cp mecrisp-stellaris-linux ../../linux
 cd ..
