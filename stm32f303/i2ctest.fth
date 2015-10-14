@@ -88,6 +88,7 @@ STK_LOAD_VAL 1+ constant STK_LOAD_PERIOD
 : tts ( -- )  test-time-stamp ;
 : ts. time-stamp . ;
 
+\ logic tester for i2c
 $40010000         constant SYSCFG_BASE 
 $08 SYSCFG_BASE + constant SYSCFG_EXTICR1
 $0c SYSCFG_BASE + constant SYSCFG_EXTICR2
@@ -97,29 +98,31 @@ EXTI_BASE         constant EXTI_IMR1
 $08 EXTI_BASE +   constant EXTI_RTSR1
 $0C EXTI_BASE +   constant EXTI_FTSR1
 $14 EXTI_BASE +   constant EXTI_PR1
-\ logic tester for i2c
+0    variable logic-test-old-irq
 0    variable logic-test-last-time            \ last timestamp
 0    variable logic-test-#                    \ next write location in ring buffer
-#512 constant logic-test-size                 \ ringbuffer 512 words
+#512 constant logic-test-size                 \ logic tester buffer size 512 words
 logic-test-size cells BUFFER: logic-test-buffer
-
-0 variable log-test-old-irq
 : logic-test-buffer! ( n -- )                 \ store item into buffer
    logic-test-# @
-   dup 1+ dup logic-test-size - 0< and
-   logic-test-# ! 2 lshift logic-test-buffer + ! ;
+   dup logic-test-size 1- - 0< -                 \ stop when buffer full
+   logic-test-# !
+   2 lshift logic-test-buffer + ! ;
+: logic-test-next-sample ( -- )
+   STK_VAL @                                  \ 24 bit time stamp
+   GPIOC_IDR @ #24 #10 - lshift               \ pc10->b24 , pc11->b25
+   #3 #24 lshift and                          \ b24(pc10) and b25(pc11) only
+   logic-test-buffer!
+   1 #10 lshift 1 #11 lshift or EXTI_PR1 bis! \ clear pending interrupt
+   inline ; 
 : logic-test-irq-handler  ( -- )
    EXTI_PR1 @ 
-   1 #10 lshift 1 #11 lshift or and
-   if
-    STK_VAL @                                  \ 24 bit time stamp
-    GPIOC_IDR @ #24 #10 - lshift               \ pc10->b24 , pc11->b25
-    #3 #24 lshift and                          \ b24(pc10) and b25(pc11) only
-    logic-test-buffer!
-    1 #10 lshift 1 #11 lshift or EXTI_PR1 bis! \ clear pending interrupt
-   then ;
-: logic-test-start  ( -- )                     \ start logic tester
-   log-test-old-irq 0=
+   1 #10 lshift 1 #11 lshift or and              
+   if logic-test-next-sample  then
+   logic-test-old-irq @ dup 0<>
+   if execute else drop then ;
+: logic-test-start  ( -- )                        \ start logic tester
+   log-test-old-irq 0=                            \ only insert irq once
    if irq-collection @ log-test-old-irq ! then
    PORT_C gpio-port-ena                           \ port c enable
    #0 PC10 gpio-mode!                             \ PC10 input mode
