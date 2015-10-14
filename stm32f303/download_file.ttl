@@ -1,0 +1,34 @@
+; load file
+; ConfirmDisconnect=off
+
+
+timeout  = 0
+mtimeout = 500
+infilehandle = 0
+fname = ""
+sprintf "paramcnt:%i" paramcnt
+
+if paramcnt = 2 then
+	fname = param2
+endif
+strlen fname
+if result = 0 then
+	filenamebox "select file" 0
+	fname = inputstr
+endif
+strlen fname
+if result > 0 then
+  connect "/C=5"
+  setsync 1
+  messagebox fname "Downloading"
+  fileopen infilehandle fname 0 1
+  while 1
+    filereadln infilehandle line
+    ende = result
+    send line  #10
+    wait "ok."
+    if ende = 1 then
+      break
+	endif
+  endwhile
+endif
