@@ -13,12 +13,19 @@
 $40005400 constant I2C1_BASE
 $40005400 constant I2C1
 $E000E100 constant NVIC_ISER0
+$E000E280 constant NVIC_ICPR0
+NVIC_ICPR0 4 + constant NVIC_ICPR1
+NVIC_ICPR0 8 + constant NVIC_ICPR2
 \ following definitions my be used for defining driver usage for port 1 or 2
 \ when both ports shall be supported the driver might be double included for both ports
 \ support interrupt handling has to be adapted for dual port support
 
+: nvic-mask  ( n -- n )
+   #16 - dup $1f and 1 swap lshift 1-foldable ;
+: nvic-offset ( n -- n )
+   #5 rshift #2 lshift 1-foldable ;
 : nvic-enable-irq ( n -- )
-   dup $1f and 1 swap lshift swap 5 rshift 2 lshift NVIC_ISER0 + bis! ;
+   #16 - dup $1f and 1 swap lshift swap #5 rshift #2 lshift NVIC_ISER0 + bis! ;
 
 
 \ i2c configuration
@@ -52,6 +59,7 @@ I2C I2Cx_TIMINGR or constant I2C_TIMINGR
 : ftab: ( "name" -- )                         \ build function table
    <BUILDS  DOES> swap 2 lshift + @ execute ;
 
+: i2c. i2c @ . ;
 
 : scl-h ( -- ) i2c-scl           gpiob_bsrr ! ;
 : scl-l ( -- ) i2c-scl 16 lshift gpiob_bsrr ! ;
@@ -74,7 +82,7 @@ I2C I2Cx_TIMINGR or constant I2C_TIMINGR
   i2c-scl i2c-sda or gpiob_otyper bis!                  \ open drain
   $FF000000 gpiob_afrl bic! $44000000 gpiob_afrl bis!   \ i2c mode
   i2c-clk-hsi-100khz                                    \ set i2c timing  
-  $7f i2c bis! ;                                        \ enable interrupts
+  $7f i2c bis! i2c. ;                                   \ enable interrupts
   
 
 : enum dup constant 1+ ;
@@ -97,7 +105,7 @@ I2C I2Cx_TIMINGR or constant I2C_TIMINGR
 0          variable i2c-xfer-size
 0          variable i2c-xfer-cnt
 0          variable i2c-reg
-0          variable i2c-dbg-irq-nr
+4          BUFFER:  i2c-dbg-irq-nr
 32         BUFFER:  i2c-xfer-buffer
 
 : i2c-state! i2c-state ! inline ;
@@ -108,6 +116,7 @@ I2C I2Cx_TIMINGR or constant I2C_TIMINGR
 \      then immediate ;
 \ : test -> >i2c->tx-reg i2c-state @ . ;
 \ test
+i2c           constant i2c-cr1
 i2c I2C_CR2 + constant i2c-cr2
 i2c $18     + constant i2c-isr
 i2c $28     + constant i2c-txdr
@@ -118,6 +127,7 @@ i2c $24     + constant i2c-rxdr
 : i2c-rd  ( -- )  #1 #10 lshift i2c-cr2 bis! ;
 : i2c-wr  ( -- )  #1 #10 lshift i2c-cr2 bic! ;
 : i2c-stop  ( -- )  #1 #14 lshift i2c-cr2 bic! ;
+: i2c-off  ( -- )  #1 i2c-cr1 bic! ;
 : i2c-no-autoend  ( -- ) #1 #25 lshift i2c-cr2 bic! ;
 : i2c-bytes ( -- ) i2c-xfer-size @ $ff0000 i2c-cr2 bits! ;
 : i2c-1byte  ( -- )  1 $ff0000 i2c-cr2 bits! ;
@@ -141,16 +151,16 @@ i2c $24     + constant i2c-rxdr
    i2c-nackf? ?of                            >i2c->abort         -> endof endcase ;
 : i2c->tx-complete ;
 : i2c->rx-start i2c-adr-mode7 i2c-slave-adr7 i2c-wr i2c-no-autoend i2c-1byte i2c-start >i2c->rx-reg -> ;
-: i2c->rx-reg 0 case
-   i2c-txis?  ?of i2c-tx-reg                 >i2c->rx-read-start -> endof
+: i2c->rx-reg ." i2c->rx-reg " 0 case
+   i2c-txis?  ?of i2c-tx-reg                 >i2c->rx-read-start -> ." i2c-txis? " endof
    i2c-nackf? ?of                            >i2c->abort         -> endof endcase ;
-: i2c->rx-read-start 0 case
-   i2c-tc?    ?of i2c-bytes i2c-rd i2c-start >i2c->rx-data       -> endof
-   i2c-nackf? ?of                            >i2c->abort         -> endof endcase ;
-: i2c->rx-data 0 case
-   i2c-rxne?  ?of i2c-rx-data                >i2c->rx-data       -> endof 
-   i2c-tc?    ?of i2c-stop                   >i2c->rx-complete   -> endof endcase ;
-: i2c->rx-complete ;
+: i2c->rx-read-start ." i2c->rx-read-start " 0 case
+   i2c-tc?    ?of i2c-bytes i2c-rd i2c-start >i2c->rx-data       -> ." i2c-tc " endof
+   i2c-nackf? ?of                            >i2c->abort         -> ." nackf "  endof endcase ;
+: i2c->rx-data 0 ." i2c->rx-data " case
+   i2c-rxne?  ?of i2c-rx-data                >i2c->rx-data       -> ." i2c-rxne? " endof 
+   i2c-tc?    ?of i2c-stop                   >i2c->rx-complete   -> ." i2c-tc? " endof endcase ;
+: i2c->rx-complete i2c-stop i2c-off ." i2c->rx-complete " hex i2c-isr @ . ;
 : i2c->abort ;
 
 ftab: i2c-state-table
@@ -169,13 +179,15 @@ ftab: i2c-state-table
 : i2c-handle ( -- ) i2c-state @ dup 0< not and dup i2c->num-states < and i2c-state-table ;
 0 variable irq-old-handler
 : i2c-irq-handle ( -- ) 
-   ipsr dup i2c-dbg-irq-nr ! case
+   ipsr dup ." ipsr " . case
      I2C_EV of i2c-handle endof
      I2C_ER of i2c-handle endof
-     irq-old-handler @ execute
-   endcase ;     
-: i2c-irq-init  ( -- )  irq-collection @  irq-old-handler ! ['] i2c-irq-handle irq-collection ! ;
-: i2c-setup  ( -- )  i2c-irq-init i2c-init I2C_EV nvic-enable-irq I2C_ER nvic-enable-irq ;
+     \ irq-old-handler @ execute
+   endcase
+   $80000000 NVIC_ICPR0 !
+   1 NVIC_ICPR1 !  ;     
+: i2c-irq-init  ( -- ) 0 i2c-dbg-irq-nr ! irq-collection @  irq-old-handler ! ['] i2c-irq-handle irq-collection ! ;
+: i2c-setup  ( -- )  i2c-irq-init i2c-init I2C_EV nvic-enable-irq I2C_ER nvic-enable-irq i2c. ;
 : i2c-test  ( -- )  %00110011 i2c-slave-adr ! 6 i2c-xfer-size ! 0 i2c-xfer-cnt ! $28 i2c-reg ! >i2c->rx-start i2c-state !
    i2c-handle ;
 
