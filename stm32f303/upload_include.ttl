@@ -52,7 +52,6 @@ intdim clp MAXLEVEL                           ; line position stack - unused at 
 strdim cln MAXLEVEL                           ; line stack - unused at the moment
 strdim cfn MAXLEVEL                           ; filename stack
 
-
 ; check for macro parameter
 if paramcnt = 2 then                          ; if there is a macro parameter use it as input file name
 	fname = param2
