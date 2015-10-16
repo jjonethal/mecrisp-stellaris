@@ -7,11 +7,14 @@
 \ debugging support
 0 variable DEBUG                               \ debug flag
 : DEBUG? ( -- f) DEBUG @ ;
-: .debug" ( -- )                               \ type text when debugging active
-   DEBUG? if cr type else drop then ;
+: .debug" ( c-addr len -- )                               \ type text when debugging active
+   DEBUG? if cr type ." sp " sp@ . ."  " else 2drop then cr ;
+
 : .D" ( -- )                                   \ output debug text
    postpone s" postpone .debug" immediate ;
 : .D DEBUG? if . else drop then ;
+: debug-on -1 DEBUG ! ;
+: dbg hex debug-on ;
 
 \ interrupt ids for i2c1 and i2c2
 #47                 constant I2C1_EV           \ i2c event interrupd
@@ -62,7 +65,7 @@ i2c $24     +       constant i2c-rxdr
 \ calculate nvic enable disable mask from ipsr number
 \ ipsr vector number is pos + 16 
 : nvic-mask  ( n -- n )
-   #16 - dup $1f and 1 swap lshift 1-foldable ;
+   #16 - $1f and 1 swap lshift 1-foldable ;
 : nvic-offset ( n -- n )  \ nvic register offset depending on vector number
    #16 - #5 rshift #2 lshift 1-foldable ;
 : nvic-enable-irq ( n -- )
@@ -72,7 +75,7 @@ i2c $24     +       constant i2c-rxdr
 : ftab: ( "name" -- )                         \ build function table
    <BUILDS  DOES> swap 2 lshift + @ execute ;
 
-: i2c. .D" i2c_cr1 " i2c .D ;
+\ : i2c. .D" i2c_cr1 " i2c .D ;
 
 : scl-h ( -- ) i2c-scl           gpiob_bsrr ! ;
 : scl-l ( -- ) i2c-scl 16 lshift gpiob_bsrr ! ;
@@ -136,7 +139,7 @@ i2c $24     +       constant i2c-rxdr
 : i2c-bytes       ( -- )  i2c-xfer-size @ $ff0000 i2c-cr2 bits! ;
 : i2c-1byte       ( -- )  1 $ff0000 i2c-cr2 bits! ;
 : i2c-start       ( -- )  #1 #13 lshift i2c-cr2 bis! ;
-: i2c-tx-reg      ( -- )  i2c-reg @ i2c-txdr c! ;
+: i2c-tx-reg      ( -- )  i2c-reg @ .D"  i2c-reg " dup .d i2c-txdr c! ;
 : i2c-tx-data     ( -- )  1 i2c-xfer-cnt dup @ i2c-xfer-buffer + c@ i2c-txdr c! +! ;
 : i2c-rx-data     ( -- )  i2c-rxdr c@ i2c-xfer-cnt @ i2c-xfer-buffer + c! 1 i2c-xfer-cnt +! ;
 : i2c-rxne?       ( -- f )  #1 #2 lshift i2c-isr bit@ ;
@@ -150,7 +153,7 @@ i2c $24     +       constant i2c-rxdr
    i2c-scl i2c-sda or gpiob_otyper bis!                  \ open drain
    $FF000000 gpiob_afrl bic! $44000000 gpiob_afrl bis!   \ alternate function i2c mode
    i2c-clk-hsi-100khz                                    \ set i2c timing  
-   i2c-on i2c. ;                                         \ enable interrupts
+   i2c-on  ;                                             \ enable interrupts
 
 : ->  ( n -- )  i2c-state ! inline ;                     \ set i2c-state
 : accel-x     ( -- u ) i2c-xfer-buffer h@ ;
@@ -179,17 +182,17 @@ i2c $24     +       constant i2c-rxdr
    i2c-rxne?  ?of i2c-rx-data                >i2c->rx-data       -> .D" i2c-rxne? " endof 
    i2c-tc?    ?of i2c-stop                   >i2c->rx-complete   -> .D" i2c-tc? "   endof endcase ;
 : i2c->rx-complete i2c-stop i2c-off .D" i2c->rx-complete " i2c-isr .D 
-   i2c-on-rx-complete @ dup if execute else drop then ;
-: i2c->abort ;
+   >i2c->abort -> i2c-on-rx-complete @ dup if execute else drop then ;
+: i2c->abort i2c-off ;
+: i2c->accel-xfer  ( -- )
+   %00110011 i2c-slave-adr   ! 6   i2c-xfer-size !
+   0         i2c-xfer-cnt    ! $28 i2c-reg       ! >i2c->rx-start i2c-state !
+   ['] accel-dump i2c-on-rx-complete ! i2c->rx-start ;
 : i2c->accel-start  ( -- ) 
    %00110011 i2c-slave-adr   !   1 i2c-xfer-size !
            0 i2c-xfer-cnt    ! $20 i2c-reg       !
          $67 i2c-xfer-buffer ! ['] i2c->accel-xfer i2c-on-tx-complete !
    i2c->tx-start ;
-: i2c->accel-xfer  ( -- )
-   %00110011 i2c-slave-adr   ! 6   i2c-xfer-size !
-   0         i2c-xfer-cnt    ! $28 i2c-reg       ! >i2c->rx-start i2c-state !
-   ['] accel-dump i2c-on-rx-complete ! i2c->rx-start ;
 ftab: i2c-state-table
   ' i2c->idle , \ default state
   ' i2c->tx-start ,
@@ -210,17 +213,17 @@ ftab: i2c-state-table
 : i2c-isr-ack ( -- )                           \ acknowledge interrupt
    I2C_EV nvic-mask I2C_EV nvic-offset NVIC_ICPR0 + !
    I2C_ER nvic-mask I2C_ER nvic-offset NVIC_ICPR0 + ! ;
-: i2c-irq-handle ( -- )                        \ default interrupt handler 
-   ipsr dup .D" ipsr " .D case
+: i2c-irq-handle ( -- ) cr .s                    \ default interrupt handler 
+   ipsr case
      I2C_EV of i2c-handle endof
      I2C_ER of i2c-handle endof
      irq-old-handler @ execute                 \ invoke old handler
    endcase
-   i2c-isr-ack  ;     
+   ." before-ack " i2c-isr-ack  cr .s cr ;     
 : i2c-irq-init  ( -- ) 0 i2c-dbg-irq-nr ! irq-collection @  irq-old-handler ! ['] i2c-irq-handle irq-collection ! ;
-: i2c-setup  ( -- )  i2c-irq-init i2c-init I2C_EV nvic-enable-irq I2C_ER nvic-enable-irq i2c. ;
+: i2c-setup  ( -- )  i2c-irq-init i2c-init I2C_EV nvic-enable-irq I2C_ER nvic-enable-irq ;
 : i2c-test  ( -- )  %00110011 i2c-slave-adr ! 6 i2c-xfer-size ! 0 i2c-xfer-cnt ! $28 i2c-reg ! >i2c->rx-start i2c-state !
    i2c-handle ;
-
+: accel-test  ( -- )  i2c-setup hex i2c->accel-start ;
 
 
