@@ -1,2 +1,2 @@
-C:\app\teraterm\ttpmacro.exe %~dp0download.ttl %*
+C:\app\teraterm\ttpmacro.exe %~dp0upload_include.ttl %*
 
