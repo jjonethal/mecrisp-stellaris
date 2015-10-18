@@ -134,8 +134,11 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .ltorg @ Mal wieder Konstanten schreiben
   .include "../common/interpreter.s"
   .ltorg @ Mal wieder Konstanten schreiben
+
+  .ifndef within_os
   .include "../common/interrupts-common.s"
   .include "interrupts.s" @ You have to change interrupt handlers for Porting !
+  .endif
 
 @ -----------------------------------------------------------------------------
 @ Schließen der Dictionarystruktur und Zeiger ins Flash-Dictionary

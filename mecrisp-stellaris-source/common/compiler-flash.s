@@ -31,7 +31,7 @@ smudge:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs smudge_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n smudge_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Smudge for Flash
@@ -125,7 +125,7 @@ setflags_intern:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs setflags_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n setflags_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Setflags for Flash
@@ -305,7 +305,7 @@ hkomma: @ Fügt 16 Bits an das Dictionary an.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs hkomma_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n hkomma_ram @ Befinde mich im Ram. Schalte um !
 
   @ hkomma for Flash:
   pushda r1 @ Adresse auch auf den Stack  Put target address on datastack, too !
@@ -580,7 +580,7 @@ create: @ Nimmt das nächste Token aus dem Puffer,
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
-  bhs create_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n create_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Create for Flash
@@ -709,7 +709,7 @@ nvariable: @ Creates an initialised variable of given length.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs variable_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n variable_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Variable Flash
@@ -853,7 +853,7 @@ variable_ram:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs rambuffer_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n rambuffer_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Buffer Flash
