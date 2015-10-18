@@ -20,7 +20,9 @@
 @ Terminal code and initialisations.
 @ Porting: Rewrite this !
 
-  .equ GPIOA_BASE      ,   0x40020000
+@PD5-USART_TX, PD6-USART_RX USART2
+
+  .equ GPIOA_BASE      ,   0x48000000
   .equ GPIOA_MODER     ,   GPIOA_BASE + 0x00
   .equ GPIOA_OTYPER    ,   GPIOA_BASE + 0x04
   .equ GPIOA_OSPEEDR   ,   GPIOA_BASE + 0x08
@@ -32,9 +34,23 @@
   .equ GPIOA_AFRL      ,   GPIOA_BASE + 0x20
   .equ GPIOA_AFRH      ,   GPIOA_BASE + 0x24
 
-  .equ RCC_BASE        ,   0x40023800
-  .equ RCC_AHB1ENR     ,   RCC_BASE + 0x30
-  .equ RCC_APB1ENR     ,   RCC_BASE + 0x40
+  .equ GPIOD_BASE      ,   0x48000C00
+  .equ GPIOD_MODER     ,   GPIOA_BASE + 0x00
+  .equ GPIOD_OTYPER    ,   GPIOA_BASE + 0x04
+  .equ GPIOD_OSPEEDR   ,   GPIOA_BASE + 0x08
+  .equ GPIOD_PUPDR     ,   GPIOA_BASE + 0x0C
+  .equ GPIOD_IDR       ,   GPIOA_BASE + 0x10
+  .equ GPIOD_ODR       ,   GPIOA_BASE + 0x14
+  .equ GPIOD_BSRR      ,   GPIOA_BASE + 0x18
+  .equ GPIOD_LCKR      ,   GPIOA_BASE + 0x1C
+  .equ GPIOD_AFRL      ,   GPIOA_BASE + 0x20
+  .equ GPIOD_AFRH      ,   GPIOA_BASE + 0x24
+
+  .equ RCC_BASE        ,   0x40021000
+  .equ RCC_AHB2ENR     ,   RCC_BASE + 0x4C
+  .equ RCC_APB1ENR1    ,   RCC_BASE + 0x58
+
+
 
   .equ Terminal_USART_Base, 0x40004400 @ USART 2
   .include "../common/stm-terminal.s"  @ Common STM terminal code for emit, key and key?
@@ -44,26 +60,27 @@ uart_init: @ ( -- )
 @ -----------------------------------------------------------------------------
 
         @ Enable all GPIO peripheral clocks
-        ldr r1, = RCC_AHB1ENR
-        movs r0, #0x9F
+        ldr r1, = RCC_AHB2ENR
+        movs r0, #0xFF
         str r0, [r1]
 
-        @ Set PORTA pins in alternate function mode
-        ldr r1, = GPIOA_MODER
+        @ Set PORTD pins in alternate function mode
+        ldr r1, = GPIOD_MODER
         ldr r0, [r1]
-        orrs r0, #0xA0
+        orrs r0, #0x2800  @ PD5, PD6 Alternate function 
         str r0, [r1]
 
-        @ Set alternate function 7 to enable USART2 pins on Port A
+        @ Set alternate function 7 to enable USART2 pins on Port PD5 and PD6
         ldr  r1, = GPIOA_AFRL
-        and  r0, 0xFFFF00FF      @ Zero the bits 8-15
-        orrs r0, #0x7700         @ Alternate function 7 for TX and RX pins of USART2 on PORTA(2,3)
+        and  r0, 0xF00FFFFF      @ Zero the bits 20-27
+        orrs r0, #0x07700000     @ Alternate function 7 for TX and RX pins of USART2 on PORTA(5,6)
         str  r0, [r1]
 
         @ Enable the USART2 peripheral clock by setting bit 17
-        ldr r1, = RCC_APB1ENR
+        ldr r1, = RCC_APB1ENR1
         ldr r0, = BIT17
         str r0, [r1]
+@@@@@TODO::
 
     @ Configure BRR by deviding the bus clock with the baud rate
 
