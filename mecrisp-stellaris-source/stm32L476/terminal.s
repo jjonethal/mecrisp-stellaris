@@ -1,6 +1,6 @@
 @
 @    Mecrisp-Stellaris - A native code Forth implementation for ARM-Cortex M microcontrollers
-@    Copyright (C) 2013  Matthias Koch
+@    Copyright (C) 2015  Matthias Koch
 @
 @    This program is free software: you can redistribute it and/or modify
 @    it under the terms of the GNU General Public License as published by
@@ -22,29 +22,17 @@
 
 @PD5-USART_TX, PD6-USART_RX USART2
 
-  .equ GPIOA_BASE      ,   0x48000000
-  .equ GPIOA_MODER     ,   GPIOA_BASE + 0x00
-  .equ GPIOA_OTYPER    ,   GPIOA_BASE + 0x04
-  .equ GPIOA_OSPEEDR   ,   GPIOA_BASE + 0x08
-  .equ GPIOA_PUPDR     ,   GPIOA_BASE + 0x0C
-  .equ GPIOA_IDR       ,   GPIOA_BASE + 0x10
-  .equ GPIOA_ODR       ,   GPIOA_BASE + 0x14
-  .equ GPIOA_BSRR      ,   GPIOA_BASE + 0x18
-  .equ GPIOA_LCKR      ,   GPIOA_BASE + 0x1C
-  .equ GPIOA_AFRL      ,   GPIOA_BASE + 0x20
-  .equ GPIOA_AFRH      ,   GPIOA_BASE + 0x24
-
   .equ GPIOD_BASE      ,   0x48000C00
-  .equ GPIOD_MODER     ,   GPIOA_BASE + 0x00
-  .equ GPIOD_OTYPER    ,   GPIOA_BASE + 0x04
-  .equ GPIOD_OSPEEDR   ,   GPIOA_BASE + 0x08
-  .equ GPIOD_PUPDR     ,   GPIOA_BASE + 0x0C
-  .equ GPIOD_IDR       ,   GPIOA_BASE + 0x10
-  .equ GPIOD_ODR       ,   GPIOA_BASE + 0x14
-  .equ GPIOD_BSRR      ,   GPIOA_BASE + 0x18
-  .equ GPIOD_LCKR      ,   GPIOA_BASE + 0x1C
-  .equ GPIOD_AFRL      ,   GPIOA_BASE + 0x20
-  .equ GPIOD_AFRH      ,   GPIOA_BASE + 0x24
+  .equ GPIOD_MODER     ,   GPIOD_BASE + 0x00
+  .equ GPIOD_OTYPER    ,   GPIOD_BASE + 0x04
+  .equ GPIOD_OSPEEDR   ,   GPIOD_BASE + 0x08
+  .equ GPIOD_PUPDR     ,   GPIOD_BASE + 0x0C
+  .equ GPIOD_IDR       ,   GPIOD_BASE + 0x10
+  .equ GPIOD_ODR       ,   GPIOD_BASE + 0x14
+  .equ GPIOD_BSRR      ,   GPIOD_BASE + 0x18
+  .equ GPIOD_LCKR      ,   GPIOD_BASE + 0x1C
+  .equ GPIOD_AFRL      ,   GPIOD_BASE + 0x20
+  .equ GPIOD_AFRH      ,   GPIOD_BASE + 0x24
 
   .equ RCC_BASE        ,   0x40021000
   .equ RCC_AHB2ENR     ,   RCC_BASE + 0x4C
@@ -67,11 +55,12 @@ uart_init: @ ( -- )
         @ Set PORTD pins in alternate function mode
         ldr r1, = GPIOD_MODER
         ldr r0, [r1]
+        and r0, 0xffffc300
         orrs r0, #0x2800  @ PD5, PD6 Alternate function 
         str r0, [r1]
 
         @ Set alternate function 7 to enable USART2 pins on Port PD5 and PD6
-        ldr  r1, = GPIOA_AFRL
+        ldr  r1, = GPIOD_AFRL
         and  r0, 0xF00FFFFF      @ Zero the bits 20-27
         orrs r0, #0x07700000     @ Alternate function 7 for TX and RX pins of USART2 on PORTA(5,6)
         str  r0, [r1]
@@ -80,18 +69,16 @@ uart_init: @ ( -- )
         ldr r1, = RCC_APB1ENR1
         ldr r0, = BIT17
         str r0, [r1]
-@@@@@TODO::
 
-    @ Configure BRR by deviding the bus clock with the baud rate
+        @ Configure BRR by deviding the bus clock with the baud rate
+        ldr r1, =Terminal_USART_BRR
+        movs r0, #0x8B  @ 115200 bps / 16 MHz HSI
+        str r0, [r1]
 
-    ldr r1, =Terminal_USART_BRR
-    movs r0, #0x8B  @ 115200 bps / 16 MHz HSI
-    str r0, [r1]
-
-    @ Enable the USART, TX, and RX circuit
-    ldr r1, =Terminal_USART_CR1
-    ldr r0, =BIT13+BIT3+BIT2 @ USART_CR1_UE | USART_CR1_TE | USART_CR1_RE
-    str r0, [r1]
+        @ Enable the USART, TX, and RX circuit
+        ldr r1, =Terminal_USART_CR1
+        ldr r0, =BIT13+BIT3+BIT2 @ USART_CR1_UE | USART_CR1_TE | USART_CR1_RE
+        str r0, [r1]
 
         bx lr
 
