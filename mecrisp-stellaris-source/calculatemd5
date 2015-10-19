@@ -54,6 +54,10 @@ cd stm32l152
 md5sum *.bin
 cd ..
 
+cd stm32l152rb
+md5sum *.bin
+cd ..
+
 cd stm32f100
 md5sum *.bin
 cd ..
@@ -80,4 +84,8 @@ cd ..
 
 cd stm32f429
 md5sum *.bin
+cd ..
+
+cd linux
+md5sum mecrisp-stellaris-linux
 cd ..

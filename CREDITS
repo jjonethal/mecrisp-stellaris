@@ -11,6 +11,9 @@ Snowy Christmas Card by Ouatu Bogdan Ionut (humptydumpty)
 Gameduino 2 Forth library and Marsaglia pseudo random number generator by James Bowman
 Examples for LPC1114FN28 by Bert Lohmann
 Nucleo STM32F411 port by Jean Jonethal
+An example for a custom prompt by Glen Worstell
+Syscall usage examples by Ulrich Hoffmann
+Discovery L152 port by Абдрахимов Илья
 
 Hardware donations:
 
@@ -25,6 +28,7 @@ Carsten Strotmann
 Testing and hints in alphabetical order:
 
 John O. 'Sandy' Bumgarner
+Jean Jonethal
 Michael Kalus
 Izidor Makuc
 Bernd Paysan

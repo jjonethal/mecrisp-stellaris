@@ -86,17 +86,10 @@
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_1|Flag_inline, "abs" @ ( n1 -- |n1| )
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-  cmp tos, #0
-  bpl 1f
-  rsbs tos, tos, #0
-1:bx lr
-  .else
-  cmp tos, #0
-  it mi
-  rsbsmi tos, tos, #0
+  asrs r0, tos, #31 @ Turn MSB into 0xffffffff or 0x00000000
+  adds tos, r0
+  eors tos, r0
   bx lr
-  .endif
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2, "u/mod" @ ( u1 u2 -- rem quot )
