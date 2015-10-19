@@ -1,5 +1,4 @@
 eraseflash
 compiletoflash
-include dump.txt
+include ..\common\dump.txt
 include ..\common\disassembler-m3.txt
-include demo2.fth
