@@ -391,3 +391,8 @@
   - Added early experimental bignum implementation
   - Contribution by Ulrich Hoffman:
       Examples for syscall usage in ARM Linux
+
+15.10.2015, Matthias Koch, Mecrisp-Stellaris 2.1.5
+
+  - Contribution by Абдрахимов Илья:
+      New target: STM L152 Discovery
