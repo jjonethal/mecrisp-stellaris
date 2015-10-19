@@ -241,7 +241,7 @@ strukturen_passen_nicht:
 @------------------------------------------------------------------------------
   push {lr}
   cmp tos, #2
-  bne strukturen_passen_nicht
+  bne.n strukturen_passen_nicht
   drop
 
   @ ( Bedingter-Sprung )  ( Conditional-Jump )

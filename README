@@ -791,7 +791,7 @@ Counted string routines:
 Pictured numerical output:
 
         .digit          ( u -- char ) Converts a digit to a char
-        digit           ( char -- u ) Converts a char to a digit
+        digit           ( char -- u true | false ) Converts a char to a digit
 
         [char] *        Compiles code of following char
                         ( -- char ) when executed
