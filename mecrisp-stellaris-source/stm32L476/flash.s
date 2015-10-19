@@ -28,13 +28,67 @@
 
 .equ FLASH_Base, 0x40022000
 
-.equ FLASH_ACR,     FLASH_Base + 0x00 @ Flash Access Control Register
-.equ FLASH_KEYR,    FLASH_Base + 0x04 @ Flash Key Register
-.equ FLASH_OPTKEYR, FLASH_Base + 0x08 @ Flash Option Key Register
-.equ FLASH_SR,      FLASH_Base + 0x0C @ Flash Status Register
-.equ FLASH_CR,      FLASH_Base + 0x10 @ Flash Control Register
-.equ FLASH_AR,      FLASH_Base + 0x14 @ Flash Address Register
-.equ FLASH_OBR,     FLASH_Base + 0x1C @ Flash Option Byte Register
+.equ FLASH_ACR,      FLASH_Base + 0x00 @ Flash Access Control Register
+.equ FLASH_PDKEYR    FLASH_Base + 0x04 @ Flash Power-down key register
+.equ FLASH_KEYR,     FLASH_Base + 0x08 @ Flash Key Register
+.equ FLASH_OPTKEYR,  FLASH_Base + 0x0C @ Flash Option Key Register
+.equ FLASH_SR,       FLASH_Base + 0x10 @ Flash Status Register
+.equ FLASH_CR,       FLASH_Base + 0x14 @ Flash Control Register
+.equ FLASH_ECCR,     FLASH_Base + 0x18 @ Flash ECC register
+.equ FLASH_OPTR,     FLASH_Base + 0x20 @ Flash option register
+.equ FLASH_PCROP1SR, FLASH_Base + 0x24 @ Flash Bank 1 PCROP Start address register
+.equ FLASH_PCROP1ER, FLASH_Base + 0x28 @ Flash Bank 1 PCROP End address register
+.equ FLASH_WRP1AR,   FLASH_Base + 0x2C @ Flash Bank 1 WRP area A address register
+.equ FLASH_WRP1BR,   FLASH_Base + 0x30 @ Flash Bank 1 WRP area B address register
+.equ FLASH_PCROP2SR, FLASH_Base + 0x44 @ Flash Bank 2 PCROP Start address register
+.equ FLASH_PCROP2ER, FLASH_Base + 0x48 @ Flash Bank 2 PCROP End address register
+.equ FLASH_WRP2AR,   FLASH_Base + 0x4C @ Flash Bank 2 WRP area A address register
+.equ FLASH_WRP2BR,   FLASH_Base + 0x50 @ Flash Bank 2 WRP area B address register
+
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "cflash!" @ ( x Addr -- )
+  @ write on character into flash.
+c_flashkomma:
+@ -----------------------------------------------------------------------------
+  @ check boundaries
+  @ getDword at address
+  @ progadr = Addr and $fffffff8
+  @ shift = (Addr and 3) << 3
+  @ mask = $ff << shift
+  @ shifted_val = x << shift
+  @ shifted_val = shifted_val or not mask
+  @ wordl = [progadr]
+  @ wordh = [progadr+4]
+  @ if addr and 4 
+  @   prog_wordh = shifted_val
+  @   prog_wordl = $ffff_ffff
+  @   if wordh and mask and shifted_val != shifted_val error
+  @ else
+  @   prog_wordl = shifted_val
+  @   prog_wordh = $ffff_ffff
+  @   if wordl and mask and shifted_val != shifted_val error
+  @ end
+  @ writel = prog_wordl and wordl
+  @ writeh = prog_wordh and wordl
+  @ [progadr]   = writel
+  @ [progadr+4] = writeh
+  popda r0 @ address
+  popda r1 @ value
+  movs  r2, #0xff
+  ands  r1, r2  @ mask out other then byte0
+  movs  r3, #3  @ which byte 0..3
+  ands  r3, r0  @ shift value ( progadr bits 0,1)
+  movs  r2, #3
+  lsl   r3, r2  @ number of bits to shift in r3 now
+  lsl   r1, r3  @ shift value to final position
+  movs  r2, #0xff
+  lsl   r2, r3  @ shift mask to same position as value r2 contains shifted mask
+  movs  r4, #7  @ mask for double word base address
+  mvn   r4, r4
+  ands  r4, r0  @ r4 contains double word base adress
+1:
+  bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "hflash!" @ ( x Addr -- )
@@ -73,7 +127,7 @@ h_flashkomma:
 
   @ Okay, alle Proben bestanden. 
 
-  @ Im STM32F051 ist der Flash-Speicher gespiegelt, die wirkliche Adresse liegt weiter hinten !
+  @ Im STM32L476 ist der Flash-Speicher gespiegelt, die wirkliche Adresse liegt weiter hinten !
   @ Flash memory is mirrored, use true address later for write
   ldr r2, =0x08000000
   adds r0, r2
