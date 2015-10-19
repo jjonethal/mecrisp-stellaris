@@ -39,8 +39,8 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20020000 @ End   of RAM. 128 kb. Porting: Change this !
+.equ RamAnfang, 0x20000000 @ Start of RAM               Porting: Change this !
+.equ RamEnde,   0x20018000 @ End   of RAM. 96 kb. SRAM1 Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
@@ -73,7 +73,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " for STM32F411 by Matthias Koch"
+   welcome " for STM32L476 by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
