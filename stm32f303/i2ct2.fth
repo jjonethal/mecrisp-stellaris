@@ -16,6 +16,41 @@
 : debug-on -1 DEBUG ! ;
 : dbg hex debug-on ;
 
+$40021000 constant RCC_BASE
+$30 RCC_BASE or constant RCC_CFGR3
+#3 #22 lshift  constant UART5SW               \ UART5 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#3 #20 lshift  constant UART4SW               \ UART4 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#3 #18 lshift  constant USART3SW              \ USART3 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#3 #16 lshift  constant USART2SW              \ USART2 clock source selection 00:PCLK 01:SYSCLK 10:LSE 11:HSI
+#1  #9 lshift  constant TIM8SW
+#1  #8 lshift  constant TIM1SW
+#1  #5 lshift  constant I2C2SW
+#1  #4 lshift  constant I2C1SW
+#3  #0 lshift  constant USART1SW
+$14 RCC_BASE or constant RCC_AHBENR
+
+$1C RCC_BASE or constant RCC_APB1ENR
+#1 #29 lshift   constant DAC1EN
+#1 #28 lshift   constant PWREN
+#1 #26 lshift   constant DAC2EN
+#1 #25 lshift   constant CANEN
+#1 #23 lshift   constant USBEN
+#1 #22 lshift   constant I2C2EN
+#1 #21 lshift   constant I2C1EN
+#1 #20 lshift   constant UART5EN
+#1 #19 lshift   constant UART4EN
+#1 #18 lshift   constant USART3EN
+#1 #17 lshift   constant USART2EN
+#1 #15 lshift   constant SPI3EN
+#1 #14 lshift   constant SPI2EN
+#1 #11 lshift   constant WWDGEN
+#1 #5  lshift   constant TIM7EN
+#1 #4  lshift   constant TIM6EN
+#1 #2  lshift   constant TIM4EN
+#1 #1  lshift   constant TIM3EN
+#1 #0  lshift   constant TIM2EN
+
+
 \ ********** interrupt ids for i2c1 and i2c2 **
 #47                 constant I2C1_EV           \ i2c event interrupd
 #48                 constant I2C1_ER           \ i2c error interrupd
@@ -27,9 +62,6 @@ $E000E100           constant NVIC_ISER0
 $E000E280           constant NVIC_ICPR0
 NVIC_ICPR0 4 +      constant NVIC_ICPR1
 NVIC_ICPR0 8 +      constant NVIC_ICPR2
-$40021000           constant RCC_BASE
-$14 RCC_BASE or     constant RCC_AHBENR
-$1C RCC_BASE or     constant RCC_APB1ENR
 $48000400           constant gpiob
 gpiob               constant gpiob_moder
 $04 gpiob or        constant gpiob_otyper
@@ -61,6 +93,21 @@ i2c I2C_CR2 +       constant i2c-cr2
 i2c $18     +       constant i2c-isr
 i2c $28     +       constant i2c-txdr
 i2c $24     +       constant i2c-rxdr
+
+\ utility functions for common use
+: cnt0   ( m -- b )                           \ count trailing zeros with hw support
+   dup negate and 1-
+   clz negate #32 + 1-foldable ;
+: bits@  ( m adr -- b )                       \ get bits a masked position
+   @ over and swap cnt0 rshift ;
+: bits!  ( n m adr -- )                       \ set masked bits at position
+   >R dup >R cnt0 lshift                      \ shift value to proper pos
+   R@ and                                     \ mask out unrelated bits
+   R> not R@ @ and                            \ invert bitmask and makout new bits
+   or r> ! ;                                  \ apply value and store back
+: bit-mask! ( v m adr -- )                    \ set bit masked value at 
+   >R dup >R and R> not R@ @ and or R> ! ; 
+
 
 \ calculate nvic enable disable mask from ipsr number
 \ ipsr "vector number" is interrupt position + 16 or vector_adress / 4 
@@ -226,10 +273,21 @@ ftab: i2c-state-table
 : i2c-test  ( -- )  %00110011 i2c-slave-adr ! 6 i2c-xfer-size ! 0 i2c-xfer-cnt ! $28 i2c-reg ! >i2c->rx-start i2c-state !
    i2c-handle ;
 
-: 2048 buffer: la-buffer
-0 variable la-cnt
-: la begin key? until ;
+2048 constant la-buffer-size
+la-buffer-size 1- constant la-buffer-end
+la-buffer-size buffer: la-buffer
+0 variable la-state
+0 variable la#
+: >la ( c -- )
+   la# @ dup dup la-buffer-end < - la# ! la-buffer + c! ;
+: la?! ( c -- ) 
+   dup la-state c@ <> 
+   if dup la-state c! >la else drop then ;
+: la. ( -- )
+  la# @ dup 0 > if 0 do i la-buffer + c@ [char] 0 + emit loop else drop then ;
+: lat 1 la?! la# @ . 0 la?! la# @ . ;
+: la ( -- ) 0 la# ! begin gpiob_idr @ 6 lshift 3 and la?! key? la# @ la-buffer-end >= or until ;
 
-: accel-test  ( -- )  i2c-setup hex i2c->accel-start ;
+: accel-test  ( -- ) dbg key . i2c-setup hex i2c->accel-start la ;
 
 
