@@ -43,17 +43,21 @@ $28 i2c1  + constant I2C1_TXDR
    $13            or \ SCLL=0x13
    I2C1_TIMINGR ! ;
 : i2c-on ( -- ) 1 i2c1 bis! ; \ PE 1 
-: i2c-start ( n a r/w -- ) \ number of bytes, address, read(1)/write(0)
+: i2c-off ( -- ) 1 i2c1 bic! ; \ PE 1 
+: i2c-start ( a n r/w -- ) \ number of bytes, address, read(1)/write(0)
    0<> 1 and #10 lshift \ r/w
-   or  \ addr
-   swap #16 lshift or \ nbytes
+   swap #16 lshift or   \ number of bytes 
+   or                   \ i2c address
    I2C1_CR2 !
    1 #13 lshift I2C1_CR2 bis! ;
 : i2c-tx  ( n -- )  I2C1_TXDR c! ;
 : i2c-rx  ( -- n )  I2C1_RXDR c@ ;
 : i2c-stat  ( -- n )  i2c1_isr @ ;
 : i2c-stop  ( -- )  $1 #14 lshift i2c1_cr2 bis! ;
-: accel-init gpiob-en i2c1-en pin-opendrain pin-af-mode ;
-: i2c-set-reg-adr ( reg a  -- ) 1 swap 0 i2c-start i2c-tx ;
-
-
+: accel-init gpiob-en i2c1-en pin-opendrain pin-af-mode i2c-timing i2c-on ;
+: i2c-wait ( n -- ) begin dup i2c-stat and until drop ; 
+: i2c-set-reg-adr ( reg a  -- ) 1 0 i2c-start 2 i2c-wait i2c-tx ;
+: i2c-write-reg ( v reg a  -- ) \ value register i2c-adress
+   2 0 i2c-start 2 i2c-wait i2c-tx 2 i2c-wait i2c-tx $40 i2c-wait ;
+: i2c-read-reg ( reg a  -- ) \ value register i2c-adress
+   tuck i2c-set-reg-adr 1 1 i2c-start $4 i2c-wait i2c-rx i2c-stop ;
