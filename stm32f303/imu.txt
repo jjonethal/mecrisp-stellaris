@@ -1,4 +1,6 @@
 
+include basisdefinitions.txt
+
 \ Intertial sensing with accelerometer, magnetometer and gyroscope
 \   needs basisdefinitions.txt
 
@@ -259,6 +261,7 @@ $1E constant i2c-addr-mag
 : accel-init ( -- )
   i2c-init
   $67 $20 i2c-addr-accel i2c-reg!  \ Enable the accelerometer, 200 Hz rate
+  $8 $23 i2c-addr-accel i2c-reg!   \ Enable the 12 bit high resolution mode
 ;
 
 : accel-xyz ( -- x y z )
