@@ -54,10 +54,31 @@ $28 i2c1  + constant I2C1_TXDR
 : i2c-rx  ( -- n )  I2C1_RXDR c@ ;
 : i2c-stat  ( -- n )  i2c1_isr @ ;
 : i2c-stop  ( -- )  $1 #14 lshift i2c1_cr2 bis! ;
-: accel-init gpiob-en i2c1-en pin-opendrain pin-af-mode i2c-timing i2c-on ;
-: i2c-wait ( n -- ) begin dup i2c-stat and until drop ; 
-: i2c-set-reg-adr ( reg a  -- ) 1 0 i2c-start 2 i2c-wait i2c-tx ;
+: i2c-wait ( n -- ) begin dup i2c-stat and until i2c1_icr bis! ; 
+: i2c-set-reg-adr ( reg a  -- ) $FE and 1 0 i2c-start 2 i2c-wait i2c-tx ;
 : i2c-write-reg ( v reg a  -- ) \ value register i2c-adress
    2 0 i2c-start 2 i2c-wait i2c-tx 2 i2c-wait i2c-tx $40 i2c-wait ;
 : i2c-read-reg ( reg a  -- ) \ value register i2c-adress
-   tuck i2c-set-reg-adr 1 1 i2c-start $4 i2c-wait i2c-rx i2c-stop ;
+   tuck i2c-set-reg-adr 1 or 1 1 i2c-start $4 i2c-wait i2c-rx i2c-stop ;
+: i2c-read-2-reg ( reg adr -- ) \ read 2 register values
+   tuck i2c-set-reg-adr 1 or 2 1 i2c-start $4 i2c-wait i2c-rx  $4 i2c-wait i2c-rx i2c-stop ;
+: i2c-wait-rx ( -- n ) $4 i2c-wait i2c-rx ;
+: i2c-read-6-reg ( reg adr -- ) \ read 6 register values
+   tuck i2c-set-reg-adr 1 or 6 1 i2c-start
+   i2c-wait-rx  i2c-wait-rx i2c-wait-rx  i2c-wait-rx i2c-wait-rx  i2c-wait-rx
+   i2c-stop ;
+: i2c-init  ( -- )  gpiob-en i2c1-en pin-opendrain pin-af-mode i2c-timing i2c-on ;
+: accel-init ( -- ) i2c-init $67 $20 $32 i2c-write-reg $20 $32 i2c-read-reg $67 = 
+   if ." accel initialized. " else ." accel failed. " then ;
+: accel-xl ( -- xl ) $28 $33 i2c-read-reg ;
+: accel-xh ( -- xh ) $29 $33 i2c-read-reg ;
+\ multi register read : reg-adr $80 OR 
+: accel-x ( -- x ) $28 $80 or $33 i2c-read-2-reg 8 lshift or ;
+: accel-y ( -- y ) $2A $80 or $33 i2c-read-2-reg 8 lshift or ;
+: accel-z ( -- z ) $2C $80 or $33 i2c-read-2-reg 8 lshift or ;
+: h>s  ( h -- s ) #16 lshift #16 arshift ;
+: accel-xyz ( -- x y z ) $28 $80 or $33 i2c-read-6-reg
+   8 lshift or h>s >R 8 lshift or h>s >R 8 lshift or h>s R> R> ;
+: accel. ( n -- ) $33 i2c-read-reg . ;
+: accel-hr ( -- ) $08 $23 $32 i2c-write-reg ;
+: axyz. ( -- ) accel-xyz rot . swap . . ;
