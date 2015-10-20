@@ -3,6 +3,7 @@
 \ SDA               - PB7 ( I2C1 AF4 )
 \ INT2              - PE5 
 \ INT1              - PE4
+\ using polling
 
 $48000400   constant gpiob
 $4 gpiob  + constant GPIOB_OTYPER
@@ -101,8 +102,9 @@ $28 i2c1  + constant I2C1_TXDR
 0 variable my
 0 variable mz
 : filter ( x a -- )
-   dup >R @ dup 10 arshift - + R> ! ;
+   dup >R @ dup 5000 + 10000 / - + R> ! ;
 : accel-demo ( -- ) accel-init accel-hr
+   accel-xyz 10000 * mz ! 10000 * my ! 10000 * mx !
    begin accel-xyz mz filter my filter mx filter
    mx @ . my @ . mz @ .
    #13 emit key?
