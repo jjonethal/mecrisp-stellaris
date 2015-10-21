@@ -8,7 +8,7 @@
 0 variable DEBUG                               \ debug flag
 : DEBUG? ( -- f) DEBUG @ ;                     \ turn on debugging output ?
 : .debug" ( c-addr len -- )                    \ type text when debugging active
-   DEBUG? if cr type ." sp " sp@ . ."  " else 2drop then cr ;
+   DEBUG? if cr type ." sp " sp@ . ."  " else 2drop then ;
 
 : .D" ( -- )                                   \ output debug text
    postpone s" postpone .debug" immediate ;
@@ -221,7 +221,7 @@ i2c $24     +       constant i2c-rxdr
    i2c-tc?    ?of i2c-stop                   >i2c->tx-complete   -> .D" i2c-tc? "     endof
    i2c-nackf? ?of                            >i2c->abort         -> .D" i2c-nackf? "  endof endcase ;
 : i2c->tx-complete .D" i2c->tx-complete " i2c-off i2c-on-tx-complete @ dup if execute else drop then ;
-: i2c->rx-start i2c-on i2c-adr-mode7 i2c-slave-adr7 i2c-wr i2c-no-autoend i2c-1byte i2c-start >i2c->rx-reg -> ;
+: i2c->rx-start i2c-on i2c-adr-mode7 i2c-slave-adr7 i2c-wr i2c-no-autoend i2c-1byte i2c-start i2c-isr . >i2c->rx-reg -> ;
 : i2c->rx-reg .D" i2c->rx-reg " 0 case
    i2c-txis?  ?of i2c-tx-reg                 >i2c->rx-read-start -> .D" i2c-txis? " endof
    i2c-nackf? ?of                            >i2c->abort         -> endof endcase ;
@@ -270,7 +270,7 @@ ftab: i2c-state-table
    endcase i2c-isr-ack ;     
 : i2c-irq-init  ( -- ) 0 i2c-dbg-irq-nr ! irq-collection @  irq-old-handler ! ['] i2c-irq-handle irq-collection ! ;
 : i2c-setup  ( -- )  i2c-irq-init i2c-init I2C_EV nvic-enable-irq I2C_ER nvic-enable-irq ;
-: i2c-test  ( -- )  %00110011 i2c-slave-adr ! 6 i2c-xfer-size ! 0 i2c-xfer-cnt ! $28 i2c-reg ! >i2c->rx-start i2c-state !
+: i2c-test  ( -- ) hex %00110011 i2c-slave-adr ! 6 i2c-xfer-size ! 0 i2c-xfer-cnt ! $28 $80 or i2c-reg ! >i2c->rx-start i2c-state !
    i2c-handle ;
 
 2048 constant la-buffer-size
