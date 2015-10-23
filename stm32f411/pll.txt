@@ -1,6 +1,14 @@
 \ DAS GEHT NOCH NICHT !!!
 \ THAT FILE doesn't work yet !!!
+\ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
+\ progman "E:\stm\DM00046982 PM0214 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
+\ ref man "E:\stm\DM00119316  RM0383 STM32F411xC_E advanced ARM-based 32-bit MCUs .pdf"
 
+\ stm32f411re clock tree
+\ 
+\
+\
+\
 decimal
 $40023C00 constant Flash_ACR \ Flash Access Control Register
 $40004408 constant USART2_BRR
