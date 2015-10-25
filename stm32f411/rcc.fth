@@ -2,6 +2,14 @@
 \ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
 \ progman "E:\stm\DM00046982 PM0214 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
 \ ref man "E:\stm\DM00119316  RM0383 STM32F411xC_E advanced ARM-based 32-bit MCUs .pdf"
+\ clock tree
+\
+\
+\ HSE --- PLLSRC:1 --> /PLLM(2..63) --> *PLLN(50..432) -+-> /PLLP(00:/2 01:/4 10:/6 11:/8) --> PLLCLK
+\ HSI --- PLLSRC:0                                      +-> /PLLQ(/2..15) --> PLL48CK
+\ >HSI ------> SW:00 ---> SYSCLK
+\ >HSE ------> SW:01
+\ >PLLCLK ---> SW:10
 
 #8000000      constant hse-base-clock
 #1 #18 lshift constant hse-byp-mode
@@ -25,7 +33,7 @@ $00 RCC_BASE or constant RCC_CR
 
 $04 RCC_BASE or constant RCC_PLLCFGR
    $F #24 lshift constant PLLQ    \ 2.. 15
-   $1 #22 lshift constant PLLSRC
+   $1 #22 lshift constant PLLSRC  \ 0:HSI 1:HSE
    $3 #16 lshift constant PllP
  $1FF  #6 lshift constant PLLN
  $3F             constant PLLM
@@ -42,31 +50,29 @@ $08 RCC_BASE or constant RCC_CFGR
    $7 #10 lshift constant PPRE1   \ APB Low speed prescaler (APB1) 0xx: /1, 100: /2, 101: /4, 110: /8, 111: /16 <= 42Mhz
    $3  #8 lshift constant RCC_CFGR_RES \ reserved
    $F  #4 lshift constant HPRE    \ AHB prescaler 0-7:/1 8:/2 9:/4 10:/8 11:/16 12:/64 13:/128 14:/256 15:/512 (>=25 for Ethernet)
-   #3  #2 lshift constant SWS     \ System clock switch status 0:HSI 1:HSE 2:PLL 3:not applicable
-   #3            constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
+   $3  #2 lshift constant SWS     \ System clock switch status 0:HSI 1:HSE 2:PLL 3:not applicable
+   $3            constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
 
 
 : cnt0 ( m -- b )           \ count trailing zeros with hw support
-  dup negate and 1- clz negate #32 +
-;
+  dup negate and 1- clz negate #32 + 1-foldable ;
 
-: getbits ( m adr -- b )    \ get masked bits from adress and shift down to least significant bit
-  @ over and swap cnt0 rshift
-;
+: bits@ ( m adr -- b )      \ get masked bits from adress and shift down to least significant bit
+  @ over and swap cnt0 rshift ;
 
-: setbits  ( v m adr -- )   \ set the bits at mask position e.g. m:%00|111|00 v: %11 adr@ = %10|100|10 -- adr@:%10|011|10
+: bits!  ( v m adr -- )     \ set the bits at mask position e.g. m:%00|111|00 v: %11 adr@ = %10|100|10 -- adr@:%10|011|10
   >R dup >R cnt0 lshift     \ shift value to proper pos
   R@ and                    \ mask out unrelated bits of v
   R> not R@ @ and           \ invert bit mask and mask out new bits
-  or r> !                   \ apply value and store back
-;
+  or r> ! ;                 \ apply value and store back
 
-: -1>=0! ( n -- 0|n-1 ) \ n-1 or 0 if negative
+
+: -1>=0 ( n -- 0|n-1 ) \ n-1 or 0 if negative
   1- dup 0< not and
 ;
 
 : ws-2v1 ( mhz -- ws ) \ waitstates for 1.71-2.1V
-  -1>=0! #4 rshift
+  -1>=0 #4 rshift
 ;
 
 : c18/ ( c -- c/18 ) \ divide a value by 18 for values 0..255
@@ -74,7 +80,7 @@ $08 RCC_BASE or constant RCC_CFGR
 ;
 
 : ws-2v4 ( mhz -- ws ) \ waitstates for 2.1-2.4V
-  -1>=0! c18/
+  -1>=0 c18/
 ;
 
 : c24/ ( c -- c/24 ) \ divide a value by 24 for values 0..255
@@ -82,7 +88,7 @@ $08 RCC_BASE or constant RCC_CFGR
 ;
 
 : ws-2v7 ( mhz -- ws ) \ waitstates for 2.4-2.7V 1..100 mhz
-  -1>=0! c24/
+  -1>=0 c24/
 ;
 
 : ws-3v6 ( mhz -- ws ) \ waitstates for 2.7-3.6V
@@ -111,55 +117,39 @@ ftab: ws-ftab
   ws-v-range ws-ftab
 ;
 
-: RCC_CFGR.SWS@ ( -- clksrc ) \ System clock switch status #0:HSI #1:HSE #2:PLL #3:not used
-  RCC_CFGR @ #2 rshift #3 and
-;
+: sys-clk-source@ ( -- clksrc ) \ get System clock switch status #0:HSI #1:HSE #2:PLL #3:not used
+  SWS RCC_CFGR bits@ ;
 
-: RCC_CFGR.SW! ( clksrc -- ) \ System clock switch #0:HSI #1:HSE #2:PLL #3:not used
-  RCC_CFGR @ [ 3 not literal, ] and or RCC_CFGR !
-;
-
-
-
-: set-mask ( m adr -- ) dup >R @ or R> ! ;
-: clr-mask ( m adr -- ) >R not R@ @ and R> ! ;
-
-
-decimal
-
+: sys-clk-source! ( clksrc -- ) \ System clock switch #0:HSI #1:HSE #2:PLL #3:not used
+  SW RCC_CFGR bits! ;
 
 : hse-on!  ( -- ) HSEON RCC_CR bis! ;
 : hse-off! ( -- ) HSEON RCC_CR bic! ;
-
 : hse-on? ( -- f ) HSEON RCC_CR bit@ ;
-
 : hse-ready? ( -- f ) HSERDY RCC_CR bit@ ;
 
-: wait-hse-stable
-  begin 
-    hse-on!
-    hse-ready?  
-  until
-;
+: hsi-on!  ( -- ) HSION RCC_CR bis! ;
+: hsi-off! ( -- ) HSION RCC_CR bic! ;
+: hsi-on? ( -- f ) HSION RCC_CR bit@ ;
+: hsi-ready? ( -- f ) HSIRDY RCC_CR bit@ ;
 
-: pll-off ( -- )
-  clk-source?
-;
 
-: set-hse-clock ( -- ) \ set system clock source to hse
-  hse-on? not if set-hse-on wait-hse-stable then
-  1 sys-clk-set
-  clk-pll-off
-; 
+: wait-hse-stable ( -- )  \ tun on hse and wait until stable
+  hse-on! begin hse-ready? until ;
+: wait-hsi-stable ( -- )  \ tun on hsi and wait until stable
+  hsi-on! begin hsi-ready? until ;
 
-: switch-clk-source-hse ( -- )
-  current-mhz hse-base-clock < if hse-base-clock cfg-flash then
-  clk-source-hse
-  pll-off
-;
+: pll-off ( -- ) 
+  PLLON RCC_CR bic! ;
+
+: sys-clock-hse ( -- ) \ set system clock source to hse
+  wait-hse-stable 1 sys-clk-source! ; 
+: sys-clock-hsi ( -- ) \ set system clock source to hsi
+  wait-hsi-stable 0 sys-clk-source! ; 
+: sys-clock-pll ( -- ) \ set system clock source to pll
+  wait-hsi-stable 2 sys-clk-source! ; 
 
 : set-pll-hse ( mhz -- )
-  
   dup cfg-flash
 ;
 
