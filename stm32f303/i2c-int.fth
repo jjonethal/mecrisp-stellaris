@@ -46,6 +46,21 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 1  #1 lshift constant TXIS 
 1            constant TXE
 
+\ **** long range defer ***********************
+: BX,  ( reg -- )                              \ compile branch exchange to [reg]
+   $f and #3 lshift $4700 or h, ;
+: defer  ( "name" )                            \ create place holder for jump (bx r0)
+   (create) #10 allot smudge ;
+: is  ( a -- ) ( "name" )                      \ create jump to address a at "name"
+   '  here dup >R - allot                      \ adjust here to place holder
+   1 or                                        \ adjust jump target address to thumb mode !
+   0 registerliteral,                          \ compile address to r0
+   0 BX,                                       \ compile BX r0
+   r> here - allot ;                           \ restore dictionary pointer
+
+
+
+
 \ calculate nvic enable disable mask from ipsr number
 \ ipsr "vector number" is interrupt position + 16 or vector_adress / 4 
 : nvic-mask  ( n -- n )                        \ calculate mask for nvic vector number
@@ -129,14 +144,35 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 0 variable mx
 0 variable my
 0 variable mz
-: filter ( x a -- )
-   dup >R @ dup 5000 + 10000 / - + R> ! ;
+0 variable ax
+0 variable ay
+0 variable az
+0 variable aabs
+0 variable mabs
+
+: filter ( x a -- )  \ averaging filter
+   dup >R @ dup 500 + 1000 / - + R> ! ;
+: filter-xyz ( -- )
+   ax @ mx filter ay @ my filter az @ mz filter ;
+: abs-xyz ( -- )
+   ax @ dup * ay @ dup * az @ dup * + + 
+   aabs ! ;
 : accel-demo ( -- ) accel-init accel-hr
-   accel-xyz 10000 * mz ! 10000 * my ! 10000 * mx !
-   begin accel-xyz mz filter my filter mx filter
-   mx @ . my @ . mz @ .
-   #13 emit key?
+   az ! ay ! ax !
+   az @ 1000 * mz ! ay @ 1000 * my ! ax @ 1000 * mx !
+   begin accel-xyz    az ! ay ! ax !
+     filter-xyz
+     mx @ . my @ . mz @ .
+     #13 emit key?
    until ;
+: sqrt-step ( a xn -- a xn+1 )
+   2dup / + 2/ 2-foldable inline ;
+: sqrt ( n -- sqrt ) \ ( xn+1 = ( a/xn + xn ) / 2 )
+   dup dup clz 32 - negate 2/ rshift
+   ." initial val " dup .
+   sqrt-step sqrt-step sqrt-step sqrt-step sqrt-step
+   swap drop ;
+   
 0 variable i2c-state
 : i2c-s-tx-finish ." i2c-s-tx-finish " $20 i2c1_icr ! ." i2c-stat " i2c-stat . ( i2c-nvic-dis ) ;
 : i2c-s-tx-stop ." i2c-s-tx-stop " i2c-stop ." i2c-stat " i2c-stat . ['] i2c-s-tx-finish i2c-state !  ;
