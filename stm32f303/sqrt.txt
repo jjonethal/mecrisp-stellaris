@@ -1,0 +1,13 @@
+\ Fast integer square root Copyright (C) 2015  Jean Jonethal
+\ This is free software under GNU General Public License v3.
+\ example : 1000000 sqrt .
+\ by Jean Jonethal
+
+: sqrt-step ( a xn -- a xn+1 )  \ perform one sqrt step x(n+1) = ( a/x(n) + x(n))/2 
+   2dup / + 2/ 2-foldable inline ;
+: sqrt ( n -- sqrt ) \ calc square root of signed positive number  0 <= n <= 2^31-1 
+   dup dup clz 32 - negate 2/ rshift \ first estimation
+   sqrt-step sqrt-step sqrt-step     \ sqrt-step \ sqrt-step
+   swap drop ;
+: test-sqrt ( -- )
+   32768 0 do i i * sqrt i <> if ." error "  i . leave then loop ;
