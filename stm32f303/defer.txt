@@ -6,7 +6,7 @@
 
 \ long range defer
 : BX,  ( reg -- )                              \ compile branch exchange to [reg]
-   3 lshift $4700 or h, ;
+   $f and #3 lshift $4700 or h, ;
 : defer  ( "name" )                            \ create place holder for jump (bx r0)
    (create) #10 allot smudge ;
 : is  ( a -- ) ( "name" )                      \ create jump to address a at "name"
