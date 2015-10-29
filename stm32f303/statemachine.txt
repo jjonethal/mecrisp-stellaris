@@ -1,0 +1,16 @@
+statemachine: sm1 init s1 
+  state: s1 
+    init:    s11 ->
+    entry:   s1-setup
+    exit:    s1-leave
+  ;
+  state: s11 parent s1 
+   init:
+   entry:
+   exit:
+  ;
+  state: s2 ;
+  state: s3 ;
+  state: s4 ;
+  state: s5 ;
+;statemachine
