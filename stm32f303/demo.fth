@@ -362,16 +362,6 @@ $30 RCC_BASE or constant RCC_CFGR3
 : bit-mask! ( v m adr -- )                    \ set bit masked value at 
    >R dup >R and R> not R@ @ and or R> ! ; 
 
-compiletoram
-: bits3! ( v m a -- )
-   -rot swap
-   over cnt0 lshift over and  ( -- a m vm )
-   swap not ( -- a vm /m )
-   2 pick @ and   ( -- )
-   or swap ! ;
-   
-
-   
 \ flash functions
 : flash-ws!  ( n -- )  LATENCY FLASH_ACR bits! ;
 : flash-ws-mhz!  ( n -- )  #24 / flash-ws! ;
