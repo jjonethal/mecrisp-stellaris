@@ -218,6 +218,8 @@ decimal
   #32 + + + + + +
 ;
 
+
+
 : cnt0 ( m -- b )           \ count trailing zeros with hw support
   dup negate and 1-   clz negate #32 +
 ;
