@@ -9,4 +9,15 @@
 : sqr ( n -- n^2 ) dup * 1-foldable ;
 : star 42 emit ;
 
+: bounds ( addr len -- addr+len addr ) over + swap ;
+
+: erase ( addr # -- ) 0 fill ;
+
+: stop-loop
+   key?
+   if   key $1B =  \ ESC
+   else 0
+   then
+ ;
+
 

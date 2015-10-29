@@ -396,3 +396,9 @@
 
   - Contribution by Абдрахимов Илья:
       New target: STM L152 Discovery
+
+28.10.2015, Matthias Koch, Mecrisp-Stellaris 2.1.6
+
+  - Many new examples for Teensy 3.1 by Andreas Wagner
+  - Bugfix for STM32L152 vector map and additional interrupt vectors,
+    more examples for STM L152 Discovery by Абдрахимов Илья

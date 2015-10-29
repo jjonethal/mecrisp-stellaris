@@ -1,0 +1,26 @@
+\ bitstruct demo
+\ REQUIRES: dump.txt misc.txt bitstruct.txt
+
+struct
+  8  bits part1
+  8  superbits part2&3
+     4 bits part2
+     4 bits part3
+  16 bits part4
+  32 bits part5
+constant strangetype
+
+strangetype buffer: test
+test strangetype erase
+: st. ( -- ) test strangetype dump ;
+
+      $cd test part2&3 rtbit!    test part2&3 rtbit@ hex.
+       $9 test part3   rtbit!    test part3   rtbit@ hex.
+      $42 test part1   rtbit!    test part1   rtbit@ hex.
+    $5678 test part4   rtbit!    test part4   rtbit@ hex.
+$AAAAAAAA test part5   rtbit!    test part5   rtbit@ hex.
+
+st.
+
+
+\ vim:set filetype=forth foldmarker=\:,; foldmethod=marker :

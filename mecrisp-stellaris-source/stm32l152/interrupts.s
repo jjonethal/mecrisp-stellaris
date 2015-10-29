@@ -34,5 +34,16 @@ interrupt dac
 interrupt tim2
 interrupt tim3
 interrupt tim4
-
+interrupt tim6
+interrupt tim7
+interrupt i2c1_ev
+interrupt i2c1_er
+interrupt i2c2_ev
+interrupt i2c2_er
+interrupt spi1
+interrupt spi2
+interrupt usart1
+interrupt usart2
+interrupt usart3
+interrupt rtc_alarm
 @------------------------------------------------------------------------------

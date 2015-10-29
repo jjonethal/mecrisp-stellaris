@@ -1,0 +1,15 @@
+\ triangle-wave.txt - Triangle wave
+\ Andreas Wagner <andreas.wagner@lowfatcomputing.org>
+\ REQUIRES: nvic.txt misc.txt delay.txt dac.txt
+
+: triangle-wave
+  +dac
+  begin
+    $FFF 0 ?do      i       dac loop
+    $FFF 0 ?do $FFF i -     dac loop
+    stop-loop
+  until
+  0 dac
+ ;
+
+

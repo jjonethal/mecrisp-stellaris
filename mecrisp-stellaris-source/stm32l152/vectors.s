@@ -46,7 +46,6 @@
 .word nullhandler+1 @ Position 19:
 .word nullhandler+1 @ Position 20:
 .word irq_vektor_dac+1 @ Position 21: DAC interrupt
-.word nullhandler+1 @ Position 21:
 .word nullhandler+1 @ Position 22:
 .word nullhandler+1 @ Position 23:
 .word nullhandler+1 @ Position 24:
@@ -56,31 +55,19 @@
 .word irq_vektor_tim2+1 @ Position 28: TIM2
 .word irq_vektor_tim3+1 @ Position 29: TIM3
 .word irq_vektor_tim4+1 @ Position 30: TIM4
-.word nullhandler+1 @ Position 31:
-.word nullhandler+1 @ Position 32:
-.word nullhandler+1 @ Position 33:
-.word nullhandler+1 @ Position 34:
-.word nullhandler+1 @ Position 35:
-.word nullhandler+1 @ Position 36:
-.word nullhandler+1 @ Position 37:
-.word nullhandler+1 @ Position 38:
-.word nullhandler+1 @ Position 39:
+.word irq_vektor_i2c1_ev+1 @ Position 31:  I2C1 Event Interrupt
+.word irq_vektor_i2c1_er+1 @ Position 32: I2C1 Error Interrupt
+.word irq_vektor_i2c2_ev+1 @ Position 33: I2C2 Event Interrupt
+.word irq_vektor_i2c2_er+1 @ Position 34: I2C2 Error Interrupt
+.word irq_vektor_spi1+1 @ Position 35: SPI1 global Interrupt
+.word irq_vektor_spi2+1 @ Position 36: SPI2 global Interrupt
+.word irq_vektor_usart1+1 @ Position 37: USART1 global Interrupt
+.word irq_vektor_usart2+1 @ Position 38: USART2 global Interrupt
+.word irq_vektor_usart3+1 @ Position 39: USART3 global Interrupt
 .word nullhandler+1 @ Position 40:
-.word nullhandler+1 @ Position 41:
+.word irq_vektor_rtc_alarm+1 @ Position 41: RTC Alarm through EXTI Line Interrupt
 .word nullhandler+1 @ Position 42:
-.word nullhandler+1 @ Position 43:
-.word nullhandler+1 @ Position 44:
-.word nullhandler+1 @ Position 45:
-.word nullhandler+1 @ Position 46:
-.word nullhandler+1 @ Position 47:
-.word nullhandler+1 @ Position 48:
-.word nullhandler+1 @ Position 49:
-.word nullhandler+1 @ Position 50:
-.word nullhandler+1 @ Position 51:
-.word nullhandler+1 @ Position 52:
-.word nullhandler+1 @ Position 53:
-.word nullhandler+1 @ Position 54:
-.word nullhandler+1 @ Position 55:
-.word nullhandler+1 @ Position 56:
+.word irq_vektor_tim6+1 @ Position 43: TIM6
+.word irq_vektor_tim7+1 @ Position 44: TIM7
 
 @ -----------------------------------------------------------------------------
