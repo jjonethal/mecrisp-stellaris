@@ -169,7 +169,8 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 : i2c-set-reg-adr  ( reg a  -- )
    $FE and 1 0 i2c-start TXIS i2c-wait i2c-tx ;
 : i2c-write-reg  ( v reg a  -- )              \ write a value to register at i2c-adress
-   2 0 i2c-start TXIS i2c-wait i2c-tx TXIS i2c-wait i2c-tx TC i2c-wait ;
+   2 0 i2c-start TXIS i2c-wait i2c-tx TXIS
+   i2c-wait i2c-tx TC i2c-wait ;
 : i2c-read-reg  ( reg a  -- )                 \ read a value from register at i2c-adress
    tuck i2c-set-reg-adr 1 or 1 1 i2c-start
    RXNE i2c-wait i2c-rx i2c-stop ;
@@ -236,6 +237,10 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 
 : filter ( x a -- )                           \ averaging filter
    dup >R @ dup 500 + 1000 / - + R> ! ;
+: filter2 ( x a -- ) tuck @ dup 500 + 1000 / - + swap ! ;
+: filter2 tuck @ dup 500 + 1000 / - + swap ! ;
+
+: test ." : filter2 tuck @ dup 500 + 1000 / - + swap ! ; " evaluate ;
 : filter-xyz ( -- )
    ax @ mx filter ay @ my filter az @ mz filter ;
 : abs-xyz ( -- )
@@ -289,7 +294,7 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
   constant i2c-states#
 
 \ ********** i2c state words *****************
-: i2c-s-idle ( -- ) i2c-nvic-dis ;
+: i2c-s-idle ( -- ) i2c-off i2c-nvic-dis ;
 : i2c-s-tx-adr    ." i2c-s-tx-adr "    i2c-on i2c-int-ena i2c-s-tx-reg# ->
    i2c-device-adr @ i2c-tx-count @ 1+ i2c-start-write ;
 : i2c-s-tx-reg    ." i2c-s-tx-reg "    $20 i2c-tx     ." i2c-stat " i2c-stat . i2c-s-tx-val#    -> ;
