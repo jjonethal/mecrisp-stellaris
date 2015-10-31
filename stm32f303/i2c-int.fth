@@ -272,12 +272,18 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 \ ********** i2c driver variables ************
 0 variable i2c-device-adr                     \ address of i2c device
 0 variable i2c-device-reg                     \ register of i2c device
-0 variable i2c-tx-count                       \ number of bytes to transfer
+0 variable i2c-xfer-num                       \ number of bytes to transfer
 0 variable i2c-xfer-buffer-adr                \ pointer to transferbuffer
+0 variable i2c-xfer-count                     \ count received/transmitted bytes
 0 variable i2c-state                          \ number of next state
 
 : ->  ( --  )  i2c-state ! ;                  \ put state number to i2c-state
-
+: i2c-tx-val#  ( -- c? )                      \ return next byte to transmit or -1
+   i2c-xfer-count dup >R @
+   dup i2c-xfer-buffer-adr @ + c@
+   swap i2c-xfer-num @ < -
+   R> ! ;
+  
 \ ********** i2c state ids *******************
 0 enum i2c-s-idle#
   enum i2c-s-tx-adr#
@@ -296,9 +302,10 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 \ ********** i2c state words *****************
 : i2c-s-idle ( -- ) i2c-off i2c-nvic-dis ;
 : i2c-s-tx-adr    ." i2c-s-tx-adr "    i2c-on i2c-int-ena i2c-s-tx-reg# ->
-   i2c-device-adr @ i2c-tx-count @ 1+ i2c-start-write ;
-: i2c-s-tx-reg    ." i2c-s-tx-reg "    $20 i2c-tx     ." i2c-stat " i2c-stat . i2c-s-tx-val#    -> ;
-: i2c-s-tx-val    ." i2c-s-tx-val "    $67 i2c-tx     ." i2c-stat " i2c-stat . i2c-s-tx-stop#   -> ;
+   i2c-device-adr @ i2c-xfer-num @ 1+ i2c-start-write ;
+: i2c-s-tx-reg    ." i2c-s-tx-reg "    i2c-device-reg @
+   i2c-tx     ." i2c-stat " i2c-stat . i2c-s-tx-val#    -> ;
+: i2c-s-tx-val    ." i2c-s-tx-val "    i2c-tx-val     ." i2c-stat " i2c-stat . i2c-s-tx-stop#   -> ;
 : i2c-s-tx-stop   ." i2c-s-tx-stop "   i2c-stop       ." i2c-stat " i2c-stat . i2c-s-tx-finish# -> ;
 : i2c-s-tx-finish ." i2c-s-tx-finish " $20 i2c1_icr ! ." i2c-stat " i2c-stat . i2c-nvic-dis i2c-s-idle# -> ;
 : i2c-s-rx-sel-adr ;
@@ -309,6 +316,8 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 : i2c-s-rx-finish ;
 
 \ ********** i2c function table **************
+\ order in function table must be same as i2c state ids
+\ i2c state id maps to entry in function table
 ftab: i2c-sm
   ['] i2c-s-idle
   ['] i2c-s-tx-adr
