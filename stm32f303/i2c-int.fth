@@ -159,13 +159,13 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 : i2c-rx  ( -- n )  I2C1_RXDR c@ ;            \ receive a byte
 : i2c-stat  ( -- n )  i2c1_isr @ ;            \ get i2c status
 : i2c-stop  ( -- )  $1 #14 lshift i2c1_cr2 bis! ;
-: i2c-init  ( -- )                            \ init ports mode i2c timing 
+: i2c-init  ( -- )                            \ init ports mode i2c timing
    gpiob-en i2c1-en pin-opendrain pin-af-mode i2c-timing i2c-on ;
 
 
 \ ********** i2c polling functions ***********
 : i2c-wait  ( m -- )                          \ wait for masked i2c status flags
-   begin dup i2c-stat and until i2c1_icr bis! ; 
+   begin dup i2c-stat and until i2c1_icr bis! ;
 : i2c-set-reg-adr  ( reg a  -- )
    $FE and 1 0 i2c-start TXIS i2c-wait i2c-tx ;
 : i2c-write-reg  ( v reg a  -- )              \ write a value to register at i2c-adress
@@ -212,6 +212,29 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
 : accel-highres  ( -- )                       \ enable 12 bit ADC resolution for accel sensor
    $08 $23 $32 i2c-write-reg ;
 : axyz. ( -- ) accel-xyz rot . swap . . ;
+
+\ ********** magnetometer sensor *************
+: mag-init ( -- )
+   i2c-init $9C $00 $3C i2c-write-reg         \ CTRL_REG1_A 200 Hz, Normal mode XYZ enable
+                $00 $3C i2c-read-reg $9C =    \ read back init value
+   if   ." mag initialized. "
+   else ." mag failed. " then ;
+: mag-set ( v r -- f )
+   2dup $3C i2c-write-reg
+   $3C i2c-read-reg = ;
+: mag-get ( r -- v )
+   $3C i2c-read-reg ;
+: mag-x ( -- )
+   $03 $3C i2c-read-2-reg 2c>sh ;
+: mag-y ( -- )
+   $05 $3C i2c-read-2-reg 2c>sh ;
+: mag-z ( -- )
+   $07 $3C i2c-read-2-reg 2c>sh ;
+: mag-xyz ( -- x y z )                      \ read acceleration axes
+   $03 $3D i2c-read-6-reg
+   2c>sh >R 2c>sh >R 2c>sh R> R> ;
+: mxyz. ( -- ) mag-xyz rot . swap . . ;
+
 
 \ ********** acceleration sensor variables ***
 0   variable mx                               \ average x acceleration
@@ -270,20 +293,31 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
    dup constant 1+ ;
 
 \ ********** i2c driver variables ************
-0 variable i2c-device-adr                     \ address of i2c device
-0 variable i2c-device-reg                     \ register of i2c device
-0 variable i2c-xfer-num                       \ number of bytes to transfer
-0 variable i2c-xfer-buffer-adr                \ pointer to transferbuffer
-0 variable i2c-xfer-count                     \ count received/transmitted bytes
-0 variable i2c-state                          \ number of next state
+#16 constant i2c-def-buffer-size
+i2c-def-buffer-size buffer:  i2c-def-buffer
+0                   variable i2c-device-adr   \ address of i2c device
+0                   variable i2c-device-reg   \ register of i2c device
+i2c-def-buffer-size variable i2c-buffer$      \ size of i2c-buffer
+i2c-def-buffer      variable i2c-buffer       \ pointer to transferbuffer
+0                   variable i2c-buffer#      \ count received/transmitted bytes
+0                   variable i2c-state        \ number of next state
 
-: ->  ( --  )  i2c-state ! ;                  \ put state number to i2c-state
-: i2c-tx-val#  ( -- c? )                      \ return next byte to transmit or -1
-   i2c-xfer-count dup >R @
-   dup i2c-xfer-buffer-adr @ + c@
-   swap i2c-xfer-num @ < -
-   R> ! ;
-  
+: ->  ( -- )  i2c-state ! ;                   \ put state number to i2c-state
+: i2c-buffer>  ( -- c )                       \ return next byte to transmit
+   i2c-buffer# @ dup dup i2c-buffer$ @ <
+   if i2c-buffer @ + c@                       \ get next character from buffer
+    swap 1+ i2c-buffer# !                     \ update buffer index
+   else 2drop -1 then ;
+: >i2c-buffer ( c -- )                        \ store character to xfer buffer
+   i2c-buffer# @ i2c-buffer$ @ <              \ get xfer-count
+   if i2c-buffer# @ i2c-buffer @ + c!
+    i2c-buffer# @ 1+ i2c-buffer# !            \ store c to buffer
+   else drop then ;                           \ check and store i2c-xfer-count
+: i2c-buffer-end? ( -- f )
+   i2c-buffer$ @ i2c-buffer# @ = ;
+: >test 20 0 do i >i2c-buffer loop ;
+: test> 0 i2c-buffer# ! 20 0 do cr i . i2c-buffer> . i2c-buffer# @ . loop ;
+
 \ ********** i2c state ids *******************
 0 enum i2c-s-idle#
   enum i2c-s-tx-adr#
@@ -300,20 +334,32 @@ NVIC_ICPR0 8 + constant NVIC_ICPR2
   constant i2c-states#
 
 \ ********** i2c state words *****************
-: i2c-s-idle ( -- ) i2c-off i2c-nvic-dis ;
-: i2c-s-tx-adr    ." i2c-s-tx-adr "    i2c-on i2c-int-ena i2c-s-tx-reg# ->
-   i2c-device-adr @ i2c-xfer-num @ 1+ i2c-start-write ;
-: i2c-s-tx-reg    ." i2c-s-tx-reg "    i2c-device-reg @
-   i2c-tx     ." i2c-stat " i2c-stat . i2c-s-tx-val#    -> ;
-: i2c-s-tx-val    ." i2c-s-tx-val "    i2c-tx-val     ." i2c-stat " i2c-stat . i2c-s-tx-stop#   -> ;
-: i2c-s-tx-stop   ." i2c-s-tx-stop "   i2c-stop       ." i2c-stat " i2c-stat . i2c-s-tx-finish# -> ;
-: i2c-s-tx-finish ." i2c-s-tx-finish " $20 i2c1_icr ! ." i2c-stat " i2c-stat . i2c-nvic-dis i2c-s-idle# -> ;
-: i2c-s-rx-sel-adr ;
-: i2c-s-rx-sel-reg ;
-: i2c-s-rx-adr ;
-: i2c-s-rx-data ;
-: i2c-s-rx-stop ;
-: i2c-s-rx-finish ;
+: i2c-s-idle  ( -- )                          \ default / idle state turn off i2c disable interrupts 
+   i2c-off i2c-nvic-dis ;
+: i2c-s-tx-adr  ( -- )                        \ transmit mode send device address
+   ." i2c-s-tx-adr " i2c-on i2c-int-ena
+   i2c-s-tx-reg# ->
+   i2c-device-adr @ i2c-buffer$ @ 1+
+   i2c-start-write ;
+: i2c-s-tx-reg  ( -- )                        \ transmit mode send register address
+   ." i2c-s-tx-reg "    i2c-device-reg @
+   i2c-tx     ." i2c-stat " i2c-stat .
+   i2c-s-tx-val#    -> ;
+: i2c-s-tx-val  ( -- )                        \ transmit mode send value
+   ." i2c-s-tx-val " 
+   i2c-buffer-end? if i2c-s-tx-stop# -> then
+   i2c-buffer> i2c-tx
+   ." i2c-stat " i2c-stat . ;
+: i2c-s-tx-stop  ( -- )
+   ." i2c-s-tx-stop " i2c-stop ." i2c-stat " i2c-stat . i2c-s-tx-finish# -> ;
+: i2c-s-tx-finish  ( -- )
+   ." i2c-s-tx-finish " $20 i2c1_icr ! ." i2c-stat " i2c-stat . i2c-nvic-dis i2c-s-idle# -> ;
+: i2c-s-rx-sel-adr ( -- )  ;
+: i2c-s-rx-sel-reg  ( -- )  ;
+: i2c-s-rx-adr ( -- )  ;
+: i2c-s-rx-data  ( -- )  ;
+: i2c-s-rx-stop  ( -- ) ;
+: i2c-s-rx-finish  ( -- ) ;
 
 \ ********** i2c function table **************
 \ order in function table must be same as i2c state ids
