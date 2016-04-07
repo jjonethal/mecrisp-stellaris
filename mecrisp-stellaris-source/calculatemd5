@@ -86,6 +86,10 @@ cd stm32f103
 md5sum *.bin
 cd ..
 
+cd stm32f103-ra
+md5sum *.bin
+cd ..
+
 cd stm32f303
 md5sum *.bin
 cd ..

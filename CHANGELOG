@@ -490,3 +490,10 @@
   - Contribution by Ralph Sahli: Peripheral libraries for STM32F407
   - Contribution by Terry Porter: Register definitions and insight generator
   - Contribution by Igor OM1ZZ: Eight queens bechmark and PLL code
+
+20.02.2016, Matthias Koch, Mecrisp-Stellaris 2.2.2
+
+  - More interrupts in STM32F103
+  - Added STM32F103-RA
+  - Contribution by Ilya Abdrahimov: Many examples for STM32F429
+  - Contribution by Ralph Sahli: Many more examples and libraries for STM32F407

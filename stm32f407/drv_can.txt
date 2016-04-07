@@ -1,0 +1,121 @@
+\
+\ 	CAN1 driver 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- CAN1 
+\			- PD0 -> CAN1_RX
+\			- PD1 -> CAN1_TX
+\
+\		REQUIRES: lib_registers.txt
+
+
+0 0 0 0 4 nvariable canTrmBuffer	\ buffer for: CAN_TI0R, CAN_TDT0R, CAN_TDL0R, CAN_TDH0R
+
+: cbId! ( identifier -- )
+	 21 lshift canTrmBuffer ! ;
+: cbLen! ( n -- )
+	canTrmBuffer 4 + ! ;
+: cb! ( word n -- )					\ n -> index 0 .. 1
+	4 * canTrmBuffer 8 + + ! ;
+: cbH! ( halfWord n -- )			\ n -> index 0 .. 3
+	2 * canTrmBuffer 8 + + h! ;
+: cbC! ( char n -- )					\ n -> index 0 .. 7
+	canTrmBuffer 8 + + c! ;
+: cbTrm.
+	4 0 do canTrmBuffer i 4 * + @ hex. loop cr ;
+	
+0 0 0 0 4 nvariable canRcvBuffer	\ buffer for: CAN_RI0R, CAN_RDT0R, CAN_RDL0R, CAN_RDT0R
+	
+: cbId@ (  -- identifier )
+	canRcvBuffer @ 21 rshift ;
+: cbLen@ ( n -- )		
+	canRcvBuffer 4 + @ %1111 and ;
+: cbFilter@ ( -- n )	
+	canRcvBuffer 4 + @ $FF00 and 8 rshift ;
+: cb@ ( n -- word )					\ n -> index 0 .. 1
+	4 * canRcvBuffer 8 + + @ ;
+: cbH@ ( n -- halfWord )			\ n -> index 0 .. 3
+	2 * canRcvBuffer 8 + + h@ ;
+: cbC@ ( n -- char )					\ n -> index 0 .. 7
+	canRcvBuffer 8 + + c@ ;
+: cbRcv.
+	4 0 do canRcvBuffer i 4 * + @ hex. loop cr ;
+			
+: canInit ( -- )  
+	\ --- init can lines 
+    GPIODEN RCC_AHB1ENR bis!								\ IO port D clock enabled
+    MODE_ALTERNATE 0 PORTD_BASE set-moder		\ PD0 -> Alternate function mode
+    MODE_ALTERNATE 1 PORTD_BASE set-moder		\ PD1 -> Alternate function mode
+    SPEED_HIGH 0 PORTD_BASE set-opspeed			\ high speed PD0
+    SPEED_HIGH 1 PORTD_BASE set-opspeed			\ high speed PD1
+    9 0 PORTD_BASE set-alternate						\ PD0 -> Alternate function: %1001: AF9 (CAN1) 
+    9 1 PORTD_BASE set-alternate						\ PD1 -> Alternate function: %1001: AF9 (CAN1) 
+	\ init CAN1
+    CAN1EN RCC_APB1ENR bis!          						\ Enable clock for CAN1
+ 
+	INRQ CAN_MCR bis!											\ initalization request
+
+	$001C0000 CAN_BTR !										\ set bit timing for 500 baud, clk = 8Mhz from table -> http://www.bittiming.can-wiki.info/
+
+	begin INAK CAN_MSR bit@ until						\ initalization done
+      
+    INRQ CAN_MCR bic!											\ leave initalization
+    begin INAK CAN_MSR bit@ not until				\ initalization left
+	
+	SLEEP CAN_MCR bic!											\ clear Sleep mode 
+;
+
+\ test for empty transmit mailbox 0
+: canTme0? ( -- f )
+    pause TME0 CAN_TSR bit@ ;
+
+\ send message over  transmit mailbox 0
+: >canMb0 ( -- )
+	begin canTme0? until
+    canTrmBuffer @ CAN_TI0R !							
+    canTrmBuffer 4 + @ CAN_TDT0R !	
+    canTrmBuffer 8 + @ CAN_TDL0R !	
+    canTrmBuffer 12 + @ CAN_TDH0R !
+   TXRQ CAN_TI0R bis!										\ Transmit mailbox request 
+;
+
+\ test for pending messages in fifo 0
+: canFifo0? ( -- n )
+	pause CAN_RF0R @ %11 and ;							\ # of FIFO 0 message pending ( 0..3)
+
+\ get message from fifo 0
+: canFifo0> ( -- )
+	begin canFifo0? 0<> until
+	CAN_RI0R @ canRcvBuffer !
+	CAN_RDT0R @ canRcvBuffer 4 + !				
+	CAN_RDL0R @ canRcvBuffer 8 + !
+	CAN_RDH0R @ canRcvBuffer 12 + !								
+	RFOM0 CAN_RF0R bis!									\ Release FIFO 0 output mailbox
+;
+
+\ set filter Identifier list
+: setFilterIdList ( filterId register bank -- )	\ register: 1..2, bank: 0..27)
+	FINIT CAN_FMR bis!
+	dup 1 swap lshift dup CAN_FM1R bis!		\ filter mode 1 -> Identifier list
+	dup CAN_FS1R bis!										\ filter scale register  1 x 32-Bit Filter
+	dup CAN_FFA1R bic! 										\ filter FIFO 0 assignment
+	CAN_FA1R bis! 												\ filter activation
+	+ 1- 4 * CAN_F0R1 + 										\ filter bank i register x (i=0..27, x=1, 2)
+	swap 21 lshift swap ! 									\ set filterId ( standard identifier )
+	FINIT CAN_FMR bic!
+;
+
+\ set filter Identifier Mask
+: setFilterIdMask ( filterId filterMask bank -- )	\ bank: 0..27)
+	FINIT CAN_FMR bis!
+	dup 1 swap lshift dup CAN_FM1R bic!		\ filter mode 0 -> Identifier Mask
+	dup CAN_FS1R bis!										\ filter scale register 1 x 32-Bit Filter
+	dup CAN_FFA1R bic! 										\ filter FIFO 0 assignment
+	CAN_FA1R bis!												\ filter activation
+	4 * 2 * CAN_F0R1 +  										\ filter bank i (i=0..27)
+	rot 21 lshift over !									\ set filterId ( standard identifier )
+	swap 21 lshift swap 4 + !							\ set filterMask ( standard identifier )
+	FINIT CAN_FMR bic! 
+;

@@ -1502,7 +1502,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
   
 ;------------------------------------------------------------------------------
-; Specials for STM32F100 and STM32F103:
+; Specials for STM32F100:
 ;------------------------------------------------------------------------------
 
 Flash:
@@ -1524,6 +1524,61 @@ Interrupts:
         irq-exti2
         irq-exti1
         irq-exti0
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for STM32F103:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 1k flash page only. Take care:
+                                      No Reset, no dictionary reinitialisation.
+
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-adc         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-exti4
+        irq-exti3
+        irq-exti2
+        irq-exti1
+        irq-exti0
+
+        irq-rtc
+        irq-exti5
+        irq-tim1brk
+        irq-tim1up
+        irq-tim1trg
+        irq-tim1cc
+        irq-tim2
+        irq-tim3
+        irq-tim4
+        irq-i2c1ev
+        irq-i2c1er
+        irq-i2c2ev
+        irq-i2c2er
+        irq-spi1
+        irq-spi2
+        irq-usart1
+        irq-usart2
+        irq-usart3
+        irq-exti10
+        irq-rtcalarm
+        irq-usbwkup
+        irq-tim5
+        irq-spi3
+        irq-uart4
+        irq-uart5
+        irq-tim6
+        irq-tim7
+        irq-usbfs
 
   Look into vectors.s and interrupts.s to add more interrupts.
 

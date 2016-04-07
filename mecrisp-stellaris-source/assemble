@@ -84,6 +84,10 @@ cd stm32f103
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103
 cd ..
 
+cd stm32f103-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103-ra
+cd ..
+
 cd stm32f303
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303
 cd ..
@@ -165,6 +169,10 @@ arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-st
 cd ..
 
 cd stm32f103
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103.bin mecrisp-stellaris-stm32f103.hex
+cd ..
+
+cd stm32f103-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103.bin mecrisp-stellaris-stm32f103.hex
 cd ..
 

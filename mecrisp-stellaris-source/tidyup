@@ -84,6 +84,10 @@ cd stm32f103
 make clean
 cd ..
 
+cd stm32f103-ra
+make clean
+cd ..
+
 cd stm32f303
 make clean
 cd ..
