@@ -12,6 +12,10 @@ cd lpc1115fbd48
 make clean
 cd ..
 
+cd lpc1115fbd48-ra
+make clean
+cd ..
+
 cd kl25z128
 make clean
 cd ..

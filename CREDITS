@@ -6,7 +6,7 @@ MK20DX256 port for Teensy 3.1 board by Mark Schweizer
 Ethernet drivers for TM4C1294 by Bernd Paysan
 Random number generator for STM32F4 by Sean Stasiak
 LM4F232H5QC port for Chinese QF-LM4F232 board by 呂明貴 (Albert)
-Forth register definition generator adapted for Mecrisp-Stellaris by Terry Porter
+Forth register definitions & insight generator for Mecrisp-Stellaris by Terry Porter
 Snowy Christmas Card by Ouatu Bogdan Ionut (humptydumpty)
 Gameduino 2 Forth library and Marsaglia pseudo random number generator by James Bowman
 Examples for LPC1114FN28 by Bert Lohmann
@@ -16,6 +16,8 @@ Syscall usage examples by Ulrich Hoffmann
 Discovery L152 port, 1-Wire driver and examples by Абдрахимов Илья (Ilya Abdrahimov)
 Many MK20DX256 examples by Andreas Wagner
 Discovery L476 and Discovery F746 ports by Jean Jonethal
+Peripheral libraries for STM32F407 by Ralph Sahli
+Eight queens bechmark and PLL code by Igor OM1ZZ
 
 Hardware donations:
 

@@ -482,3 +482,11 @@
   - Contribution by Ilya Abdrahimov: 1-Wire for STM32L152RB
   - Contribution by Jean Jonethal:
       New target: STM F746 Discovery
+
+13.02.2016, Matthias Koch, Mecrisp-Stellaris 2.2.1a
+
+  - LDMIA + Interrupt silicon bug found: KNOWN-ISSUES added
+  - Added RA for LPC1115
+  - Contribution by Ralph Sahli: Peripheral libraries for STM32F407
+  - Contribution by Terry Porter: Register definitions and insight generator
+  - Contribution by Igor OM1ZZ: Eight queens bechmark and PLL code
