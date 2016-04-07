@@ -51,7 +51,27 @@
 
 : timer-handler ;
 : usb-handler ;
+\ ********** i2c section *********************
+0   variable i2c-adr
+0   variable i2c-reg
+0   variable i2c-xfer-num
+0   variable i2c-xfer-count
+0   variable i2c-state
+0   variable i2c-callback
+#32 buffer:  i2c-buffer
+: i2c-tx-start  ( -- )  i2c-adr@ i2c-xfer-num@ i2c-start-write ;
+: i2c-s-idle  ( -- )  i2c-off i2c-int-dis ;
+: i2c-tx-adr  ( -- )  i2c-init i2c-tx-start i2c-tx-reg# -> ;
+: i2c-tx-reg  ( -- )  
+   i2c-isr case dup TXIE and ?of i2c-reg @ i2c-tx  i2c-tx-data# -> endof
+                dup TC   and ?of i2c-stop          i2c-tx-end#  -> endof endcase ;
+: i2c-tx-data  ( -- )
+    i2c-isr case dup TXIE and ?of i2c-tx i2c-buffer@ i2c-tx i2c-tx-data# -> endof
+                 dup TC   and ?of i2c-stop                  i2c-tx-end#  -> endof endcase ;
+: i2c-tx-end  ( -- )  i2c-off i2c-int-dis i2c-notify ;
+: i2c-rx-sel-adr  ( -- )  i2c-init i2c
 : i2c-handler ;
+
 : spi-handler ;
 : accel-handler ;
 : mag-handler ;

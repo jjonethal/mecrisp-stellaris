@@ -249,13 +249,13 @@ $30 RCC_BASE or constant RCC_CFGR3
 : gpio-mode!  ( mode pin -- ) \ 00:input 01:output 10:alternate function 11:analog
    dup gpio-port >R $f and 2* #3 swap lshift R> bits! ;
 : gpio-otype!  ( mode pin -- ) \ set ouput type 0: push-pull 1:open drain
-   dup gpio-port 4+ >R $f and #1 swap lshift R> bits! ;
+   dup gpio-port 4 + >R $f and #1 swap lshift R> bits! ;
 : gpio-pupd!  ( mode pin -- ) \ 00:no pupd 01:pu 10:pd 11:reserved
    dup gpio-port >R $f and 2* #3 swap lshift R> bits! ;
 : gpio-bsrr  ( pinAdr -- adr )  gpio-port $18 + 1-foldable inline ; \ calc gpio_bsrr address
 : gpio-odr  ( pinAdr -- adr )  gpio-port $14 + 1-foldable inline ; \ calc gpio_odr address
 : gpio-af   ( pinAdr -- adr ) dup gpio-port $20 + swap $8 and shr + 1-foldable ; 
-: gpio-af-msk  ( pinAdr -- m ) $7 and $f swap lshift 1-foldable ;
+: gpio-af-msk  ( pinAdr -- m ) $7 and #2 lshift $f swap lshift 1-foldable ;
 : gpio-af!  ( afmode pin -- )   dup gpio-af-msk swap gpio-af bits! ;
 
 #4 gpio-port-adr $20 +    constant GPIOE_AFRL
