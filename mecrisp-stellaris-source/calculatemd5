@@ -114,11 +114,23 @@ cd stm32l476-ra
 md5sum *.bin
 cd ..
 
+cd stm32f746-ra
+md5sum *.bin
+cd ..
+
 cd xmc1100
 md5sum *.bin
 cd ..
 
 cd xmc1100-ra
+md5sum *.bin
+cd ..
+
+cd efm32gg990
+md5sum *.bin
+cd ..
+
+cd efm32gg990-ra
 md5sum *.bin
 cd ..
 

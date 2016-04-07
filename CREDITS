@@ -13,9 +13,9 @@ Examples for LPC1114FN28 by Bert Lohmann
 Nucleo STM32F411 port by Jean Jonethal
 An example for a custom prompt by Glen Worstell
 Syscall usage examples by Ulrich Hoffmann
-Discovery L152 port and examples by Абдрахимов Илья (Ilya Abdrahimov)
+Discovery L152 port, 1-Wire driver and examples by Абдрахимов Илья (Ilya Abdrahimov)
 Many MK20DX256 examples by Andreas Wagner
-Discovery L476 port by Jean Jonethal
+Discovery L476 and Discovery F746 ports by Jean Jonethal
 
 Hardware donations:
 

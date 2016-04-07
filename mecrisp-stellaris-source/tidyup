@@ -112,11 +112,23 @@ cd stm32l476-ra
 make clean
 cd ..
 
+cd stm32f746-ra
+make clean
+cd ..
+
 cd xmc1100
 make clean
 cd ..
 
 cd xmc1100-ra
+make clean
+cd ..
+
+cd efm32gg990
+make clean
+cd ..
+
+cd efm32gg990-ra
 make clean
 cd ..
 

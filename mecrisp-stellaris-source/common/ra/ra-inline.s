@@ -70,7 +70,7 @@ inline_cache_schreiben:
     @ Jetzt den Inhalt des Inline-Caches fein säuberlich einkompilieren :-)
     ldr r0, =inline_cache @ r1 enthält die Anzahl von Elementen.
     subs r1, #1 @ Insgesamt ein Element weniger, weil ; auch mit in den Inline-Cache kommt.
-    beq 2f @ Sonst nichts vorhanden ? Schon fertig !
+    beq 4f @ Sonst nichts vorhanden ? Bei einer leeren Definition kann diese als 0-faltbar markiert und komplett wegoptimiert werden.
 
     pushda r1 @ Zahl der Elemente schreiben
     bl hkomma
@@ -97,6 +97,11 @@ inline_cache_schreiben:
     bl setflags
 
 3:@ Zu lang, nicht komplett erfasst ! Kann leider keine Optimiervererbungssequenz schreiben.
+  pop {r0, r1, r2, r3, pc}
+
+4:@ Leere Definition. als 0-faltbar markieren, damit sie komplett wegoptimiert werden kann.
+  pushdaconst Flag_foldable_0 & ~Flag_visible
+  bl setflags
   pop {r0, r1, r2, r3, pc}
 
 @ -----------------------------------------------------------------------------

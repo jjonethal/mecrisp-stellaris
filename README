@@ -36,6 +36,7 @@ It runs out of the box on:
   - STM F429 Discovery           with STM32F429ZIT6
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
   - Infineon XMC2GO              with XMC1100Q024F0064
+  - EFM32 Giant Gecko            with EFM32GG990F1024
   
   - Breadboard friendly, DIP packaged LPC1114FN28
   -                                   LPC1115FBD48
@@ -47,6 +48,7 @@ Contributions:
   - nRFgo Starter Kit            with nRF51822
   - STM L152 Discovery           with STM32L152RBT6
   - STM L476 Discovery           with STM32L476VG
+  - STM F746 Discovery           with STM32F746NG
 
 http://mecrisp.sourceforge.net/
 
@@ -350,6 +352,20 @@ Hardware and configuration for XMC1100:
   try changing the UART_FDR_STEP value in terminal.s a bit.
 
   On startup, this runs with internal MCLK = PCKL = 8 MHz clock.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for EFM32GG990:
+;------------------------------------------------------------------------------
+  Connect USB cable to DBG connector for flashing and terminal.
+
+  To get the mass storage flashing interface and USB-serial bridge,
+  a firmware update of the on board debugger might be necessary.
+  See instructions on MBED:
+  https://developer.mbed.org/teams/SiliconLabs/wiki/Silicon-Labs-Firmware
+
+  Flashing is done by copying the binary into the USB drive.
+
+  On startup, this runs with internal HFCLK = HFRCO = 14 MHz clock.
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for MK20DX256VLH7 on a Teensy 3.1 board:
@@ -1634,7 +1650,7 @@ Interrupts:
         irq-ccu3
 
 ;------------------------------------------------------------------------------
-; Specials for MK20DX256:
+; Specials for EFM32GG990:
 ;------------------------------------------------------------------------------
 
 Flash:
@@ -1643,6 +1659,54 @@ Flash:
         eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
                                       Clears Ram. Restarts Forth.
 
+        flashpageerase  ( a-addr -- ) Erase one 4 kb flash page only.
+                                      No Reset, no dictionary reinitialisation.
+
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-dma         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-gpioeven
+        irq-timer0
+        irq-usart0rx
+        irq-usart0tx
+        irq-acmp0
+        irq-adc0
+        irq-dac0
+        irq-i2c0
+        irq-gpioodd
+        irq-timer1
+        irq-timer2
+        irq-usart1rx
+        irq-usart1tx
+        irq-usart2rx
+        irq-usart2tx
+        irq-uart0rx
+        irq-uart0tx
+        irq-leuart0
+        irq-leuart1
+        irq-letimer0
+        irq-pcnt0
+        irq-pcnt1
+        irq-pcnt2
+        irq-rtc
+        irq-cmu
+        irq-vcmp
+        irq-lcd
+        irq-msc
+        irq-aes
+            
+;------------------------------------------------------------------------------
+; Specials for MK20DX256:
+;------------------------------------------------------------------------------
+            
+Flash:      
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+            
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+            
         flashpageerase  ( a-addr -- ) Erase one 1k flash page only. Take care:
                                       No Reset, no dictionary reinitialisation.
 

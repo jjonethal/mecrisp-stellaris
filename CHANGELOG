@@ -472,3 +472,13 @@
 
   - Replaced align, with halign
   - Removed align4, as it has been identical with align
+
+01.01.2016, Matthias Koch, Mecrisp-Stellaris 2.2.1 - 32C3 release !
+
+  E-Paper graphics buffer and paint primitives
+  New target: Silicon Labs Giant Gecko Starter Kit with EFM32GG990F1024
+  Fixed flaw in RA core when inlining empty definitions
+
+  - Contribution by Ilya Abdrahimov: 1-Wire for STM32L152RB
+  - Contribution by Jean Jonethal:
+      New target: STM F746 Discovery

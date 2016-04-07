@@ -112,12 +112,24 @@ cd stm32l476-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l476-ra
 cd ..
 
+cd stm32f746-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
+cd ..
+
 cd xmc1100
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100 && cp *.hex ../../xmc1100
 cd ..
 
 cd xmc1100-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100-ra && cp *.hex ../../xmc1100-ra
+cd ..
+
+cd efm32gg990
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32gg990
+cd ..
+
+cd efm32gg990-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32gg990-ra
 cd ..
 
 # Intel Hex images for STM targets:
