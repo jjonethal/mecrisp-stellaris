@@ -1,0 +1,86 @@
+
+\ -----------------------------------------------------------------------------
+\  Hello world: Blinky LEDs
+\ -----------------------------------------------------------------------------
+
+\ Connections on the board:
+\
+\ P1.0  Red LED 1
+\ P1.1  Red LED 2
+\
+\ P2.1  TXD
+\ P2.2  RXD
+\
+\ Connections to the pin headers:
+\
+\       X2    X1
+\ P0.6   1    1   P0.5
+\ P0.7   2 || 2   P0.0
+\ P0.8   3    3   3.3V
+\ P0.9   4    4   GND
+\ P0.14  5    5   P2.11
+\ P0.15  6    6   P2.10
+\ P2.0   7    7   P2.9
+\ P2.6   8    8   P2.7
+\
+\ Note: P0 has normal digital IO capabilities
+\       P1 has digital IO with high current output drivers
+\       P2 has analog inputs, but the pins
+\          P2.6, P2.7, P2.8 and P2.9 have no output driver at all.
+
+
+\ -----------------------------------------------------------------------------
+
+$40040000 constant P0OUT
+$40040004 constant P0OMR
+$40040010 constant P0IOCR0
+$40040014 constant P0IOCR4
+$40040018 constant P0IOCR8
+$4004001c constant P0IOCR12
+$40040024 constant P0IN
+$40040040 constant P0PHCR0
+$40040044 constant P0PHCR1
+$40040060 constant P0PDISC
+$40040070 constant P0PPS
+$40040074 constant P0HWSEL
+
+$40040100 constant P1OUT
+$40040104 constant P1OMR
+$40040110 constant P1IOCR0
+$40040114 constant P1IOCR4
+$40040118 constant P1IOCR8
+$4004011c constant P1IOCR12
+$40040124 constant P1IN
+$40040140 constant P1PHCR0
+$40040144 constant P1PHCR1
+$40040160 constant P1PDISC
+$40040170 constant P1PPS
+$40040174 constant P1HWSEL
+
+$40040200 constant P2OUT
+$40040204 constant P2OMR
+$40040210 constant P2IOCR0
+$40040214 constant P2IOCR4
+$40040218 constant P2IOCR8
+$4004021c constant P2IOCR12
+$40040224 constant P2IN
+$40040240 constant P2PHCR0
+$40040244 constant P2PHCR1
+$40040260 constant P2PDISC
+$40040270 constant P2PPS
+$40040274 constant P2HWSEL
+
+\ -----------------------------------------------------------------------------
+
+: blinky ( -- )
+
+  $8080 P1IOCR0 ! \ Set P1.0 and P1.1 as push-pull outputs
+
+  0
+  begin
+    1+
+    dup 3 and P1OUT !
+    1000000 0 do loop    
+  key? until
+  drop
+;

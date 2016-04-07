@@ -31,7 +31,7 @@
 
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_1|Flag_inline, "0<>" @ ( x -- ? ) @ Meins
+  Wortbirne Flag_foldable_1|Flag_inline, "0<>" @ ( x -- ? )
 @ -----------------------------------------------------------------------------
   subs tos, #1
   sbcs tos, tos
@@ -45,98 +45,61 @@
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_2, ">=" @ ( x1 x2 -- ? ) @ Meins
+  Wortbirne Flag_foldable_0|Flag_inline, "true" @ ( -- -1 )
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
+  pushdatos
+generate_true:
+  movs tos, #0
+  mvns tos, tos
+  bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_0|Flag_inline, "false" @ ( x -- 0 )
+@ -----------------------------------------------------------------------------
+  pushdatos
+  movs tos, #0
+  bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_2, ">=" @ ( x1 x2 -- ? )
+@ -----------------------------------------------------------------------------
   ldm psp!, {r0}      @ Get x1 into a register.
-  cmp r0, tos         @ Is x2 less?
-  bge 1f
+  cmp r0, tos         @ Is x2 less or equal ?
+  bge.n generate_true
   movs tos, #0
   bx lr
-1:movs tos, #0
-  mvns tos, tos
-  bx lr
-
-  .else
-  ldm psp!, {r0}     @ Get x1 into a register.
-  cmp r0, tos        @ Is x2 less?
-  ite lt             @ If so,
-  movlt tos, #0      @  set all bits in TOS,
-  movge tos, #-1     @  otherwise clear 'em all.
-  bx lr
-  .endif
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_2, "<=" @ ( x1 x2 -- ? ) @ Meins          
+  Wortbirne Flag_foldable_2, "<=" @ ( x1 x2 -- ? )          
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
   ldm psp!, {r0}     @ Get x1 into a register.
-  cmp r0, tos        @ Is x2 greater?
-  ble 1f  
+  cmp r0, tos        @ Is x2 greater or equal ?
+  ble.n generate_true
   movs tos, #0
   bx lr
-1:movs tos, #0
-  mvns tos, tos
-  bx lr
-
-  .else
-  ldm psp!, {r0}     @ Get x1 into a register.
-  cmp r0, tos        @ Is x2 greater?
-  ite gt             @ If so,
-  movgt tos, #0      @  set all bits in TOS,
-  movle tos, #-1     @  otherwise clear 'em all.
-  bx lr
-  .endif
-
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2, "<" @ ( x1 x2 -- ? )
                       @ Checks if x2 is less than x1.
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
   ldm psp!, {r0}     @ Get x1 into a register.
   cmp r0, tos        @ Is x2 less?
-  bge 1f
+  blt.n generate_true
   movs tos, #0
-  mvns tos, tos
   bx lr
-1:movs tos, #0
-  bx lr
-
-  .else
-  ldm psp!, {r0}     @ Get x1 into a register.
-  cmp r0, tos        @ Is x2 less?
-  ite lt             @ If so,
-  movlt tos, #-1     @  set all bits in TOS,
-  movge tos, #0      @  otherwise clear 'em all.
-  bx lr
-  .endif
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2, ">" @ ( x1 x2 -- ? )
                       @ Checks if x2 is greater than x1.
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
   ldm psp!, {r0}     @ Get x1 into a register.
   cmp r0, tos        @ Is x2 greater?
-  ble 1f
+  bgt.n generate_true
   movs tos, #0
-  mvns tos, tos
   bx lr
-1:movs tos, #0
-  bx lr
-
-  .else
-  ldm psp!, {r0}     @ Get x1 into a register.
-  cmp r0, tos        @ Is x2 greater?
-  ite gt             @ If so,
-  movgt tos, #-1     @  set all bits in TOS,
-  movle tos, #0      @  otherwise clear 'em all.
-  bx lr
-  .endif
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_2|Flag_inline, "u>=" @ ( u1 u2 -- ? ) @ Meins
+  Wortbirne Flag_foldable_2|Flag_inline, "u>=" @ ( u1 u2 -- ? )
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0}      @ Get u1 into a register.
   subs tos, r0, tos   @ subs tos, w, tos   @ TOS = a-b  -- carry set if a is less than b
@@ -145,7 +108,7 @@
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_2|Flag_inline, "u<=" @ ( u1 u2 -- ? ) @ Meins
+  Wortbirne Flag_foldable_2|Flag_inline, "u<=" @ ( u1 u2 -- ? )
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0}
   subs tos, r0
@@ -162,7 +125,7 @@
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_2|Flag_inline, "u>" @ ( u1 u2 -- ? ) @ Meins
+  Wortbirne Flag_foldable_2|Flag_inline, "u>" @ ( u1 u2 -- ? )
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0}
   subs tos, r0
@@ -176,16 +139,10 @@
   ldm psp!, {r0}      @ Get the next elt into a register.
   subs tos, r0        @ Z=equality; if equal, TOS=0
 
-  .ifdef m0core
-  beq 1f
-  movs tos, #0
+  subs tos, #1
+  sbcs tos, tos
   mvns tos, tos
-1:bx lr
-  .else
-  it ne             @ If not equal,
-  movne tos, #-1    @  set all bits in TOS.
   bx lr
-  .endif
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_opcodierbar_GleichUngleich, "=" @ ( x1 x2 -- ? )
@@ -202,72 +159,37 @@
   Wortbirne Flag_foldable_2|Flag_inline, "min" @ ( x1 x2 -- x3 )
                         @ x3 is the lesser of x1 and x2.
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-  ldm psp!, {r0}       @ Get x1 into a register.
-  cmp r0, tos          @ Compare 'em.
-  bge 1f
+  ldm psp!, {r0}
+  cmp r0, tos
+  bgt 1f
   movs tos, r0
 1:bx lr
-
-  .else
-  ldm psp!, {r0}       @ Get x1 into a register.
-  cmp r0, tos          @ Compare 'em.
-  it lt                @ If X is less,
-  movlt tos, r0        @  replace TOS with it.
-  bx lr
-  .endif
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_inline, "max" @ ( x1 x2 -- x3 )
                         @ x3 is the greater of x1 and x2.
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-  ldm psp!, {r0}       @ Get x1 into a register.
-  cmp r0, tos          @ Compare 'em.  
+  ldm psp!, {r0}
+  cmp r0, tos
   blt 1f
   movs tos, r0
 1:bx lr
 
-  .else
-  ldm psp!, {r0}       @ Get x1 into a register.
-  cmp r0, tos          @ Compare 'em.
-  it gt                @ If X is greater,
-  movgt tos, r0        @  replace TOS with it.
-  bx lr
-  .endif
-
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_inline, "umax" @ ( u1 u2 -- u1|u2 )
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-  ldm psp!, {r0}  @ Get u1 into a register.
-  cmp r0, tos 
+  ldm psp!, {r0}
+  cmp r0, tos
   blo 1f
   movs tos, r0
 1:bx lr
 
-  .else
-  ldm psp!, {r0}  @ Get u1 into a register.
-  cmp r0, tos 
-  it hi           @ If W > TOS,
-  movhi tos, r0   @  replace TOS with W.
-  bx lr
-  .endif
-
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_inline, "umin" @ ( u1 u2 -- u1|u2 )
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-  ldm psp!, {r0}  @ Get u1 into a register.
-  cmp r0, tos 
+  ldm psp!, {r0}
+  cmp r0, tos
   bhi 1f
   movs tos, r0
 1:bx lr
 
-  .else
-  ldm psp!, {r0}  @ Get u1 into a register.
-  cmp r0, tos
-  it lo           @ If W < TOS,
-  movlo tos, r0   @  replace TOS with W.
-  bx lr
-  .endif

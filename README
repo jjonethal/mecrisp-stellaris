@@ -17,7 +17,7 @@
 @
 
 ;------------------------------------------------------------------------------
-This is the third stable release of Mecrisp-Stellaris,
+This is the stable release of Mecrisp-Stellaris,
 a port of Mecrisp to the ARM Cortex M architecture.
 
 It runs out of the box on:
@@ -35,6 +35,7 @@ It runs out of the box on:
   - STM F4 Discovery             with STM32F407VGT6 
   - STM F429 Discovery           with STM32F429ZIT6
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
+  - Infineon XMC2GO              with XMC1100Q024F0064
   
   - Breadboard friendly, DIP packaged LPC1114FN28
   -                                   LPC1115FBD48
@@ -45,6 +46,7 @@ Contributions:
   - Chinese QF-LM4F232           with LM4F232H5QC
   - nRFgo Starter Kit            with nRF51822
   - STM L152 Discovery           with STM32L152RBT6
+  - STM L476 Discovery           with STM32L476VG
 
 http://mecrisp.sourceforge.net/
 
@@ -64,18 +66,19 @@ Communication is via serial 115200 baud 8N1 over
   - USCI0  in MSP432P401R  (TX on P1.3, RX on P1.2, connected to USB-serial bridge)
   - UART   in LPC1114FN28  (TX on P1.7, RX on P1.6)
   - UART   in LPC1115FBD48 (TX on P1.7, RX on P1.6)
-  - USART1 in STM32F051 (TX on PA9, RX on PA10)
-  - USART1 in STM32F030F4 (TX on PA9, RX on PA10)
-  - USART1 in STM32F100 (TX on PA9, RX on PA10)
-  - USART1 in STM32F103 (TX on PA9, RX on PA10)
-  - USART1 in STM32F303 (TX on PA9, RX on PA10)
-  - USART1 in STM32L053C8 (TX on PA9, RX on PA10)
-  - USART2 in STM32L152 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
-  - USART2 in STM32F401 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
-  - USART2 in STM32F411 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
-  - USART2 in STM32F407 (TX on PA2, RX on PA3)
-  - USART1 in STM32F429 (TX on PA9, RX on PA10)
-  - UART0  in KL25Z128  (connected to USB-serial bridge on Freedom board)
+  - USART1 in STM32F051    (TX on PA9, RX on PA10)
+  - USART1 in STM32F030F4  (TX on PA9, RX on PA10)
+  - USART1 in STM32F100    (TX on PA9, RX on PA10)
+  - USART1 in STM32F103    (TX on PA9, RX on PA10)
+  - USART1 in STM32F303    (TX on PA9, RX on PA10)
+  - USART1 in STM32F429    (TX on PA9, RX on PA10)
+  - USART1 in STM32L053C8  (TX on PA9, RX on PA10)
+  - USART2 in STM32F401    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32F407    (TX on PA2, RX on PA3)
+  - USART2 in STM32F411    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32L152    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32L476    (TX on PD5, RX on PD6 connected to USB-serial bridge on Discovery board)
+  - UART0  in KL25Z128     (connected to USB-serial bridge on Freedom board)
   - UART5  in LM4F232
   - UART0  in MK20DX256 (RX1/TX1 on Teensy 3.1.  Physical pins #2/#3 (these are also Digital IO 0/1 lines)
     	      		Digital IO pins 18/19 are setup for CTS/RTS respectively
@@ -178,6 +181,26 @@ Hardware and configuration for STM32L152:
   st-flash write mecrisp-stellaris-stm32l152.bin 0x08000000
 
   On startup, this runs with internal 16 MHz HSI clock.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for STM32L476:
+;------------------------------------------------------------------------------
+  Connect USB cable to ST-Link USB port.
+  Terminal is included into the debug section on Discovery boards.
+  
+  Flashing is possible with st-flash:
+  https://github.com/texane/stlink
+  on Windows using STLINK Tools from ST website:
+  http://www.st.com/web/en/catalog/tools/PF258168#
+
+  Flash memory is mirrored in hardware starting from address 0. Mecrisp uses
+  the low address range to generate short opcodes for calling core words, but
+  for flashing the binary, you have to use the "true address" $08000000.
+  st-flash erase
+  st-flash write mecrisp-stellaris-stm32l476.bin 0x08000000
+
+  On startup, this runs with internal 48 MHz MSI clock. Currently flash ECC is
+  supported. (JJ:O)
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for STM32F401 and STM32F411:
@@ -303,6 +326,32 @@ Hardware and configuration for KL25Z128:
   "thumbulator mecrisp-stellaris-kl25z128.bin" to run.
 
 ;------------------------------------------------------------------------------
+Hardware and configuration for XMC1100:
+;------------------------------------------------------------------------------
+  Connect USB cable for flashing and terminal.
+
+  Flashing is possible with JLinkExe from Segger, which is available for Linux:
+  https://www.segger.com/jlink-software.html
+  "Software and documentation pack", 32 Bit TGZ archive is fine.
+  
+  JLink_Linux_V510c_i386# ./JLinkExe -device XMC1100-0064 -if SWD -speed 4000
+    erase
+    loadfile mecrisp-stellaris-xmc1100.hex
+    r
+    g
+      
+  OpenOCD 0.9 has support for the XMC2GO, but it failed with the firmware version
+  of my board. The command line would be something like this:
+
+  openocd -f board/xmc-2go.cfg
+  openocd -f board/xmc-2go.cfg -c "program mecrisp-stellaris-xmc1100.hex verify reset exit"
+
+  If you have issues with broken characters in the terminal,
+  try changing the UART_FDR_STEP value in terminal.s a bit.
+
+  On startup, this runs with internal MCLK = PCKL = 8 MHz clock.
+
+;------------------------------------------------------------------------------
 Hardware and configuration for MK20DX256VLH7 on a Teensy 3.1 board:
 ;------------------------------------------------------------------------------
   ( Contributed by Mark Schweizer )
@@ -413,7 +462,7 @@ real applications, go with at least of 32 kb flash and 4 kb RAM.
 Look at the flash specification for your particular chip.
 
 The compiler only depends on 2-aligned 16-Bit flash writes
-one time per location, you can remove c, and align, without issues 
+one time per location, you can remove c, and halign without issues 
 from the compiler, but 8-Bit flash writes are nice to have 
 for compatibility with standard code. 
 
@@ -448,7 +497,79 @@ but only once per location.
 I would like to focus on core development, support porting to other chips and 
 families with adaptions in core, but leave writing initialisation code, 
 testing and writing Forth examples to "family maintainers" which are deep 
-into their chip of choice. 
+into their chip of choice.
+
+;------------------------------------------------------------------------------
+; Register allocator
+;------------------------------------------------------------------------------
+
+It should look and feel like the classic Mecrisp-Stellaris,
+but with a very important difference:
+
+It contains an analytical compiler which keeps track
+of the top five stack elements and maps them to registers
+whenever possible.
+
+To dive in, you should load the disassembler and see
+definitions you have just compiled.
+
+Two examples, on M0:
+
+: >gray ( u -- x ) dup 1 rshift xor ;  ok.
+see >gray
+00006B38: 0873  lsrs r3 r6 #1
+00006B3A: 405E  eors r6 r3
+00006B3C: 4770  bx lr
+ ok.
+
+
+: bitexp ( u -- u )  ok.
+  ok.
+  \ Returns an integer value equivalent to  ok.
+  \ the exponential. For numbers > 16,  ok.
+  \ bitexp(x) approx = 2^(x/8 + 1)  ok.
+  ok.
+  \ B(E(x)) = x for 16 <= x <= 247.  ok.
+  ok.
+  dup 247 u>  \ Overflow ?  ok.
+  if drop $F0000000  ok.
+  else  ok.
+  ok.
+    dup 16 u<= if 1 rshift  ok.
+               else  ok.
+                 dup ( u u )  ok.
+                 7 and 8 or ( u b )  ok.
+                 swap ( b u )  ok.
+                 3 rshift 2 - lshift  ok.
+               then  ok.
+  ok.
+  then  ok.
+  ok.
+  1-foldable ;  ok.
+  ok.
+see bitexp
+00006BA2: 2EF7  cmp r6 #F7
+00006BA4: B500  push { lr }
+00006BA6: D902  bls 00006BAE
+00006BA8: 26F0  movs r6 #F0
+00006BAA: 0636  lsls r6 r6 #18
+00006BAC: E00C  b 00006BC8
+00006BAE: 2E10  cmp r6 #10
+00006BB0: D801  bhi 00006BB6
+00006BB2: 0876  lsrs r6 r6 #1
+00006BB4: E008  b 00006BC8
+00006BB6: 0033  lsls r3 r6 #0
+00006BB8: 2007  movs r0 #7
+00006BBA: 4003  ands r3 r0
+00006BBC: 2008  movs r0 #8
+00006BBE: 4303  orrs r3 r0
+00006BC0: 08F6  lsrs r6 r6 #3
+00006BC2: 3E02  subs r6 #2
+00006BC4: 40B3  lsls r3 r6
+00006BC6: 461E  mov r6 r3
+00006BC8: BD00  pop { pc }
+
+Note that it compiles bitexp without any stack movements at all.
 
 ;------------------------------------------------------------------------------
 ; Hacking
@@ -752,7 +873,7 @@ like signed double numbers.
 String routines:
 
         type            ( c-addr length -- )
-                        Prints a counted string.
+                        Prints a string.
 
         s" Hello"       Compiles a string and
                         ( -- c-addr length )
@@ -761,6 +882,9 @@ String routines:
         ." Hello"       Compiles a string and
                         ( -- )
                         prints it when executed.
+
+        ( Comment )     Ignore Comment
+        \ Comment       Comment to end of line
 
         cr              ( -- ) Emits line feed
         bl              ( -- 32 ) ASCII code for Space
@@ -897,8 +1021,7 @@ Deep insights:
     Available depending on chip capabilities:
 
         c,              ( char -- ) Appends a byte to dictionary
-        align,          ( -- ) Makes Dictionary Pointer even, if uneven.
-        align4,         ( -- ) Aligns on 4.
+        halign          ( -- ) Makes Dictionary Pointer even, if uneven.
 
         movwmovt,       ( x Register -- ) Generate a movw/movt-Sequence to
                                           get x into any given Register. M3/M4 only
@@ -1330,6 +1453,39 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
   
 ;------------------------------------------------------------------------------
+; Specials for STM32L476:
+;------------------------------------------------------------------------------
+
+Flash:
+        initflash       ( -- ) Clear buffers
+        hflash!         ( u|n a-addr -- ) Writes halfword to flash (buffered)
+        flushflash      ( -- ) Flush flash buffers
+                               needed if you comma in values after create
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 2048 byte flash page only. Take care:
+                                      No Reset, no dictionary reinitialisation.
+
+        16flash!        ( x1 x2 x3 x4 addr -- ) Flash 4 words aligned at 8 byte boundary at once
+
+Interrupts:
+
+        irq-adc         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-exti4
+        irq-exti3
+        irq-exti2
+        irq-exti1
+        irq-exti0
+        irq-tim2
+        irq-tim3
+        irq-tim4
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+  
+;------------------------------------------------------------------------------
 ; Specials for STM32F100 and STM32F103:
 ;------------------------------------------------------------------------------
 
@@ -1435,6 +1591,47 @@ Interrupts:
         irq-portd
 
   Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for XMC1100:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 256 byte flash page only.
+                                      No Reset, no dictionary reinitialisation.
+
+        initflash       ( -- ) Clear buffers
+        hflash!         ( u|n a-addr -- ) Writes halfword to flash (buffered)
+        flushflash      ( -- ) Flush flash buffers
+                                 needed if you comma in values after create
+
+        16flash!        ( x1 x2 x3 x4 addr -- ) Flash aligned 16 Bytes at once
+
+Interrupts:
+
+        irq-scu0        ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-scu1
+        irq-eru0
+        irq-eru1
+        irq-eru2
+        irq-eru3
+        irq-usi0
+        irq-usi1
+        irq-usi2
+        irq-usi3
+        irq-usi4
+        irq-usi5
+        irq-adc0
+        irq-adc1
+        irq-ccu0
+        irq-ccu1
+        irq-ccu2
+        irq-ccu3
 
 ;------------------------------------------------------------------------------
 ; Specials for MK20DX256:

@@ -151,27 +151,16 @@ setflags_ram:
   ldr r3, =0xFFFF
   cmp r1, r3
 
-  .ifdef m0core
   bne 1f
-  movs r1, r2
+  movs r1, r2 @ Direkt setzen, falls an der Stelle noch -1 steht  Set directly, if there are no Flags before
   b 2f
-1:orrs r1, r2
+1:orrs r1, r2 @ Hinzuverodern, falls schon Flags da sind          If there already are Flags, OR them together.
 2:
-  .else
-  ite eq
-    moveq r1, r2 @ Direkt setzen, falls an der Stelle noch -1 steht  Set directly, if there are no Flags before
-    orrne r1, r2 @ Hinzuverodern, falls schon Flags da sind          If there already are Flags, OR them together.
-  .endif
 
   strh r1, [r0]
   pop {pc}
 
  .ltorg
-
-@ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align" @ ( -- ) 
-@ -----------------------------------------------------------------------------
-  b.n align4komma
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_foldable_1, "aligned" @ ( c-addr -- a-addr ) 
@@ -191,7 +180,7 @@ setflags_ram:
 
   .ifdef charkommaavailable
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align," @ ( -- ) 
+  Wortbirne Flag_visible, "halign" @ ( -- ) 
 alignkomma: @ Macht den Dictionarypointer gerade
 @ -----------------------------------------------------------------------------
   ldr r0, =Dictionarypointer
@@ -209,7 +198,7 @@ alignkomma: @ Macht den Dictionarypointer gerade
   .endif
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align4," @ ( -- ) 
+  Wortbirne Flag_visible, "align" @ ( -- ) 
 align4komma: @ Macht den Dictionarypointer auf 4 gerade
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -299,6 +288,21 @@ hkomma: @ Fügt 16 Bits an das Dictionary an.
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, lr}
   uxth tos, tos @ Mask low 16 Bits, just in case.
+
+  @ dup
+  @ bl hexdot
+
+  .ifdef registerallocator
+    @ Schon geschriebene Opcodes zählen !
+    ldr r0, =state
+    ldr r1, [r0]
+    cmp r1, #0        @ Nicht aus dem Execute-Zustand herausschalten
+    beq 1f
+    adds r1, #1
+    beq 1f            @ Das normale True-Flag nicht erhöhen :-)
+      str r1, [r0]
+1:
+  .endif
 
   ldr r0, =Dictionarypointer @ Fetch Dictionarypointer to decide if compiling for RAM or for Flash
   ldr r1, [r0] @ Hole den Dictionarypointer
