@@ -120,6 +120,14 @@ cd stm32f103-ra
 make clean
 cd ..
 
+cd stm32f207zg
+make clean
+cd ..
+
+cd stm32f207zg-ra
+make clean
+cd ..
+
 cd stm32f303
 make clean
 cd ..

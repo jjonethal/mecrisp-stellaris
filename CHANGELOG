@@ -515,3 +515,11 @@
   - New target: MK64FN1M0 on Freescale Freedom FRDM-K64F board
   - New target: LPC1114FBD48
   - New target: Nordic nRF51822 prepared for Microbit
+
+08.05.2016, Matthias Koch, Mecrisp-Stellaris 2.2.6
+
+  - Scripts for invoking Mecrisp-Stellaris for ARM Linux with qemu-arm-static
+  - Contribution by Bernd Paysan:
+      New target: STM32F207ZG on Nucleo-F207ZG
+      
+  

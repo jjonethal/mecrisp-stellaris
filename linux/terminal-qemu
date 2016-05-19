@@ -1,0 +1,2 @@
+#!/bin/bash
+stty -icanon -echo && qemu-arm-static mecrisp-stellaris-linux && stty sane 
