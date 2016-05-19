@@ -252,17 +252,45 @@ allocator_nullsprungprobe:
 
   pop {pc}
 
+@------------------------------------------------------------------------------
+  Wortbirne Flag_immediate_compileonly, "then"
+  @ ( Adresse-für-Sprung Opcode"0" | Adresse-für-Sprung 5 -- )
+  @ ( Address-for-Jump   Opcode"0" | Address-for-Jump 5 --)
+struktur_then:
+@------------------------------------------------------------------------------
+  cmp tos, #5 @ Unbedingten Vorwärtssprung einfügen
+  bne 1f
+    drop @ ( Sprunglücke )
+    b.n v_branch @ Abschluss unbedingter Vorwärtssprung  Fill in unconditional forward jummp
+
+1:uxtb r1, tos @ Das unterste Byte muss als Strukturerkennung 0 enthalten.
+  cmp r1, #0 @ Bedingten Vorwärtssprung einfügen
+  bne.n strukturen_passen_nicht
+    @ ( Sprunglücke Opcode )
+    push {lr}
+    bl here @ Sprungziel auf den Stack legen  Put target for jump on datastack
+    swap
+    bl cjumpgenerator @ Abschluss bedingter Vorwärtssprung v_nullbranch  Fill in conditional forward jump
+    pop {pc}
+
+@------------------------------------------------------------------------------
+  Wortbirne Flag_immediate_compileonly, "else"
+@------------------------------------------------------------------------------
+  push {lr}
+  bl struktur_ahead
+  bl dswap
+  bl struktur_then
+  pop {pc}
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate_compileonly|Flag_allocator|Flag_Sprungschlucker, "if"
-struktur_if: @ ( -- Adresse-für-Sprung Opcode 2 )
-             @ ( -- Address-for-Jump   Opcode 2 )
+struktur_if: @ ( -- Adresse-für-Sprung Opcode"0" )
+             @ ( -- Address-for-Jump   Opcode"0" )
 @------------------------------------------------------------------------------
   push {lr}
   bl nullbranch_v
   pushdaconstw 0xD000 @ Opcode für den bedingten Sprung beq  Opcode for conditional jump BEQ
-  pushdaconst 2           @ Strukturerkennung  Structure matching
-  pop {pc}
+  pop {pc}            @ Strukturerkennung  Structure matching "0" already in opcode
 
 struktur_if_allokator:
   push {lr} @ Spezialeinsprung des Registerallokators:
@@ -279,138 +307,52 @@ struktur_if_allokator:
     bl tidyup_register_allocator @ Den kanonischen Stack wieder herstellen. In diesem Fall sind alle Elemente in Registern oder auf dem Stack, so dass dabei die Flags erhalten bleiben.
                                  @ Außerdem wird das Sprungtrampolin dabei gelöscht. Fein !
 
-    bl here
-    pushdaconst 2 @ Platz für die Opcodelücke schaffen  Allot space for filling in Opcode later
-    bl allot
+    bl branch_v   @ Sprunglücke erschaffen
 
-    pushdatos     @ Opcode bereitlegen
-    pop {tos}
-
-    pushdaconst 2           @ Strukturerkennung  Structure matching
-    pop {pc}
-
+    pushdatos     @ Opcode bereitlegen mit Strukturerkennung "0"
+    pop {tos, pc}
 
 1:bl allocator_nullsprungprobe
   bl here
   pushdaconst 2 @ Platz für die Opcodelücke schaffen  Allot space for filling in Opcode later
   bl allot
 
-  pushdaconstw 0xD000 @ Opcode für den bedingten Sprung beq  Opcode for conditional jump BEQ
-
-  pushdaconst 2           @ Strukturerkennung  Structure matching
+  pushdaconstw 0xD000 @ Opcode für den bedingten Sprung beq  Opcode for conditional jump BEQ mit Strukturerkennung "0"
   pop {pc}
 
-
 @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly, "else"
-  @ ( Adresse-für-Sprung Opcode 2 -- Adresse-für-Sprung 5 )
-  @ ( Address-for-Jump   Opcode 2 -- Address-for-Jump 5 )
+  Wortbirne Flag_immediate_compileonly, "ahead"
+struktur_ahead: @ ( -- Adresse-für-Sprung 5 )   ( -- Address-for-Jump 5 )
 @------------------------------------------------------------------------------
   push {lr}
-  cmp tos, #2
-  bne strukturen_passen_nicht
-  drop
-
-  @ ( Bedingter-Sprung Opcode )  ( Conditional-Jump Opcode )
   bl branch_v
-  @ ( Bedingter-Sprung Opcode Unbedingter-Sprung )  ( Conditional-Jump Opcode Unconditional-Jump )
-  bl minusrot
-  @ ( Unbedingter-Sprung Bedingter-Sprung Opcode )  ( Unconditional-Jump Conditional-Jump Opcode )
-  bl here @ Sprungziel auf den Stack legen  Put target for jump on datastack
-  swap
-  bl cjumpgenerator
-
-  @ ( Unbedingter Sprung )  ( Unconditional-Jump )
-  pushdaconst 5 @ Strukturerkennung bereitlegen  Structure matching
-  @ ( Unbedingter Sprung 5 )  ( Unconditional-Jump 5 )
+  pushdaconst 5           @ Strukturerkennung  Structure matching
   pop {pc}
 
-  @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly, "then"
-  @ ( Adresse-für-Sprung Opcode 2 | Adresse-für-Sprung 5 -- )
-  @ ( Address-for-Jump   Opcode 2 | Address-for-Jump 5 --)
 @------------------------------------------------------------------------------
-  cmp tos, #5 @ Kommend aus Else-Zweig
-  bne 1f
-    drop @ ( Sprunglücke )
-    b.n v_branch @ Abschluss unbedingter Vorwärtssprung  Fill in unconditional forward jummp
+  Wortbirne Flag_immediate_compileonly, "repeat"
+@------------------------------------------------------------------------------
+  push {lr}
+  bl struktur_again
+  bl struktur_then
+  pop {pc}
 
-1:cmp tos, #2 @ Kommend aus IF-Zweig
-  bne.n strukturen_passen_nicht
-    drop @ ( Sprunglücke Opcode )
+@------------------------------------------------------------------------------
+  Wortbirne Flag_immediate_compileonly|Flag_allocator|Flag_Sprungschlucker, "while"
+@------------------------------------------------------------------------------
+  push {lr}
+  bl struktur_if
+  bl dswap
+  pop {pc}
+  @------------------------------------------------------------
+  push {lr}
+  bl struktur_if_allokator
+  bl dswap
+  pop {pc}
 
-    push {lr}
-    bl here @ Sprungziel auf den Stack legen  Put target for jump on datastack
-    swap
-    bl cjumpgenerator @ Abschluss bedingter Vorwärtssprung v_nullbranch  Fill in conditional forward jump
-    pop {pc}
-
+@ An diese Stelle gelegt, damit die Sprungweiten hinkommen.
 strukturen_passen_nicht:
   Fehler_Quit "Structures don't match"
-
-@------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly, "repeat"  @ Wie das Pascal-While-Konstrukt.
-  @ ( Sprungziel Adresse-für-Sprung Opcode 4 -- )
-  @ ( Target     Address-for-Jump   Opcode 4 -- )
-@------------------------------------------------------------------------------
-  @ begin (Bedingung) while (Agenda) repeat (Folgendes).
-  @ begin (Flag) while (To Do) repeat
-
-  @ In Pascal: while (true) do Agenda;
-  @ ( Sprungziel-zurück-an-Anfang Adresse-für-Sprung-ans-Ende Opcode 4 )
-  cmp tos, #4
-  bne.n strukturen_passen_nicht
-  drop
-
-  push {lr}
-
-  @ ( Sprungziel-zurück-an-Anfang  Adresse-für-Sprung-ans-Ende Opcode )
-  @ ( Target-Beginning             Address-for-jump-to-End     Opcode )
-  bl rot
-  @ ( Adresse-für-Sprung-ans-Ende Opcode Sprungziel-zurück-an-Anfang )
-  @ ( Address-for-jump-to-End     Opcode Target-Beginning )
-
-  bl r_branch @ Rücksprung an den Anfang, falls ich normal einlaufe   Write jump back to beginning
-  @ ( Adresse-für-Sprung-ans-Ende Opcode )
-  @ ( Address-for-jump-to-End     Opcode )
-
-  bl here @ Sprungziel auf den Stack legen  Put target for jump on datastack
-  swap
-  bl cjumpgenerator @ Raussprung aus dem Konstrukt. Write exit of structure into dictionary.
-
-  pop {pc}
-
-@------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly|Flag_allocator|Flag_Sprungschlucker, "while"  @ Wie das Pascal-While-Konstrukt.
-  @ ( Sprungziel 1 -- Sprungziel Adresse-Für-Sprung Opcode 4 )
-  @ ( Target 1     -- Target     Address-for-Jump   Opcode 4 )
-@------------------------------------------------------------------------------
-  @ begin (Bedingung) while (Agenda) repeat (Folgendes).
-  @ begin (Flag) while (To Do) repeat
-
-  @ In Pascal: while (true) do Agenda;
-  cmp tos, #1
-  bne.n strukturen_passen_nicht
-  drop
-  @ ( Sprungziel ) wird für den späteren Rücksprung benutzt.  Used for jump back later
-  push {lr}
-  bl struktur_if @ Benutze einfach mal If.  Use IF to generate the code
-  @ ( Sprungziel Adresse-Für-Sprung 2 ) ( Target Address-for-Jump )
-  adds tos, #2 @ Structure matching 2+2 = 4
-  @ ( Sprungziel Adresse-Für-Sprung 4 ) Strukturkennung 4 !
-  pop {pc}
-@------------------------------------------------------------------------------
-  cmp tos, #1
-  bne.n strukturen_passen_nicht
-  drop
-
-  @ ( Sprungziel ) wird für den späteren Rücksprung benutzt.  Used for jump back later
-  push {lr}
-  bl struktur_if_allokator @ Benutze einfach mal If.  Use IF to generate the code
-  @ ( Sprungziel Adresse-Für-Sprung 2 ) ( Target Address-for-Jump )
-  adds tos, #2 @ Structure matching 2+2 = 4
-  @ ( Sprungziel Adresse-Für-Sprung 4 ) Strukturkennung 4 !
-  pop {pc}
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate_compileonly|Flag_allocator|Flag_Sprungschlucker, "until"  @ Bedingte Schleife
@@ -428,7 +370,7 @@ strukturen_passen_nicht:
 
   push {lr}
   bl eliminiere_tos_wenn_bmi
-  
+
   ldr r1, [r0, #offset_sprungtrampolin]
   cmp r1, #0
   beq 1f
@@ -457,7 +399,7 @@ strukturen_passen_nicht:
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate_compileonly, "again"  @ Endlosschleife
-  @ ( Sprungziel 1 -- )                          @ Unconditional loop
+struktur_again:  @ ( Sprungziel 1 -- )           @ Unconditional loop
 @------------------------------------------------------------------------------
   cmp tos, #1
   bne.n strukturen_passen_nicht

@@ -45,7 +45,7 @@
 
   - New target: STM32F407 on STM32F4-Discovery board
   - Removed experimental atomic memory access from core
-  - Rearranged source code and 
+  - Rearranged source code and
     added English comments to simplify porting
   - First examples for STM32F4 included
 
@@ -128,10 +128,10 @@
 
   - Added Intel Hex style binaries for STM targets
   - Improved code generation for do and ?do
-  - Fixed minor issue with arshift when opcoded 
+  - Fixed minor issue with arshift when opcoded
       with folding constant >= 32
   - Added bit rotations ror and rol
-  - M3/M4 only: 
+  - M3/M4 only:
     - Added 12bitencoding
     - Faster opcodes for inline literals,
         calculations, logic and comparisions
@@ -254,7 +254,7 @@
 
 02.07.2014, Matthias Koch, Mecrisp-Stellaris 2.0.0a
 
-  - Fixed a flaw in NVIC Forth code 
+  - Fixed a flaw in NVIC Forth code
   - Fixed a minor flaw in ethernet driver
   - Added 1Msps analog-digital converter ethernet stream example
 
@@ -318,7 +318,7 @@
 
 11.11.2014, Matthias Koch, Mecrisp-Stellaris 2.0.5a
 
-  - Adapted Thumbulator emulator for LPC1114FN28 and 
+  - Adapted Thumbulator emulator for LPC1114FN28 and
       added Forth code to generate custom binaries for this target
   - Fixed a small flaw in disassemblers
 
@@ -397,10 +397,10 @@
   - Contribution by Абдрахимов Илья:
       New target: STM L152 Discovery
 
-22.10.2015, Matthias Koch, Mecrisp-Stellaris 2.2.0 & RA 1.0 experimental 
+22.10.2015, Matthias Koch, Mecrisp-Stellaris 2.2.0 & RA 1.0 experimental
 
   - Merged the experimental RA branch with the mainstream package
-  
+
   Changes to the mainstream release are:
 
   - Replaced align, with halign
@@ -507,3 +507,11 @@
   - No line break directly after the "Redefine..." message anymore
   - Graphics driver for Sharp LCD on Happy Gecko
   - New target: KL46Z256 on Freescale Freedom FRDM-KL46Z board
+
+06.04.2016, Matthias Koch, Mecrisp-Stellaris 2.2.5
+
+  - Added ahead and changed control structures to allow more combinations
+  - Fixed Forth register constants for PORTE on KL25Z128 and KL46Z256
+  - New target: MK64FN1M0 on Freescale Freedom FRDM-K64F board
+  - New target: LPC1114FBD48
+  - New target: Nordic nRF51822 prepared for Microbit

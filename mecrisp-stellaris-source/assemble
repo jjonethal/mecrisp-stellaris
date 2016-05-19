@@ -8,6 +8,14 @@ cd lpc1114fn28-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28-ra && cp *.hex ../../lpc1114fn28-ra
 cd ..
 
+cd lpc1114fbd48
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fbd48 && cp *.hex ../../lpc1114fbd48
+cd ..
+
+cd lpc1114fbd48-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fbd48-ra && cp *.hex ../../lpc1114fbd48-ra
+cd ..
+
 cd lpc1115fbd48
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48 && cp *.hex ../../lpc1115fbd48
 cd ..
@@ -36,8 +44,24 @@ cd mk20dx256
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk20dx256 && cp *.hex ../../mk20dx256
 cd ..
 
+cd mk64fn1m0
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk64fn1m0 && cp *.srec ../../mk64fn1m0
+cd ..
+
+cd mk64fn1m0-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk64fn1m0-ra && cp *.srec ../../mk64fn1m0-ra
+cd ..
+
 cd nrf51822
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
+cd ..
+
+cd microbit
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit && cp *.hex ../../microbit
+cd ..
+
+cd microbit-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit-ra && cp *.hex ../../microbit-ra
 cd ..
 
 cd msp432p401r

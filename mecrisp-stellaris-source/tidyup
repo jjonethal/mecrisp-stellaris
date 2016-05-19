@@ -8,6 +8,14 @@ cd lpc1114fn28-ra
 make clean
 cd ..
 
+cd lpc1114fbd48
+make clean
+cd ..
+
+cd lpc1114fbd48-ra
+make clean
+cd ..
+
 cd lpc1115fbd48
 make clean
 cd ..
@@ -36,7 +44,23 @@ cd mk20dx256
 make clean
 cd ..
 
+cd mk64fn1m0
+make clean
+cd ..
+
+cd mk64fn1m0-ra
+make clean
+cd ..
+
 cd nrf51822
+make clean
+cd ..
+
+cd microbit
+make clean
+cd ..
+
+cd microbit-ra
 make clean
 cd ..
 

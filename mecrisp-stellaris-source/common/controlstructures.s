@@ -23,17 +23,17 @@
   Wortbirne Flag_visible, "cjump," @ Fügt einen bedingten Sprung ein. Write a conditional jump into dictionary
 cjumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel Bitmaske -- )
                 @ ( Address-of-hole-for-jump Target Bitmask -- )
-@------------------------------------------------------------------------------ 
+@------------------------------------------------------------------------------
   popda r2 @ Bitmaske    Bitmask for jump condition
   popda r1 @ Sprungziel  Target
   @ popda r0 @ Adresse-der-Opcodelücke - bleibt auf dem Stack  Hole to fill in opcode - keep that on stack
-  
+
   @ Calculate jump offset.
   subs r3, r1, tos @ Differenz aus Lücken-Adresse und Sprungziel bilden  Calculate relative jump offset
   subs r3, #4      @ Da der aktuelle Befehl noch läuft und es komischerweise andere Offsets beim ARM gibt.  Current instruction still running...
 
-  @ 8 Bits für die Sprungweite mit Vorzeichen - 
-  @ also habe ich 7 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen. 
+  @ 8 Bits für die Sprungweite mit Vorzeichen -
+  @ also habe ich 7 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen.
 
   @ Short conditional B.. opcodes support 8 Bits jump range - one of that for sign.
   @ Check if opcodable range is enough to reach target:
@@ -77,15 +77,15 @@ sprungbefehl_einfuegen: @ strh r3, [r0] over h, to handle Flash writes
   Wortbirne Flag_visible, "jump," @ Fügt einen unbedingten Sprung ein.  Write an unconditional jump into dictionary
 jumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel -- )
                @ ( Address-of-hole-for-jump Target -- )
-@------------------------------------------------------------------------------ 
+@------------------------------------------------------------------------------
   popda r1 @ Sprungziel  Target
   popda r0 @ Adresse-der-Opcodelücke  Hole to fill in opcode
-  
+
   subs r3, r1, r0 @ Differenz aus Lücken-Adresse und Sprungziel bilden  Calculate relative jump offset
   subs r3, #4     @ Da der aktuelle Befehl noch läuft und es komischerweise andere Offsets beim ARM gibt.   Current instruction still running...
 
-  @ 11 Bits für die Sprungweiter mit Vorzeichen - 
-  @ also habe ich 10 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen. 
+  @ 11 Bits für die Sprungweiter mit Vorzeichen -
+  @ also habe ich 10 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen.
 
   @ Short unconditional B opcodes support 11 Bits jump range - one of that for sign.
   @ Check if opcodable range is enough to reach target:
@@ -118,7 +118,7 @@ jumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel -- )
   Wortbirne Flag_visible, "here" @ ( -- addr ) Gives Dictionarypointer
 here: @ Gibt den Dictionarypointer zurück
 @ -----------------------------------------------------------------------------
-  pushdatos    @ Platz auf dem Datenstack schaffen 
+  pushdatos    @ Platz auf dem Datenstack schaffen
   ldr tos, =Dictionarypointer
   ldr tos, [tos] @ Hole den Dictionarypointer
   bx lr
@@ -219,14 +219,15 @@ v_casebranch:  @ ( Adresse-für-Sprungbefehl -- ) Abschluss besonderer bedingter
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate_compileonly, "then"
   @ ( Adresse-für-Sprung 2 | Adresse-für-Sprung 5 -- )
-  @ ( Address-for-Jump 2 | Address-for-Jump 5 --)
+  @ ( Address-for-Jump 2   | Address-for-Jump 5 --)
+struktur_then:
 @------------------------------------------------------------------------------
-  cmp tos, #5 @ Kommend aus Else-Zweig
+  cmp tos, #5 @ Unbedingten Vorwärtssprung einfügen
   bne 1f
-    drop @ ( Sprunglücke )    
+    drop @ ( Sprunglücke )
     b.n v_branch @ Abschluss unbedingter Vorwärtssprung  Fill in unconditional forward jummp
 
-1:cmp tos, #2 @ Kommend aus IF-Zweig
+1:cmp tos, #2 @ Bedingten Vorwärtssprung einfügen
   bne.n strukturen_passen_nicht
     drop @ ( Sprunglücke )
     b.n v_nullbranch @ Abschluss bedingter Vorwärtssprung v_nullbranch  Fill in conditional forward jump
@@ -236,23 +237,11 @@ strukturen_passen_nicht:
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate_compileonly, "else"
-  @ ( Adresse-für-Sprung 2 -- Adresse-für-Sprung 5 )
-  @ ( Address-for-Jump 2 -- Address-for-Jump 5 )
 @------------------------------------------------------------------------------
   push {lr}
-  cmp tos, #2
-  bne.n strukturen_passen_nicht
-  drop
-
-  @ ( Bedingter-Sprung )  ( Conditional-Jump )
-  bl branch_v
-  @ ( Bedingter-Sprung Unbedingter-Sprung )  ( Conditional-Jump Unconditional-Jump )
-  swap
-  @ ( Unbedingter-Sprung Bedingter-Sprung )  ( Unconditional-Jump Conditional-Jump )
-  bl v_nullbranch  @ Fill in conditional forward jump
-  @ ( Unbedingter Sprung )  ( Unconditional-Jump )
-  pushdaconst 5 @ Strukturerkennung bereitlegen  Structure matching
-  @ ( Unbedingter Sprung 5 )  ( Unconditional-Jump 5 )
+  bl struktur_ahead
+  bl dswap
+  bl struktur_then
   pop {pc}
 
 @------------------------------------------------------------------------------
@@ -264,51 +253,29 @@ struktur_if: @ ( -- Adresse-für-Sprung 2 )   ( -- Address-for-Jump 2 )
   pushdaconst 2           @ Strukturerkennung  Structure matching
   pop {pc}
 
-@ : schleife begin key 27 <> while ." Moin" repeat ;
-
 @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly, "repeat"  @ Wie das Pascal-While-Konstrukt.
-  @ ( Sprungziel Adresse-für-Sprung 4 -- )
-  @ ( Target Address-for-Jump 4 -- )
+  Wortbirne Flag_immediate_compileonly, "ahead"
+struktur_ahead: @ ( -- Adresse-für-Sprung 5 )   ( -- Address-for-Jump 5 )
 @------------------------------------------------------------------------------
-  @ begin (Bedingung) while (Agenda) repeat (Folgendes).
-  @ begin (Flag) while (To Do) repeat
- 
-  @ In Pascal: while (true) do Agenda;
-  @ ( Sprungziel-zurück-an-Anfang Adresse-für-Sprung-ans-Ende 4 )
-  cmp tos, #4
-  bne.n strukturen_passen_nicht
-  drop
-  @ ( Sprungziel-zurück-an-Anfang  Adresse-für-Sprung-ans-Ende )
-  @ ( Target-Beginning  Address-for-jump-to-End )
-  swap
-  @ ( Adresse-für-Sprung-ans-Ende Sprungziel-zurück-an-Anfang )
-  @ ( Address-for-jump-to-End Target-Beginning )
   push {lr}
-  bl r_branch @ Rücksprung an den Anfang, falls ich normal einlaufe   Write jump back to beginning
-  @ ( Adresse-für-Sprung-ans-Ende )
-  @ ( Address-for-jump-to-End )
-  bl v_nullbranch @ Raussprung aus dem Konstrukt. Write exit of structure into dictionary.
+  bl branch_v
+  pushdaconst 5           @ Strukturerkennung  Structure matching
   pop {pc}
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly, "while"  @ Wie das Pascal-While-Konstrukt.
-  @ ( Sprungziel 1 -- Sprungziel Adresse-Für-Sprung 4 )
-  @ ( Target 1 -- Target Address-for-Jump 4 )
+  Wortbirne Flag_immediate_compileonly, "repeat"
 @------------------------------------------------------------------------------
-  @ begin (Bedingung) while (Agenda) repeat (Folgendes).
-  @ begin (Flag) while (To Do) repeat
-
-  @ In Pascal: while (true) do Agenda;
-  cmp tos, #1
-  bne.n strukturen_passen_nicht
-  drop
-  @ ( Sprungziel ) wird für den späteren Rücksprung benutzt.  Used for jump back later
   push {lr}
-  bl struktur_if @ Benutze einfach mal If.  Use IF to generate the code
-  @ ( Sprungziel Adresse-Für-Sprung 2 ) ( Target Address-for-Jump )
-  adds tos, #2 @ Structure matching 2+2 = 4
-  @ ( Sprungziel Adresse-Für-Sprung 4 ) Strukturkennung 4 !
+  bl struktur_again
+  bl struktur_then
+  pop {pc}
+
+@------------------------------------------------------------------------------
+  Wortbirne Flag_immediate_compileonly, "while"
+@------------------------------------------------------------------------------
+  push {lr}
+  bl struktur_if
+  bl dswap
   pop {pc}
 
 @------------------------------------------------------------------------------
@@ -322,7 +289,7 @@ struktur_if: @ ( -- Adresse-für-Sprung 2 )   ( -- Address-for-Jump 2 )
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate_compileonly, "again"  @ Endlosschleife
-  @ ( Sprungziel 1 -- )                          @ Unconditional loop
+struktur_again:  @ ( Sprungziel 1 -- )           @ Unconditional loop
 @------------------------------------------------------------------------------
   cmp tos, #1
   bne.n strukturen_passen_nicht

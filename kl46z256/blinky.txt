@@ -52,9 +52,9 @@ $4004C000 constant PORTD_PCR
 $4004C080 constant PORTD_GPCLR
 $4004C084 constant PORTD_GPCHR
 
-$4004E000 constant PORTE_PCR
-$4004E080 constant PORTE_GPCLR
-$4004E084 constant PORTE_GPCHR
+$4004D000 constant PORTE_PCR
+$4004D080 constant PORTE_GPCLR
+$4004D084 constant PORTE_GPCHR
 
 
 : led  ( ? -- ) if 1 5 lshift GPIOD_PSOR ! else 1 5 lshift GPIOD_PCOR ! then ;
@@ -71,7 +71,7 @@ $4004E084 constant PORTE_GPCHR
   $0103  12 4 * PORTC_PCR + ! \ Set Port C12 as GPIO with pullup resistor
   $0100   5 4 * PORTD_PCR + ! \ Set Port D5  as GPIO
 
-  1 5 lshift GPIOD_PDDR ! \ Port D1 Output
+  1 5 lshift GPIOD_PDDR ! \ Port D5 Output
 
   begin
     true led
