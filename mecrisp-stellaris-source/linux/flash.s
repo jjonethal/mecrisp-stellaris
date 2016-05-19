@@ -109,3 +109,26 @@ c_flashkomma:
   strb r1, [r0]  
   
   bx lr
+        
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "eraseflash" @ ( -- )
+eraseflash: @ Löscht den gesamten Inhalt des Flashdictionaries.
+@ -----------------------------------------------------------------------------
+        ldr r0, =FlashDictionaryAnfang
+eraseflash_intern:
+        ldr r1, =FlashDictionaryEnde
+        movw r2, #0xFFFF
+
+1:      strh r2, [r0]
+        adds r0, #2
+        cmp r0, r1
+        bne 1b
+  b Reset
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "eraseflashfrom" @ ( Addr -- )
+  @ Beginnt an der angegebenen Adresse mit dem Löschen des Dictionaries.
+@ -----------------------------------------------------------------------------
+        popda r0
+        b.n eraseflash_intern
+  

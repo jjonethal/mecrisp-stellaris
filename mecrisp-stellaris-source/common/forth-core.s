@@ -42,6 +42,11 @@ ramallot ZweitFadenende, 4
 ramallot FlashFlags, 4
 ramallot VariablenPointer, 4
 
+.ifdef within_os
+  @ Specials for Linux targets
+  ramallot arguments, 4
+.endif
+
 .ifdef registerallocator
 
 @ Variablen für den Registerallokator

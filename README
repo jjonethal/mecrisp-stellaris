@@ -1934,4 +1934,27 @@ Interrupts:
 
   Look into vectors.s and interrupts.s to add more interrupts.
 
-Matthias Koch, Summer 2013, updated Spring 2014
+;------------------------------------------------------------------------------
+; Specials for Linux
+;------------------------------------------------------------------------------
+
+"Flash":
+
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        cflash!         ( char c-addr -- )  Writes byte to "flash"
+        hflash!         ( u|n a-addr -- )   Writes halfword to "flash"
+
+System:       
+
+        cacheflush      ( -- ) Flushes data and instruction cache
+        syscall         ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 ) Perform Syscall
+        arguments       ( -- a-addr ) Gives the initial stack pointer which
+                                    contains command line arguments.
+        bye             ( -- ) Leave Mecrisp-Stellaris
+        
+        
+Matthias Koch, Summer 2013, updated Spring 2016

@@ -324,6 +324,10 @@ hkomma_ram: @ Simply write directly if compiling for RAM.
 hkomma_fertig:
   pushdaconst 2
   bl allot
+  
+  .ifdef within_os
+  bl cacheflush
+  .endif
 
   pop {r0, r1, r2, r3, pc}
 

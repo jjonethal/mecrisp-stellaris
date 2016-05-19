@@ -522,4 +522,16 @@
   - Contribution by Bernd Paysan:
       New target: STM32F207ZG on Nucleo-F207ZG
       
+14.05.2016, Matthias Koch, Mecrisp-Stellaris 2.2.7
+
+  Linux target got an improving touch:
   
+    - Added cacheflush to solve difficulties with data and instruction cache flushes
+    - Welcome message is omitted when command line arguments are specified
+    - A check for Ctrl+D and for EOF in serial-key quits Mecrisp-Stellaris for Linux
+    - arguments, reset, eraseflash and eraseflashfrom added
+    - Now 1 MB for compiletoram and compiletoflash each
+    - Smaller binary
+    - Forth code for cornerstone added
+    - Handling of command line arguments in Forth
+      

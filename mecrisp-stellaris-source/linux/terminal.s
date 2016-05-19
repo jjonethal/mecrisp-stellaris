@@ -70,9 +70,15 @@ serial_key: @ ( -- c ) Receive one character
   movs r7, #3   @ Syscall 3: Read
   swi #0
   
+  cmp r0, #0 @ A size of zero bytes or less denotes EOF.
+  ble.n bye
+
   pop {r6}
   
   pop {r0, r1, r2, r3, r4, r5, r7}
+  
+  cmp tos, #4 @ Ctrl-D
+  beq.n bye
   
   pop {pc}
 
@@ -120,9 +126,45 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
  movs r6, r0 @ Syscall reply into TOS
  
  pop {pc}
+     
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "cacheflush" @ ( -- )
+cacheflush:
+@ -----------------------------------------------------------------------------
+  push {r4, r5, r6, r7, lr}
+
+  dmb
+  dsb
+  isb  
+  
+  ldr r0, =FlashDictionaryAnfang  @ Start address
+  ldr r1, =RamEnde                @ End  address
+  movs r2, #0                     @ This zero is important !s
+  movs r3, #0
+  movs r4, #0
+  movs r5, #0
+  movs r6, #0
+  ldr r7, =0x000f0002  @ Syscall __ARM_NR_cacheflush
+  swi #0
+
+  pop {r4, r5, r6, r7, pc}
 
 @ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_0, "arguments" @ ( -- a-addr )
+@ -----------------------------------------------------------------------------
+  pushdatos
+  ldr tos, =arguments
+  ldr tos, [tos]
+  bx lr
+  
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "reset"
+@ -----------------------------------------------------------------------------
+  b Reset
+ 
+@ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "bye"
+bye:
 @ -----------------------------------------------------------------------------
   movs r0, #0  @ Error code 0
   movs r7, #1  @ Syscall 1: Exit

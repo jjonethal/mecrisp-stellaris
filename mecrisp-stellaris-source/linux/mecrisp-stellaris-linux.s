@@ -24,7 +24,7 @@
 .text
   .global _start
 _start:
-  ldr r0, =Reset+1
+  ldr r0, =Reset_with_arguments+1
   bx r0 @ Switch to thumb mode
 
 .data
@@ -51,6 +51,13 @@ _start:
 .include "../common/forth-core.s"
 
 @ -----------------------------------------------------------------------------
+Reset_with_arguments:
+@ -----------------------------------------------------------------------------
+   ldr r0, =arguments  @ Save the initial stack pointer, as it contains
+   str sp, [r0]        @ command line arguments. Do this only once on first entry.
+   b eraseflash        @ Fill flash memory with $FF
+
+@ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn
 @ -----------------------------------------------------------------------------
    @ No initialisation necessary, as we are not running bare metal.
@@ -58,8 +65,13 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for "Flash" dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " for Linux by Matthias Koch"
-
+   ldr r0, =arguments
+   ldr r0, [r0]
+   ldr r0, [r0]
+   cmp r0, #1    @ Skip welcome message if user gives command line arguments
+   bne 1f
+     welcome " for Linux by Matthias Koch"
+1:
    @ Ready to fly !
    .include "../common/boot.s"
    
@@ -67,13 +79,13 @@ Reset: @ Einsprung zu Beginn
 @ Special memory map for "Flash" and RAM sections within target RAM.
 @ -----------------------------------------------------------------------------
 
-.p2align 2         @ Auf 4 gerade Adressen ausrichten  Align to 4-even locations
+.bss
 
 .equ Kernschutzadresse,     . @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
 .equ FlashDictionaryAnfang, . @ Ein bisschen Platz für den Kern reserviert... Some space reserved for core.
 
-  .rept 32768      @ 32768*4 = 128 kb for "Flash" dictionary
-  .word 0xFFFFFFFF
+  .rept 1024 * 256      @ 1024 * 256*4 = 1 MB for "Flash" dictionary
+  .word 0x00000000
   .endr
 
 .equ FlashDictionaryEnde,   .  @ 128 kb Platz für das Flash-Dictionary     128 kb Flash available. Porting: Change this !
@@ -83,9 +95,8 @@ Reset: @ Einsprung zu Beginn
 
 .equ RamAnfang, . @ Start of RAM
 
-  .rept 32768      @ 32768*4 = 128 kb for RAM dictionary
-  .word 0xFFFFFFFF
+  .rept 1024 * 256      @ 1024 * 254*4 = 1 MB for RAM dictionary
+  .word 0x00000000
   .endr
   
 .equ RamEnde,   . @ End   of RAM.
-
