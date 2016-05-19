@@ -6,6 +6,8 @@ SET P=E:\gcc\4.6_2012q4\bin
 if exist %P%\nul set GNU_ARM_BIN=%P%
 SET P=C:\gccarm\4.7_2014q2\bin
 if exist %P%\nul set GNU_ARM_BIN=%P%
+SET P=C:\gccarm\4.9-2015q3\bin
+if exist %P%\nul set GNU_ARM_BIN=%P%
 SET P=C:\app\gcc\4.9_2014q4\bin
 if exist %P%\nul set GNU_ARM_BIN=%P%
 
