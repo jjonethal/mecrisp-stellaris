@@ -37,6 +37,7 @@ It runs out of the box on:
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
   - Infineon XMC2GO              with XMC1100Q024F0064
   - EFM32 Giant Gecko            with EFM32GG990F1024
+  - EFM32 Happy Gecko            with EFM32HG322F64
   
   - Breadboard friendly, DIP packaged LPC1114FN28
   -                                   LPC1115FBD48
@@ -354,7 +355,7 @@ Hardware and configuration for XMC1100:
   On startup, this runs with internal MCLK = PCKL = 8 MHz clock.
 
 ;------------------------------------------------------------------------------
-Hardware and configuration for EFM32GG990:
+Hardware and configuration for EFM32GG990 and EFM32HG322:
 ;------------------------------------------------------------------------------
   Connect USB cable to DBG connector for flashing and terminal.
 
@@ -1751,6 +1752,45 @@ Interrupts:
         irq-lcd
         irq-msc
         irq-aes
+
+;------------------------------------------------------------------------------
+; Specials for EFM32HG322:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 1 kb flash page only.
+                                      No Reset, no dictionary reinitialisation.
+
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-dma         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-gpioeven
+        irq-timer0
+        irq-acmp0
+        irq-adc0
+        irq-i2c0
+        irq-gpioodd
+        irq-timer1
+        irq-usart1rx
+        irq-usart1tx
+        irq-leuart0
+        irq-pcnt0
+        irq-rtc
+        irq-cmu
+        irq-vcmp
+        irq-msc
+        irq-aes
+        irq-usart0rx
+        irq-usart0tx
+        irq-usb
+        irq-timer2
             
 ;------------------------------------------------------------------------------
 ; Specials for MK20DX256:

@@ -497,3 +497,7 @@
   - Added STM32F103-RA
   - Contribution by Ilya Abdrahimov: Many examples for STM32F429
   - Contribution by Ralph Sahli: Many more examples and libraries for STM32F407
+
+26.03.2016, Matthias Koch, Mecrisp-Stellaris 2.2.3
+
+  - New target: Silicon Labs Happy Gecko Starter Kit with EFM32HG322F64

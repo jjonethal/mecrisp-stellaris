@@ -1,0 +1,71 @@
+
+\ Blinky and digital IO for Happy Gecko
+
+\ PA0:  UART RX, US1_RX, Location 4
+\ PF2:  UART TX, US1_TX, Location 4
+\ PA9:  Terminal enable
+
+\ PC9:  Button 0
+\ PC10: Button 1
+
+\ PF4:  LED 0
+\ PF5:  LED 1
+
+\ PF0:  SWDIO
+\ PF1:  SWCLK
+
+$40006000 $24 0 * + constant PA_Base
+$40006000 $24 1 * + constant PB_Base
+$40006000 $24 2 * + constant PC_Base
+$40006000 $24 3 * + constant PD_Base
+$40006000 $24 4 * + constant PE_Base
+$40006000 $24 5 * + constant PF_Base
+
+PC_Base $00 +  constant  PC_CTRL         \ RW  Port Control Register
+PC_Base $04 +  constant  PC_MODEL        \ RW  Port Pin Mode Low Register
+PC_Base $08 +  constant  PC_MODEH        \ RW  Port Pin Mode High Register
+PC_Base $0C +  constant  PC_DOUT         \ RW  Port Data Out Register
+PC_Base $10 +  constant  PC_DOUTSET      \ W1  Port Data Out Set Register
+PC_Base $14 +  constant  PC_DOUTCLR      \ W1  Port Data Out Clear Register
+PC_Base $18 +  constant  PC_DOUTTGL      \ W1  Port Data Out Toggle Register
+PC_Base $1C +  constant  PC_DIN          \ R   Port Data In Register
+
+PF_Base $00 +  constant  PF_CTRL         \ RW  Port Control Register
+PF_Base $04 +  constant  PF_MODEL        \ RW  Port Pin Mode Low Register
+PF_Base $08 +  constant  PF_MODEH        \ RW  Port Pin Mode High Register
+PF_Base $0C +  constant  PF_DOUT         \ RW  Port Data Out Register
+PF_Base $10 +  constant  PF_DOUTSET      \ W1  Port Data Out Set Register
+PF_Base $14 +  constant  PF_DOUTCLR      \ W1  Port Data Out Clear Register
+PF_Base $18 +  constant  PF_DOUTTGL      \ W1  Port Data Out Toggle Register
+PF_Base $1C +  constant  PF_DIN          \ R   Port Data In Register
+ 
+\ 0  DISABLED                  Input disabled. Pullup if DOUT is set.
+\ 1  INPUT                     Input enabled. Filter if DOUT is set
+\ 2  INPUTPULL                 Input enabled. DOUT determines pull direction
+\ 3  INPUTPULLFILTER           Input enabled with filter. DOUT determines pull direction
+\ 4  PUSHPULL                  Push-pull output
+\ 5  PUSHPULLDRIVE             Push-pull output with drive-strength set by DRIVEMODE
+\ 6  WIREDOR                   Wired-or output
+\ 7  WIREDORPULLDOWN           Wired-or output with pull-down
+\ 8  WIREDAND                  Open-drain output
+\ 9  WIREDANDFILTER            Open-drain output with filter
+\ 10 WIREDANDPULLUP            Open-drain output with pullup
+\ 11 WIREDANDPULLUPFILTER      Open-drain output with filter and pullup
+\ 12 WIREDANDDRIVE             Open-drain output with drive-strength set by DRIVEMODE
+\ 13 WIREDANDDRIVEFILTER       Open-drain output with filter and drive-strength set by DRIVEMODE
+\ 14 WIREDANDDRIVEPULLUP       Open-drain output with pullup and drive-strength set by DRIVEMODE
+\ 15 WIREDANDDRIVEPULLUPFILTER Open-drain output with filter, pullup and drive-strength set by DRIVEMODE
+
+: blinky ( -- )
+   $220 pc_modeh bis! \ Set PC9 and PC10 as inputs with pullup/pulldown
+   1 9 lshift 1 10 lshift or pc_dout ! \ Pullups for the buttons
+
+  $440000 pf_model bis! \ Set PF4 and PF5 as Push-Pull-Output
+
+  begin
+    1  9 lshift pc_din bit@ if %010000 pf_douttgl ! then
+    1 10 lshift pc_din bit@ if %100000 pf_douttgl ! then
+
+    500000 0 do loop
+  key? until
+;

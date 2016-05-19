@@ -140,6 +140,14 @@ cd efm32gg990-ra
 make clean
 cd ..
 
+cd efm32hg322
+make clean
+cd ..
+
+cd efm32hg322-ra
+make clean
+cd ..
+
 cd linux
 rm mecrisp-stellaris-linux.o
 rm mecrisp-stellaris-linux

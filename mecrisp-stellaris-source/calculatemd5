@@ -142,6 +142,14 @@ cd efm32gg990-ra
 md5sum *.bin
 cd ..
 
+cd efm32hg322
+md5sum *.bin
+cd ..
+
+cd efm32hg322-ra
+md5sum *.bin
+cd ..
+
 cd linux
 md5sum mecrisp-stellaris-linux
 cd ..
