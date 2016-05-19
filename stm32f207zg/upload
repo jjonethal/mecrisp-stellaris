@@ -1,0 +1,3 @@
+#!/bin/bash
+sudo /usr/local/bin/st-flash erase
+sudo /usr/local/bin/st-flash write ./mecrisp-stellaris-stm32f207zg.bin 0x8000000

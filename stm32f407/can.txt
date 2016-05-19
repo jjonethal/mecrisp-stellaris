@@ -1,0 +1,57 @@
+\
+\ 	CAN1 driver test 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- CAN1 
+\			- PD0 -> CAN1_RX
+\			- PD1 -> CAN1_TX
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_dump.txt
+\		REQUIRES: drv_can.txt
+
+: 3# 0 <# # # # #> TYPE ;
+
+: readTest ( -- )
+	BASE @ >R HEX					\ save base
+	cr 
+	begin
+		canFifo0? 0<> if
+			canFifo0>
+			."  Id: " cbId@ 3# 
+			."  len: " cbLen@ . 
+			."  filter#: " cbFilter@ . 
+			."  data: " 8 0 do i cbC@ 2# space loop  cr
+		then
+	key? until
+	R> BASE ! 					  \ restore base
+;
+
+: writeTest1 ( -- )
+	$3F0 cbId! 8 cbLen!
+	$11223344 0 cb! $55667788 1 cb! >canMb0
+;
+: writeTest2 ( -- )
+	$3A0 cbId! 8 cbLen!
+	$9900AABB 0 cb! $CCDDEEFF 1 cb! >canMb0
+;
+: writeTest3 ( -- )
+	$3B0 cbId! 8 cbLen!
+	$5500AA00 0 cb! $F0F0F0F0 1 cb! >canMb0
+;
+
+: filterTest ( -- )
+	$3F0 1 0 setFilterIdList		\ filter# 0	
+	$1F0 2 0 setFilterIdList		\ filter# 1
+	$11F 1 1 setFilterIdList		\ filter# 2
+	$31B 2 1 setFilterIdList		\ filter# 3
+	$31B $FF0 2 setFilterIdMask		\ filter# 4
+	$31C $FFF 3 setFilterIdMask		\ filter# 5
+	0 0 4 setFilterIdMask			\ filter# 6, let pass all messages !	
+;
+
+canInit
+filterTest \ needed for readtest
+

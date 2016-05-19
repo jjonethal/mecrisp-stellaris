@@ -482,48 +482,11 @@ inline ;
 inline ;
 
 
-: exact-crystal-handler ( -- )
+\ -----------------------------------------------------------------------------
+\  Assembly parts for bulding the different interrupt handlers
+\ -----------------------------------------------------------------------------
 
-  led-on
-  1 ADC0_PSSI !  \ Restart ADC
-
-  [
-    \ Fetch measurement result from FIFO
-    ADC0_SSFIFO0 0 registerliteral,
-    6800 h,                          \ ldr	r0, [r0, #0]
-
-     \ Put circular buffer start address into r1
-     Circus 1 registerliteral,
-
-     \ Any samples to capture left ?
-     f1b8 h, 0f00 h,                 \ cmp.w	r8, #0
-     d00b h,                         \ beq.n	Increment circular sample pointer
-
-     \ One sample less to capture     
-     f1b8 h, 0801 h,                 \ subs.w	r8, r8, #1
-
-     \ Subtract offset for wider dynamic range
-     ebb0 h, 000a h,                 \ subs.w	r0, r0, sl
-
-     \ Calculate buffer location
-     eb11 h, 0109 h,                 \ adds.w	r1, r1, r9
-     eb11 h, 0109 h,                 \ adds.w	r1, r1, r9
-
-     \ Add measurement into buffer
-     880a h,                         \ ldrh	r2, [r1, #0]
-     fa92 h, f210 h,                 \ qadd16	r2, r2, r0
-     800a h,                         \ strh	r2, [r1, #0]
-
-     \ Increment circular sample pointer:
-
-     f119 h, 0901 h,                  \ adds.w	r9, r9, #1
-     45e1 h,                          \ cmp	r9, ip
-     bf28 h,                          \ it	cs
-     f04f h, 0900 h,                  \ movcs.w	r9, #0
-  ]
-
-
-  \ Perform on-the-fly clock calibration.
+: exact-clock-calibration ( -- )  \ Perform on-the-fly clock calibration.
 
   [
      f51b h, 3b80 h,                 \  adds.w  fp, fp, #65536  ; 0x10000
@@ -536,106 +499,11 @@ inline ;
      Systick-Reload 0 registerliteral,
      6002 h,                         \  str     r2, [r0, #0]    ; 0x00
   ]
-  led-off
+
+  inline
 ;
 
-: slow-crystal-handler ( -- )
-
-  led-on
-  1 ADC0_PSSI !  \ Restart ADC
-
-  [
-    \ Fetch measurement result from FIFO
-    ADC0_SSFIFO0 0 registerliteral,
-    6800 h,                          \ ldr	r0, [r0, #0]
-
-     \ Put circular buffer start address into r1
-     Circus 1 registerliteral,
-
-     \ Any samples to capture left ?
-     f1b8 h, 0f00 h,                 \ cmp.w	r8, #0
-     d00b h,                         \ beq.n	Increment circular sample pointer
-
-     \ One sample less to capture     
-     f1b8 h, 0801 h,                 \ subs.w	r8, r8, #1
-
-     \ Subtract offset for wider dynamic range
-     ebb0 h, 000a h,                 \ subs.w	r0, r0, sl
-
-     \ Calculate buffer location
-     eb11 h, 0109 h,                 \ adds.w	r1, r1, r9
-     eb11 h, 0109 h,                 \ adds.w	r1, r1, r9
-
-     \ Add measurement into buffer
-     880a h,                         \ ldrh	r2, [r1, #0]
-     fa92 h, f210 h,                 \ qadd16	r2, r2, r0
-     800a h,                         \ strh	r2, [r1, #0]
-
-     \ Increment circular sample pointer:
-
-     f119 h, 0901 h,                  \ adds.w	r9, r9, #1
-     45e1 h,                          \ cmp	r9, ip
-     bf28 h,                          \ it	cs
-     f04f h, 0900 h,                  \ movcs.w	r9, #0
-  ]
-
-  \ Perform on-the-fly clock calibration.
-
-  [
-     f51b h, 3b80 h,                 \  adds.w  fp, fp, #65536  ; 0x10000
-     ebbb h, 4f0b h,                 \  cmp.w   fp, fp, lsl #16
-     bf26 h,                         \  itte    cs
-     f05f h, 0200 ticks-slow  or h,  \  movscs.w        r2, #58 ; 0x3a
-     fa1f h, fb8b h,                 \  uxthcs.w        fp, fp
-     f05f h, 0200 ticks-exact or h,  \  movscc.w        r2, #59 ; 0x3b
-
-     Systick-Reload 0 registerliteral,
-     6002 h,                         \  str     r2, [r0, #0]    ; 0x00
-  ]
-  led-off
-;
-
-: fast-crystal-handler ( -- )
-
-  led-on
-  1 ADC0_PSSI !  \ Restart ADC
-
-  [
-    \ Fetch measurement result from FIFO
-    ADC0_SSFIFO0 0 registerliteral,
-    6800 h,                          \ ldr	r0, [r0, #0]
-
-     \ Put circular buffer start address into r1
-     Circus 1 registerliteral,
-
-     \ Any samples to capture left ?
-     f1b8 h, 0f00 h,                 \ cmp.w	r8, #0
-     d00b h,                         \ beq.n	Increment circular sample pointer
-
-     \ One sample less to capture     
-     f1b8 h, 0801 h,                 \ subs.w	r8, r8, #1
-
-     \ Subtract offset for wider dynamic range
-     ebb0 h, 000a h,                 \ subs.w	r0, r0, sl
-
-     \ Calculate buffer location
-     eb11 h, 0109 h,                 \ adds.w	r1, r1, r9
-     eb11 h, 0109 h,                 \ adds.w	r1, r1, r9
-
-     \ Add measurement into buffer
-     880a h,                         \ ldrh	r2, [r1, #0]
-     fa92 h, f210 h,                 \ qadd16	r2, r2, r0
-     800a h,                         \ strh	r2, [r1, #0]
-
-     \ Increment circular sample pointer:
-
-     f119 h, 0901 h,                  \ adds.w	r9, r9, #1
-     45e1 h,                          \ cmp	r9, ip
-     bf28 h,                          \ it	cs
-     f04f h, 0900 h,                  \ movcs.w	r9, #0
-  ]
-
-  \ Perform on-the-fly clock calibration.
+: fast-clock-calibration ( -- )  \ Perform on-the-fly clock calibration.
 
   [
      f51b h, 3b80 h,                 \  adds.w  fp, fp, #65536  ; 0x10000
@@ -648,18 +516,196 @@ inline ;
      Systick-Reload 0 registerliteral,
      6002 h,                         \  str     r2, [r0, #0]    ; 0x00
   ]
-  led-off
+
+  inline
+;
+
+: slow-clock-calibration ( -- )  \ Perform on-the-fly clock calibration.
+
+  [
+     f51b h, 3b80 h,                 \  adds.w  fp, fp, #65536  ; 0x10000
+     ebbb h, 4f0b h,                 \  cmp.w   fp, fp, lsl #16
+     bf26 h,                         \  itte    cs
+     f05f h, 0200 ticks-slow  or h,  \  movscs.w        r2, #58 ; 0x3a
+     fa1f h, fb8b h,                 \  uxthcs.w        fp, fp
+     f05f h, 0200 ticks-exact or h,  \  movscc.w        r2, #59 ; 0x3b
+
+     Systick-Reload 0 registerliteral,
+     6002 h,                         \  str     r2, [r0, #0]    ; 0x00
+  ]
+
+  inline
+;
+
+
+
+\ Just to remember: Those constants are in use here !
+\ $40038028 constant ADC0_PSSI    \ Processor Sample Sequence Initiate
+\ $40038048 constant ADC0_SSFIFO0 \ Sample Sequence Result FIFO
+
+
+: sum-into-buffer ( -- )
+
+  [
+     \ Put ADC base address into r1
+     40038000 1 registerliteral,
+
+     \ Restart ADC
+     2001 h, \ movs r0, #1
+     6008   28 4 / 6 lshift or h,    \ str r0, [r1, #offset_pssi]
+
+     \ Fetch measurement result from FIFO    
+     6808   48 4 / 6 lshift or h,    \ ldr r0, [r1, #offset_SSFIFO0]
+
+     \ Any samples to capture left ?
+     f1b8 h, 0f00 h,                 \ cmp.w    r8, #0
+     here 2 allot                    \ beq.n    Increment circular sample pointer
+
+     \ One sample less to capture     
+     f1b8 h, 0801 h,                 \ subs.w   r8, r8, #1
+
+     \ Subtract offset for wider dynamic range
+     ebb0 h, 000a h,                 \ subs.w   r0, r0, sl
+
+     \ Put circular buffer start address into r1
+     Circus 1 registerliteral,
+
+     \ Calculate buffer location
+     eb11 h, 0109 h,                 \ adds.w   r1, r1, r9
+     eb11 h, 0109 h,                 \ adds.w   r1, r1, r9
+
+     \ Add measurement into buffer
+     880a h,                         \ ldrh     r2, [r1, #0]
+     fa92 h, f210 h,                 \ qadd16   r2, r2, r0
+     800a h,                         \ strh     r2, [r1, #0]
+
+     here d000 cjump,                \ Destination of the beq.n opcode prepared above
+
+     \ Increment circular sample pointer:
+
+     f119 h, 0901 h,                  \ adds.w  r9, r9, #1
+     45e1 h,                          \ cmp     r9, ip
+     bf28 h,                          \ it      cs
+     f04f h, 0900 h,                  \ movcs.w r9, #0
+  ]  
+
+  inline
+;
+
+\ Exponential average over 2^n samples.
+\ Having 16 bits in buffer and 12 bits of ADC, 2^4=16 is the maximum.
+\ The buffer uses a saturating 16 bit add, so it will not produce artifacts on overflow.
+\ So with a low signal strength and offset subtraction, you can average longer.
+
+\ Set averaging with samples! - this register is simply reused here with a different function.
+\ With continuous capture there is no need to count the individual samples.
+
+: expavg-into-buffer ( -- )
+
+  [
+     \ Put ADC base address into r1
+     40038000 1 registerliteral,
+
+     \ Restart ADC
+     2001 h, \ movs r0, #1
+     6008   28 4 / 6 lshift or h,    \ str r0, [r1, #offset_pssi]
+
+     \ Fetch measurement result from FIFO    
+     6808   48 4 / 6 lshift or h,    \ ldr r0, [r1, #offset_SSFIFO0]
+
+     \ Subtract offset for wider dynamic range
+     ebb0 h, 000a h,                 \ subs.w   r0, r0, sl
+
+     \ Put circular buffer start address into r1
+     Circus 1 registerliteral,
+
+     \ Calculate buffer location
+     eb11 h, 0109 h,                 \ adds.w   r1, r1, r9
+     eb11 h, 0109 h,                 \ adds.w   r1, r1, r9
+
+     \ Variable exponential average of the measurements into buffer
+
+     880a h,                         \ ldrh     r2, [r1, #0]
+     b212 h,                         \ sxth     r2, r2
+     fa52 h, f308 h,                 \ asrs     r3, r2, r8
+     1ad2 h,                         \ subs     r2, r2, r3
+     fa92 h, f210 h,                 \ qadd16   r2, r2, r0
+     800a h,                         \ strh     r2, [r1, #0]
+
+     \ Increment circular sample pointer:
+
+     f119 h, 0901 h,                  \ adds.w  r9, r9, #1
+     45e1 h,                          \ cmp     r9, ip
+     bf28 h,                          \ it      cs
+     f04f h, 0900 h,                  \ movcs.w r9, #0
+  ]  
+
+  inline
 ;
 
 decimal
 
+\ -----------------------------------------------------------------------------
+\  Summing signal processing interrupt handlers
+\ -----------------------------------------------------------------------------
 
-: exact-xtal ( -- ) ['] exact-crystal-handler irq-systick ! ticks-exact Systick-RELOAD !  ;
-: slow-xtal  ( -- ) [']  slow-crystal-handler irq-systick ! ;
-: fast-xtal  ( -- ) [']  fast-crystal-handler irq-systick ! ;
+: exact-crystal-handler ( -- )
+  \ led-on
+  sum-into-buffer
+  exact-clock-calibration
+  \ led-off
+;
+
+: slow-crystal-handler ( -- )
+  \ led-on
+  sum-into-buffer
+  slow-clock-calibration
+  \ led-off
+;
+
+: fast-crystal-handler ( -- )
+  \ led-on
+  sum-into-buffer
+  fast-clock-calibration
+  \ led-off
+;
+
+\ -----------------------------------------------------------------------------
+\  Exponential average signal processing interrupt handlers
+\ -----------------------------------------------------------------------------
+
+: exact-crystal-expavg-handler ( -- )
+  \ led-on
+  expavg-into-buffer
+  exact-clock-calibration
+  \ led-off
+;
+
+: slow-crystal-expavg-handler ( -- )
+  \ led-on
+  expavg-into-buffer
+  slow-clock-calibration
+  \ led-off
+;
+
+: fast-crystal-expavg-handler ( -- )
+  \ led-on
+  expavg-into-buffer
+  fast-clock-calibration
+  \ led-off
+;
+
+\ -----------------------------------------------------------------------------
+\  Sampling clock calibration helpers
+\ -----------------------------------------------------------------------------
+
+false variable expavg-handlers
+
+: exact-xtal ( -- ) expavg-handlers @ if ['] exact-crystal-expavg-handler else ['] exact-crystal-handler then irq-systick ! ;
+: slow-xtal  ( -- ) expavg-handlers @ if [']  slow-crystal-expavg-handler else [']  slow-crystal-handler then irq-systick ! ;
+: fast-xtal  ( -- ) expavg-handlers @ if [']  fast-crystal-expavg-handler else [']  fast-crystal-handler then irq-systick ! ;
 
 : t ( u -- ) tack! ; \ For quick clock adjustments
-
 
 1000,00 2constant centerfrequency \ in kHz
  120,00 2constant tickcount
@@ -682,6 +728,33 @@ decimal
   cr
 ;
 
+\ -----------------------------------------------------------------------------
+\  Switch the set of interrupt handlers from summing to average and vice versa
+\ -----------------------------------------------------------------------------
+
+: summing ( -- ) \ Default
+  false expavg-handlers !
+  irq-systick @
+  case    
+    ['] exact-crystal-expavg-handler of ['] exact-crystal-handler irq-systick ! endof
+    [']  slow-crystal-expavg-handler of [']  slow-crystal-handler irq-systick ! endof
+    [']  fast-crystal-expavg-handler of [']  fast-crystal-handler irq-systick ! endof
+  endcase
+;
+
+: expavg ( -- )
+  true expavg-handlers !
+  irq-systick @
+  case    
+    ['] exact-crystal-handler of ['] exact-crystal-expavg-handler irq-systick ! endof
+    [']  slow-crystal-handler of [']  slow-crystal-expavg-handler irq-systick ! endof
+    [']  fast-crystal-handler of [']  fast-crystal-expavg-handler irq-systick ! endof
+  endcase
+;
+
+\ -----------------------------------------------------------------------------
+\  Loran initialisations
+\ -----------------------------------------------------------------------------
 
 : loran ( -- )
 
@@ -908,438 +981,439 @@ decimal
 \ puls[i] := round(886 * loranpuls(i) ); // For 1/65us pulse envelope
 \
 
+\ Filter points sorted for their value to generate shorter filter code.
 
 filterdesign-start pulseconvolution
 
-0 0      filterpoint
-1 1      filterpoint
-2 6      filterpoint
-3 12     filterpoint
-4 13     filterpoint
-5 0      filterpoint
-6 -27    filterpoint
-7 -58    filterpoint
-8 -74    filterpoint
-9 -56    filterpoint
-10 0     filterpoint
-11 79    filterpoint
-12 147   filterpoint
-13 167   filterpoint
-14 116   filterpoint
-15 0     filterpoint
-16 -143  filterpoint
-17 -252  filterpoint
-18 -274  filterpoint
-19 -183  filterpoint
-20 0     filterpoint
-21 210   filterpoint
-22 362   filterpoint
-23 384   filterpoint
-24 251   filterpoint
-25 0     filterpoint
-26 -277  filterpoint
-27 -468  filterpoint
-28 -488  filterpoint
-29 -314  filterpoint
-30 0     filterpoint
-31 337   filterpoint
-32 564   filterpoint
-33 581   filterpoint
-34 370   filterpoint
-35 0     filterpoint
-36 -390  filterpoint
-37 -646  filterpoint
-38 -661  filterpoint
-39 -417  filterpoint
-40 0     filterpoint
-41 434   filterpoint
-42 714   filterpoint
-43 726   filterpoint
-44 455   filterpoint
-45 0     filterpoint
-46 -468  filterpoint
-47 -767  filterpoint
-48 -775  filterpoint
-49 -484  filterpoint
-50 0     filterpoint
-51 493   filterpoint
-52 805   filterpoint
-53 810   filterpoint
-54 504   filterpoint
-55 0     filterpoint
-56 -510  filterpoint
-57 -829  filterpoint
-58 -832  filterpoint
-59 -516  filterpoint
-60 0     filterpoint
-61 519   filterpoint
-62 841   filterpoint
-63 842   filterpoint
-64 521   filterpoint
-65 0     filterpoint
-66 -521  filterpoint
-67 -842  filterpoint
-68 -841  filterpoint
-69 -519  filterpoint
-70 0     filterpoint
-71 517   filterpoint
-72 834   filterpoint
-73 831   filterpoint
-74 512   filterpoint
-75 0     filterpoint
-76 -508  filterpoint
-77 -817  filterpoint
-78 -813  filterpoint
-79 -500  filterpoint
-80 0     filterpoint
-81 494   filterpoint
-82 795   filterpoint
-83 790   filterpoint
-84 485   filterpoint
-85 0     filterpoint
-86 -478  filterpoint
-87 -767  filterpoint
-88 -761  filterpoint
-89 -467  filterpoint
-90 0     filterpoint
-91 459   filterpoint
-92 736   filterpoint
-93 729   filterpoint
-94 446   filterpoint
-95 0     filterpoint
-96 -438  filterpoint
-97 -701  filterpoint
-98 -694  filterpoint
-99 -424  filterpoint
-100 0    filterpoint
-101 415  filterpoint
-102 665  filterpoint
-103 657  filterpoint
-104 402  filterpoint
-105 0    filterpoint
-106 -392 filterpoint
-107 -627 filterpoint
-108 -620 filterpoint
-109 -378 filterpoint
-110 0    filterpoint
-111 369  filterpoint
-112 589  filterpoint
-113 582  filterpoint
-114 355  filterpoint
-115 0    filterpoint
-116 -345 filterpoint
-117 -551 filterpoint
-118 -544 filterpoint
-119 -331 filterpoint
-120 0    filterpoint
-121 322  filterpoint
-122 514  filterpoint
-123 506  filterpoint
-124 309  filterpoint
-125 0    filterpoint
-126 -300 filterpoint
-127 -477 filterpoint
-128 -470 filterpoint
-129 -286 filterpoint
-130 0    filterpoint
-131 278  filterpoint
-132 442  filterpoint
-133 435  filterpoint
-134 265  filterpoint
-135 0    filterpoint
-136 -257 filterpoint
-137 -408 filterpoint
-138 -402 filterpoint
-139 -244 filterpoint
-140 0    filterpoint
-141 236  filterpoint
-142 376  filterpoint
-143 370  filterpoint
-144 225  filterpoint
-145 0    filterpoint
-146 -217 filterpoint
-147 -346 filterpoint
-148 -340 filterpoint
-149 -206 filterpoint
-150 0    filterpoint
-151 199  filterpoint
-152 317  filterpoint
-153 311  filterpoint
-154 189  filterpoint
-155 0    filterpoint
-156 -182 filterpoint
-157 -290 filterpoint
-158 -285 filterpoint
-159 -173 filterpoint
-160 0    filterpoint
-161 167  filterpoint
-162 265  filterpoint
-163 260  filterpoint
-164 158  filterpoint
-165 0    filterpoint
-166 -152 filterpoint
-167 -241 filterpoint
-168 -237 filterpoint
-169 -144 filterpoint
-170 0    filterpoint
-171 138  filterpoint
-172 219  filterpoint
-173 215  filterpoint
-174 130  filterpoint
-175 0    filterpoint
-176 -125 filterpoint
-177 -199 filterpoint
-178 -195 filterpoint
-179 -118 filterpoint
-180 0    filterpoint
-181 114  filterpoint
-182 181  filterpoint
-183 177  filterpoint
-184 107  filterpoint
-185 0    filterpoint
-186 -103 filterpoint
-187 -163 filterpoint
-188 -160 filterpoint
-189 -97  filterpoint
-190 0    filterpoint
-191 93   filterpoint
-192 148  filterpoint
-193 145  filterpoint
-194 88   filterpoint
-195 0    filterpoint
-196 -84  filterpoint
-197 -133 filterpoint
-198 -131 filterpoint
-199 -79  filterpoint
-200 0    filterpoint
-201 76   filterpoint
-202 120  filterpoint
-203 118  filterpoint
-204 71   filterpoint
-205 0    filterpoint
-206 -68  filterpoint
-207 -108 filterpoint
-208 -106 filterpoint
-209 -64  filterpoint
-210 0    filterpoint
-211 61   filterpoint
-212 97   filterpoint
-213 95   filterpoint
-214 58   filterpoint
-215 0    filterpoint
-216 -55  filterpoint
-217 -87  filterpoint
-218 -86  filterpoint
-219 -52  filterpoint
-220 0    filterpoint
-221 50   filterpoint
-222 78   filterpoint
-223 77   filterpoint
-224 46   filterpoint
-225 0    filterpoint
-226 -44  filterpoint
-227 -70  filterpoint
-228 -69  filterpoint
-229 -42  filterpoint
-230 0    filterpoint
-231 40   filterpoint
-232 63   filterpoint
-233 62   filterpoint
-234 37   filterpoint
-235 0    filterpoint
-236 -36  filterpoint
-237 -56  filterpoint
-238 -55  filterpoint
-239 -33  filterpoint
-240 0    filterpoint
-241 32   filterpoint
-242 50   filterpoint
-243 49   filterpoint
-244 30   filterpoint
-245 0    filterpoint
-246 -28  filterpoint
-247 -45  filterpoint
-248 -44  filterpoint
-249 -27  filterpoint
-250 0    filterpoint
-251 25   filterpoint
-252 40   filterpoint
-253 39   filterpoint
-254 24   filterpoint
-255 0    filterpoint
-256 -23  filterpoint
-257 -36  filterpoint
-258 -35  filterpoint
-259 -21  filterpoint
-260 0    filterpoint
-261 20   filterpoint
-262 32   filterpoint
-263 31   filterpoint
-264 19   filterpoint
-265 0    filterpoint
-266 -18  filterpoint
-267 -28  filterpoint
-268 -28  filterpoint
-269 -17  filterpoint
-270 0    filterpoint
-271 16   filterpoint
-272 25   filterpoint
-273 25   filterpoint
-274 15   filterpoint
-275 0    filterpoint
-276 -14  filterpoint
-277 -22  filterpoint
-278 -22  filterpoint
-279 -13  filterpoint
-280 0    filterpoint
-281 13   filterpoint
-282 20   filterpoint
-283 20   filterpoint
-284 12   filterpoint
-285 0    filterpoint
-286 -11  filterpoint
-287 -18  filterpoint
-288 -17  filterpoint
-289 -10  filterpoint
-290 0    filterpoint
-291 10   filterpoint
-292 16   filterpoint
-293 15   filterpoint
-294 9    filterpoint
-295 0    filterpoint
-296 -9   filterpoint
-297 -14  filterpoint
-298 -14  filterpoint
-299 -8   filterpoint
-300 0    filterpoint
-301 8    filterpoint
-302 12   filterpoint
-303 12   filterpoint
-304 7    filterpoint
-305 0    filterpoint
-306 -7   filterpoint
-307 -11  filterpoint
-308 -11  filterpoint
-309 -6   filterpoint
-310 0    filterpoint
-311 6    filterpoint
-312 10   filterpoint
-313 9    filterpoint
-314 6    filterpoint
-315 0    filterpoint
-316 -5   filterpoint
-317 -9   filterpoint
-318 -8   filterpoint
-319 -5   filterpoint
-320 0    filterpoint
-321 5    filterpoint
-322 8    filterpoint
-323 7    filterpoint
-324 4    filterpoint
-325 0    filterpoint
-326 -4   filterpoint
-327 -7   filterpoint
-328 -7   filterpoint
-329 -4   filterpoint
-330 0    filterpoint
-331 4    filterpoint
-332 6    filterpoint
-333 6    filterpoint
-334 3    filterpoint
-335 0    filterpoint
-336 -3   filterpoint
-337 -5   filterpoint
-338 -5   filterpoint
-339 -3   filterpoint
-340 0    filterpoint
-341 3    filterpoint
-342 5    filterpoint
-343 5    filterpoint
-344 3    filterpoint
-345 0    filterpoint
-346 -3   filterpoint
-347 -4   filterpoint
-348 -4   filterpoint
-349 -2   filterpoint
-350 0    filterpoint
-351 2    filterpoint
-352 4    filterpoint
-353 4    filterpoint
-354 2    filterpoint
-355 0    filterpoint
-356 -2   filterpoint
-357 -3   filterpoint
-358 -3   filterpoint
-359 -2   filterpoint
-360 0    filterpoint
-361 2    filterpoint
-362 3    filterpoint
-363 3    filterpoint
-364 2    filterpoint
-365 0    filterpoint
-366 -2   filterpoint
-367 -2   filterpoint
-368 -2   filterpoint
-369 -1   filterpoint
-370 0    filterpoint
-371 1    filterpoint
-372 2    filterpoint
-373 2    filterpoint
-374 1    filterpoint
-375 0    filterpoint
-376 -1   filterpoint
-377 -2   filterpoint
-378 -2   filterpoint
-379 -1   filterpoint
-380 0    filterpoint
-381 1    filterpoint
-382 2    filterpoint
-383 2    filterpoint
-384 1    filterpoint
-385 0    filterpoint
-386 -1   filterpoint
-387 -1   filterpoint
-388 -1   filterpoint
-389 -1   filterpoint
-390 0    filterpoint
-391 1    filterpoint
-392 1    filterpoint
-393 1    filterpoint
-394 1    filterpoint
-395 0    filterpoint
-396 -1   filterpoint
-397 -1   filterpoint
-398 -1   filterpoint
-399 -1   filterpoint
-400 0    filterpoint
-401 1    filterpoint
-402 1    filterpoint
-403 1    filterpoint
-404 1    filterpoint
-405 0    filterpoint
-406 -1   filterpoint
-407 -1   filterpoint
-408 -1   filterpoint
-409 -1   filterpoint
-410 0    filterpoint
-411 0    filterpoint
-412 1    filterpoint
-413 1    filterpoint
-414 0    filterpoint
-415 0    filterpoint
-416 0    filterpoint
-417 -1   filterpoint
-418 -1   filterpoint
-419 0    filterpoint
-420 0    filterpoint
-421 0    filterpoint
-422 1    filterpoint
-423 1    filterpoint
-424 0    filterpoint
-425 0    filterpoint
-426 0    filterpoint
-427 -1   filterpoint
-428 -1   filterpoint
+63      842 filterpoint
+62      841 filterpoint
+72      834 filterpoint
+73      831 filterpoint
+53      810 filterpoint
+52      805 filterpoint
+82      795 filterpoint
+83      790 filterpoint
+92      736 filterpoint
+93      729 filterpoint
+43      726 filterpoint
+42      714 filterpoint
+102     665 filterpoint
+103     657 filterpoint
+112     589 filterpoint
+113     582 filterpoint
+33      581 filterpoint
+32      564 filterpoint
+64      521 filterpoint
+61      519 filterpoint
+71      517 filterpoint
+122     514 filterpoint
+74      512 filterpoint
+123     506 filterpoint
+54      504 filterpoint
+81      494 filterpoint
+51      493 filterpoint
+84      485 filterpoint
+91      459 filterpoint
+44      455 filterpoint
+94      446 filterpoint
+132     442 filterpoint
+133     435 filterpoint
+41      434 filterpoint
+101     415 filterpoint
+104     402 filterpoint
+23      384 filterpoint
+142     376 filterpoint
+34      370 filterpoint
+143     370 filterpoint
+111     369 filterpoint
+22      362 filterpoint
+114     355 filterpoint
+31      337 filterpoint
+121     322 filterpoint
+152     317 filterpoint
+153     311 filterpoint
+124     309 filterpoint
+131     278 filterpoint
+134     265 filterpoint
+162     265 filterpoint
+163     260 filterpoint
+24      251 filterpoint
+141     236 filterpoint
+144     225 filterpoint
+172     219 filterpoint
+173     215 filterpoint
+21      210 filterpoint
+151     199 filterpoint
+154     189 filterpoint
+182     181 filterpoint
+183     177 filterpoint
+13      167 filterpoint
+161     167 filterpoint
+164     158 filterpoint
+192     148 filterpoint
+12      147 filterpoint
+193     145 filterpoint
+171     138 filterpoint
+174     130 filterpoint
+202     120 filterpoint
+203     118 filterpoint
+14      116 filterpoint
+181     114 filterpoint
+184     107 filterpoint
+212     97 filterpoint
+213     95 filterpoint
+191     93 filterpoint
+194     88 filterpoint
+11      79 filterpoint
+222     78 filterpoint
+223     77 filterpoint
+201     76 filterpoint
+204     71 filterpoint
+232     63 filterpoint
+233     62 filterpoint
+211     61 filterpoint
+214     58 filterpoint
+221     50 filterpoint
+242     50 filterpoint
+243     49 filterpoint
+224     46 filterpoint
+231     40 filterpoint
+252     40 filterpoint
+253     39 filterpoint
+234     37 filterpoint
+241     32 filterpoint
+262     32 filterpoint
+263     31 filterpoint
+244     30 filterpoint
+251     25 filterpoint
+272     25 filterpoint
+273     25 filterpoint
+254     24 filterpoint
+261     20 filterpoint
+282     20 filterpoint
+283     20 filterpoint
+264     19 filterpoint
+271     16 filterpoint
+292     16 filterpoint
+274     15 filterpoint
+293     15 filterpoint
+4       13 filterpoint
+281     13 filterpoint
+3       12 filterpoint
+284     12 filterpoint
+302     12 filterpoint
+303     12 filterpoint
+291     10 filterpoint
+312     10 filterpoint
+294     9 filterpoint
+313     9 filterpoint
+301     8 filterpoint
+322     8 filterpoint
+304     7 filterpoint
+323     7 filterpoint
+2       6 filterpoint
+311     6 filterpoint
+314     6 filterpoint
+332     6 filterpoint
+333     6 filterpoint
+321     5 filterpoint
+342     5 filterpoint
+343     5 filterpoint
+324     4 filterpoint
+331     4 filterpoint
+352     4 filterpoint
+353     4 filterpoint
+334     3 filterpoint
+341     3 filterpoint
+344     3 filterpoint
+362     3 filterpoint
+363     3 filterpoint
+351     2 filterpoint
+354     2 filterpoint
+361     2 filterpoint
+364     2 filterpoint
+372     2 filterpoint
+373     2 filterpoint
+382     2 filterpoint
+383     2 filterpoint
+1       1 filterpoint
+371     1 filterpoint
+374     1 filterpoint
+381     1 filterpoint
+384     1 filterpoint
+391     1 filterpoint
+392     1 filterpoint
+393     1 filterpoint
+394     1 filterpoint
+401     1 filterpoint
+402     1 filterpoint
+403     1 filterpoint
+404     1 filterpoint
+412     1 filterpoint
+413     1 filterpoint
+422     1 filterpoint
+423     1 filterpoint
+0       0 filterpoint
+5       0 filterpoint
+10      0 filterpoint
+15      0 filterpoint
+20      0 filterpoint
+25      0 filterpoint
+30      0 filterpoint
+35      0 filterpoint
+40      0 filterpoint
+45      0 filterpoint
+50      0 filterpoint
+55      0 filterpoint
+60      0 filterpoint
+65      0 filterpoint
+70      0 filterpoint
+75      0 filterpoint
+80      0 filterpoint
+85      0 filterpoint
+90      0 filterpoint
+95      0 filterpoint
+100     0 filterpoint
+105     0 filterpoint
+110     0 filterpoint
+115     0 filterpoint
+120     0 filterpoint
+125     0 filterpoint
+130     0 filterpoint
+135     0 filterpoint
+140     0 filterpoint
+145     0 filterpoint
+150     0 filterpoint
+155     0 filterpoint
+160     0 filterpoint
+165     0 filterpoint
+170     0 filterpoint
+175     0 filterpoint
+180     0 filterpoint
+185     0 filterpoint
+190     0 filterpoint
+195     0 filterpoint
+200     0 filterpoint
+205     0 filterpoint
+210     0 filterpoint
+215     0 filterpoint
+220     0 filterpoint
+225     0 filterpoint
+230     0 filterpoint
+235     0 filterpoint
+240     0 filterpoint
+245     0 filterpoint
+250     0 filterpoint
+255     0 filterpoint
+260     0 filterpoint
+265     0 filterpoint
+270     0 filterpoint
+275     0 filterpoint
+280     0 filterpoint
+285     0 filterpoint
+290     0 filterpoint
+295     0 filterpoint
+300     0 filterpoint
+305     0 filterpoint
+310     0 filterpoint
+315     0 filterpoint
+320     0 filterpoint
+325     0 filterpoint
+330     0 filterpoint
+335     0 filterpoint
+340     0 filterpoint
+345     0 filterpoint
+350     0 filterpoint
+355     0 filterpoint
+360     0 filterpoint
+365     0 filterpoint
+370     0 filterpoint
+375     0 filterpoint
+380     0 filterpoint
+385     0 filterpoint
+390     0 filterpoint
+395     0 filterpoint
+400     0 filterpoint
+405     0 filterpoint
+410     0 filterpoint
+411     0 filterpoint
+414     0 filterpoint
+415     0 filterpoint
+416     0 filterpoint
+419     0 filterpoint
+420     0 filterpoint
+421     0 filterpoint
+424     0 filterpoint
+425     0 filterpoint
+426     0 filterpoint
+369     -1 filterpoint
+376     -1 filterpoint
+379     -1 filterpoint
+386     -1 filterpoint
+387     -1 filterpoint
+388     -1 filterpoint
+389     -1 filterpoint
+396     -1 filterpoint
+397     -1 filterpoint
+398     -1 filterpoint
+399     -1 filterpoint
+406     -1 filterpoint
+407     -1 filterpoint
+408     -1 filterpoint
+409     -1 filterpoint
+417     -1 filterpoint
+418     -1 filterpoint
+427     -1 filterpoint
+428     -1 filterpoint
+349     -2 filterpoint
+356     -2 filterpoint
+359     -2 filterpoint
+366     -2 filterpoint
+367     -2 filterpoint
+368     -2 filterpoint
+377     -2 filterpoint
+378     -2 filterpoint
+336     -3 filterpoint
+339     -3 filterpoint
+346     -3 filterpoint
+357     -3 filterpoint
+358     -3 filterpoint
+326     -4 filterpoint
+329     -4 filterpoint
+347     -4 filterpoint
+348     -4 filterpoint
+316     -5 filterpoint
+319     -5 filterpoint
+337     -5 filterpoint
+338     -5 filterpoint
+309     -6 filterpoint
+306     -7 filterpoint
+327     -7 filterpoint
+328     -7 filterpoint
+299     -8 filterpoint
+318     -8 filterpoint
+296     -9 filterpoint
+317     -9 filterpoint
+289     -10 filterpoint
+286     -11 filterpoint
+307     -11 filterpoint
+308     -11 filterpoint
+279     -13 filterpoint
+276     -14 filterpoint
+297     -14 filterpoint
+298     -14 filterpoint
+269     -17 filterpoint
+288     -17 filterpoint
+266     -18 filterpoint
+287     -18 filterpoint
+259     -21 filterpoint
+277     -22 filterpoint
+278     -22 filterpoint
+256     -23 filterpoint
+6       -27 filterpoint
+249     -27 filterpoint
+246     -28 filterpoint
+267     -28 filterpoint
+268     -28 filterpoint
+239     -33 filterpoint
+258     -35 filterpoint
+236     -36 filterpoint
+257     -36 filterpoint
+229     -42 filterpoint
+226     -44 filterpoint
+248     -44 filterpoint
+247     -45 filterpoint
+219     -52 filterpoint
+216     -55 filterpoint
+238     -55 filterpoint
+9       -56 filterpoint
+237     -56 filterpoint
+7       -58 filterpoint
+209     -64 filterpoint
+206     -68 filterpoint
+228     -69 filterpoint
+227     -70 filterpoint
+8       -74 filterpoint
+199     -79 filterpoint
+196     -84 filterpoint
+218     -86 filterpoint
+217     -87 filterpoint
+189     -97 filterpoint
+186     -103 filterpoint
+208     -106 filterpoint
+207     -108 filterpoint
+179     -118 filterpoint
+176     -125 filterpoint
+198     -131 filterpoint
+197     -133 filterpoint
+16      -143 filterpoint
+169     -144 filterpoint
+166     -152 filterpoint
+188     -160 filterpoint
+187     -163 filterpoint
+159     -173 filterpoint
+156     -182 filterpoint
+19      -183 filterpoint
+178     -195 filterpoint
+177     -199 filterpoint
+149     -206 filterpoint
+146     -217 filterpoint
+168     -237 filterpoint
+167     -241 filterpoint
+139     -244 filterpoint
+17      -252 filterpoint
+136     -257 filterpoint
+18      -274 filterpoint
+26      -277 filterpoint
+158     -285 filterpoint
+129     -286 filterpoint
+157     -290 filterpoint
+126     -300 filterpoint
+29      -314 filterpoint
+119     -331 filterpoint
+148     -340 filterpoint
+116     -345 filterpoint
+147     -346 filterpoint
+109     -378 filterpoint
+36      -390 filterpoint
+106     -392 filterpoint
+138     -402 filterpoint
+137     -408 filterpoint
+39      -417 filterpoint
+99      -424 filterpoint
+96      -438 filterpoint
+89      -467 filterpoint
+27      -468 filterpoint
+46      -468 filterpoint
+128     -470 filterpoint
+127     -477 filterpoint
+86      -478 filterpoint
+49      -484 filterpoint
+28      -488 filterpoint
+79      -500 filterpoint
+76      -508 filterpoint
+56      -510 filterpoint
+59      -516 filterpoint
+69      -519 filterpoint
+66      -521 filterpoint
+118     -544 filterpoint
+117     -551 filterpoint
+108     -620 filterpoint
+107     -627 filterpoint
+37      -646 filterpoint
+38      -661 filterpoint
+98      -694 filterpoint
+97      -701 filterpoint
+88      -761 filterpoint
+47      -767 filterpoint
+87      -767 filterpoint
+48      -775 filterpoint
+78      -813 filterpoint
+77      -817 filterpoint
+57      -829 filterpoint
+58      -832 filterpoint
+68      -841 filterpoint
+67      -842 filterpoint
 
 \ Sum of coefficients: -1 Sum of absolute coefficients: 65473 Number of coefficients <> 0: 336
 
@@ -1621,13 +1695,9 @@ false variable type4
 ;
 
 : locate ( -- )
-  \ Switch off interrupt handler during calculations for speed
-  \ No need to keep in sync meanwhile
-  dint
   convolution
   findpulsetrains
   calculatetds
-  eint
 ;
 
 : l ( -- )
@@ -1800,7 +1870,7 @@ $40030050 constant GPTM0_TAV   \ GPTM Timer A Value
     dup 120 / ." Time elapsed: " . ." us" cr
 
   ( location-old elapsedcycles )                 \ Sampling takes exactly the same time for first and second run, so it is ok to get time after each sampling runs.
-  dint findagain-strongestpulsetrain eint        \ Find out where the strongest pulse train is now. No need to keep in sync, disable interrupts.
+  findagain-strongestpulsetrain                  \ Find out where the strongest pulse train is now. Stay in sync, maybe we need the positions later.
   ( location-old elapsedcycles location-new )
   rot
   ( elapsedcycles location-new location-old )
@@ -1835,6 +1905,28 @@ $40030050 constant GPTM0_TAV   \ GPTM Timer A Value
     locate
     cr
   key? until
+;
+
+\ -----------------------------------------------------------------------------
+\  Catch signal and switch to continuous exponential average capture
+\ -----------------------------------------------------------------------------
+
+: conti \ nuous ( -- )
+
+  cold-ca              \ Try to calibrate local sampling frequency first, also sets analog DC offset
+  convolution-adjust    \ Fine tune the determined frequency
+
+  expavg      \ Switch to continous capture
+  0 samples!   \ This register holds the amount of averaging. A value of zero just causes the handler to clear the buffer along.
+  clearbuffer   \ Start with a freshly cleared buffer
+  4 samples!     \ Now start to average into.
+
+  begin
+    2 samples@ lshift latestgris !  \ Set latestgris according to the current averaging
+    signalquality cr
+  key? until
+
+  summing \ Switch back to the default handlers
 ;
 
 \ -----------------------------------------------------------------------------

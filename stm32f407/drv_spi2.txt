@@ -1,0 +1,52 @@
+\
+\ 	SPI2 driver 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- SPI2  
+\			- PB13 -> SCK
+\			- PB14 -> MISO
+\			- PB15 -> MOSI
+\
+\		REQUIRES: lib_registers.txt
+
+: spi2Init ( -- )  
+	GPIOBEN RCC_AHB1ENR bis!									\ IO port B clock enabled
+    MODE_ALTERNATE 13 PORTB_BASE set-moder      \ PB13 -> Alternate function mode
+    MODE_ALTERNATE 14 PORTB_BASE set-moder      \ PB14 -> Alternate function mode
+    MODE_ALTERNATE 15 PORTB_BASE set-moder      \ PB15 -> Alternate function mode
+    5 13 PORTB_BASE set-alternate               			\ PB13 -> Alternate function: %0101: AF5 (SPI2) 
+    5 14 PORTB_BASE set-alternate               			\ PB14 -> Alternate function: %0101: AF5 (SPI2) 
+    5 15 PORTB_BASE set-alternate               			\ PB15 -> Alternate function: %0101: AF5 (SPI2) 
+
+	SPI2EN RCC_APB1ENR bis! 		\ Enable clock for SPI2
+	MSTR SPI2_CR1 bis!					\ Master selection 
+	SSI SPI2_CR1 bis!                	\ Internal slave select 
+	SSM SPI2_CR1 bis!					\ Software slave management
+	SPE SPI2_CR1 bis!                	\ SPI enable
+;
+
+: spi2Txe? ( -- f )
+    TXE SPI2_SR bit@ inline ;
+
+: spi2Rxne? ( -- f )
+    RXNE SPI2_SR bit@ inline ;
+	
+: spi2Bsy? ( -- f )
+    BSY SPI2_SR bit@ inline ;
+
+
+\ transmit a byte to SPI
+: >spi2 ( byte -- )
+	begin pause spi2Txe? until			\ wait until transmit is empty
+	SPI2_DR h!											\ send byte
+;
+
+\ read a byte from SPI
+: spi2> (  --  byte )
+	SPI2_DR h@ drop								\ clearing OVR flag
+	$FF  >spi2											\ send dummy to shift in read byte
+	begin pause spi2Rxne? until			\ wait until read is shift in
+	SPI2_DR h@											\ fetch data
+;

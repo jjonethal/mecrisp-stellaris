@@ -1,0 +1,305 @@
+
+8000000 constant HCLK
+
+$E000E100 constant NVIC_EN0_R              	\ IRQ 0 to 31 Set Enable Register
+	1 18 lshift constant NVIC_EN0_INT18		\ ADC Interrupt 18
+	1 28 lshift constant NVIC_EN0_INT28     \ TIM2 Interrupt 28
+
+$40023C00 constant FLASH_ACR 			\ Flash Access Control Register
+
+$40023800 constant RCC_Base
+	RCC_Base $00 + constant RCC_CR
+	  1 24 lshift constant PLLON
+	  1 25 lshift constant PLLRDY
+	RCC_Base $04 + constant RCC_PLLCRGR
+	   1 22 lshift constant PLLSRC
+	RCC_Base $08 + constant RCC_CFGR
+	RCC_Base $30 + constant RCC_AHB1ENR
+		1 constant GPIOAEN					\ IO port A clock enable
+		2 constant GPIOBEN					\ IO port B clock enable
+		1 2 lshift constant GPIOCEN			\ IO port C clock enable
+		1 3 lshift constant GPIODEN			\ IO port D clock enable
+		1 4 lshift constant GPIOEEN			\ IO port E clock enable
+	RCC_Base $40 + constant RCC_APB1ENR
+		1 constant TIM2EN					\ TIM2 clock enable
+		2 constant TIM3EN					\ TIM3 clock enable
+		1 2 lshift constant TIM4EN			\ TIM4 clock enable
+		1 3 lshift constant TIM5EN			\ TIM5 clock enable
+		1 4 lshift constant TIM6EN			\ TIM6 clock enable
+    	1 14 lshift constant SPI2EN			\ SPI2 clock enable
+    	1 15 lshift constant SPI3EN			\ SPI3 clock enable
+		1 18 lshift constant USART3EN		\ USART3 clock enable
+		1 25 lshift constant CAN1EN			\ CAN1 clock enable
+	RCC_Base $44 + constant RCC_APB2ENR
+		1 5 lshift constant USART6EN		\ USART6EN clock enable
+		1 8 lshift constant ADC1EN			\ ADC1 clock enable
+		1 14 lshift constant SYSCFGEN		\ System configuration controller clock enable
+
+
+$40021000 constant PORTE_BASE
+	PORTE_BASE $00 + constant PORTE_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+	PORTE_BASE $04 + constant PORTE_OTYPER   \ Reset 0 Port Output type register - (0) Push/Pull vs. (1) Open Drain
+	PORTE_BASE $08 + constant PORTE_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+	PORTE_BASE $0C + constant PORTE_PUPDR    \ Reset 0 Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+	PORTE_BASE $10 + constant PORTE_IDR		\ Input Data Register
+	PORTE_BASE $14 + constant PORTE_ODR		\ Output Data Register
+	PORTE_BASE $20 + constant PORTE_AFRL     \ Reset 0 Alternate function  low register
+	PORTE_BASE $24 + constant PORTE_AFRH     \ Reset 0 Alternate function high register
+
+$40020C00 constant PORTD_Base
+	PORTD_BASE $00 + constant PORTD_MODER   \ Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+	PORTD_BASE $04 + constant PORTD_OTYPER  \ Port Output type register - (0) Push/Pull vs. (1) Open Drain
+	PORTD_BASE $08 + constant PORTD_OSPEEDR \ Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+	PORTD_BASE $0C + constant PORTD_PUPDR	\ Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+	PORTD_BASE $10 + constant PORTD_IDR		\ Input Data Register
+	PORTD_BASE $14 + constant PORTD_ODR     \ Output Data Register
+		1 12 lshift constant LED_GREEN			\ PD12
+		1 13 lshift constant LED_ORANGE		\ PD13
+		1 14 lshift constant LED_RED				\ PD14
+		1 15 lshift constant LED_BLUE			\ PD15
+	PORTD_BASE $20 + constant PORTD_AFRL	\ Alternate function  low register
+	PORTD_BASE $24 + constant PORTD_AFRH	\ Alternate function high register
+
+$40020800 constant PORTC_Base
+	PORTC_BASE $00 + constant PORTC_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+	PORTC_BASE $08 + constant PORTC_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+	PORTC_BASE $10 + constant PORTC_IDR		\ Input Data Register
+	PORTC_BASE $14 + constant PORTC_ODR     \ Output Data Register
+	PORTC_BASE $20 + constant PORTC_AFRL     \ Reset 0 Alternate function  low register
+	PORTC_BASE $24 + constant PORTC_AFRH     \ Reset 0 Alternate function high register
+
+$40020400 constant PORTB_BASE
+	PORTB_BASE $00 + constant PORTB_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+	PORTB_BASE $04 + constant PORTB_OTYPER   \ Reset 0 Port Output type register - (0) Push/Pull vs. (1) Open Drain
+	PORTB_BASE $08 + constant PORTB_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+	PORTB_BASE $0C + constant PORTB_PUPDR    \ Reset 0 Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+	PORTB_BASE $10 + constant PORTB_IDR		\ Input Data Register
+	PORTB_BASE $14 + constant PORTB_ODR     \ Output Data Register
+	PORTB_BASE $20 + constant PORTB_AFRL     \ Reset 0 Alternate function  low register
+	PORTB_BASE $24 + constant PORTB_AFRH     \ Reset 0 Alternate function high register
+		
+$40020000 constant PORTA_Base
+	PORTA_BASE $00 + constant PORTA_MODER	\ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+	PORTA_BASE $10 + constant PORTA_IDR		\ Input Data Register
+		1 constant USER_BTN					\ PA0 -> User button
+	PORTA_BASE $14 + constant PORTA_ODR     \ Output Data Register
+	PORTA_BASE $20 + constant PORTA_AFRL     \ Reset 0 Alternate function  low register
+	PORTA_BASE $24 + constant PORTA_AFRH     \ Reset 0 Alternate function high register
+
+$40012000 constant ADC1_Base
+	ADC1_Base $00 + constant ADC1_SR
+		$0004 constant JEOC					\ Injected channel end of conversion
+		$0008 constant JSTRT				\ Injected channel start flag
+	ADC1_Base $04 + constant ADC1_CR1
+		$0080 constant JEOCIE				\ Interrupt enable for injected channels
+		$0100 constant SCAN					\ Scan mode
+	ADC1_Base $08 + constant ADC1_CR2
+		1 constant ADON
+		1 22 lshift constant JSWSTART		\ Start conversion of injected channels
+	ADC1_Base $0C + constant ADC1_SMPR1
+	ADC1_Base $10 + constant ADC1_SMPR2
+	ADC1_Base $14 + constant ADC1_JOFR1
+	ADC1_Base $18 + constant ADC1_JOFR2
+	ADC1_Base $1C + constant ADC1_JOFR3
+	ADC1_Base $20 + constant ADC1_JOFR4
+	ADC1_Base $38 + constant ADC1_JSQR
+	ADC1_Base $3C + constant ADC1_JDR1
+	ADC1_Base $40 + constant ADC1_JDR2
+	ADC1_Base $44 + constant ADC1_JDR3
+	ADC1_Base $48 + constant ADC1_JDR4
+
+$40006400 constant CAN1_Base
+	CAN1_Base $00 + constant CAN_MCR	\ CAN master control register
+		1 constant INRQ						\ Initialization request
+		2 constant SLEEP					\ Sleep mode request
+	CAN1_Base $04 + constant CAN_MSR		\ CAN master status register
+		1 constant INAK						\ Initialization acknowledge
+	CAN1_Base $08 + constant CAN_TSR	\ CAN transmit status register
+		1 constant RQCP0							\ Request completed mailbox0
+		2 constant TXOK0							\ Transmission OK of mailbox0
+		1 8 lshift constant RQCP1					\ Request completed mailbox1
+		1 9 lshift constant TXOK1					\ Transmission OK of mailbox0
+		1 26 lshift constant TME0					\ Transmit mailbox 0 empty
+		1 27 lshift constant TME1					\ Transmit mailbox 1 empty
+	CAN1_Base $0C + constant CAN_RF0R	\ CAN receive FIFO 0 register
+		1 5 lshift constant RFOM0					\ Release FIFO 0 output mailbox
+	CAN1_Base $1C + constant CAN_BTR		\ CAN bit timing register
+	CAN1_Base $180 + constant CAN_TI0R	\ CAN TX mailbox_0 identifier register
+		1 constant TXRQ	\ Transmit mailbox request
+	CAN1_Base $184 + constant CAN_TDT0R	\ CAN mailbox_0 data length control
+	CAN1_Base $188 + constant CAN_TDL0R	\ CAN mailbox_0 data low register
+	CAN1_Base $18C + constant CAN_TDH0R	\ CAN mailbox_0 data high register
+
+	CAN1_Base $1B0 + constant CAN_RI0R		\ CAN receive FIFO_0 mailbox identifier register
+	CAN1_Base $1B4 + constant CAN_RDT0R	\ CAN receive FIFO mailbox data length control
+	CAN1_Base $1B8 + constant CAN_RDL0R	\ CAN receive FIFO mailbox data low register
+	CAN1_Base $1BC + constant CAN_RDH0R	\ CAN receive FIFO mailbox data high register
+
+	CAN1_Base $200 + constant CAN_FMR		\ CAN filter master register
+		1 constant FINIT	\ Filter init mode
+	CAN1_Base $204 + constant CAN_FM1R		\ CAN filter mode register
+	CAN1_Base $20C + constant CAN_FS1R		\ CAN filter scale register
+	CAN1_Base $214 + constant CAN_FFA1R	\ CAN filter FIFO assignment register
+	CAN1_Base $21C + constant CAN_FA1R		\ CAN filter activation register
+	CAN1_Base $240 + constant CAN_F0R1		\ start Filter bank i register x (i=0..27, x=1, 2)
+	
+$40011400  constant USART6_Base
+	USART6_Base  $00 + constant USART6_SR 		\ Status register
+	USART6_Base  $04 + constant USART6_DR		\ Data register
+	USART6_Base  $08 + constant USART6_BRR 		\ Baud rate register
+	USART6_Base  $0C + constant USART6_CR1		\ Control register 1
+
+$40004800 constant USART3_Base
+	USART3_Base  $00 + constant USART3_SR 		\ Status register
+		1 5 lshift constant uRXNE				\ Read data register not empty
+		1 7 lshift constant uTXE				\ Transmit data register empty
+	USART3_Base  $04 + constant USART3_DR		\ Data register
+	USART3_Base  $08 + constant USART3_BRR 		\ Baud rate register
+	USART3_Base  $0C + constant USART3_CR1		\ Control register 1
+		1 2 lshift constant RE					\ Receiver enable
+		1 3 lshift constant TE					\ Transmitter enable
+		1 13 lshift  constant UE				\ USART enable
+
+	
+$40004400 constant USART2_Base
+	USART2_Base  $08 + constant USART2_BRR 		\ Baud rate register
+
+
+$40003C00 constant SPI3_Base					\ SPI 3 register map
+    SPI3_Base $00 + constant SPI3_CR1		\ SPI control register
+    SPI3_Base $04 + constant SPI3_CR2		\ SPI control register 2
+    SPI3_Base $08 + constant SPI3_SR		\ SPI status register
+    SPI3_Base $0C + constant SPI3_DR		\ SPI data register
+
+
+$40003800 constant SPI2_Base					\ SPI 2 register map
+    SPI2_Base $00 + constant SPI2_CR1		\ SPI control register
+        1 2 lshift constant MSTR						\ Master selection    
+        1 6 lshift constant SPE						\ SPI enable    
+        1 8 lshift constant SSI						\ Internal slave select    
+        1 9 lshift constant SSM						\ Software slave management    
+    SPI2_Base $04 + constant SPI2_CR2		\ SPI control register 2
+    SPI2_Base $08 + constant SPI2_SR		\ SPI status register
+        1 constant RXNE									\ Receive buffer not empty
+        2 constant TXE										\ Transmit buffer empty
+        1 7 lshift constant BSY						\ Busy flag
+    SPI2_Base $0C + constant SPI2_DR		\ SPI data register
+
+
+$40001000 constant TIM6_Base
+	TIM6_Base $00 + constant TIM6_CR1
+	TIM6_Base $10 + constant TIM6_SR
+	TIM6_Base $14 + constant TIM6_EGR
+	TIM6_Base $24 + constant TIM6_CNT
+	TIM6_Base $28 + constant TIM6_PSC
+	TIM6_Base $2C + constant TIM6_ARR
+
+$40000C00 constant TIM5_Base
+	TIM5_Base $00 + constant TIM5_CR1
+	TIM5_Base $08 + constant TIM5_SMCR
+	TIM5_Base $10 + constant TIM5_SR
+	TIM5_Base $14 + constant TIM5_EGR
+	TIM5_Base $18 + constant TIM5_CCMR1
+	TIM5_Base $1C + constant TIM5_CCMR2
+	TIM5_Base $20 + constant TIM5_CCER
+	TIM5_Base $24 + constant TIM5_CNT
+	TIM5_Base $28 + constant TIM5_PSC
+	TIM5_Base $2C + constant TIM5_ARR
+	TIM5_Base $38 + constant TIM5_CCR2
+
+	
+$40000800 constant TIM4_Base
+	TIM4_Base $00 + constant TIM4_CR1
+		1 constant CEN									\ Counter enable
+		1 3 lshift constant OPM	 					\ One-pulse mode
+		1 7 lshift constant ARPE 					\ Auto-reload preload enable
+	TIM4_Base $08 + constant TIM4_SMCR
+	TIM4_Base $14 + constant TIM4_EGR
+		1 constant UG									\ Update generation
+	TIM4_Base $18 + constant TIM4_CCMR1
+	TIM4_Base $1C + constant TIM4_CCMR2
+	TIM4_Base $20 + constant TIM4_CCER
+	TIM4_Base $24 + constant TIM4_CNT
+	TIM4_Base $28 + constant TIM4_PSC
+	TIM4_Base $2C + constant TIM4_ARR
+	TIM4_Base $40 + constant TIM4_CCR4
+
+	
+$40000400 constant TIM3_Base
+	TIM3_Base $00 + constant TIM3_CR1
+	TIM3_Base $08 + constant TIM3_SMCR
+	TIM3_Base $10 + constant TIM3_SR
+	TIM3_Base $14 + constant TIM3_EGR
+	TIM3_Base $18 + constant TIM3_CCMR1
+	TIM3_Base $1C + constant TIM3_CCMR2
+	TIM3_Base $20 + constant TIM3_CCER
+	TIM3_Base $24 + constant TIM3_CNT
+	TIM3_Base $28 + constant TIM3_PSC
+	TIM3_Base $2C + constant TIM3_ARR
+	TIM3_Base $34 + constant TIM3_CCR1
+
+	
+$40000000 constant TIM2_Base
+	TIM2_Base $00 + constant TIM2_CR1
+	TIM2_Base $04 + constant TIM2_CR2
+	TIM2_Base $0C + constant TIM2_DIER
+		1 constant UIE									\ Update interrupt enable
+	TIM2_Base $10 + constant TIM2_SR
+		1 constant UIF									\ Update interrupt flag
+	TIM2_Base $24 + constant TIM2_CNT
+	TIM2_Base $14 + constant TIM2_EGR
+	TIM2_Base $28 + constant TIM2_PSC
+	TIM2_Base $2C + constant TIM2_ARR
+
+	
+\ Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+%00 constant MODE_Input  
+%01 constant MODE_Output  
+%10 constant MODE_Alternate  
+%11 constant MODE_Analog
+: set-moder ( mode pin# baseAddr -- )
+	>R 2* %11 over lshift r@ bic! lshift R> bis!
+;
+
+\ Port Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+%00 constant SPEED_LOW 
+%01 constant SPEED_MEDIUM
+%10 constant SPEED_HIGH
+%11 constant SPEED_VERYHIGH
+: set-opspeed ( speed pin# baseAddr -- )
+	>R 2* %11 over lshift r@ 8 + bic! lshift R> 8 + bis!
+;
+
+\ Port alternate function
+: set-alternate ( af# pin# baseAddr -- )
+	>R dup 8 < if 
+		4 * lshift R> $20 + 
+	else 
+		8 - 4 * lshift R> $24 + 
+	then
+	bis!
+;
+
+\ ADC sample time constants
+%000 constant SAMPLE_3 			\ 3 cycles
+%001 constant SAMPLE_15 		\ 15 cycles
+%010 constant SAMPLE_28 		\ 28 cycles
+%011 constant SAMPLE_56 		\ 56 cycles
+: set-sampletime ( sampletime channel# baseAddr -- )
+	>R dup 10 < if 
+		3 * lshift R> $10 +
+	else 
+		10 - 3 * lshift R> $0C +
+	then
+	bis! 
+;
+
+\ set ADC injected sequence register
+: set-sequence ( seq1CH# .. seq4CH# seq# baseAddr -- )
+	$38 + 										\offset to ADC1_JSQR
+	over 1-  20 lshift over bis!			\ Injected sequence length
+	swap 0 do
+		swap 3 i - 5 * lshift over bis!		\ ch# of sequence
+	loop
+	drop
+;

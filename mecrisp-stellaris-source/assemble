@@ -4,20 +4,64 @@ cd lpc1114fn28
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28 && cp *.hex ../../lpc1114fn28
 cd ..
 
+cd lpc1114fn28-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28-ra && cp *.hex ../../lpc1114fn28-ra
+cd ..
+
+cd lpc1114fbd48
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fbd48 && cp *.hex ../../lpc1114fbd48
+cd ..
+
+cd lpc1114fbd48-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fbd48-ra && cp *.hex ../../lpc1114fbd48-ra
+cd ..
+
 cd lpc1115fbd48
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48 && cp *.hex ../../lpc1115fbd48
+cd ..
+
+cd lpc1115fbd48-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48-ra && cp *.hex ../../lpc1115fbd48-ra
 cd ..
 
 cd kl25z128
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128 && cp *.srec ../../kl25z128
 cd ..
 
+cd kl25z128-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128-ra && cp *.srec ../../kl25z128-ra
+cd ..
+
+cd kl46z256
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl46z256 && cp *.srec ../../kl46z256
+cd ..
+
+cd kl46z256-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl46z256-ra && cp *.srec ../../kl46z256-ra
+cd ..
+
 cd mk20dx256
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk20dx256 && cp *.hex ../../mk20dx256
 cd ..
 
+cd mk64fn1m0
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk64fn1m0 && cp *.srec ../../mk64fn1m0
+cd ..
+
+cd mk64fn1m0-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk64fn1m0-ra && cp *.srec ../../mk64fn1m0-ra
+cd ..
+
 cd nrf51822
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
+cd ..
+
+cd microbit
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit && cp *.hex ../../microbit
+cd ..
+
+cd microbit-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit-ra && cp *.hex ../../microbit-ra
 cd ..
 
 cd msp432p401r
@@ -28,12 +72,20 @@ cd lm4f120
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
 cd ..
 
+cd lm4f120-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120-ra
+cd ..
+
 cd lm4f232
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f232
 cd ..
 
 cd tm4c1294
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../tm4c1294
+cd ..
+
+cd tm4c1294-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../tm4c1294-ra
 cd ..
 
 cd stm32f030f4
@@ -64,8 +116,24 @@ cd stm32f103
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103
 cd ..
 
+cd stm32f103-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103-ra
+cd ..
+
+cd stm32f207zg
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f207zg
+cd ..
+
+cd stm32f207zg-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f207zg-ra
+cd ..
+
 cd stm32f303
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303
+cd ..
+
+cd stm32f303-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303-ra
 cd ..
 
 cd stm32f401
@@ -82,6 +150,42 @@ cd ..
 
 cd stm32f429
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f429
+cd ..
+
+cd stm32l476
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l476
+cd ..
+
+cd stm32l476-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l476-ra
+cd ..
+
+cd stm32f746-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
+cd ..
+
+cd xmc1100
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100 && cp *.hex ../../xmc1100
+cd ..
+
+cd xmc1100-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100-ra && cp *.hex ../../xmc1100-ra
+cd ..
+
+cd efm32gg990
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32gg990
+cd ..
+
+cd efm32gg990-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32gg990-ra
+cd ..
+
+cd efm32hg322
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32hg322
+cd ..
+
+cd efm32hg322-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32hg322-ra
 cd ..
 
 # Intel Hex images for STM targets:
@@ -116,7 +220,23 @@ cd stm32f103
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103.bin mecrisp-stellaris-stm32f103.hex
 cd ..
 
+cd stm32f103-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103.bin mecrisp-stellaris-stm32f103.hex
+cd ..
+
+cd stm32f207zg
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f207zg.bin mecrisp-stellaris-stm32f207zg.hex
+cd ..
+
+cd stm32f207zg-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f207zg.bin mecrisp-stellaris-stm32f207zg.hex
+cd ..
+
 cd stm32f303
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303.bin mecrisp-stellaris-stm32f303.hex
+cd ..
+
+cd stm32f303-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303.bin mecrisp-stellaris-stm32f303.hex
 cd ..
 
@@ -136,9 +256,24 @@ cd stm32f429
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f429.bin mecrisp-stellaris-stm32f429.hex
 cd ..
 
+cd stm32l476
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l476.bin mecrisp-stellaris-stm32l476.hex
+cd ..
+
+cd stm32l476-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l476.bin mecrisp-stellaris-stm32l476.hex
+cd ..
+
 # Special target for running on ARM Linux and Android:
 
-cd mecrisp-stellaris-source/linux
+cd mecrisp-stellaris-source
+
+cd linux
 ./assemble
 cp mecrisp-stellaris-linux ../../linux
+cd ..
+
+cd linux-ra
+./assemble
+cp mecrisp-stellaris-linux ../../linux-ra
 cd ..

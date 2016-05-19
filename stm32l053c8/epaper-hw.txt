@@ -143,38 +143,35 @@
   32 epaper-reg!   \ Launching the update: Nothing should interrupt this sequence in order to avoid display corruption
 ;
 
+
 \ ---------------------------------------------------------
-\   Display patterns for a simple demonstration
+\   Low-Level Graphics for E-Paper display
 \ ---------------------------------------------------------
 
-: epaper-image-grayscale-pattern ( -- )
+18 172 * buffer: graphic
+
+: page ( -- ) graphic 18 172 * $FF fill ;
+
+: epaper-transmit-image ( -- )
   36 epaper-reg! \ Prepare the register to write data on the RAM
 
   18    \ 18*4 Pixels/Byte = 72 Pixels
   172 *  \ * 172 Pixels
-  0 do $1B epaper-data! loop
+  0 do graphic i + c@ epaper-data! loop
 ;
 
-: epaper-image-blocks ( -- )
-  36 epaper-reg! \ Prepare the register to write data on the RAM
+: putpixel ( x y -- ) \ X ist die lange Seite, Y die kurze. 0.0 ist am schwarzen Taster.
 
-  18 0 do
-   172 0 do
-      i j + 3 and case
-                    0 of $00 endof
-                    1 of $55 endof
-                    2 of $AA endof
-                    3 of $FF endof
-                  endcase
-      epaper-data!
-    loop
-  loop
+  swap negate 172 + 18 *  graphic +  ( y addr )
+  swap dup 3 and 192 swap 2* rshift ( addr y bitmuster )
+  >r 2 rshift + r> swap
+  cbic!
 ;
 
-: epaper-demo ( -- ) \ Just draw a nice pattern
+: epaper ( -- ) \ Just draw contents of buffer
   epaper-io-init
   epaper-init
-  epaper-image-blocks
+  epaper-transmit-image
   epaper-update
   epaper-shutdown
 ;

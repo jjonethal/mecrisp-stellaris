@@ -283,34 +283,18 @@ number_nachkommastellen: @ Digits after the decimal point.
 digitausgeben: @ ( u -- c ) Converts a digit into a character.
                @ If base is bigger than 36, unprintable digits are written as #
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
   cmp tos, #10   @ Von 0-9:
   bhs 1f
     adds tos, #48 @ Schiebe zum Anfang der Zahlen  Shift to beginning of ASCII numbers
-    b 3f
+    bx lr
 
 1:cmp tos, #36   @ Von A-Z:
   bhs 2f 
     adds tos, #55 @ Alternative für Kleinbuchstaben: 87.                 For small letters: 87.
-    b 3f
+    bx lr
 
 2:movs tos, #35 @ Zeichen #, falls diese Ziffer nicht darstellbar ist. Character #, if digit is not printable
-3:bx lr
-
-  .else
-  cmp tos, #10   @ Von 0-9:
-  itt lo
-  addlo tos, #48 @ Schiebe zum Anfang der Zahlen  Shift to beginning of ASCII numbers
-  blo 1f
-
-  cmp tos, #36   @ Von A-Z:
-  ite lo         @ Schiebe zum Anfang der Großbuchstaben - 10 = 55.     Shift to beginning of ASCII-capital-letters- 10 = 55.
-  addlo tos, #55 @ Alternative für Kleinbuchstaben: 87.                 For small letters: 87.
-  movhs tos, #35 @ Zeichen #, falls diese Ziffer nicht darstellbar ist. Character #, if digit is not printable
-
-1:bx lr
-  .endif
-
+  bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "hold" @ Fügt dem Zahlenstring von vorne ein Zeichen hinzu.

@@ -4,7 +4,23 @@ cd lpc1114fn28
 make clean
 cd ..
 
+cd lpc1114fn28-ra
+make clean
+cd ..
+
+cd lpc1114fbd48
+make clean
+cd ..
+
+cd lpc1114fbd48-ra
+make clean
+cd ..
+
 cd lpc1115fbd48
+make clean
+cd ..
+
+cd lpc1115fbd48-ra
 make clean
 cd ..
 
@@ -12,11 +28,39 @@ cd kl25z128
 make clean
 cd ..
 
+cd kl25z128-ra
+make clean
+cd ..
+
+cd kl46z256
+make clean
+cd ..
+
+cd kl46z256-ra
+make clean
+cd ..
+
 cd mk20dx256
 make clean
 cd ..
 
+cd mk64fn1m0
+make clean
+cd ..
+
+cd mk64fn1m0-ra
+make clean
+cd ..
+
 cd nrf51822
+make clean
+cd ..
+
+cd microbit
+make clean
+cd ..
+
+cd microbit-ra
 make clean
 cd ..
 
@@ -28,11 +72,19 @@ cd lm4f120
 make clean
 cd ..
 
+cd lm4f120-ra
+make clean
+cd ..
+
 cd lm4f232
 make clean
 cd ..
 
 cd tm4c1294
+make clean
+cd ..
+
+cd tm4c1294-ra
 make clean
 cd ..
 
@@ -64,7 +116,23 @@ cd stm32f103
 make clean
 cd ..
 
+cd stm32f103-ra
+make clean
+cd ..
+
+cd stm32f207zg
+make clean
+cd ..
+
+cd stm32f207zg-ra
+make clean
+cd ..
+
 cd stm32f303
+make clean
+cd ..
+
+cd stm32f303-ra
 make clean
 cd ..
 
@@ -84,7 +152,48 @@ cd stm32f429
 make clean
 cd ..
 
+cd stm32l476
+make clean
+cd ..
+
+cd stm32l476-ra
+make clean
+cd ..
+
+cd stm32f746-ra
+make clean
+cd ..
+
+cd xmc1100
+make clean
+cd ..
+
+cd xmc1100-ra
+make clean
+cd ..
+
+cd efm32gg990
+make clean
+cd ..
+
+cd efm32gg990-ra
+make clean
+cd ..
+
+cd efm32hg322
+make clean
+cd ..
+
+cd efm32hg322-ra
+make clean
+cd ..
+
 cd linux
+rm mecrisp-stellaris-linux.o
+rm mecrisp-stellaris-linux
+cd ..
+
+cd linux-ra
 rm mecrisp-stellaris-linux.o
 rm mecrisp-stellaris-linux
 cd ..

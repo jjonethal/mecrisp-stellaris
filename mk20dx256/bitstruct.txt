@@ -1,0 +1,93 @@
+\ bitstruct.txt - struct with bitfields.
+\ TODO
+\ Compile masks rather than computing them at runtime. For compatibility with cbit@, cbit!, bit@ and bit! etc.. as well as runtime speed. If we got masks we could also just or them together and wouldn't need to store them right away.
+\ Word to create bitmask from ( byte_addr bit# #bits ) to be used by bits word and for convenience.
+
+0 variable bitoffset
+
+: bitalign ( offset size -- offset' size )
+( moves to next byte boundary if the bit offset is nonzero )
+  bitoffset @ if
+    0 bitoffset !   swap 1+ swap
+  then
+;
+
+: struct 0 bitoffset ! 0 ;
+: field ( offset size -- newoffset )
+    <builds bitalign over , +
+    does> ( structure-base -- structure-member-address )
+          @ +
+;
+
+\ Mark the address of a field with subfields.
+\ Does not add to the NEXT offset at compile time,
+\ but gives its offset at runtime.
+: superfield \ ( offset --  ) ; ( addr -- addr+offset )
+  <builds bitalign dup ,
+  does> ( structure-base -- structure-member-address )
+        @ +
+ ;
+
+( reserves an n-bits field )
+: resbits ( offset #bits -- newoffset )
+  bitoffset @ + $8 /mod  ( offset bitoffset_mod_8 bitoffset/8 )
+  swap bitoffset !  +
+;
+
+( structure describing the layout of information in the parameter field )
+( of a word created by "bits" )
+
+struct ( bit-record )
+  $2 field bit-offset
+  $2 field bit#
+  $2 field #bits
+constant bit-record-size
+
+( defines an n-bit field )
+: bits ( offset #bits --namex newoffset )
+  <builds  over , bitoffset @ over + , dup ,  ( offset #bits )
+  resbits
+  postpone 2-foldable
+  does> ( struct_addr pfa -- byte_addr bit# #bits )
+     >r
+     r@ bit-offset @ +  ( byte_addr )
+     r@ bit#       @    ( byte_addr bit# )
+     r> #bits      @    ( byte_addr bit# #bits )
+;
+
+( defines an n-bit field without adding the *next* offset. Used for ranges of sub-bitfields. )
+: superbits ( offset #bits --namex newoffset )
+  <builds  over , bitoffset @ over + , ,  ( offset #bits ) \ Don't reserve bits, this is done by subfields.
+  postpone 2-foldable
+  does> ( struct_addr pfa -- byte_addr bit# #bits )
+     >r
+     r@ bit-offset @ +  ( byte_addr )
+     r@ bit#       @    ( byte_addr bit# )
+     r> #bits      @    ( byte_addr bit# #bits )
+;
+
+: bitmask ( n -- mask ) 1 swap lshift 1- ;
+
+\ rtbit@ and rtbit! are like bit@ and bit! but with runtime calculation of mask.
+\ TODO Have mask calculated at compile time when defining the struct such that we get ( mask addr ) instead of ( addr bit# #bits ).
+: rtbit@ ( byte_addr bit# #bits -- n )
+  rot @                  ( bit# #bits byte )
+  rot negate rshift      ( #bits shifted-byte )
+  swap bitmask and
+;
+
+: rtbit! ( n byte_addr bit# #bits -- )
+  bitmask         ( n byte_addr bit# mask )
+  rot >r          ( n bit# mask )
+  rot over and    ( bit# mask masked-n )
+  $2 pick rshift  ( bit# mask shifted-masked-n )
+  -rot            ( shifted-masked-n bit# mask )
+  swap rshift     ( shifted-masked-n shifted-mask )
+  not             ( shifted-masked-n shifted-inverted-mask )
+  r@              ( shifted-masked-n shifted-inverted-mask byte_addr )
+  @ and           ( shifted-masked-n masked-old-value )
+  or              ( new-value )
+  r>  !
+;
+
+\ vim:set filetype=forth foldmarker=\:,; foldmethod=marker :

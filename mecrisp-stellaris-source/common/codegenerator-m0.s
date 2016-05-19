@@ -25,6 +25,39 @@ registerliteralkomma:  @ Compile code to put a literal constant into a register.
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, r4, r5, lr}
 
+  @ Ist die gewünschte Konstante eine kleine negative Zahl ?
+  @ Is desired constant a small negative number ?
+
+  ldr r3, =0xFFFF0000
+  ldr r0, [psp]
+  ands r0, r3
+  cmp r0, r3
+  bne 1f
+
+    ldr r0, [psp]
+    mvns r0, r0   @ Invert constant
+    str r0, [psp]
+
+    push {tos} @ Save desired register
+
+    bl registerliteralkomma_intern
+    
+    pushdaconstw 0x43C0 @ Opcode: mvns r0, r0
+    pop {r0}
+    orrs tos, r0
+    lsls r0, #3
+    orrs tos, r0
+    bl hkomma
+    pop {r0, r1, r2, r3, r4, r5, pc}
+
+1:bl registerliteralkomma_intern
+  pop {r0, r1, r2, r3, r4, r5, pc}
+
+@ -----------------------------------------------------------------------------
+registerliteralkomma_intern:
+@ -----------------------------------------------------------------------------
+  push {lr}
+
   @ TOS: Konstante
   @ r0:  Helferlein
   @ r1:  LSLS-Opcode, fertig vorbereitet für den gewünschten Zielregister, aber noch ohne Schubweite.
@@ -103,7 +136,7 @@ registerliteralkomma:  @ Compile code to put a literal constant into a register.
     bl hkomma
 
 6:drop @ Konstante vergessen  Drop constant
-  pop {r0, r1, r2, r3, r4, r5, pc}
+  pop {pc}
 
 
 @ -----------------------------------------------------------------------------
@@ -312,7 +345,7 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
   Wortbirne Flag_visible, "literal," @ ( x -- )
 literalkomma: @ Save r1, r2 and r3 !
 @ -----------------------------------------------------------------------------
-  push {r3, lr}
+  push {lr}
 
 @     128:	3f04      	subs	r7, #4
 @     12a:	603e      	str	r6, [r7, #0]
@@ -322,42 +355,22 @@ literalkomma: @ Save r1, r2 and r3 !
   pushdaconstw 0x603e  @ str tos, [psp, #0]
   bl hkomma
 
-  @ Ist die gewünschte Konstante eine kleine negative Zahl ?
-  @ Is desired constant a small negative number ?
-  ldr r3, =0xFFFF0000
-  movs r0, tos
-  ands r0, r3
-  cmp r0, r3
-  bne 2f
-
-    mvns tos, tos
-
-    pushdaconst 6 @ Target register r6=tos
-    bl registerliteralkomma
-
-    pushdaconstw 0x43F6 @ Opcode: mvns tos, tos
-    bl hkomma
-    pop {r3, pc}
-
-2:
   pushdaconst 6 @ Target register r6=tos
   bl registerliteralkomma
 
-  pop {r3, pc}
+  pop {pc}
 
-/* Some tests:
-schuhu: push {lr} 
-        writeln "Es sitzt der Uhu auf einem Baum und macht Schuhuuuu, Schuhuuuu !"
-        pop {pc}
 
-: c <builds $12345678 , does> . ." does>-Teil " ;  c uhu ' uhu dump
-: con <builds h, does> h@ ;  42 con antwort    antwort .
-*/
+.ifdef m0core_start_offset
+  .equ dodoesaddr, (dodoes - addresszero) + m0core_start_offset @ To circumvent address relocation issues
+.else
+  .equ dodoesaddr, dodoes - addresszero @ To circumvent address relocation issues
+.endif
 
-.equ dodoesaddr, dodoes - addresszero @ To circumvent address relocation issues
-.equ dodoes_byte1, ((dodoesaddr + 1)>>8) & 255
-.equ dodoes_byte2,  (dodoesaddr + 1)     & 255
-
+.equ dodoes_byte1, ((dodoesaddr + 1)>>24) & 255
+.equ dodoes_byte2, ((dodoesaddr + 1)>>16) & 255
+.equ dodoes_byte3, ((dodoesaddr + 1)>> 8) & 255
+.equ dodoes_byte4,  (dodoesaddr + 1)      & 255
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "create" @ ANS-Create with default action.
@@ -367,10 +380,20 @@ schuhu: push {lr}
 
   @ Copy of the inline-code of does>
 
-  @ Benötigt das High-Word nicht, da dodoes weit am Anfang des Flashs sitzt.  High word not needed as dodoes in core is in the lowest 64 kb.
-  movs r0, #dodoes_byte1
-  lsls r0, #8
-  adds r0, #dodoes_byte2
+  .ifdef does_above_64kb
+    movs r0, #dodoes_byte1
+    lsls r0, #8
+    adds r0, #dodoes_byte2
+    lsls r0, #8
+    adds r0, #dodoes_byte3
+    lsls r0, #8
+    adds r0, #dodoes_byte4
+  .else @ High word not needed as dodoes in core is in the lowest 64 kb.
+    movs r0, #dodoes_byte3
+    lsls r0, #8
+    adds r0, #dodoes_byte4
+  .endif
+
   blx r0 @ Den Aufruf mit absoluter Adresse einkompilieren. Perform this call with absolute addressing.
 
     @ Die Adresse ist hier nicht auf dem Stack, sondern in LR. LR ist sowas wie "TOS" des Returnstacks.
@@ -397,11 +420,20 @@ does: @ Gives freshly defined word a special action.
   @  movt r0, #:upper16:dodoes+1   
   @ blx r0 @ Den Aufruf mit absoluter Adresse einkompilieren. Perform this call with absolute addressing.
 
+  .ifdef does_above_64kb
+    movs r0, #dodoes_byte1
+    lsls r0, #8
+    adds r0, #dodoes_byte2
+    lsls r0, #8
+    adds r0, #dodoes_byte3
+    lsls r0, #8
+    adds r0, #dodoes_byte4
+  .else @ High word not needed as dodoes in core is in the lowest 64 kb.
+    movs r0, #dodoes_byte3
+    lsls r0, #8
+    adds r0, #dodoes_byte4
+  .endif
 
-  @ Benötigt das High-Word nicht, da dodoes weit am Anfang des Flashs sitzt.  High word not needed as dodoes in core is in the lowest 64 kb.
-  movs r0, #dodoes_byte1
-  lsls r0, #8
-  adds r0, #dodoes_byte2
   blx r0 @ Den Aufruf mit absoluter Adresse einkompilieren. Perform this call with absolute addressing.
 
     @ Die Adresse ist hier nicht auf dem Stack, sondern in LR. LR ist sowas wie "TOS" des Returnstacks.

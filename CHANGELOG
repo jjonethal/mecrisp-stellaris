@@ -45,7 +45,7 @@
 
   - New target: STM32F407 on STM32F4-Discovery board
   - Removed experimental atomic memory access from core
-  - Rearranged source code and 
+  - Rearranged source code and
     added English comments to simplify porting
   - First examples for STM32F4 included
 
@@ -128,10 +128,10 @@
 
   - Added Intel Hex style binaries for STM targets
   - Improved code generation for do and ?do
-  - Fixed minor issue with arshift when opcoded 
+  - Fixed minor issue with arshift when opcoded
       with folding constant >= 32
   - Added bit rotations ror and rol
-  - M3/M4 only: 
+  - M3/M4 only:
     - Added 12bitencoding
     - Faster opcodes for inline literals,
         calculations, logic and comparisions
@@ -254,7 +254,7 @@
 
 02.07.2014, Matthias Koch, Mecrisp-Stellaris 2.0.0a
 
-  - Fixed a flaw in NVIC Forth code 
+  - Fixed a flaw in NVIC Forth code
   - Fixed a minor flaw in ethernet driver
   - Added 1Msps analog-digital converter ethernet stream example
 
@@ -318,7 +318,7 @@
 
 11.11.2014, Matthias Koch, Mecrisp-Stellaris 2.0.5a
 
-  - Adapted Thumbulator emulator for LPC1114FN28 and 
+  - Adapted Thumbulator emulator for LPC1114FN28 and
       added Forth code to generate custom binaries for this target
   - Fixed a small flaw in disassemblers
 
@@ -396,3 +396,142 @@
 
   - Contribution by Абдрахимов Илья:
       New target: STM L152 Discovery
+
+22.10.2015, Matthias Koch, Mecrisp-Stellaris 2.2.0 & RA 1.0 experimental
+
+  - Merged the experimental RA branch with the mainstream package
+
+  Changes to the mainstream release are:
+
+  - Replaced align, with halign
+  - Removed align4, as it has been identical with align
+  - Improved maintainability of the code
+  - Small improvements under the hood here and there
+
+28.10.2015, Matthias Koch, Mecrisp-Stellaris 2.1.6
+
+  - Many new examples for Teensy 3.1 by Andreas Wagner
+  - Bugfix for STM32L152 vector map and additional interrupt vectors,
+    more examples for STM L152 Discovery by Абдрахимов Илья (Ilya Abdrahimov)
+
+31.10.2015, Matthias Koch, Mecrisp-Stellaris RA 1.1
+
+  - Merged news from 2.1.6 into this package
+  - Improved tuck
+
+01.11.2015, Matthias Koch, Mecrisp-Stellaris RA 1.2
+
+  - Jean Jonethal added STM32F303-RA and fixed a bug.
+
+05.11.2015, Matthias Koch, Mecrisp-Stellaris RA 1.3
+
+  - Inline-Cache allows register allocation across inlined definitions
+
+08.11.2015, Matthias Koch, Mecrisp-Stellaris RA 1.4
+
+  - Small improvements for negate
+
+14.11.2015, Matthias Koch, Mecrisp-Stellaris RA 1.5
+
+  - Smaller disassemblers
+  - Continuous sampling with exponential average for Loran-C
+  - RTC examples for STM L152 Discovery by Абдрахимов Илья (Ilya Abdrahimov)
+  - Contribution by Jean Jonethal:
+      New target: STM L476 Discovery
+
+28.11.2015, Matthias Koch, Mecrisp-Stellaris RA 1.5a
+
+  - Added fast integer square root
+  - More examples for STM L152 Discovery by Абдрахимов Илья (Ilya Abdrahimov)
+  - Experimental new target: XMC1100 on Infineon XMC2GO board
+
+
+24.12.2015, Matthias Koch, Mecrisp-Stellaris 2.2.0 - Christmas release !
+
+  My Christmas present for you:
+  Mecrisp-Stellaris RA with Register Allocator is ready for mainstream release
+  and should already be quite stable after a few months of testing.
+
+  Now you can choose for your projects if you need the smaller classic core
+  or the larger RA which includes much stronger optimisations.
+
+  Both should have exactly the same capabilities and behaviours.
+
+  Some hints for the choice:
+
+  If you touch performance barriers with the classic core,
+  if you love experiments and if you are curious,
+  try the fresh Mecrisp-Stellaris RA core.
+
+  If you have something that already works well with older releases,
+  if your project has high demands on stability,
+  if space is what you wish to save,
+  use the smaller and rock solid classic Mecrisp-Stellaris.
+
+  Changes relative to Mecrisp-Stellaris 2.1.6:
+
+  - Replaced align, with halign
+  - Removed align4, as it has been identical with align
+
+01.01.2016, Matthias Koch, Mecrisp-Stellaris 2.2.1 - 32C3 release !
+
+  E-Paper graphics buffer and paint primitives
+  New target: Silicon Labs Giant Gecko Starter Kit with EFM32GG990F1024
+  Fixed flaw in RA core when inlining empty definitions
+
+  - Contribution by Ilya Abdrahimov: 1-Wire for STM32L152RB
+  - Contribution by Jean Jonethal:
+      New target: STM F746 Discovery
+
+13.02.2016, Matthias Koch, Mecrisp-Stellaris 2.2.1a
+
+  - LDMIA + Interrupt silicon bug found: KNOWN-ISSUES added
+  - Added RA for LPC1115
+  - Contribution by Ralph Sahli: Peripheral libraries for STM32F407
+  - Contribution by Terry Porter: Register definitions and insight generator
+  - Contribution by Igor OM1ZZ: Eight queens bechmark and PLL code
+
+20.02.2016, Matthias Koch, Mecrisp-Stellaris 2.2.2
+
+  - More interrupts in STM32F103
+  - Added STM32F103-RA
+  - Contribution by Ilya Abdrahimov: Many examples for STM32F429
+  - Contribution by Ralph Sahli: Many more examples and libraries for STM32F407
+
+26.03.2016, Matthias Koch, Mecrisp-Stellaris 2.2.3
+
+  - New target: Silicon Labs Happy Gecko Starter Kit with EFM32HG322F64
+
+28.03.2016, Matthias Koch, Mecrisp-Stellaris 2.2.4
+
+  - No line break directly after the "Redefine..." message anymore
+  - Graphics driver for Sharp LCD on Happy Gecko
+  - New target: KL46Z256 on Freescale Freedom FRDM-KL46Z board
+
+06.04.2016, Matthias Koch, Mecrisp-Stellaris 2.2.5
+
+  - Added ahead and changed control structures to allow more combinations
+  - Fixed Forth register constants for PORTE on KL25Z128 and KL46Z256
+  - New target: MK64FN1M0 on Freescale Freedom FRDM-K64F board
+  - New target: LPC1114FBD48
+  - New target: Nordic nRF51822 prepared for Microbit
+
+08.05.2016, Matthias Koch, Mecrisp-Stellaris 2.2.6
+
+  - Scripts for invoking Mecrisp-Stellaris for ARM Linux with qemu-arm-static
+  - Contribution by Bernd Paysan:
+      New target: STM32F207ZG on Nucleo-F207ZG
+      
+14.05.2016, Matthias Koch, Mecrisp-Stellaris 2.2.7
+
+  Linux target got an improving touch:
+  
+    - Added cacheflush to solve difficulties with data and instruction cache flushes
+    - Welcome message is omitted when command line arguments are specified
+    - A check for Ctrl+D and for EOF in serial-key quits Mecrisp-Stellaris for Linux
+    - arguments, reset, eraseflash and eraseflashfrom added
+    - Now 1 MB for compiletoram and compiletoflash each
+    - Smaller binary
+    - Forth code for cornerstone added
+    - Handling of command line arguments in Forth
+      

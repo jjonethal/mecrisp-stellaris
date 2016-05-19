@@ -1,0 +1,34 @@
+
+\ A small analog input example for Microbit
+
+\ Tasks:
+$40007000 constant adc_start
+$40007004 constant adc_stop
+
+\ Events:
+$40007100 constant adc_end
+
+\ Registers:
+$40007400 constant adc_busy
+$40007500 constant adc_enable
+$40007504 constant adc_config
+$40007508 constant adc_result
+
+: init-analog ( -- )
+  1 adc_enable !
+;
+
+: analog ( channel -- result )
+  \ 1 adc_stop !
+  $200 swap lshift 2 or adc_config !  \ Select input channel and 10 bits resolution with internal 1.2V bandgap reference
+  1 adc_start !
+  begin 1 adc_busy bit@ not until
+  adc_result @
+;
+
+: analog-demo ( -- ) \ Reads all three banana jack ports
+  init-analog
+  begin
+    3 analog u. 2 analog u. 1 analog u. cr
+  key? until
+;

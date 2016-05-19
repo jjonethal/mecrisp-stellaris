@@ -1,20 +1,43 @@
-\ Words for enabling interrupts
+\ nvic.txt Words for enabling interrupts
 
-: irq-enable-mask-offset ( IRQ -- mask offset)
-   dup $1F and 1 swap lshift   	  \ calculate bitfield mask
-   swap $E0 and 3 rshift	  \ Divide by 32 to figure out the register number, multiply by four bytes per reg -> 3 shift
-;
+: irq-enable-mask-offset ( irq# -- mask offset )
+  dup $1F and 1 swap lshift   \ calculate bitfield mask
+  swap $E0 and 3 rshift       \ Divide by 32 to figure out the register number, multiply by four bytes per reg -> 3 shift
+ ;
 
-: irq-enable ( IRQ -- )
+: irq-enable  ( irq# -- )
   irq-enable-mask-offset
   $E000E100 + !
-;
+ ;
 
-: irq-disable ( IRQ -- ) 
+: irq-disable ( irq# -- )
   irq-enable-mask-offset
   $E000E180 + !
-;
+ ;
 
-: irq-trigger ( IRQ -- )
+: irq-set-pending   ( irq# -- )
+  irq-enable-mask-offset
+  $E000E200 + !
+ ;
+
+: irq-clear-pending ( irq# -- )
+  irq-enable-mask-offset
+  $E000E280 + !
+ ;
+
+: irq-trigger ( irq# -- )
   $E000EF00 !
 ;
+
+\ There are 16 Cortex-M4 priority levels ( $00 is highest priority ):
+\ $00, $10, $20, $30, $40, $50, $60, $70,
+\   $80, $90, $A0, $B0, $C0, $D0, $E0, $F0
+
+: irq-priority! ( c irq# -- )
+  $E000E400 + c!
+ ;
+
+: irq-priority@ ( irq# -- c )
+  $E000E400 + c@
+ ;
+

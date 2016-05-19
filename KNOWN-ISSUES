@@ -1,0 +1,67 @@
+
+\ -----------------------------------------------------------------------------
+\  Known issues
+\ -----------------------------------------------------------------------------
+
+*********************************
+*  LDMIA + Interrupts in M3/M4:
+*********************************
+
+  LDMIA and some other opcodes with a register list can be interrupted and
+  continued afterwards in M3 and M4 cores.
+
+  Unfortunately, there seems to be a silicon bug in some chips / core revisions
+  that causes an interrupted LDMIA opcode to fail.
+
+  The error has already been observed in LM4F120, TM4C1294, STM32F407
+  when using the multitasking example. M0 chips and EFM32GG990 are fine.
+
+  It could affect other M4 chips and maybe M3, too.
+
+  So if you get mysterious crashes when using Interrupts om M3/M4,
+  try disabling preemption capabilities with this workaround:
+
+  1 $E000E008 !
+
+  Drawback is that this increases interrupt latency.
+
+  Manual snipplets:
+
+  B1.5.10 Exceptions in LDM and STM operations
+
+       In order to allow implementations to have the best possible interrupt response, an interrupt can be taken
+       during an LDM or STM and continued after the return from the interrupt. The continuation state of the LDM or
+       STM is held in the ICI bits in the EPSR (see The special-purpose program status registers (xPSR) on
+       page B1-8). It is IMPLEMENTATION DEFINED when interrupts are recognized, so the use of the ICI bits is
+       IMPLEMENTATION DEFINED.
+       The ARMv7-M architecture supports continuation of, or restarting from the beginning, an abandoned LDM
+       or STM instruction as outlined below. Where an LDM or STM is abandoned and restarted (ICI bits are not
+       supported), the instructions should not be used with volatile memory. To support instruction replay, the LDM,
+       STM, PUSH and POP instructions are required to restore/maintain the base register when a fault occurs (no base
+       register writeback update) during execution.
+
+  M3: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0552a/CHDCBHEE.html
+  M4: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/CHDCBHEE.html
+  
+  Address     Name   Type  Required privilege  Reset value  Description
+  0xE000E008  ACTLR  RW    Privileged          0x00000000   Auxiliary Control Register
+
+  Auxiliary Control Register
+
+  [0]    DISMCYCINT     Disables interruption of multi-cycle instructions. 
+         This increases the interrupt latency of the processor because load/store and
+         multiply/divide operations complete before interrupt stacking occurs. 
+
+  M7: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0646b/CHDCBHEE.html 
+  Does not have this bit.
+
+
+****************************************
+* Terminal running on Android / Linux:
+****************************************
+
+  The linux port is known to work on both Linux and Android, but on some kernels, pasting into
+  the terminal causes problems. Manual typing always works.
+
+  It is still unclear why the terminal fails, as the standard input is used
+  exactly the same way in both cases and should be properly buffered by the underlying OS kernel.

@@ -144,13 +144,13 @@ holechar: @ ( -- Zeichen )
   pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate|Flag_foldable_0, "(" @ Der Kommentar
+  Wortbirne Flag_immediate|Flag_foldable_0|Flag_Sprungschlucker, "(" @ Der Kommentar
 @ -----------------------------------------------------------------------------
   pushdaconst 41 @ Die Klammer )
   b 1f
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate|Flag_foldable_0, "\\" @ Der lange Kommentar
+  Wortbirne Flag_immediate|Flag_foldable_0|Flag_Sprungschlucker, "\\" @ Der lange Kommentar
 @ -----------------------------------------------------------------------------
   pushdaconst 0 @ Gibt es nicht - immer bis zum Zeilenende. Zero never occours - always catches whole line.
 

@@ -17,7 +17,7 @@
 @
 
 ;------------------------------------------------------------------------------
-This is the third stable release of Mecrisp-Stellaris,
+This is the stable release of Mecrisp-Stellaris,
 a port of Mecrisp to the ARM Cortex M architecture.
 
 It runs out of the box on:
@@ -32,19 +32,28 @@ It runs out of the box on:
   - STM VL Discovery             with STM32F100RB
   - Shenzhen LC Technology board with STM32F103C8T6
   - STM F3 Discovery             with STM32F303VCT6
-  - STM F4 Discovery             with STM32F407VGT6 
+  - STM F4 Discovery             with STM32F407VGT6
   - STM F429 Discovery           with STM32F429ZIT6
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
-  
+  - Freescale Freedom FRDM-KL46Z with KL46Z256VLL4
+  - Freescale Freedom FRDM-K64F  with MK64FN1M0VLL12
+  - Infineon XMC2GO              with XMC1100Q024F0064
+  - EFM32 Giant Gecko            with EFM32GG990F1024
+  - EFM32 Happy Gecko            with EFM32HG322F64
+
   - Breadboard friendly, DIP packaged LPC1114FN28
+  -                                   LPC1114FBD48
   -                                   LPC1115FBD48
   - Very small TSSOP20 packaged       STM32F030F4
 
 Contributions:
   - Teensy 3.1                   with MK20DX256VLH7
   - Chinese QF-LM4F232           with LM4F232H5QC
-  - nRFgo Starter Kit            with nRF51822
+  - nRFgo Starter Kit & Microbit with nRF51822
   - STM L152 Discovery           with STM32L152RBT6
+  - STM Nucleo F207ZG            with STM32F207ZG  
+  - STM L476 Discovery           with STM32L476VG
+  - STM F746 Discovery           with STM32F746NG
 
 http://mecrisp.sourceforge.net/
 
@@ -54,28 +63,31 @@ m-atthias@users.sf.net
 Mecrisp finally got a younger sister and mastered the jump
 to the ARM Cortex M instruction set.
 
-They share most of the design ideas, so Mecrisp-Stellaris can compile 
+They share most of the design ideas, so Mecrisp-Stellaris can compile
 directly into Flash, generates native code with constant folding and
-inlining of short words. 
+inlining of short words.
 
 Communication is via serial 115200 baud 8N1 over
   - UART0  in LM4F120   (connected to USB-serial bridge on Stellaris Launchpad)
   - UART0  in TM4C1294  (connected to USB-serial bridge on Tiva Connected Launchpad)
   - USCI0  in MSP432P401R  (TX on P1.3, RX on P1.2, connected to USB-serial bridge)
   - UART   in LPC1114FN28  (TX on P1.7, RX on P1.6)
+  - UART   in LPC1114FBD48 (TX on P1.7, RX on P1.6)
   - UART   in LPC1115FBD48 (TX on P1.7, RX on P1.6)
-  - USART1 in STM32F051 (TX on PA9, RX on PA10)
-  - USART1 in STM32F030F4 (TX on PA9, RX on PA10)
-  - USART1 in STM32F100 (TX on PA9, RX on PA10)
-  - USART1 in STM32F103 (TX on PA9, RX on PA10)
-  - USART1 in STM32F303 (TX on PA9, RX on PA10)
-  - USART1 in STM32L053C8 (TX on PA9, RX on PA10)
-  - USART2 in STM32L152 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
-  - USART2 in STM32F401 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
-  - USART2 in STM32F411 (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
-  - USART2 in STM32F407 (TX on PA2, RX on PA3)
-  - USART1 in STM32F429 (TX on PA9, RX on PA10)
-  - UART0  in KL25Z128  (connected to USB-serial bridge on Freedom board)
+  - USART1 in STM32F051    (TX on PA9, RX on PA10)
+  - USART1 in STM32F030F4  (TX on PA9, RX on PA10)
+  - USART1 in STM32F100    (TX on PA9, RX on PA10)
+  - USART1 in STM32F103    (TX on PA9, RX on PA10)
+  - USART1 in STM32F303    (TX on PA9, RX on PA10)
+  - USART1 in STM32F429    (TX on PA9, RX on PA10)
+  - USART1 in STM32L053C8  (TX on PA9, RX on PA10)
+  - USART2 in STM32F401    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32F407    (TX on PA2, RX on PA3)
+  - USART2 in STM32F411    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32L152    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
+  - USART2 in STM32L476    (TX on PD5, RX on PD6 connected to USB-serial bridge on Discovery board)
+  - UART0  in KL25Z128     (connected to USB-serial bridge on Freedom board)
+  - UART0  in KL46Z256     (connected to USB-serial bridge on Freedom board)
   - UART5  in LM4F232
   - UART0  in MK20DX256 (RX1/TX1 on Teensy 3.1.  Physical pins #2/#3 (these are also Digital IO 0/1 lines)
     	      		Digital IO pins 18/19 are setup for CTS/RTS respectively
@@ -83,20 +95,20 @@ Communication is via serial 115200 baud 8N1 over
 ;------------------------------------------------------------------------------
 Hardware and configuration for LM4F120 and TM4C123:
 ;------------------------------------------------------------------------------
-  Connect your cable to the Debug-USB-Port, 
+  Connect your cable to the Debug-USB-Port,
   set "PWR SELECT" switch to DEBUG and
   close VDD jumper.
 
   Flashing is possible with lm4flash:
   https://github.com/utzig/lm4tools
 
-  On startup, this runs with internal PIOSC at 16 MHz, 
+  On startup, this runs with internal PIOSC at 16 MHz,
   which is specified +-3% over whole temperature range.
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for TM4C1294:
 ;------------------------------------------------------------------------------
-  Connect your cable to the Debug-USB-Port, 
+  Connect your cable to the Debug-USB-Port,
   set "POWER SELECT" jumpers (JP1) to "ICDI",
   close both "MCU 3V3" (JP2) and "+3v3" (JP3) jumpers and
   set communication jumper blocks (JP4 and JP5) both to UART mode.
@@ -104,7 +116,7 @@ Hardware and configuration for TM4C1294:
   Flashing is possible with lm4flash:
   https://github.com/utzig/lm4tools
 
-  On startup, this runs with internal PIOSC at 16 MHz, 
+  On startup, this runs with internal PIOSC at 16 MHz,
   which is specified +-3% over whole temperature range.
 
 ;------------------------------------------------------------------------------
@@ -115,7 +127,7 @@ Hardware and configuration for MSP432P401R:
   close 5V, 3V3, RXD, TXD jumpers.
 
   Flashing is possible with DSLite, which is part of Energia 15:
-  DSLite -c MSP432P401R.ccxml -f mecrisp-stellaris-msp432p401r.bin -l 0 
+  DSLite -c MSP432P401R.ccxml -f mecrisp-stellaris-msp432p401r.bin -l 0
 
   On startup, this runs with DCO on 12 MHz.
 
@@ -126,13 +138,13 @@ Hardware and configuration for LPC1114FN28 on breadboard:
     + Vdd (Pin 21) and Vdda (Pin 7)
     - Vss (Pin 22) and Vssa (Pin 8)
   Connect TTL serial to
-    TXD on P1.7 (Pin 16) and 
+    TXD on P1.7 (Pin 16) and
     RXD on P1.6 (Pin 15)
   Connect two push buttons between
     /Reset (Pin 23) and GND
     Bootloader enable on P0.1 (Pin 24) and GND
 
-  The chip enters serial bootloader in ROM 
+  The chip enters serial bootloader in ROM
   if Reset button is released while
   the bootloader button is hold down.
 
@@ -150,7 +162,7 @@ Hardware and configuration for STM32L053C8:
   Connect USB cable to ST-Link USB port.
   Terminal is included into the debug section and can be used
   if you close solder bridges SB2 and SB3.
-  
+
   Flashing is possible with st-flash:
   https://github.com/texane/stlink
 
@@ -167,7 +179,7 @@ Hardware and configuration for STM32L152:
 ;------------------------------------------------------------------------------
   Connect USB cable to ST-Link USB port.
   Terminal is included into the debug section on Nucleo boards.
-  
+
   Flashing is possible with st-flash:
   https://github.com/texane/stlink
 
@@ -180,11 +192,31 @@ Hardware and configuration for STM32L152:
   On startup, this runs with internal 16 MHz HSI clock.
 
 ;------------------------------------------------------------------------------
+Hardware and configuration for STM32L476:
+;------------------------------------------------------------------------------
+  Connect USB cable to ST-Link USB port.
+  Terminal is included into the debug section on Discovery boards.
+
+  Flashing is possible with st-flash:
+  https://github.com/texane/stlink
+  on Windows using STLINK Tools from ST website:
+  http://www.st.com/web/en/catalog/tools/PF258168#
+
+  Flash memory is mirrored in hardware starting from address 0. Mecrisp uses
+  the low address range to generate short opcodes for calling core words, but
+  for flashing the binary, you have to use the "true address" $08000000.
+  st-flash erase
+  st-flash write mecrisp-stellaris-stm32l476.bin 0x08000000
+
+  On startup, this runs with internal 48 MHz MSI clock. Currently flash ECC is
+  supported. (JJ:O)
+
+;------------------------------------------------------------------------------
 Hardware and configuration for STM32F401 and STM32F411:
 ;------------------------------------------------------------------------------
   Connect USB cable to ST-Link USB port.
   Terminal is included into the debug section on Nucleo boards.
-  
+
   Flashing is possible with st-flash:
   https://github.com/texane/stlink
 
@@ -203,7 +235,7 @@ Hardware and configuration for STM32F407:
   Connect USB cable to ST-Link USB port,
   connect your favourite serial link to PA2 (TX) and PA3 (RX),
   keep logic voltage levels in mind !
-  
+
   Flashing is possible with st-flash:
   https://github.com/texane/stlink
 
@@ -233,7 +265,7 @@ Hardware and configuration for STM32F429:
 ;------------------------------------------------------------------------------
 Hardware and configuration for STM32F030F4:
 ;------------------------------------------------------------------------------
- 
+
   Connect everything necessary to power up and flash the chip.
   Connect your favourite serial link to PA9 (TX) and PA10 (RX),
   keep logic voltage levels in mind !
@@ -286,21 +318,70 @@ Hardware and configuration for STM32F303:
   On startup, this runs with internal 8 MHz HSI clock.
 
 ;------------------------------------------------------------------------------
-Hardware and configuration for KL25Z128:
+Hardware and configuration for KL25Z128, KL46Z256, MK64FN1M0:
 ;------------------------------------------------------------------------------
   Connect USB cable to SDA-USB-PORT
 
   Flashing is via mass storage interface -
-    the board will appear as Flash Disk, just copy .srec file in.
+    the board will appear as Flash Disk, just copy .bin file in.
     Maybe you have to do an OpenSDA firmware update before.
 
   On startup, this runs with internal FLL at 20.97 MHz.
 
-  If you wish to try Mecrisp-Stellaris without target hardware, 
-  there is a Cortex M0 instruction set emulator prepared for use with 
-  Freescale Freedom binary images. Go into kl25z128/thumbulator 
-  directory, type "make", copy the binary and then type 
+  If you wish to try Mecrisp-Stellaris without target hardware,
+  there is a Cortex M0 instruction set emulator prepared for use with
+  Freescale Freedom binary images. Go into kl25z128/thumbulator
+  directory, type "make", copy the binary and then type
   "thumbulator mecrisp-stellaris-kl25z128.bin" to run.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for XMC1100:
+;------------------------------------------------------------------------------
+  Connect USB cable for flashing and terminal.
+
+  Flashing is possible with JLinkExe from Segger, which is available for Linux:
+  https://www.segger.com/jlink-software.html
+  "Software and documentation pack", 32 Bit TGZ archive is fine.
+
+  JLink_Linux_V510c_i386# ./JLinkExe -device XMC1100-0064 -if SWD -speed 4000
+    erase
+    loadfile mecrisp-stellaris-xmc1100.hex
+    r
+    g
+
+  OpenOCD 0.9 has support for the XMC2GO, but it failed with the firmware version
+  of my board. The command line would be something like this:
+
+  openocd -f board/xmc-2go.cfg
+  openocd -f board/xmc-2go.cfg -c "program mecrisp-stellaris-xmc1100.hex verify reset exit"
+
+  If you have issues with broken characters in the terminal,
+  try changing the UART_FDR_STEP value in terminal.s a bit.
+
+  To circumvent a bug in the XMC2GO serial bridge, the baudrate is set a bit
+  off the nominal value. If you connect your own terminal, make sure to change
+  it to the correct value.
+    See mecrisp-stellaris-source/xmc1100/terminal.s for hints.
+
+  On startup, this runs with internal MCLK = PCKL = 8 MHz clock.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for EFM32GG990 and EFM32HG322:
+;------------------------------------------------------------------------------
+  Connect USB cable to DBG connector for flashing and terminal.
+
+  To get the mass storage flashing interface and USB-serial bridge,
+  a firmware update of the on board debugger might be necessary.
+  See instructions on MBED:
+  https://developer.mbed.org/teams/SiliconLabs/wiki/Silicon-Labs-Firmware
+
+  Flashing is done by copying the binary into the USB drive.
+
+  Unfortunately, flashing this way doesn't not perform a proper mass erase.
+  If you cannot get it up and running this way, you need use a proper debugger
+  and erase the whole flash properly.
+
+  On startup, this runs with internal HFCLK = HFRCO = 14 MHz clock.
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for MK20DX256VLH7 on a Teensy 3.1 board:
@@ -318,7 +399,7 @@ Hardware and configuration for MK20DX256VLH7 on a Teensy 3.1 board:
      		  R C
      		  T T
        		  S S
-       	 	    
+
     o o o o o o o o o o o o o o
    |--------------------------o
    |     	     	      o
@@ -330,7 +411,7 @@ USB|       Teensy 3.1 	      o
     G R T
     N X X
     D
-  
+
   On startup, this runs with internal FLL at 20.97 MHz.  See MCG.txt for how to switch to 96MHz
 
 ;------------------------------------------------------------------------------
@@ -338,21 +419,31 @@ Hardware and configuration for nRF51822:
 ;------------------------------------------------------------------------------
   ( Contributed by John Huberts )
 
-  I have been using the nRFgo Motherboard fitted with a nRF51822 module 
+  I have been using the nRFgo Motherboard fitted with a nRF51822 module
   to do the development and testing. Programming is done using nRFStudio
   and the Segger J-LINK LITE that comes with the dev kit.
 
   I was also able to debug using GDB in the nRF51 Eclipse IDE
 
-  The motherboard has a DB9 for serial port connection but jumpers need to 
+  The motherboard has a DB9 for serial port connection but jumpers need to
   be placed between P15 (RXD, TXD) and P9 (P2.0, P2.1). If you don't have a
   serial port on your PC then you will need a USB-serial cable.
 
-  The UART can be configured to use other pins on the SOC by changing these 
+  The UART can be configured to use other pins on the SOC by changing these
   lines in in terminal.s:
 
   .equ RX_PIN_NUMBER, 16
   .equ TX_PIN_NUMBER, 17
+
+;------------------------------------------------------------------------------
+Hardware and configuration for Microbit:
+;------------------------------------------------------------------------------
+
+  Flashing can be done by just copying mecrisp-stellaris-microbit.hex
+  into the Microbit which comes with a mass storage interface.
+
+  Communication is done over P0.24 TX and P0.25 RX, connected
+  to USB-serial-bridge on debugger section.
 
 ;------------------------------------------------------------------------------
 
@@ -370,7 +461,7 @@ https://launchpad.net/gcc-arm-embedded/
 
 * Fetch-Modify-Store operations like +! or bic! are not atomic.
 
-* You can contribute your favourite hardware handling routines 
+* You can contribute your favourite hardware handling routines
     to be included in upcoming releases !
 
 * Chip specific sources have added English comments and hints included
@@ -392,63 +483,135 @@ setup; don't forget to give your old definition of init a call if you have one.
 
 Mecrisp-Stellaris can assemble without change for M0, M3 and M4 cores.
 
-M0 cores lack conditional execution "ite eq...", which has to be circumvented 
-by conditional branches. stmdb psp!, {tos} is missing, which I use to push to 
-data stack and they have no division in hardware. 
+M0 cores lack conditional execution "ite eq...", which has to be circumvented
+by conditional branches. stmdb psp!, {tos} is missing, which I use to push to
+data stack and they have no division in hardware.
 
-There is an assembler switch "m0core" to assemble the core with replacement 
+There is an assembler switch "m0core" to assemble the core with replacement
 code for ARM Cortex-M0 chips. Depending on your flash capabilities, there are
-two useful switches: 
+two useful switches:
 
-  "charkommaavailable" which is self-explaining and 
+  "charkommaavailable" which is self-explaining and
   "emulated16bitflashwrites" if your particular Flash controller
                              cannot write data in separate 16-Bit chunks.
 
 Core needs about 14 kb flash at the moment, but reserves 16 kb for upcoming
-additions, and needs 1.5 kb RAM for stacks and buffers plus variables for 
-interrupt handlers plus RAM dictionary space. Bare minimum for ARM to get it 
-running will be around 16kb/2kb, but to have fun with it and leave space for 
-real applications, go with at least of 32 kb flash and 4 kb RAM. 
+additions, and needs 1.5 kb RAM for stacks and buffers plus variables for
+interrupt handlers plus RAM dictionary space. Bare minimum for ARM to get it
+running will be around 16kb/2kb, but to have fun with it and leave space for
+real applications, go with at least of 32 kb flash and 4 kb RAM.
 
 Look at the flash specification for your particular chip.
 
 The compiler only depends on 2-aligned 16-Bit flash writes
-one time per location, you can remove c, and align, without issues 
-from the compiler, but 8-Bit flash writes are nice to have 
-for compatibility with standard code. 
+one time per location, you can remove c, and halign without issues
+from the compiler, but 8-Bit flash writes are nice to have
+for compatibility with standard code.
 
 For special cases having only 4-aligned 32-bit one-time writes to Flash,
 there is a hflash! emulation layer.
 
-Flash erasing is only available for the user, it doesn't need erase cycles 
-while compiling. 
+Flash erasing is only available for the user, it doesn't need erase cycles
+while compiling.
 
-Keep these criteria in mind, pick your favourite chip and add it as your 
-contribution. It won't be too difficult, start with an UART echo written 
+Keep these criteria in mind, pick your favourite chip and add it as your
+contribution. It won't be too difficult, start with an UART echo written
 in assembly without libraries, and I will be there for your help.
 
 You have to change memory map, hardware initialisation and interrupt vectors,
 write key?, key, emit?, emit for a first reaction and flash write access
-for final success. There is a common mimimum set of handlers across 
+for final success. There is a common mimimum set of handlers across
 ARM Cortex CPUs, which will help you to get it running for the first time.
 
-Unfortunately, there is a lot of bit twiddling necessary for peripherial 
-modules, as they differ a lot across manufacturers. ARMs seem to only share 
+Unfortunately, there is a lot of bit twiddling necessary for peripherial
+modules, as they differ a lot across manufacturers. ARMs seem to only share
 core components like CPU, interrupt controler and a very basic systick timer.
 
-I don't have the time to support a lot of different chips with examples. 
+I don't have the time to support a lot of different chips with examples.
 
-TI ADCs have a sequencer FIFO buffer, ST ADCs need a DMA channel configured. 
-TI Flash controller offers 32 bit aligned writes only, but as many as you 
-wish per location until all bits are zero; 
-ST-M3 have 16 bit aligned Flash write only, 
-ST-M4 have 8 bit, 16 bit and 32 bit Flash writes available, 
-but only once per location. 
+TI ADCs have a sequencer FIFO buffer, ST ADCs need a DMA channel configured.
+TI Flash controller offers 32 bit aligned writes only, but as many as you
+wish per location until all bits are zero;
+ST-M3 have 16 bit aligned Flash write only,
+ST-M4 have 8 bit, 16 bit and 32 bit Flash writes available,
+but only once per location.
 
-I would like to focus on core development, support porting to other chips and 
-families with adaptions in core, but leave writing initialisation code, 
-testing and writing Forth examples to "family maintainers" which are deep 
-into their chip of choice. 
+I would like to focus on core development, support porting to other chips and
+families with adaptions in core, but leave writing initialisation code,
+testing and writing Forth examples to "family maintainers" which are deep
+into their chip of choice.
+
+;------------------------------------------------------------------------------
+; Register allocator
+;------------------------------------------------------------------------------
+
+It should look and feel like the classic Mecrisp-Stellaris,
+but with a very important difference:
+
+It contains an analytical compiler which keeps track
+of the top five stack elements and maps them to registers
+whenever possible.
+
+To dive in, you should load the disassembler and see
+definitions you have just compiled.
+
+Two examples, on M0:
+
+: >gray ( u -- x ) dup 1 rshift xor ;  ok.
+see >gray
+00006B38: 0873  lsrs r3 r6 #1
+00006B3A: 405E  eors r6 r3
+00006B3C: 4770  bx lr
+ ok.
+
+
+: bitexp ( u -- u )  ok.
+  ok.
+  \ Returns an integer value equivalent to  ok.
+  \ the exponential. For numbers > 16,  ok.
+  \ bitexp(x) approx = 2^(x/8 + 1)  ok.
+  ok.
+  \ B(E(x)) = x for 16 <= x <= 247.  ok.
+  ok.
+  dup 247 u>  \ Overflow ?  ok.
+  if drop $F0000000  ok.
+  else  ok.
+  ok.
+    dup 16 u<= if 1 rshift  ok.
+               else  ok.
+                 dup ( u u )  ok.
+                 7 and 8 or ( u b )  ok.
+                 swap ( b u )  ok.
+                 3 rshift 2 - lshift  ok.
+               then  ok.
+  ok.
+  then  ok.
+  ok.
+  1-foldable ;  ok.
+  ok.
+see bitexp
+00006BA2: 2EF7  cmp r6 #F7
+00006BA4: B500  push { lr }
+00006BA6: D902  bls 00006BAE
+00006BA8: 26F0  movs r6 #F0
+00006BAA: 0636  lsls r6 r6 #18
+00006BAC: E00C  b 00006BC8
+00006BAE: 2E10  cmp r6 #10
+00006BB0: D801  bhi 00006BB6
+00006BB2: 0876  lsrs r6 r6 #1
+00006BB4: E008  b 00006BC8
+00006BB6: 0033  lsls r3 r6 #0
+00006BB8: 2007  movs r0 #7
+00006BBA: 4003  ands r3 r0
+00006BBC: 2008  movs r0 #8
+00006BBE: 4303  orrs r3 r0
+00006BC0: 08F6  lsrs r6 r6 #3
+00006BC2: 3E02  subs r6 #2
+00006BC4: 40B3  lsls r3 r6
+00006BC6: 461E  mov r6 r3
+00006BC8: BD00  pop { pc }
+
+Note that it compiles bitexp without any stack movements at all.
 
 ;------------------------------------------------------------------------------
 ; Hacking
@@ -495,12 +658,12 @@ View it with fixed-width font !
         hook-emit?      ( -- a-addr ) Hooks for redirecting
         hook-key?       ( -- a-addr )   terminal IO
         hook-key        ( -- a-addr )     on the fly
-        hook-emit       ( -- a-addr ) 
+        hook-emit       ( -- a-addr )
 
         serial-emit?    ( -- Flag )  Serial interface
         serial-key?     ( -- Flag )    terminal routines
         serial-key      ( -- Char )      as default communications
-        serial-emit     ( Char -- ) 
+        serial-emit     ( Char -- )
 
         hook-pause      ( -- a-addr ) Hook for a multitasker
         pause           ( -- )        Task switch, none for default
@@ -752,7 +915,7 @@ like signed double numbers.
 String routines:
 
         type            ( c-addr length -- )
-                        Prints a counted string.
+                        Prints a string.
 
         s" Hello"       Compiles a string and
                         ( -- c-addr length )
@@ -761,6 +924,9 @@ String routines:
         ." Hello"       Compiles a string and
                         ( -- )
                         prints it when executed.
+
+        ( Comment )     Ignore Comment
+        \ Comment       Comment to end of line
 
         cr              ( -- ) Emits line feed
         bl              ( -- 32 ) ASCII code for Space
@@ -863,7 +1029,7 @@ Deep insights:
                         Gives current position in Dictionary
 
         ,               ( u|n -- ) Appends a single number to dictionary
-        ><,             ( u|n -- ) Reverses high and low-halfword, then 
+        ><,             ( u|n -- ) Reverses high and low-halfword, then
                                      appends it to dictionary
         h,              ( u|n -- ) Appends a halfword to dictionary
 
@@ -879,11 +1045,11 @@ Deep insights:
         literal,        ( u|n -- ) Compiles a literal with runtime
         inline,         ( a-addr -- ) Inlines the choosen subroutine
         call,           ( a-addr -- ) Compiles a call to a subroutine
-        jump,           ( Hole-for-Opcode Destination ) 
+        jump,           ( Hole-for-Opcode Destination )
                         Writes an unconditional Jump
                         to a-addr-Destination with the given Bitmask as
                         Opcode into the halfword sized a-addr-Hole
-        cjump,          ( Hole-for-Opcode Destination Bitmask ) 
+        cjump,          ( Hole-for-Opcode Destination Bitmask )
                         Writes a conditional Jump
                         to a-addr-Destination with the given Bitmask as
                         Opcode into the halfword sized a-addr-Hole
@@ -891,14 +1057,13 @@ Deep insights:
 
         flashvar-here   ( -- a-addr ) Gives current RAM management pointer
         dictionarystart ( -- a-addr ) Current entry point for dictionary search
-        dictionarynext  ( a-addr -- a-addr flag ) 
+        dictionarynext  ( a-addr -- a-addr flag )
                         Scans dictionary chain and returns true if end is reached.
-                             
+
     Available depending on chip capabilities:
 
         c,              ( char -- ) Appends a byte to dictionary
-        align,          ( -- ) Makes Dictionary Pointer even, if uneven.
-        align4,         ( -- ) Aligns on 4.
+        halign          ( -- ) Makes Dictionary Pointer even, if uneven.
 
         movwmovt,       ( x Register -- ) Generate a movw/movt-Sequence to
                                           get x into any given Register. M3/M4 only
@@ -976,6 +1141,7 @@ flag if ... else ... then
         then            ( -- )           This is the common
         else            ( -- )           flag if ... [else ...] then
         if              ( flag -- )      structure.
+        ahead           ( -- )
 
 Case:
 
@@ -1082,7 +1248,7 @@ Flash:
 
         cflash!         ( char c-addr -- )  Writes byte to flash
         hflash!         ( u|n a-addr -- )   Writes halfword to flash
-        flash!          ( u|n 4-a-addr -- ) Writes single number to flash, 
+        flash!          ( u|n 4-a-addr -- ) Writes single number to flash,
                                               4 aligned !
 Interrupts:
 
@@ -1121,7 +1287,7 @@ Flash:
 
         cflash!         ( char c-addr -- )  Writes byte to flash
         hflash!         ( u|n a-addr -- )   Writes halfword to flash
-        flash!          ( u|n 4-a-addr -- ) Writes single number to flash, 
+        flash!          ( u|n 4-a-addr -- ) Writes single number to flash,
                                               4 aligned !
 Interrupts:
 
@@ -1172,7 +1338,7 @@ Flash:
 
         cflash!         ( char c-addr -- )  Writes byte to flash
         hflash!         ( u|n a-addr -- )   Writes halfword to flash
-        flash!          ( u|n 4-a-addr -- ) Writes single number to flash, 
+        flash!          ( u|n 4-a-addr -- ) Writes single number to flash,
                                               4 aligned !
 Interrupts:
 
@@ -1190,7 +1356,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
 
 ;------------------------------------------------------------------------------
-; Specials for LPC1114FN28 and LPC1115FBD48:
+; Specials for LPC1114FN28, LPC1114FBD48 and LPC1115FBD48:
 ;------------------------------------------------------------------------------
 
         initflash       ( -- ) Clear buffers
@@ -1328,9 +1494,42 @@ Interrupts:
         irq-tim4
 
   Look into vectors.s and interrupts.s to add more interrupts.
-  
+
 ;------------------------------------------------------------------------------
-; Specials for STM32F100 and STM32F103:
+; Specials for STM32L476:
+;------------------------------------------------------------------------------
+
+Flash:
+        initflash       ( -- ) Clear buffers
+        hflash!         ( u|n a-addr -- ) Writes halfword to flash (buffered)
+        flushflash      ( -- ) Flush flash buffers
+                               needed if you comma in values after create
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 2048 byte flash page only. Take care:
+                                      No Reset, no dictionary reinitialisation.
+
+        16flash!        ( x1 x2 x3 x4 addr -- ) Flash 4 words aligned at 8 byte boundary at once
+
+Interrupts:
+
+        irq-adc         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-exti4
+        irq-exti3
+        irq-exti2
+        irq-exti1
+        irq-exti0
+        irq-tim2
+        irq-tim3
+        irq-tim4
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for STM32F100:
 ;------------------------------------------------------------------------------
 
 Flash:
@@ -1352,6 +1551,61 @@ Interrupts:
         irq-exti2
         irq-exti1
         irq-exti0
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for STM32F103:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 1k flash page only. Take care:
+                                      No Reset, no dictionary reinitialisation.
+
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-adc         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-exti4
+        irq-exti3
+        irq-exti2
+        irq-exti1
+        irq-exti0
+
+        irq-rtc
+        irq-exti5
+        irq-tim1brk
+        irq-tim1up
+        irq-tim1trg
+        irq-tim1cc
+        irq-tim2
+        irq-tim3
+        irq-tim4
+        irq-i2c1ev
+        irq-i2c1er
+        irq-i2c2ev
+        irq-i2c2er
+        irq-spi1
+        irq-spi2
+        irq-usart1
+        irq-usart2
+        irq-usart3
+        irq-exti10
+        irq-rtcalarm
+        irq-usbwkup
+        irq-tim5
+        irq-spi3
+        irq-uart4
+        irq-uart5
+        irq-tim6
+        irq-tim7
+        irq-usbfs
 
   Look into vectors.s and interrupts.s to add more interrupts.
 
@@ -1410,7 +1664,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
 
 ;------------------------------------------------------------------------------
-; Specials for KL25Z128:
+; Specials for KL25Z128 and KL46Z256:
 ;------------------------------------------------------------------------------
 
 Flash:
@@ -1423,7 +1677,7 @@ Flash:
                                       No Reset, no dictionary reinitialisation.
 
         hflash!         ( u|n a-addr -- )   Writes halfword to flash - emulated
-        flash!          ( u|n 4-a-addr -- ) Writes single number to flash, 
+        flash!          ( u|n 4-a-addr -- ) Writes single number to flash,
                                               4 aligned !
 
 Interrupts:
@@ -1435,6 +1689,170 @@ Interrupts:
         irq-portd
 
   Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for MK64FN1M0:
+;------------------------------------------------------------------------------
+
+Flash:
+        initflash       ( -- ) Clear buffers
+        hflash!         ( u|n a-addr -- ) Writes halfword to flash (buffered)
+        flushflash      ( -- ) Flush flash buffers
+                               needed if you comma in values after create
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 4 kb flash page only. Take care:
+                                      No Reset, no dictionary reinitialisation.
+
+        16flash!        ( x1 x2 x3 x4 addr -- ) Flash 4 words aligned at 8 byte boundary at once
+
+Interrupts:
+
+        irq-adc0         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-adc1
+        irq-dac0
+        irq-dac1
+        irq-cmp0
+        irq-cmp1
+        irq-cmp2
+        irq-porta
+        irq-portb
+        irq-portc
+        irq-portd
+        irq-porte
+
+  Look into vectors.s and interrupts.s to add more interrupts.
+
+;------------------------------------------------------------------------------
+; Specials for XMC1100:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 256 byte flash page only.
+                                      No Reset, no dictionary reinitialisation.
+
+        initflash       ( -- ) Clear buffers
+        hflash!         ( u|n a-addr -- ) Writes halfword to flash (buffered)
+        flushflash      ( -- ) Flush flash buffers
+                                 needed if you comma in values after create
+
+        16flash!        ( x1 x2 x3 x4 addr -- ) Flash aligned 16 Bytes at once
+
+Interrupts:
+
+        irq-scu0        ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-scu1
+        irq-eru0
+        irq-eru1
+        irq-eru2
+        irq-eru3
+        irq-usi0
+        irq-usi1
+        irq-usi2
+        irq-usi3
+        irq-usi4
+        irq-usi5
+        irq-adc0
+        irq-adc1
+        irq-ccu0
+        irq-ccu1
+        irq-ccu2
+        irq-ccu3
+
+;------------------------------------------------------------------------------
+; Specials for EFM32GG990:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 4 kb flash page only.
+                                      No Reset, no dictionary reinitialisation.
+
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-dma         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-gpioeven
+        irq-timer0
+        irq-usart0rx
+        irq-usart0tx
+        irq-acmp0
+        irq-adc0
+        irq-dac0
+        irq-i2c0
+        irq-gpioodd
+        irq-timer1
+        irq-timer2
+        irq-usart1rx
+        irq-usart1tx
+        irq-usart2rx
+        irq-usart2tx
+        irq-uart0rx
+        irq-uart0tx
+        irq-leuart0
+        irq-leuart1
+        irq-letimer0
+        irq-pcnt0
+        irq-pcnt1
+        irq-pcnt2
+        irq-rtc
+        irq-cmu
+        irq-vcmp
+        irq-lcd
+        irq-msc
+        irq-aes
+
+;------------------------------------------------------------------------------
+; Specials for EFM32HG322:
+;------------------------------------------------------------------------------
+
+Flash:
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        flashpageerase  ( a-addr -- ) Erase one 1 kb flash page only.
+                                      No Reset, no dictionary reinitialisation.
+
+        hflash!         ( u|n a-addr -- )   Writes halfword to flash
+
+Interrupts:
+
+        irq-dma         ( -- a-addr ) Memory locations for IRQ-Hooks
+        irq-gpioeven
+        irq-timer0
+        irq-acmp0
+        irq-adc0
+        irq-i2c0
+        irq-gpioodd
+        irq-timer1
+        irq-usart1rx
+        irq-usart1tx
+        irq-leuart0
+        irq-pcnt0
+        irq-rtc
+        irq-cmu
+        irq-vcmp
+        irq-msc
+        irq-aes
+        irq-usart0rx
+        irq-usart0tx
+        irq-usb
+        irq-timer2
 
 ;------------------------------------------------------------------------------
 ; Specials for MK20DX256:
@@ -1450,7 +1868,7 @@ Flash:
                                       No Reset, no dictionary reinitialisation.
 
         hflash!         ( u|n a-addr -- )   Writes halfword to flash - emulated
-        flash!          ( u|n 4-a-addr -- ) Writes single number to flash, 
+        flash!          ( u|n 4-a-addr -- ) Writes single number to flash,
                                               4 aligned !
 
 Interrupts:
@@ -1472,7 +1890,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
 
 ;------------------------------------------------------------------------------
-; Specials for nRF51822
+; Specials for nRF51822 and Microbit
 ;------------------------------------------------------------------------------
 
 Flash:
@@ -1516,4 +1934,27 @@ Interrupts:
 
   Look into vectors.s and interrupts.s to add more interrupts.
 
-Matthias Koch, Summer 2013, updated Spring 2014
+;------------------------------------------------------------------------------
+; Specials for Linux
+;------------------------------------------------------------------------------
+
+"Flash":
+
+        eraseflash      ( -- ) Erases everything. Clears Ram. Restarts Forth.
+
+        eraseflashfrom  ( a-addr -- ) Starts erasing at this address.
+                                      Clears Ram. Restarts Forth.
+
+        cflash!         ( char c-addr -- )  Writes byte to "flash"
+        hflash!         ( u|n a-addr -- )   Writes halfword to "flash"
+
+System:       
+
+        cacheflush      ( -- ) Flushes data and instruction cache
+        syscall         ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 ) Perform Syscall
+        arguments       ( -- a-addr ) Gives the initial stack pointer which
+                                    contains command line arguments.
+        bye             ( -- ) Leave Mecrisp-Stellaris
+        
+        
+Matthias Koch, Summer 2013, updated Spring 2016
