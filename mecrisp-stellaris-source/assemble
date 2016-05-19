@@ -24,6 +24,14 @@ cd kl25z128-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128-ra && cp *.srec ../../kl25z128-ra
 cd ..
 
+cd kl46z256
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl46z256 && cp *.srec ../../kl46z256
+cd ..
+
+cd kl46z256-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl46z256-ra && cp *.srec ../../kl46z256-ra
+cd ..
+
 cd mk20dx256
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk20dx256 && cp *.hex ../../mk20dx256
 cd ..

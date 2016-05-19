@@ -563,7 +563,7 @@ create: @ Nimmt das nächste Token aus dem Puffer,
     ddup
     write "Redefine "
     bl stype @ Den neuen Tokennamen nochmal ausgeben
-    writeln "."
+    write ". "
 
 2:@ ( -- )
 

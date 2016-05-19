@@ -26,6 +26,14 @@ cd kl25z128-ra
 md5sum *.bin
 cd ..
 
+cd kl46z256
+md5sum *.bin
+cd ..
+
+cd kl46z256-ra
+md5sum *.bin
+cd ..
+
 cd mk20dx256
 md5sum *.bin
 cd ..

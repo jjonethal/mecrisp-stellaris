@@ -35,6 +35,7 @@ It runs out of the box on:
   - STM F4 Discovery             with STM32F407VGT6 
   - STM F429 Discovery           with STM32F429ZIT6
   - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
+  - Freescale Freedom FRDM-KL46Z with KL46Z256VLL4
   - Infineon XMC2GO              with XMC1100Q024F0064
   - EFM32 Giant Gecko            with EFM32GG990F1024
   - EFM32 Happy Gecko            with EFM32HG322F64
@@ -82,6 +83,7 @@ Communication is via serial 115200 baud 8N1 over
   - USART2 in STM32L152    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
   - USART2 in STM32L476    (TX on PD5, RX on PD6 connected to USB-serial bridge on Discovery board)
   - UART0  in KL25Z128     (connected to USB-serial bridge on Freedom board)
+  - UART0  in KL46Z256     (connected to USB-serial bridge on Freedom board)
   - UART5  in LM4F232
   - UART0  in MK20DX256 (RX1/TX1 on Teensy 3.1.  Physical pins #2/#3 (these are also Digital IO 0/1 lines)
     	      		Digital IO pins 18/19 are setup for CTS/RTS respectively
@@ -312,7 +314,7 @@ Hardware and configuration for STM32F303:
   On startup, this runs with internal 8 MHz HSI clock.
 
 ;------------------------------------------------------------------------------
-Hardware and configuration for KL25Z128:
+Hardware and configuration for KL25Z128 and KL46Z256:
 ;------------------------------------------------------------------------------
   Connect USB cable to SDA-USB-PORT
 
@@ -351,6 +353,11 @@ Hardware and configuration for XMC1100:
 
   If you have issues with broken characters in the terminal,
   try changing the UART_FDR_STEP value in terminal.s a bit.
+  
+  To circumvent a bug in the XMC2GO serial bridge, the baudrate is set a bit
+  off the nominal value. If you connect your own terminal, make sure to change
+  it to the correct value.
+    See mecrisp-stellaris-source/xmc1100/terminal.s for hints.
 
   On startup, this runs with internal MCLK = PCKL = 8 MHz clock.
 
@@ -365,6 +372,10 @@ Hardware and configuration for EFM32GG990 and EFM32HG322:
   https://developer.mbed.org/teams/SiliconLabs/wiki/Silicon-Labs-Firmware
 
   Flashing is done by copying the binary into the USB drive.
+
+  Unfortunately, flashing this way doesn't not perform a proper mass erase.
+  If you cannot get it up and running this way, you need use a proper debugger
+  and erase the whole flash properly.
 
   On startup, this runs with internal HFCLK = HFRCO = 14 MHz clock.
 
@@ -1638,7 +1649,7 @@ Interrupts:
   Look into vectors.s and interrupts.s to add more interrupts.
 
 ;------------------------------------------------------------------------------
-; Specials for KL25Z128:
+; Specials for KL25Z128 and KL46Z256:
 ;------------------------------------------------------------------------------
 
 Flash:

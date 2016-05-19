@@ -75,7 +75,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " for EFM32HG322 by Matthias Koch"
+   welcome " with M0 core for EFM32HG322 by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
