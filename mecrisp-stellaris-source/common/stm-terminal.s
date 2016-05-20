@@ -27,6 +27,7 @@
   .equ Terminal_USART_CR3,   Terminal_USART_Base + 0x14
   .equ Terminal_USART_GTPR,  Terminal_USART_Base + 0x18
 
+  .equ ORE,   BIT3
   .equ RXNE,  BIT5
   .equ TC,    BIT6
   .equ TXE,   BIT7
@@ -124,7 +125,7 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
    pushdaconst 0
    ldr r0, =Terminal_USART_SR
    ldr r1, [r0]     @ Fetch status
-   movs r0, #RXNE
+   movs r0, # RXNE+ORE
    ands r1, r0
    beq 1f
      mvns tos, tos
