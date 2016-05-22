@@ -82,14 +82,14 @@ RCC_Base $00 +  constant RCC_CR
 
 
 RCC_Base $04 +    constant RCC_PLLCFGR
-   $03F           constant PLLM    \ pll input predivider after pll source mux 1..2MHz
-   $1FF  6 lshift constant PLLN    \ pll multiplier after PLLM 100...432MHz
+   $03F           constant PLLM    \ PLL input predivider after PLL source mux 1..2MHz
+   $1FF  6 lshift constant PLLN    \ PLL multiplier after PLLM 100...432MHz
       3 16 lshift constant PLLP    \ divider after PLLN - 0: /2 1: /4 2: /6 3: /8 <100MHz
       1 16 lshift constant PLLP0
       1 17 lshift constant PLLP1
       1 22 lshift constant PLLSRC  \ PLLCLK source for PLL and PLLI2S 0-HSI 1-HSE
-     $F 24 lshift constant PLLQ    \ pll divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN
-      1 24 lshift constant PLLQ0   \ pll divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN
+     $F 24 lshift constant PLLQ    \ PLL divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN
+      1 24 lshift constant PLLQ0   \ PLL divider for USB otg(48MHz), SDIO(<=48MHz), RNG(<=48MHZ) after PLLN
       1 25 lshift constant PLLQ1   \ valid values 2..15
       1 26 lshift constant PLLQ2
       1 27 lshift constant PLLQ3
@@ -116,15 +116,31 @@ RCC_Base $08 + constant RCC_CFGR
 : HSE_XTAL ( -- )     \ xtal
   RCC_CR @ HSEBYP not and HSEON or RCC_CR ! ;
 
-: pll-off
-
+: pll-off  ( -- ) PLLON RCC_CR bic! ;    \ turn off PLL
+: pll-on   ( -- ) PLLON RCC_CR bis! ;    \ turn on PLL
+: pll-src-hse  ( -- )                    \ PLL source is hse
+   PLLSRC RCC_PLLCFGR bis! ;
+: pllm!  ( m -- )                        \ set PLL predivider
+   PLLM RCC_PLLCFGR bits! ;
+: plln!  ( n -- )                        \ set PLL multiplier
+   PLLN RCC_PLLCFGR bits! ;
+: pllp!  ( p -- )                        \ set PLL output divider
+   PLLP RCC_PLLCFGR bits! ;
+: hpre!  ( n -- ) HPRE RCC_CFGR bits! ;  \ set AHB prescaler
+: ppre2!  ( n -- )                       \ set highspeed APB prescaler (APB2)
+   PPRE2 RCC_CFGR bits! ;
+: ppre1!  ( n -- )                       \ set low speed APB prescaler (APB1)
+   PPRE1 RCC_CFGR bits! ;
 : hse-on! ( -- ) HSEON RCC_CR bis! ;     \ turn on hse
 : hse-on? ( -- f ) HSERDY RCC_CR bit@ ;  \ is hse on ?
 : wait-hse ( n -- f )                    \ wait until hse is ready
    0 do hse-on? until loop ;             \ this might block forever
-: sys-clk-hse  ( -- )
-   
-
+: sys-clk-hse  ( -- )                    \ set system clock to hse
+   #1 SW RCC_CFGR bits! ;
+: sys-clk-hsi  ( -- )                    \ set system clock to hsi
+   #0 SW RCC_CFGR bits! ;
+: sys-clk-pll  ( -- )                    \ set system clock to PLL mode
+   #2 SW RCC_CFGR bits! ;
 : sys-clk  ( mhz -- )                    \ set system clock to MHZ
    hse-on? if sys-clk-hse 
    else sys-clk-hsi then ;
@@ -133,8 +149,8 @@ RCC_Base $08 + constant RCC_CFGR
    3 flash-latency!                      \ 2V7 .. 3V6 100 MHz
    prefetch-ena cache-init
    pll-off pll-src-hse
-   HSE_CLK 2000000 / PLLM!               \ 2 MHz PLL input clock
+   HSE_CLK 2000000 / pllm!               \ 2 MHz PLL input clock
    200 PLLN! 0 PLLP!                     \ 200 MHz PLL clock 100 Mhz PLLP clock
    pll-on
-   0 HPRE! 0 PPRE2! %100 PPRE1!          \ AHB-100MHz APB2-100MHz APB1-50MHz
+   0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-100MHz APB2-100MHz APB1-50MHz
    sys-clk-pll ;
