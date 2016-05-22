@@ -10,7 +10,7 @@
 
 \ Requires bits! bits@ from util.txt
 
-include util.txt
+\ include util.txt
 
 #8000000 constant HSE_CLK                \ 8 MHz system HSE clock on Nucleo
 
