@@ -15,6 +15,17 @@
 #8000000 constant HSE_CLK                \ 8 MHz system HSE clock on Nucleo
 
 
+\ ***** USART access ********************
+$40011000 constant USART1
+$40004400 constant USART2
+$40011400 constant USART6
+#8 constant USART_BRR                    \ Baud rate register offset
+
+USART2 USART_BRR or constant USART2_BRR
+: usart-set-baud  ( usart BAUD MHZ -- )  \ usart - base address
+                                         \ baud rate
+                                         \ usart base frequency
+   over 2/ + swap / swap USART_BRR or ! ;
 
 \ ***** stm32f411re clock tree
 \ RTCCLK <- (RTC enable & RTCSEL)
@@ -22,7 +33,7 @@
 \ HSE_RTC <- HSE/RTCPRE[2-31;0,1-clock off]
 \
 \ ***** flash control register
-$40023C00 constant Flash_ACR             \ Flash Access Control Register 
+$40023C00 constant Flash_ACR             \ Flash Access Control Register
 : dcache-ena? ( -- f )                   \ is dcache enabled
    1 #10 lshift FLASH_ACR bit@ ;
 : dcache-ena  ( -- )                     \ enable dcache
@@ -142,7 +153,7 @@ RCC_Base $08 + constant RCC_CFGR
 : sys-clk-pll  ( -- )                    \ set system clock to PLL mode
    #2 SW RCC_CFGR bits! ;
 : sys-clk  ( mhz -- )                    \ set system clock to MHZ
-   hse-on? if sys-clk-hse 
+   hse-on? if sys-clk-hse
    else sys-clk-hsi then ;
 : clk-100-hse ( -- )                     \ set system clock to 100 MHz hse
    hse-on! sys-clk-hse
@@ -153,4 +164,14 @@ RCC_Base $08 + constant RCC_CFGR
    200 PLLN! 0 PLLP!                     \ 200 MHz PLL clock 100 Mhz PLLP clock
    pll-on
    0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-100MHz APB2-100MHz APB1-50MHz
+   sys-clk-pll ;
+: clk-96-hse ( -- )                      \ set system clock to 96 MHz hse
+   hse-on! sys-clk-hse
+   3 flash-latency!                      \ 2V7 .. 3V6 96 MHz
+   prefetch-ena cache-init
+   pll-off pll-src-hse
+   HSE_CLK 2000000 / pllm!               \ 2 MHz PLL input clock
+   192 PLLN! 0 PLLP!                     \ 192 MHz PLL clock 96 Mhz PLLP clock
+   pll-on
+   0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-96MHz APB2-96MHz APB1-48MHz
    sys-clk-pll ;
