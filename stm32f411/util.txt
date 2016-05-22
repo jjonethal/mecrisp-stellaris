@@ -1,0 +1,26 @@
+\ ***************************************
+\ file: util.txt
+\ 2016-05-20jjo
+\ common utilities for many different
+\ ***** utility functions ***************
+
+\ ***** bitfield utility functions ******
+: cnt0   ( m -- b )                      \ count trailing zeros with hw support
+   dup negate and 1-
+   clz negate #32 + 1-foldable ;
+: bits@  ( m adr -- b )                  \ get bitfield at masked position e.g
+   @ over and swap cnt0 rshift ;         \  $1234 v ! $f0 v bits@ $3 = . (-1)
+: bits!  ( n m adr -- )                  \ set bitfield value n to value at masked position
+   >R dup >R cnt0 lshift                 \ shift value to proper position
+   R@ and                                \ mask out unrelated bits
+   R> not R@ @ and                       \ invert bitmask and maskout new bits in current value
+   or r> ! ;                             \ apply value and store back
+                                         \ example :
+                                         \   n: 101 m:111000 var: 000111 -> var 101111
+\ ***** output words ********************
+: u.8 ( n -- )                           \ unsigned output 8 digits
+   0 <# # # # # # # # # #> type ;
+: x.8 ( n -- )                           \ hex output 8 digits
+   base @ hex swap u.8 base ! ;
+: x.2 ( n -- )                           \ hex output 2 digits
+   base @ hex swap 0 <# # # #> type base ! ;

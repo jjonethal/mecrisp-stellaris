@@ -1,21 +1,69 @@
-\ DAS GEHT NOCH NICHT !!!
-\ THAT FILE doesn't work yet !!!
+\ file: PLL.TXT
+\ 2016-05-20jjo
+\ collects functions for reprogramming PLL
+
 \ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
+\ "C:\Users\jeanjo\Downloads\stm\DM00115249 stm32f411re data sheet.pdf"
+\ "C:\Users\jeanjo\Downloads\stm\DM00119316 stm32f411re reference manual.pdf"
 \ progman "E:\stm\DM00046982 PM0214 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
 \ ref man "E:\stm\DM00119316  RM0383 STM32F411xC_E advanced ARM-based 32-bit MCUs .pdf"
 
-\ stm32f411re clock tree
-\ 
+\ Requires bits! bits@ from util.txt
+
+include util.txt
+
+#8000000 constant HSE_CLK                \ 8 MHz system HSE clock on Nucleo
+
+
+
+\ ***** stm32f411re clock tree
+\ RTCCLK <- (RTC enable & RTCSEL)
+\ RTCSEL <- (OFF[0]|LSE[1]|LSI[2]|HSE_RTC[3])
+\ HSE_RTC <- HSE/RTCPRE[2-31;0,1-clock off]
 \
-\
-\
-decimal
-$40023C00 constant Flash_ACR \ Flash Access Control Register
+\ ***** flash control register
+$40023C00 constant Flash_ACR             \ Flash Access Control Register 
+: dcache-ena? ( -- f )                   \ is dcache enabled
+   1 #10 lshift FLASH_ACR bit@ ;
+: dcache-ena  ( -- )                     \ enable dcache
+   1 #10 lshift FLASH_ACR bis! ;
+: dcache-dis  ( -- )                     \ disable dcache
+   1 #10 lshift FLASH_ACR bic! ;
+: dcache-reset ( -- )                    \ reset dcache
+   dcache-ena? dcache-dis
+   1 #12 lshift FLASH_ACR bis!
+   1 #12 lshift FLASH_ACR bic!
+   if dcache-ena then ;
+: icache-ena? ( -- f )                   \ instruction cache enabled
+   1 #9 lshift FLASH_ACR bit@ ;
+: icache-ena  ( -- )                     \ enable instruction cache
+   1 #9 lshift FLASH_ACR bis! ;
+: icache-dis  ( -- )                     \ disable instruction cache
+   1 #9 lshift FLASH_ACR bic! ;
+: icache-reset ( -- )                    \ reset instruction cache
+   icache-ena? dcache-dis
+   1 #11 lshift FLASH_ACR bis!
+   1 #11 lshift FLASH_ACR bic!
+   if icache-ena then ;
+: prefetch-ena ( -- )                    \ enable prefetch
+   1 #8 lshift FLASH_ACR bis! ;
+: prefetch-dis ( -- )                    \ disable prefetch
+   1 #8 lshift FLASH_ACR bic! ;
+: flash-latency! ( l -- )                \ set flash latency
+   $f FLASH_ACR bits! ;
+: cache-init  ( -- )
+   icache-reset icache-ena
+   dcache-reset dcache-ena ;
+
 $40004408 constant USART2_BRR
+
 
 \ f (VCO clock) = f (PLL clock input) * (PLLN/PLLM)
 \ f (PLL general clock output) = F (VCO clock) / PLLP
 \ f (USB, RNG und andere) = f (VCO clock) / PLLQ
+
+\ RCC register definitions
+
 $40023800      constant RCC_Base
 
 RCC_Base $00 +  constant RCC_CR
@@ -70,40 +118,23 @@ RCC_Base $08 + constant RCC_CFGR
 
 : pll-off
 
-0 variable HSE_CLK
+: hse-on! ( -- ) HSEON RCC_CR bis! ;     \ turn on hse
+: hse-on? ( -- f ) HSERDY RCC_CR bit@ ;  \ is hse on ?
+: wait-hse ( n -- f )                    \ wait until hse is ready
+   0 do hse-on? until loop ;             \ this might block forever
+: sys-clk-hse  ( -- )
+   
 
-: 100MHz ( -- )       \ switch clock to 100 MHz
-  pll-off 100 ?set-flash-ws if prefetch-on then 100 set-dividers pll-on ;
-
-
-: 120MHz ( -- )
-
-  \ Set Flash waitstates !
-  $103 Flash_ACR !   \ 3 Waitstates for 120 MHz with more than 2.7 V Vcc, Prefetch buffer enabled.
-
-  PLLSRC          \ HSE clock as 8 MHz source
-
-  8  0 lshift or  \ PLLM Division factor for main PLL and audio PLL input clock
-                  \ 8 MHz / 8 =  1 MHz. Divider before VCO. Frequency entering VCO to be between 1 and 2 MHz.
-
-240  6 lshift or  \ PLLN Main PLL multiplication factor for VCO - between 192 and 432 MHz
-                  \ 1 MHz * 240 = 240 MHz
-
-  8 24 lshift or  \ PLLQ = 8, 240 MHz / 8 = 30 MHz
-
-  0 16 lshift or  \ PLLP Division factor for main system clock
-                  \ 0: /2  1: /4  2: /6  3: /8
-                  \ 240 MHz / 2 = 120 MHz
-  RCC_PLLCFGR !
-
-  PLLON RCC_CR bis!
-    \ Wait for PLL to lock:
-    begin PLLRDY RCC_CR bit@ until
-
-  2                 \ Set PLL as clock source
-  %101 10 lshift or \ APB  Low speed prescaler (APB1) - Max 42 MHz ! Here 120/4 MHz = 30 MHz.
-  %101 13 lshift or \ APB High speed prescaler (APB2) - Max 84 MHz ! Here 120/4 MHz = 30 MHz.
-  RCC_CFGR !
-
-  $104 USART2_BRR ! \ Set Baud rate divider for 115200 Baud at 30 MHz.
-;
+: sys-clk  ( mhz -- )                    \ set system clock to MHZ
+   hse-on? if sys-clk-hse 
+   else sys-clk-hsi then ;
+: clk-100-hse ( -- )                     \ set system clock to 100 MHz hse
+   hse-on! sys-clk-hse
+   3 flash-latency!                      \ 2V7 .. 3V6 100 MHz
+   prefetch-ena cache-init
+   pll-off pll-src-hse
+   HSE_CLK 2000000 / PLLM!               \ 2 MHz PLL input clock
+   200 PLLN! 0 PLLP!                     \ 200 MHz PLL clock 100 Mhz PLLP clock
+   pll-on
+   0 HPRE! 0 PPRE2! %100 PPRE1!          \ AHB-100MHz APB2-100MHz APB1-50MHz
+   sys-clk-pll ;
