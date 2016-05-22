@@ -22,7 +22,7 @@ $40011400 constant USART6
 #8 constant USART_BRR                    \ Baud rate register offset
 
 USART2 USART_BRR or constant USART2_BRR
-: usart-set-baud  ( usart BAUD MHZ -- )  \ usart - base address
+: usart-set-baud  ( usart BAUD clk -- )  \ usart - base address
                                          \ baud rate
                                          \ usart base frequency
    over 2/ + swap / swap USART_BRR or ! ;
@@ -155,16 +155,31 @@ RCC_Base $08 + constant RCC_CFGR
 : sys-clk  ( mhz -- )                    \ set system clock to MHZ
    hse-on? if sys-clk-hse
    else sys-clk-hsi then ;
+: clk-mhz-hse  ( mhz latency -- )        \ set system clock and flash latency
+   hse-on! sys-clk-hse                   \ switch system clock over to hse
+   flash-latency!                        \ set latency
+   >R                                    \ save mhz for later
+   prefetch-ena cache-init               \ setup prefetch and cache
+   pll-off pll-src-hse                   \ turn off pll use hse clock for pll
+   HSE_CLK #2000000 / pllm!              \ 2 MHz PLL input clock
+   R@ PLLN! 0 PLLP! pll-on               \ PLL clock is double mhz due 2MHz PLLM
+   0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-mhz APB2-mhz APB1-mhz/2
+   sys-clk-pll                           \ turn sys clock back to pll
+   USART2 #115200                        \ fix USART2 baud rate
+   r> 1+ 2/ usart-set-baud ;             \ apb1 clock for usart2 is mhz/2 here
+
 : clk-100-hse ( -- )                     \ set system clock to 100 MHz hse
    hse-on! sys-clk-hse
    3 flash-latency!                      \ 2V7 .. 3V6 100 MHz
    prefetch-ena cache-init
    pll-off pll-src-hse
-   HSE_CLK 2000000 / pllm!               \ 2 MHz PLL input clock
-   200 PLLN! 0 PLLP!                     \ 200 MHz PLL clock 100 Mhz PLLP clock
+   HSE_CLK #2000000 / pllm!              \ 2 MHz PLL input clock
+   #100 PLLN! 0 PLLP!                    \ 200 MHz PLL clock 100 Mhz PLLP clock
    pll-on
    0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-100MHz APB2-100MHz APB1-50MHz
-   sys-clk-pll ;
+   sys-clk-pll
+   USART2 #115200
+   #50000000 usart-set-baud ;
 : clk-96-hse ( -- )                      \ set system clock to 96 MHz hse
    hse-on! sys-clk-hse
    3 flash-latency!                      \ 2V7 .. 3V6 96 MHz
@@ -174,4 +189,6 @@ RCC_Base $08 + constant RCC_CFGR
    192 PLLN! 0 PLLP!                     \ 192 MHz PLL clock 96 Mhz PLLP clock
    pll-on
    0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-96MHz APB2-96MHz APB1-48MHz
-   sys-clk-pll ;
+   sys-clk-pll
+   USART2 #115200
+   #48000000 usart-set-baud ;
