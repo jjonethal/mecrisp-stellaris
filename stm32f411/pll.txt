@@ -1,6 +1,8 @@
 \ file: PLL.TXT
-\ 2016-05-20jjo
-\ collects functions for reprogramming PLL
+\ clock programming for stm32f411 nucleo board
+\ 2016-05-26jjo reformat code
+\ 2016-05-20jjo collects functions for reprogramming PLL
+\
 
 \ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
 \ "C:\Users\jeanjo\Downloads\stm\DM00115249 stm32f411re data sheet.pdf"
@@ -25,14 +27,14 @@ USART2 USART_BRR or constant USART2_BRR
 : usart-set-baud  ( usart BAUD clk -- )  \ usart - base address
                                          \ baud rate
                                          \ usart base frequency
-   over 2/ + swap / swap USART_BRR or ! ;
+   over 2/ + swap / swap USART_BRR or ! ; \ for 16 times oversampling mode
 
-\ ***** stm32f411re clock tree
+\ ***** stm32f411re clock tree **********
 \ RTCCLK <- (RTC enable & RTCSEL)
 \ RTCSEL <- (OFF[0]|LSE[1]|LSI[2]|HSE_RTC[3])
 \ HSE_RTC <- HSE/RTCPRE[2-31;0,1-clock off]
 \
-\ ***** flash control register
+\ ***** flash control register **********
 $40023C00 constant Flash_ACR             \ Flash Access Control Register
 : dcache-ena? ( -- f )                   \ is dcache enabled
    1 #10 lshift FLASH_ACR bit@ ;
@@ -68,13 +70,12 @@ $40023C00 constant Flash_ACR             \ Flash Access Control Register
 
 $40004408 constant USART2_BRR
 
-
+\ ***** System clock settings ***********
 \ f (VCO clock) = f (PLL clock input) * (PLLN/PLLM)
 \ f (PLL general clock output) = F (VCO clock) / PLLP
 \ f (USB, RNG und andere) = f (VCO clock) / PLLQ
 
-\ RCC register definitions
-
+\ ***** RCC register definitions ********
 $40023800      constant RCC_Base
 
 RCC_Base $00 +  constant RCC_CR
@@ -121,12 +122,10 @@ RCC_Base $08 + constant RCC_CFGR
       3           constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
 
 
-: HSE_BYPASS  ( -- )  \ external clock source
+: HSE_BYPASS  ( -- )                     \ external clock source
   HSEBYP HSEON RCC_CR BIS! ;
-
-: HSE_XTAL ( -- )     \ xtal
+: HSE_XTAL ( -- )                        \ xtal
   RCC_CR @ HSEBYP not and HSEON or RCC_CR ! ;
-
 : pll-off  ( -- ) PLLON RCC_CR bic! ;    \ turn off PLL
 : pll-on   ( -- ) PLLON RCC_CR bis! ;    \ turn on PLL
 : pll-src-hse  ( -- )                    \ PLL source is hse
