@@ -18,22 +18,32 @@
 
 
 \ ***** USART access ********************
-$40011000 constant USART1
-$40004400 constant USART2
-$40011400 constant USART6
+$40011000 constant USART1                \ base address for usart1
+$40004400 constant USART2                \ base address for usart2
+$40011400 constant USART6                \ base address for usart6
+USART2    constant USART_TERM            \ terminal USART
 #8 constant USART_BRR                    \ Baud rate register offset
 
+0            constant USART_SR           \ usart status register offset
+#1 #7 lshift constant USART_SR_TXE       \ USART Transmission complete
+#1 #6 lshift constant USART_SR_TC        \ USART Transmission complete
 USART2 USART_BRR or constant USART2_BRR
 : usart-set-baud  ( usart BAUD clk -- )  \ usart - base address
-                                         \ baud rate
-                                         \ usart base frequency
-   over 2/ + swap / swap USART_BRR or ! ; \ for 16 times oversampling mode
+   over 2/ + swap / swap                 \ baud rate
+   USART_BRR or ! ;                      \ usart base frequency
+                                         \ for 16 times oversampling mode
+: usart-tx-complete?  ( u -- f )         \ check is usart transfer is complete
+   @ USART_SR_TC USART_SR_TXE or
+   and 0<> ;
+: wait-usart-tx-complete ( u -- )        \ wait until usart tx is complete
+   begin dup usart-tx-complete? until
+   drop ;
 
 \ ***** stm32f411re clock tree **********
 \ RTCCLK <- (RTC enable & RTCSEL)
 \ RTCSEL <- (OFF[0]|LSE[1]|LSI[2]|HSE_RTC[3])
 \ HSE_RTC <- HSE/RTCPRE[2-31;0,1-clock off]
-\
+
 \ ***** flash control register **********
 $40023C00 constant Flash_ACR             \ Flash Access Control Register
 : dcache-ena? ( -- f )                   \ is dcache enabled
@@ -143,8 +153,9 @@ RCC_Base $08 + constant RCC_CFGR
    PPRE1 RCC_CFGR bits! ;
 : hse-on! ( -- ) HSEON RCC_CR bis! ;     \ turn on hse
 : hse-on? ( -- f ) HSERDY RCC_CR bit@ ;  \ is hse on ?
-: wait-hse ( n -- f )                    \ wait until hse is ready
-   0 do hse-on? until loop ;             \ this might block forever
+: wait-hse ( n -- f )                    \ wait until hse is ready return true
+   0 do hse-on? if unloop true exit then \ after n polls return false
+   loop false ;                          \ this will poll maximum n times
 : sys-clk-hse  ( -- )                    \ set system clock to hse
    #1 SW RCC_CFGR bits! ;
 : sys-clk-hsi  ( -- )                    \ set system clock to hsi
@@ -155,6 +166,7 @@ RCC_Base $08 + constant RCC_CFGR
    hse-on? if sys-clk-hse
    else sys-clk-hsi then ;
 : clk-mhz-hse  ( mhz latency -- )        \ set system clock and flash latency
+   USART_TERM wait-usart-tx-complete     \ wait until usart tx is idle
    hse-on! sys-clk-hse                   \ switch system clock over to hse
    flash-latency!                        \ set latency
    >R                                    \ save mhz for later
@@ -164,10 +176,11 @@ RCC_Base $08 + constant RCC_CFGR
    R@ PLLN! 0 PLLP! pll-on               \ PLL clock is double mhz due 2MHz PLLM
    0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-mhz APB2-mhz APB1-mhz/2
    sys-clk-pll                           \ turn sys clock back to pll
-   USART2 #115200                        \ fix USART2 baud rate
-   r> 1+ 2/ usart-set-baud ;             \ apb1 clock for usart2 is mhz/2 here
+   USART_TERM #115200                    \ fix USART_TERM baud rate
+   r> 1+ 2/ usart-set-baud ;             \ apb1 clock for USART_TERM is mhz/2 here
 
 : clk-100-hse ( -- )                     \ set system clock to 100 MHz hse
+   USART_TERM wait-usart-tx-complete     \ wait until usart tx is idle
    hse-on! sys-clk-hse
    3 flash-latency!                      \ 2V7 .. 3V6 100 MHz
    prefetch-ena cache-init
@@ -177,17 +190,18 @@ RCC_Base $08 + constant RCC_CFGR
    pll-on
    0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-100MHz APB2-100MHz APB1-50MHz
    sys-clk-pll
-   USART2 #115200
+   USART_TERM #115200
    #50000000 usart-set-baud ;
 : clk-96-hse ( -- )                      \ set system clock to 96 MHz hse
+   USART_TERM wait-usart-tx-complete     \ wait until usart tx is idle
    hse-on! sys-clk-hse
    3 flash-latency!                      \ 2V7 .. 3V6 96 MHz
    prefetch-ena cache-init
    pll-off pll-src-hse
-   HSE_CLK 2000000 / pllm!               \ 2 MHz PLL input clock
-   192 PLLN! 0 PLLP!                     \ 192 MHz PLL clock 96 Mhz PLLP clock
+   HSE_CLK #2000000 / pllm!              \ 2 MHz PLL input clock
+   #96 PLLN! 0 PLLP!                     \ 192 MHz PLL clock 96 Mhz PLLP clock
    pll-on
    0 hpre! 0 PPRE2! %100 PPRE1!          \ AHB-96MHz APB2-96MHz APB1-48MHz
    sys-clk-pll
-   USART2 #115200
+   USART_TERM #115200
    #48000000 usart-set-baud ;
