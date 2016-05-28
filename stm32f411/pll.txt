@@ -1,8 +1,13 @@
-\ file: PLL.TXT
-\ clock programming for stm32f411 nucleo board
+\ file:    PLL.TXT
+\ summary: clock programming for stm32f411 nucleo board
+\ author:  jean jonethal
+\ license: public domain
+
+\ 2016-05-28jjo update header
+\ 2016-05-27jjo add usart cleanup
 \ 2016-05-26jjo reformat code
 \ 2016-05-20jjo collects functions for reprogramming PLL
-\
+
 
 \ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
 \ "C:\Users\jeanjo\Downloads\stm\DM00115249 stm32f411re data sheet.pdf"
@@ -28,16 +33,23 @@ USART2    constant USART_TERM            \ terminal USART
 #1 #7 lshift constant USART_SR_TXE       \ USART Transmission complete
 #1 #6 lshift constant USART_SR_TC        \ USART Transmission complete
 USART2 USART_BRR or constant USART2_BRR
+$0C          constant USART_CR1          \ usart cr1 reg offset
+#1 #13 lshift constant USART_CR1_UE      \ usart enable bit
 : usart-set-baud  ( usart BAUD clk -- )  \ usart - base address
    over 2/ + swap / swap                 \ baud rate
-   USART_BRR or ! ;                      \ usart base frequency
-                                         \ for 16 times oversampling mode
+   USART_BRR or ! ;                      \ usart base frequency for 16 times oversampling mode
 : usart-tx-complete?  ( u -- f )         \ check is usart transfer is complete
    @ USART_SR_TC USART_SR_TXE or
    and 0<> ;
 : wait-usart-tx-complete ( u -- )        \ wait until usart tx is complete
    begin dup usart-tx-complete? until
    drop ;
+: usart-active? ( u -- f )
+   USART_CR1 or USART_CR1_UE swap bit@ ;
+: usart-enable ( u -- )
+   USART_CR1 or USART_CR1_UE swap bis! ;
+: usart-disable ( u -- )
+   USART_CR1 or USART_CR1_UE swap bic! ;
 
 \ ***** stm32f411re clock tree **********
 \ RTCCLK <- (RTC enable & RTCSEL)
@@ -180,7 +192,6 @@ RCC_Base $08 + constant RCC_CFGR
    r> 1+ 2/ usart-set-baud ;             \ apb1 clock for USART_TERM is mhz/2 here
 
 : clk-100-hse ( -- )                     \ set system clock to 100 MHz hse
-   USART_TERM wait-usart-tx-complete     \ wait until usart tx is idle
    hse-on! sys-clk-hse
    3 flash-latency!                      \ 2V7 .. 3V6 100 MHz
    prefetch-ena cache-init
@@ -193,7 +204,6 @@ RCC_Base $08 + constant RCC_CFGR
    USART_TERM #115200
    #50000000 usart-set-baud ;
 : clk-96-hse ( -- )                      \ set system clock to 96 MHz hse
-   USART_TERM wait-usart-tx-complete     \ wait until usart tx is idle
    hse-on! sys-clk-hse
    3 flash-latency!                      \ 2V7 .. 3V6 96 MHz
    prefetch-ena cache-init
@@ -205,3 +215,4 @@ RCC_Base $08 + constant RCC_CFGR
    sys-clk-pll
    USART_TERM #115200
    #48000000 usart-set-baud ;
+: delay  ( n -- ) 0 do loop ;            \ busy wait
