@@ -1,0 +1,100 @@
+\ file:    SPILA.TXT
+\ summary: SPI logic analyser for stm32f411 nucleo board
+\ author:  jean jonethal
+\ license: public domain
+
+\ 2016-05-28jjo initial version
+
+\ datasheet stm32f411 "E:\stm\DM00115249 STM32F411xC STM32F411xE.pdf"
+\ "C:\Users\jeanjo\Downloads\stm\DM00115249 stm32f411re data sheet.pdf"
+\ "C:\Users\jeanjo\Downloads\stm\DM00119316 stm32f411re reference manual.pdf"
+\ progman "E:\stm\DM00046982 PM0214 STM32F3 and STM32F4 Series Cortex-M4 programming manual.pdf"
+\ ref man "E:\stm\DM00119316  RM0383 STM32F411xC_E advanced ARM-based 32-bit MCUs .pdf"
+
+\ Requires bits! bits@ from util.txt
+
+\ multi channel spi interface works as simple logic analyser
+\ synchronisation via one master receiver clock 
+\ spi logic analyser
+\ using dma2 stream 0 channel 3 for spi1 sampling
+\ we use 16 bit spi mode instead of 8 bit for bus load reduction
+\ spi1 will be master,
+\ more SPI channels can be added by connecting chip select and clock as slave
+\ spi synchronization is done via chip select and clock
+\ DMA transports bit stream to memory
+\ trigger condition is checked by cpu
+ 
+\ include util.txt
+\ include gpio.txt
+
+\ helper for assembling configuration words
+: <<| ( n a b -- n )                     \ left shift or
+   lshift or 3-foldable ;
+: <<  ( a b -- n ) lshift 2-foldable ;   \ leftshift
+
+\ ***** DMA interface *******************
+
+\ RCC configuration
+$24 RCC_BASE + constant RCC_APB2RSTR
+#1 #12 lshift constant SPI1RST
+
+$44 RCC_BASE + constant RCC_APB2ENR
+#1 #12 lshift constant SPI1EN
+
+\ ***** SPI registers *******************
+
+$00 constant SPI_CR1 \ SPI control register 1 
+$04 constant SPI_CR2 \ SPI control register 2
+$08 constant SPI_SR  \ SPI status register
+$0C constant SPI_DR  \ SPI data register
+$10 constant SPI_CRCPR
+$14 constant SPI_RXCRCR
+$18 constant SPI_TXCRCR
+$1C constant SPI_I2SCFGR
+$20 constant SPI_I2SPR
+
+
+\ PA1 SPI4_MOSI AF05
+\ PA4 SPI1_NSS  AF05 SPI3_NSS AF06
+\ PA5 SPI1_SCK  AF05
+\ PA6 SPI1_MISO AF05
+\ PA7 SPI1_MOSI AF05
+
+: spi1-gpio-init  ( -- )                 \ initialize spi1 gpio pins
+   ;
+: spi2-gpio-init  ( -- )                 \ initialize spi1 gpio pins
+   ;
+: spi3-gpio-init  ( -- )                 \ initialize spi1 gpio pins
+   ;
+: spi4-gpio-init  ( -- )                 \ initialize spi1 gpio pins
+   ;
+
+: spi-port-init ( spi -- )               \ initialize gpio ports for spi port
+   ;
+: la-spi-rcc-init  ( -- )                \ rcc init for spi1
+   SPI1RST RCC_APB2RSTR bis!             \ reset spi1 rcc
+   SPI1RST RCC_APB2RSTR bic!             \ 
+   SPI1EN  RCC_APB2ENR bis! ;            \ turn on spi clock
+$40026000 constant DMA1                  \ DMA1 base address
+$40026400 constant DMA2                  \ DMA2 base address
+: DMA2SADR ( o s -- osadr )              \ dma2 stream reg address 
+   $18 * + DMA2 + 2-foldable ;
+$10 0 DMA2SADR constant DMA2_S0CR        \ DMA2 stream 0 configuration register
+$14 0 DMA2SADR constant DMA2_S0NDTR      \ number of items to be transmitted
+$18 0 DMA2SADR constant DMA2_S0PAR       \ DMA stream x peripheral address register
+$1C 0 DMA2SADR constant DMA2_S0M0AR      \ DMA stream x memory 0 address register
+$20 0 DMA2SADR constant DMA2_S0M1AR      \ DMA stream x memory 0 address register
+: la-dma2s0c3-init  ( -- )               \ init dma2 stream 0 channel 3
+   #3 #25 <<                             \ channel 3
+   #1 #13 <<|                            \ memory size 16 bit
+   #1 #11 <<|                            \ peripheral size 16 bit
+   #1 #10 <<|                            \ memory inc
+   #1  #8 <<|                            \ circular mode
+   #1  #4 <<|                            \ tcie   
+   DMA2_S0CR ! ;                         \ spi1 rx channel
+: la-init  ( -- )                        \ initialize spi logic analyser
+   la-gpio-init la-spi-rcc-init
+   la-spi-init la-dma-init ;
+: la-set-sampling-rate ( mhz -- )  ;     \  
+
+
