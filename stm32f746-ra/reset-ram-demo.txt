@@ -1,0 +1,4 @@
+\ prj.txt
+reset
+compiletoram
+include demo.fth
