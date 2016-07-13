@@ -1,8 +1,10 @@
 \ file qspi5.fth
-\ author jean jonetahl
+\ author jean jonethal
 \ qspi flash part N25Q128A13EF840E
 \ qspi flash datasheet "C:\Users\jeanjo\Downloads\stm\n25q_128mb_3v_65nm.pdf"
 \ stm32f746 user manual "C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf"
+reset
+
 
 \ include util.fth
 \ include gpio.fth
