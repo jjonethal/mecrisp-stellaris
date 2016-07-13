@@ -72,8 +72,8 @@ $24         constant GPIO_AFRH
    0 swap gpio-mode! ;
 : gpio-output ( pin -- )                 \ set pin to output mode
    1 swap gpio-mode! ;
-: pin-off  ( pin -- m a )                \ generate pin of mask and bsrr address
+: pin-off  ( pin -- m a )                \ generate pin off mask and bsrr address
    dup bsrr-off swap gpio-bsrr 1-foldable ;
-: pin-on  ( pin -- m a )                 \ generate pin of mask and bsrr address
+: pin-on  ( pin -- m a )                 \ generate pin on mask and bsrr address
    dup bsrr-on swap gpio-bsrr 1-foldable ;
 
