@@ -1,6 +1,6 @@
 \ gpio.fth
 \ gpio driver for stm32f746
-\ require utils.fth
+\ requires utils.fth
 
 $40023800      constant RCC_BASE         \ RCC base address
 $30 RCC_BASE + constant RCC_AHB1ENR      \ AHB1 peripheral clock register

@@ -6,15 +6,15 @@
 reset
 
 
-\ include util.fth
-\ include gpio.fth
+include util.fth
+include gpio.fth
 
-\ QSPI_NCS - PB6  - AF10
-\ QSPI_CLK - PB2  - AF9
-\ QSPI_D0  - PD11 - AF9
-\ QSPI_D1  - PD12 - AF9
-\ QSPI_D2  - PE2  - AF9
-\ QSPI_D3  - PD13 - AF9
+\ QSPI_NCS - PB6  - AF10                 \ chip select
+\ QSPI_CLK - PB2  - AF9                  \ clock 
+\ QSPI_D0  - PD11 - AF9                  \ data 0
+\ QSPI_D1  - PD12 - AF9                  \ data 1
+\ QSPI_D2  - PE2  - AF9                  \ data 2
+\ QSPI_D3  - PD13 - AF9                  \ data 3
 
 \ ********** qspi driver io ports *******   
  #1 GPIO    constant GPIOB
@@ -69,7 +69,7 @@ $A0001000 constant QSPI_BASE
    QSPI_D2  1 gpio-mode!
    QSPI_D3  1 gpio-mode! ;
 
-\ input pins
+\ ********** input pins *****************
 : qd0@ QSPI_D0  gpio-in# QSPI_D0  gpio-idr bit@ ;
 : qd1@ QSPI_D1  gpio-in# QSPI_D1  gpio-idr bit@ ;
 : qd2@ QSPI_D2  gpio-in# QSPI_D2  gpio-idr bit@ ;
@@ -77,6 +77,7 @@ $A0001000 constant QSPI_BASE
 : qcs@ QSPI_NCS gpio-in# QSPI_NCS gpio-idr bit@ ;
 : qck@ QSPI_CLK gpio-in# QSPI_CLK gpio-idr bit@ ;
 
+\ ********** output high ****************
 : qd0-1 QSPI_D0  pin-on ! ;
 : qd1-1 QSPI_D1  pin-on ! ;
 : qd2-1 QSPI_D2  pin-on ! ;
@@ -84,6 +85,7 @@ $A0001000 constant QSPI_BASE
 : qcs-1 QSPI_NCS pin-on ! ;
 : qck-1 QSPI_CLK pin-on ! ;
 
+\ ********** output low *****************
 : qd0-0 QSPI_D0  pin-off ! ;
 : qd1-0 QSPI_D1  pin-off ! ;
 : qd2-0 QSPI_D2  pin-off ! ;
@@ -91,6 +93,7 @@ $A0001000 constant QSPI_BASE
 : qcs-0 QSPI_NCS pin-off ! ;
 : qck-0 QSPI_CLK pin-off ! ;
 
+\ ********** output bit *****************
 : qd0! 0= #16 and QSPI_D0  bsrr-on swap lshift QSPI_D0  gpio-bsrr ! ;
 : qd1! 0= #16 and QSPI_D1  bsrr-on swap lshift QSPI_D1  gpio-bsrr ! ;
 : qd2! 0= #16 and QSPI_D2  bsrr-on swap lshift QSPI_D2  gpio-bsrr ! ;
@@ -98,3 +101,18 @@ $A0001000 constant QSPI_BASE
 : qcs! 0= #16 and QSPI_NCS bsrr-on swap lshift QSPI_NCS gpio-bsrr ! ;
 : qck! 0= #16 and QSPI_CLK bsrr-on swap lshift QSPI_CLK gpio-bsrr ! ;
 
+\ ********** output mode ****************
+: qd0> QSPI_D0  gpio-output ;
+: qd1> QSPI_D1  gpio-output ;
+: qd2> QSPI_D2  gpio-output ;
+: qd3> QSPI_D3  gpio-output ;
+: qcs> QSPI_NCS gpio-output ;
+: qck> QSPI_CLK gpio-output ;
+
+\ ********** input mode *****************
+: qd0< QSPI_D0  gpio-input ;
+: qd1< QSPI_D1  gpio-input ;
+: qd2< QSPI_D2  gpio-input ;
+: qd3< QSPI_D3  gpio-input ;
+: qcs< QSPI_NCS gpio-input ;
+: qck< QSPI_CLK gpio-input ;
