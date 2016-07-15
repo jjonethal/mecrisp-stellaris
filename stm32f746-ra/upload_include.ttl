@@ -110,7 +110,7 @@ return
 
 :processLine                                    
 ; scan every line for include filename or send to target and wait for "ok."
-; line contains current line to be scanned
+; line - contains current line to be scanned
 
   strmatch line INCLUDE_PATTERN               ; scan line for include pattern
   if result > 0 then
@@ -123,9 +123,54 @@ return
   endif
 return
 
+:processLineNew                                    
+; scan every line for include filename or send to target and wait for "ok."
+; line - contains current line to be scanned
+
+  call scanForInclude                         ; resolve includes
+  if result == 0 then
+    call scanForRequire                       ; resolve requires
+    if result == 0 then
+      call skipComment                        ; clean comment lines
+      send line #10
+      wait "ok."
+    endif
+  endif
+return
+
+
+
+:scanForInclude
+; scan for require string
+; @param line - contains line to be scanned
+; @return - result = 0 if no require line found else result will be 1
+  strmatch line INCLUDE_PATTERN               ; scan line for include pattern
+  if result > 0 then
+    fname = groupmatchstr1                    ; found new include line
+    call openNewFile
+    result = 1
+  else
+    result = 0
+  endif
+return
+
+:scanForRequire
+; scan for require string
+; @param line - contains line to be scanned
+; @return - result = 0 if no require line found else result will be 1
+  strmatch line REQUIRE_PATTERN               ; scan line for include pattern
+  if result > 0 then
+    fname = groupmatchstr1                    ; found new include line
+    call checkRequireFile
+    result = 1
+  else
+    result = 0
+  endif
+return
+
 :openNewFile
 ; start a new include level when open successfull
-; fname contains new include filename
+; @param fname - contains new include filename
 ; notify user if failed to open included file
 
   fileopen newfileHandle fname 0 1
