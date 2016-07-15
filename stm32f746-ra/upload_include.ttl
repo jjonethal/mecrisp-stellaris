@@ -83,6 +83,7 @@ goto ende
       infilehandle = cfh[level]               ; update current file handle
       filereadln infilehandle line            ; get next line from this file
       if result = 0 then
+;        call processLineNew
         call processLine
       else                                    ; end of file
         call levelback                        ; close file, back one level
