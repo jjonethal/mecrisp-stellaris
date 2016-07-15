@@ -5,9 +5,11 @@
 \ stm32f746 user manual "C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf"
 reset
 
+\ ok.
 
 include util.fth
 include gpio.fth
+require gpio.fth
 
 \ QSPI_NCS - PB6  - AF10                 \ chip select
 \ QSPI_CLK - PB2  - AF9                  \ clock 
