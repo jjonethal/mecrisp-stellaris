@@ -1,6 +1,6 @@
 ; ;
 ;    tera term mecrisp-stellaris forth upload helper
-;    Copyright (C) 2015  Jean Jonethal
+;    Copyright (C) 2015, 2016  Jean Jonethal
 ;
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@
 
 ; upload source file to target line by line and waits for "ok." after transmission of line.
 ; supports nesting include with pathname
-; line containing include directive is not sent to target
+; support nesting 'require' single include with pathname
+; line containing include or require directive is not sent to target
 ; max source line length is 511
 ; include path\filename.ext
 
@@ -30,10 +31,9 @@
 ; include ..\common\disassembler-m3.txt
 ; include demo2.fth
 
-; TODO:
-; "require" - support for single inclusion
-; error handling for MAXLEVEL
-; path handling relative to root file
+; TODO: find better approach for path handling
+;       currently upload words for letter assigned paths only
+;       UNC naming is not supported
 ; test path handling
 
 ; global definitions
