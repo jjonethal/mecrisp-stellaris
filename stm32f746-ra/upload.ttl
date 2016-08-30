@@ -63,7 +63,7 @@ strdim rfndir MAX_INCLUDE_HIST                ; memoize up MAX_INCLUDE_HIST incl
 rfnbaseSize      = 0                          ; current size of include file list
 
 ; check for macro parameter
-if paramcnt = 2 then                          ; if there is a macro parameter
+if paramcnt > 1 then                          ; if there is a macro parameter
 	fname = param2                              ; use it as input file name
 endif
 strlen fname 

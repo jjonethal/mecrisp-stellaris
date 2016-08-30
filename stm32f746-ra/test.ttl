@@ -1,0 +1,13 @@
+; test.ttl
+makepath path "..\.." "qspi5.fth"
+messagebox path "path"
+connect '/C=7'
+callmenu 50200
+closett
+connect '/C=7'
+
+
+
+; open file
+; read line
+; strip line comments 

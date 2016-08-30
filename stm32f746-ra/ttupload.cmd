@@ -9,12 +9,18 @@
 :: 2. launch new teraterm instance with upload_include.ttl macro with
 ::    upload file as parameter
 
+
+
 :: comport number for connection
 set COMPORT=7
 :: tempoary macrco for closing down existing connection
 set MACRO=%~dp0tempmac.ttl
 :: Teraterm installation directory
 set tt_dir=C:\app\teraterm
+
+
+%tt_dir%\ttpmacro.exe "%~dp0upload.ttl" %*
+goto :EOF
 
 :: clean temporary macro
 echo. > %MACRO%
