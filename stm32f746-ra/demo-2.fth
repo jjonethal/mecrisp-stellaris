@@ -20,7 +20,26 @@
    edit-key-left
    edit-key-right
    edit-key-enter
-   ; 
+   ;
+
+: draw-keyboard-shifted ( -- )
+    s" °!"§$%&/()=?`" draw-key-line
+    s" QWERTZUIOPÜ*" draw-key-line
+    s" ASDFGHJKLÖÄ'" draw-key-line
+    s" >YXCVBNM;:_"  draw-key-line ;
+
+: draw-keyboard-unshifted ( -- )
+   ;
+: qspi-init ( -- )
+   qspi-gpio-init
+   qspi-memory-mapped-mode ;   
+
+: demo-start ( -- )
+   start-timer
+   start-music
+   start-graphics ;
+: snd-sine ( -- ) ;
+: snd-sqr ( -- ) ;
 : demo ( -- )
-   clock-init sdram-init qspi-init
-   display-init sd-card-init demo-start ;
+   clock-init sdram-init qspi-init sound-init
+   display-init touch-init sd-card-init demo-start ;
