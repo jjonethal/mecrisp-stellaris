@@ -38,8 +38,31 @@
    start-timer
    start-music
    start-graphics ;
-: snd-sine ( -- ) ;
-: snd-sqr ( -- ) ;
+\ sine-buffer
+\ sine-buffer-adr
+\ sine-freq
+\ sine-ampl
+\ range 0-65535
+\ 
+: snd-sine ( -- ) 
+   sineGenPhase ;
+
+\ ********** square wave gen ************
+0  constant gen-sqr-phase                \ phase register
+4  constant gen-sqr-reload               \ reload register
+8  constant gen-sqr-out                  \ generator output
+12 constant gen-sqr-size                 \ generator size
+: sqr-phase++ ( a -- a ) -1 over +! ;
+: sqr-phase>=sqr-phase-end? ( a -- a f )
+  dup @ over gen-sqr-reload + @ >= ;
+: sqr-phase-reset ( a -- a ) dup 0 ! ;
+: sqr-toggle-out ( a -- a ) dup gen-sqr-out + dup @ negate swap ! ; 
+: gen-sqr ( a -- a )
+   sqr-phase>=sqr-phase-end 
+   if sqr-phase-reset sqr-toggle-out 
+   else sqr-phase++ then ;
+
+: gen-mix ( -- )   
 : demo ( -- )
    clock-init sdram-init qspi-init sound-init
    display-init touch-init sd-card-init demo-start ;
