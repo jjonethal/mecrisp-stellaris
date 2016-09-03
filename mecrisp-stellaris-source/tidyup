@@ -136,6 +136,14 @@ cd stm32f303-ra
 make clean
 cd ..
 
+cd stm32f303k8
+make clean
+cd ..
+
+cd stm32f303k8-ra
+make clean
+cd ..
+
 cd stm32f401
 make clean
 cd ..

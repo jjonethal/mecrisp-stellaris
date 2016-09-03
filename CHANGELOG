@@ -541,3 +541,8 @@
   - Mecrisp-Stellaris-Linux now uses software division like the M0,
       as, crazy enough, there is no integer division on large ARMs like A9 and A15.
 
+23.08.2016, Matthias Koch, Mecrisp-Stellaris 2.2.9
+
+  - Contribution by Ralph Sahli:
+    New target: STM32F303K8 with many examples. 
+                "Neopixel" driver for WS2812B LEDs and more.

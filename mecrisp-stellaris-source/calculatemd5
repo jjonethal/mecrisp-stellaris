@@ -138,6 +138,14 @@ cd stm32f303-ra
 md5sum *.bin
 cd ..
 
+cd stm32f303k8
+md5sum *.bin
+cd ..
+
+cd stm32f303k8-ra
+md5sum *.bin
+cd ..
+
 cd stm32f401
 md5sum *.bin
 cd ..
