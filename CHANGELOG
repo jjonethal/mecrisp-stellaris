@@ -534,4 +534,10 @@
     - Smaller binary
     - Forth code for cornerstone added
     - Handling of command line arguments in Forth
-      
+
+19.06.2016, Matthias Koch, Mecrisp-Stellaris 2.2.8
+
+  - Increased stack size for Linux target
+  - Mecrisp-Stellaris-Linux now uses software division like the M0,
+      as, crazy enough, there is no integer division on large ARMs like A9 and A15.
+

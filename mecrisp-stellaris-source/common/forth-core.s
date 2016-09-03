@@ -110,17 +110,29 @@ ramallot Zahlenpuffer, Zahlenpufferlaenge+1 @ Reserviere mal großzügig 64 Byte
 ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Länge String enthalten
 
 
-.ifdef flash16bytesblockwrite
-ramallot datenstackende, 512  @ Larger data stack because it will be used for buffering a 256 byte block
-ramallot datenstackanfang, 0  @ during Flash write on LPC1114FN28
+.ifdef within_os
+
+  ramallot datenstackende, 4096  @ Data stack
+  ramallot datenstackanfang, 0
+
+  ramallot returnstackende, 4096  @ Return stack
+  ramallot returnstackanfang, 0
+
 .else
-ramallot datenstackende, 256  @ Data stack
-ramallot datenstackanfang, 0
+
+  .ifdef flash16bytesblockwrite
+  ramallot datenstackende, 512  @ Larger data stack because it will be used for buffering a 256 byte block
+  ramallot datenstackanfang, 0  @ during Flash write on LPC1114FN28
+  .else
+  ramallot datenstackende, 256  @ Data stack
+  ramallot datenstackanfang, 0
+  .endif
+
+  ramallot returnstackende, 256  @ Return stack
+  ramallot returnstackanfang, 0
+  
 .endif
-
-ramallot returnstackende, 256  @ Return stack
-ramallot returnstackanfang, 0
-
+  
 .ifdef emulated16bitflashwrites
   .equ Sammelstellen, 32 @ 32 * 6 = 192 Bytes.
   ramallot Sammeltabelle, Sammelstellen * 6 @ 16-Bit Flash write emulation collection buffer

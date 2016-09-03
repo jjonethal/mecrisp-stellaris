@@ -88,7 +88,7 @@ Reset: @ Einsprung zu Beginn
   .word 0x00000000
   .endr
 
-.equ FlashDictionaryEnde,   .  @ 128 kb Platz für das Flash-Dictionary     128 kb Flash available. Porting: Change this !
+.equ FlashDictionaryEnde,   .  @ 1 MB Platz für das Flash-Dictionary     1 MB Flash available. Porting: Change this !
 .equ Backlinkgrenze,        .  @ Ab dem Ram-Start.
    
 @ Konstanten für die Größe des Ram-Speichers
