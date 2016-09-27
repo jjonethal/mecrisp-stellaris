@@ -62,7 +62,26 @@
    if sqr-phase-reset sqr-toggle-out 
    else sqr-phase++ then ;
 
-: gen-mix ( -- )   
+\ ********** mixer **********************
+ #0 constant mix-num-channels
+ #4 constant mix-out
+ #8 constant mix-gain
+#12 constant mix-in-ptr-1
+#16 constant mix-gain-1
+#20 constant mix-in-ptr-2
+#24 constant mix-gain-2
+
+: f16* * 15 rshift 2-foldable ;
+: gen-mix-calc ( e a -- o )              \ mix a number of channels 
+   \ e - end   address
+   \ a - start address
+   \ o - mixer out
+   0 -rot do
+     i @ @                               \ mix-in-ptr
+     i 4 + @                             \ gain
+     f16* + 8 +loop
+   dup 8 + @ * ;                         \ apply master gain
+      
 : demo ( -- )
    clock-init sdram-init qspi-init sound-init
    display-init touch-init sd-card-init demo-start ;
