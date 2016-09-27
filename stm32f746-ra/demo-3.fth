@@ -3,6 +3,7 @@
 \ 
 \ stm32f746g-disco user manual
 \ C:\Users\jeanjo\Downloads\stm\DM00190424 UM1907 Discovery kit for STM32F7 Series with STM32F746NG MCU en.pdf
+\ http://www.st.com/resource/en/user_manual/dm00190424.pdf
 
 \ stm32f746ng reference manual RM0385
 \ C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf
@@ -15,6 +16,9 @@
 \ Wolfson audio codec
 \ C:\Users\jeanjo\Downloads\doc\circuits\WM8994_v4.4.pdf
 \ http://www.cirrus.com/en/pubs/proDatasheet/WM8994_v4.4.pdf
+
+\ stm32f746ng Programming Manuals
+\ http://www.st.com/resource/en/programming_manual/dm00237416.pdf
 
 \ pin allocations
 \ B_USER  - PI11 - User button
