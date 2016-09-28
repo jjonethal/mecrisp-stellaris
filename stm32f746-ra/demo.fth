@@ -1251,7 +1251,7 @@ blue variable font-edit-selector-frame-color
 : font-edit-next-char ( -- )             \ select next chracter to edit
    font-edit-current-char @ 1+ $7f and font-edit-current-char ! 
    font-edit-current-char. ;
-: font-edit-exit ( -- ) ; \ nothing to be done yet
+: font-edit-exit ( -- ) ;                \ nothing to be done yet
 : font-editor-menu ( -- f )              \ terminal menu for fonteditor 
      key case
        [char] w of font-edit-cursor-up    0 endof
