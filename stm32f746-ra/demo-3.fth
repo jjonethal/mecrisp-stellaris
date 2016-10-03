@@ -360,12 +360,24 @@ $40005800 constant I2C2                  \ i2c2 port
 $40005C00 constant I2C3                  \ i2c3 port
 $40006000 constant I2C4                  \ i2c4 port
 
+#31 #16 + constant I2C1_EV               \ I2C1 event interrupt
+#32 #16 + constant I2C1_ER               \ I2C1 error interrupt 
+#33 #16 + constant I2C2_EV               \ I2C2 event interrupt
+#34 #16 + constant I2C2_ER               \ I2C2 error interrupt 
+#72 #16 + constant I2C3_EV               \ I2C3 event interrupt
+#73 #16 + constant I2C3_ER               \ I2C3 error interrupt 
+#95 #16 + constant I2C4_EV               \ I2C4 event interrupt
+#96 #16 + constant I2C4_ER               \ I2C4 error interrupt 
+
 0 variable i2c-state                     \ current state of i2c handler
 0 variable i2c-adr                       \ target address
 0 variable i2c-nr-bytes-to-send
 0 variable i2c-nr-bytes-to-receive
 0 variable i2c-job-current 
-0 variable i2c-port                      \ i2c base address
+
+\ 0 variable i2c-port                      \ i2c base address
+I2C3 constant i2c-port                   \ i2c base address
+
 : i2c-nr ( a -- n )
     I2C1 - #10 rshift 1-foldable ;
 : test-i2c-nr ( -- f )                   \ test i2c-nr passed -> true
@@ -383,36 +395,36 @@ $40006000 constant I2C4                  \ i2c4 port
 : i2c-rcc-bitmask ( i2c-port -- n )      \ calculate i2c bitmask for clock 
     i2c-nr #21 + 1 swap lshift 1-foldable ;
 : i2c-reset  ( -- )                      \ perform i2c reset
-    i2c-port @ i2c-rcc-bitmask RCC_APB1RSTR bis! ;
+    i2c-port i2c-rcc-bitmask RCC_APB1RSTR bis! ;
 : i2c-unreset  ( -- )                    \ release i2c reset
-    i2c-port @ i2c-rcc-bitmask RCC_APB1RSTR bic! ;
+    i2c-port i2c-rcc-bitmask RCC_APB1RSTR bic! ;
 : i2c-clk-on  ( -- )                     \ turn on i2c clock
-    i2c-port @ i2c-rcc-bitmask RCC_APB1ENR bis! ;
+    i2c-port i2c-rcc-bitmask RCC_APB1ENR bis! ;
 : i2c-clk-off  ( -- )                    \ turn off i2c clock
-    i2c-port @ i2c-rcc-bitmask RCC_APB1ENR bic! ;
+    i2c-port i2c-rcc-bitmask RCC_APB1ENR bic! ;
 : i2c-read  ( -- c )                     \ read data from i2c port
-   i2c-port @ $24 + c@ ; 
+   i2c-port $24 + c@ ; 
 : i2c-write  ( c -- )                    \ write data to i2c port
-   i2c-port @ $28 + c! ;
+   i2c-port $28 + c! ;
 : i2c-txe?  ( -- f )                     \ i2c txe ?
-   i2c-port @ $18 + 1 bit@ ;
+   i2c-port $18 + 1 bit@ ;
 : i2c-int-ena  ( -- )                    \ enable TCIE+STOPIE+NACKIE+RXIE+TXIE
-   $36 i2c-port @ bis ! ;
+   $36 i2c-port bis ! ;
 : i2c-on ( -- )                          \ turn on i2c port
-    i2c-port @ 1 bis! ;
+    i2c-port 1 bis! ;
 : i2c-off ( -- )                         \ turn off i2c port
-    i2c-port @ 1 bic! ;
+    i2c-port 1 bic! ;
 : i2c-clk-src-mask ( i2c-port -- m )     \ generate i2c port mask
     i2c-nr 2* #16 + 3 swap lshift 1-foldable ;
 : i2c-clk-src ( -- )                     \ set i2c clock source to APB(PCLK1) for this demo
-   i2c-port @ i2c-clk-src-mask RCC_DKCFGR2 bic! ;   
+   i2c-port i2c-clk-src-mask RCC_DKCFGR2 bic! ;   
 : i2c-timing-cfg ( -- )                  \ configure i2c timing
    \ i2c-clk PCLK1=50MHZ 100khz PRESC=1, SCLDEL=8, SDADEL=0, SCLH=97, SCLL=144
-   $10806190 i2c-port @ $10 + ! ;        \ I2C_TIMINGR
+   $10806190 i2c-port $10 + ! ;          \ I2C_TIMINGR
 : i2c-isr ( -- a )                       \ i2c-isr addr
-   i2c-port @ $18 + ;
+   i2c-port $18 + 0-foldable ;
 : i2c-isr@ ( -- a )                      \ get i2c status 
-   i2c-port @ $18 + @ ;
+   i2c-port $18 + @ ;
 : i2c-isr-bit@ ( m -- f )                \
    i2c-isr bit@ ;
 : i2c-sm-adr? ( -- i2ca )                \ i2c received address in slave mode
@@ -440,6 +452,21 @@ $40006000 constant I2C4                  \ i2c4 port
 : irq-handler ( -- )
    ipsr case 
    ;
+: codec-read ( r -- )
+   codec-adr i2c-start-write dup 8 rshift i2c-write i2c-write codec-adr i2c-start-read
+   i2c-read i2c-stop ;
+: codec-id? ( -- )
+   0 codec-read ;
+: codec-handler ( -- ) ;
+: codec-state-init ( -- ) ;
+: code-state-init-mic1 ;
+: codec-state-init-mic2 ;
+: codec-state-reset ( -- ) ;
+: codec-state-activate ( -- ) ;
+: codec-state-fading-in ( -- ) ;
+: codec-state-fading-out ( -- ) ;
+
+
 \ ********* start sound demo ************
 : demo 
    sys-clk-200-mhz ;
