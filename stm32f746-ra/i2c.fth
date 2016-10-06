@@ -23,7 +23,7 @@
 \ require gpio.fth
 \ require rcc.fth
 
-
+\ ********** i2c pin definitions ********
 \ I2C_SDA (PB9)  package pin (D14) 
 \ I2C_SCL (PB8)  package pin (D14) I2C1_SCL
 
