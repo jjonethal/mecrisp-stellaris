@@ -376,6 +376,7 @@ $40005800 constant I2C2                  \ i2c2 port
 $40005C00 constant I2C3                  \ i2c3 port
 $40006000 constant I2C4                  \ i2c4 port
 
+\ ********** i2c error and event numbers ***************************************
 #31 #16 + constant I2C1_EV               \ I2C1 event interrupt
 #32 #16 + constant I2C1_ER               \ I2C1 error interrupt 
 #33 #16 + constant I2C2_EV               \ I2C2 event interrupt
@@ -391,7 +392,7 @@ $40006000 constant I2C4                  \ i2c4 port
 0 variable i2c-nr-bytes-to-receive
 0 variable i2c-job-current 
 
-\ 0 variable i2c-port                      \ i2c base address
+\ 0 variable i2c-port                    \ i2c base address
 I2C3 constant i2c-port                   \ i2c base address
 
 : i2c-nr ( a -- n )
@@ -466,8 +467,15 @@ I2C3 constant i2c-port                   \ i2c base address
    100k i2c-set-baud
    i2c-int-ena ;
 : irq-handler ( -- )
-   ipsr case 
-   ;
+   ipsr case I2C1_EV of i2c1-ev-handler endof
+             I2C2_EV of i2c2-ev-handler endof
+             I2C3_EV of i2c3-ev-handler endof
+             I2C4_EV of i2c4-ev-handler endof
+             I2C1_ER of i2c1-er-handler endof
+             I2C2_ER of i2c2-er-handler endof
+             I2C3_ER of i2c3-er-handler endof
+             I2C4_ER of i2c4-er-handler endof
+        endcase ;
 : codec-read ( r -- )
    codec-adr i2c-start-write dup 8 rshift i2c-write i2c-write codec-adr i2c-start-read
    i2c-read i2c-stop ;
