@@ -1,4 +1,20 @@
-\ demo-3 sound demo
+\ Copyright Jean Jonethal 2015, 2016
+\
+\ This program is free software: you can redistribute it and/or modify
+\ it under the terms of the GNU General Public License as published by
+\ the Free Software Foundation, either version 3 of the License, or
+\ (at your option) any later version.
+\
+\ This program is distributed in the hope that it will be useful,
+\ but WITHOUT ANY WARRANTY; without even the implied warranty of
+\ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+\ GNU General Public License for more details.
+
+\ You should have received a copy of the GNU General Public License
+\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+\ file demo-3.fth
+\ sound demo
 \ Autor Jean Jonethal
 \ 
 \ stm32f746g-disco user manual
@@ -45,13 +61,13 @@
 
 \ LCD_BL_CTRL - PK3 display led backlight control 0-off 1-on
 
-\ ***** utility functions ***************
-\ ***** bitfield utility functions ******
+\ ********** utility functions *************************************************
+\ ********** bitfield utility functions ****************************************
 : cnt0   ( m -- b )                      \ count trailing zeros with hw support
    dup negate and 1-
    clz negate #32 + 1-foldable ;
-: bits@  ( m adr -- b )                  \ get bitfield at masked position e.g $1234 v ! $f0 v bits@ $3 = . (-1)
-   @ over and swap cnt0 rshift ;
+: bits@  ( m adr -- b )                  \ get bitfield at masked position
+   @ over and swap cnt0 rshift ;         \ e.g $1234 v ! $f0 v bits@ $3 = . (-1)
 : bits!  ( n m adr -- )                  \ set bitfield value n to value at masked position
    >R dup >R cnt0 lshift                 \ shift value to proper position
    R@ and                                \ mask out unrelated bits
@@ -69,8 +85,8 @@
    base @ hex swap u.8 base ! ;
 : x.2 ( n -- )                           \ hex output 2 digits
    base @ hex swap 0 <# # # #> type base ! ;
-: cfill ( c n a -- )                     \ fill memory block at address a length n with char c
-   tuck + swap do dup i c! loop drop ;
+: cfill ( c n a -- )                     \ fill memory block at address a length
+   tuck + swap do dup i c! loop drop ;   \   n with char c
 : d2**  ( n -- d )                       \ return 2^n 
    dup #31 > if
      #32 - 1 swap lshift 0 swap
@@ -83,7 +99,7 @@
    [char] $ emit ;
 
 
-\ ***** gpio definitions ****************
+\ ********** gpio definitions **************************************************
 \ http://www.st.com/web/en/resource/technical/document/reference_manual/DM00124865.pdf#page=195&zoom=auto,67,755
 $40020000 constant GPIO-BASE
 : gpio ( n -- adr )
@@ -119,8 +135,8 @@ $24         constant GPIO_AFRH
    #10 rshift $f and 1-foldable ;
 : mode-mask  ( pin -- m )
    #3 swap pin# 2* lshift 1-foldable ;
-: mode-shift ( mode pin -- mode<< )      \ shift mode by pin number * 2 for gpio_moder
-   pin# 2* lshift 2-foldable ;
+: mode-shift ( mode pin -- mode<< )      \ shift mode by pin number * 2 for
+   pin# 2* lshift 2-foldable ;           \  gpio_moder
 : set-mask! ( v m a -- )
    tuck @ swap bic rot or swap ! ;
 : bsrr-on  ( pin -- v )                  \ gpio_bsrr mask pin on
@@ -129,8 +145,8 @@ $24         constant GPIO_AFRH
    pin# #16 + 1 swap lshift 1-foldable ;
 : af-mask  ( pin -- mask )               \ alternate function bitmask
    $7 and #2 lshift $f swap lshift 1-foldable ;
-: af-reg  ( pin -- adr )                 \ alternate function register address for pin
-   dup $8 and 2/ swap
+: af-reg  ( pin -- adr )                 \ alternate function register address
+   dup $8 and 2/ swap                    \   for pin
    port-base GPIO_AFRL + + 1-foldable ;
 : af-shift ( af pin -- af )
    pin# #2 lshift swap lshift 2-foldable ;
@@ -140,13 +156,13 @@ $24         constant GPIO_AFRH
 : mode-af ( af pin -- )
    #2 over gpio-mode!
    dup af-mask swap af-reg bits! ;
-: speed-mode ( speed pin -- )            \ set speed mode 0:low speed 1:medium 2:fast 3:high speed
-   dup pin# 2* #3 swap lshift
+: speed-mode ( speed pin -- )            \ set speed mode 0:low speed 1:medium
+   dup pin# 2* #3 swap lshift            \                2:fast 3:high speed
    swap port-base #8 + bits! ;
 : mode-af-fast ( af pin -- )
    #2 over speed-mode mode-af ;
 
-\ ***** Flash read access config ********
+\ ********** Flash read access config ******************************************
 $40023C00      constant FLASH_ACR
 : flash-ws! ( n -- )                     \ set flash latency
    $f FLASH_ACR bits! ;
@@ -169,7 +185,7 @@ $40023C00      constant FLASH_ACR
    flash-art-unreset
    if flash-art-ena then ;
 
-\ ***** rcc definitions *****************
+\ ********** rcc definitions ***************************************************
 \ http://www.st.com/web/en/resource/technical/document/reference_manual/DM00124865.pdf#page=128&zoom=auto,67,755
 $40023800      constant RCC_BASE         \ RCC base address
 $00 RCC_BASE + constant RCC_CR           \ RCC clock control register
@@ -182,11 +198,11 @@ $04 RCC_BASE + constant RCC_PLLCFGR      \ RCC PLL configuration register
 $08 RCC_BASE + constant RCC_CFGR         \ RCC clock configuration register
 $20 RCC_BASE + constant RCC_APB1RSTR     \ RCC APB1 peripheral reset register
 $30 RCC_BASE + constant RCC_AHB1ENR      \ AHB1 peripheral clock register
-$40 RCC_BASE + constant RCC_APB1ENR      \ RCC APB1 peripheral clock enable register
+$40 RCC_BASE + constant RCC_APB1ENR      \ APB1 peripheral clock enable register
 $44 RCC_BASE + constant RCC_APB2ENR      \ APB2 peripheral clock enable register
 $88 RCC_BASE + constant RCC_PLLSAICFGR   \ RCC SAI PLL configuration register
-$8C RCC_BASE + constant RCC_DKCFGR1      \ RCC dedicated clocks configuration register
-$90 RCC_BASE + constant RCC_DKCFGR2      \ RCC dedicated clocks configuration register
+$8C RCC_BASE + constant RCC_DKCFGR1      \ RCC dedicated clocks config reg 1
+$90 RCC_BASE + constant RCC_DKCFGR2      \ RCC dedicated clocks config reg 2
 
 $0             constant PLLP/2
 $1             constant PLLP/4
@@ -216,10 +232,10 @@ $3             constant PLLSAI-DIVR/16
 
 
 \ ***** rcc words ***********************
-: rcc-gpio-clk-on  ( n -- )              \ enable single gpio port clock 0:GPIOA..10:GPIOK
-  1 swap lshift RCC_AHB1ENR bis! ;
-: rcc-gpio-clk-off  ( n -- )             \ disable gpio port n clock 0:GPIOA..10:GPIOK
-  1 swap lshift RCC_AHB1ENR bic! ;
+: rcc-gpio-clk-on  ( n -- )              \ enable single gpio port clock
+  1 swap lshift RCC_AHB1ENR bis! ;       \   0:GPIOA..10:GPIOK
+: rcc-gpio-clk-off  ( n -- )             \ disable gpio port n clock
+  1 swap lshift RCC_AHB1ENR bic! ;       \   0:GPIOA..10:GPIOK
 : rcc-ltdc-clk-on ( -- )                 \ turn on lcd controller clock
    #1 #26 lshift RCC_APB2ENR bis! ;
 : rcc-ltdc-clk-off  ( -- )               \ tun off lcd controller clock
@@ -260,9 +276,9 @@ $3             constant PLLSAI-DIVR/16
    $1f RCC_PLLCFGR bits! ;
 : pll-m@  ( -- n )                       \ get main pll clock pre divider
    $1f RCC_PLLCFGR bits@ ;
-: pll-n!  ( n -- )                       \ set Main PLL (PLL) multiplication factor
+: pll-n!  ( n -- )                       \ set Main PLL (PLL) multiplier
    $1ff #6 lshift RCC_PLLCFGR bits! ;
-: pll-n@  ( -- n )                       \ get Main PLL (PLL) multiplication factor
+: pll-n@  ( -- n )                       \ get Main PLL (PLL) multiplier
    $1ff #6 lshift RCC_PLLCFGR bits@ ;
 : pll-p!  ( n -- )                       \ set Main PLL (PLL) divider
    #3 #16 lshift RCC_PLLCFGR bits! ;
@@ -276,7 +292,7 @@ $3             constant PLLSAI-DIVR/16
    #1 #29 lshift RCC_CR bit@ ;
 : pllsai-wait-stable  ( -- )             \ wait until PLLSAI is stable
    begin pllsai-on pllsai-ready? until ;
-: pllsai-n!  ( n -- )                    \ set PLLSAI clock multiplication factor
+: pllsai-n!  ( n -- )                    \ set PLLSAI clock multiplier
    $1ff #6 lshift RCC_PLLSAICFGR bits! ;
 : pllsai-r!  ( n -- )                    \ set PLLSAI clock division factor
    $7 #28 lshift RCC_PLLSAICFGR bits! ;
@@ -303,8 +319,8 @@ $04 PWR_BASE + constant PWR_CSR1         \ PWR power control/status register
    #1 #17 lshift PWR_CSR1 bit@ ;
 : pwr-clock-on  ( -- )                   \ turn on power interface clock
    $01 #28 lshift RCC_APB1ENR bis! ;
-: overdrive-on ( -- )                    \ turn on overdrive on ( not when system clock is pll )
-   pwr-clock-on
+: overdrive-on ( -- )                    \ turn on overdrive on
+   pwr-clock-on                          \   ( not when system clock is pll )
    overdrive-enable
    begin overdrive-ready? until
    overdrive-switch-on
@@ -314,7 +330,7 @@ $04 PWR_BASE + constant PWR_CSR1         \ PWR power control/status register
 : voltage-scale-mode-1  ( -- )           \ activate voltage scale mode 1
    #3 $03 #14 lshift PWR_CR1 bits! ;
 
-\ ***** usart constants & words *********
+\ ********** usart constants & words *******************************************
 $40011000               constant USART1_BASE
 $0C                     constant USART_BRR
 USART_BRR USART1_BASE + constant USART1_BRR
@@ -322,22 +338,22 @@ USART_BRR USART1_BASE + constant USART1_BRR
    $3 RCC_DKCFGR2 bits! ;
 : usart1-baud-update!  ( baud -- )       \ update usart baudrate
    #2 usart1-clk-sel!                    \ use hsi clock
-   HSI_CLK_HZ over 2/ + swap /           \ calculate baudrate for 16 times oversampling
-   USART1_BRR ! ;
+   HSI_CLK_HZ over 2/ + swap /           \ calculate baudrate for 16 times
+   USART1_BRR ! ;                        \    oversampling
 
 \ ***** clock management ****************
 : sys-clk-200-mhz  ( -- )                \ supports also sdram clock <= 200 MHz
    hsi-wait-stable
-   clk-source-hsi                        \ switch to hsi clock for reconfiguration
+   clk-source-hsi                        \ switch to hsi clock
    hse-off hse-byp-on hse-on             \ hse bypass mode
    pll-off pll-clk-src-hse               \ pll use hse as clock source
    HSE_CLK_HZ #1000000 / PLL-M!          \ PLL input clock 1 Mhz
    #400 pll-n! PLLP/2 PLL-P!             \ VCO clock 400 MHz
-   voltage-scale-mode-1                  \ for flash clock > 168 MHz voltage scale 1(0b011)
-   overdrive-on                          \ for flash clock > 180 over drive mode
+   voltage-scale-mode-1                  \ for flash clock > 168 MHz voltage
+   overdrive-on                          \ for flash clock > 180 MHz over drive
    hse-wait-stable                       \ hse must be stable before use
    pll-on
-   flash-prefetch-ena                    \ activate prefetch to reduce latency impact
+   flash-prefetch-ena                    \ activate prefetch reduce latency
    #6 flash-ws!
    flash-art-clear                       \ prepare cache
    flash-art-ena                         \ turn on cache
@@ -354,7 +370,7 @@ USART_BRR USART1_BASE + constant USART1_BRR
    pllsai-wait-stable ;
 
    
-\ ********** i2c driver *****************
+\ ********** i2c driver ********************************************************
 $40005400 constant I2C1                  \ i2c1 port
 $40005800 constant I2C2                  \ i2c2 port
 $40005C00 constant I2C3                  \ i2c3 port
@@ -416,8 +432,8 @@ I2C3 constant i2c-port                   \ i2c base address
     i2c-port 1 bic! ;
 : i2c-clk-src-mask ( i2c-port -- m )     \ generate i2c port mask
     i2c-nr 2* #16 + 3 swap lshift 1-foldable ;
-: i2c-clk-src ( -- )                     \ set i2c clock source to APB(PCLK1) for this demo
-   i2c-port i2c-clk-src-mask RCC_DKCFGR2 bic! ;   
+: i2c-clk-src ( -- )                     \ set i2c clock source to APB(PCLK1)
+   i2c-port i2c-clk-src-mask RCC_DKCFGR2 bic! ;   \  for this demo
 : i2c-timing-cfg ( -- )                  \ configure i2c timing
    \ i2c-clk PCLK1=50MHZ 100khz PRESC=1, SCLDEL=8, SDADEL=0, SCLH=97, SCLL=144
    $10806190 i2c-port $10 + ! ;          \ I2C_TIMINGR
@@ -425,19 +441,19 @@ I2C3 constant i2c-port                   \ i2c base address
    i2c-port $18 + 0-foldable ;
 : i2c-isr@ ( -- a )                      \ get i2c status 
    i2c-port $18 + @ ;
-: i2c-isr-bit@ ( m -- f )                \
+: i2c-isr-bit@ ( m -- f )                \ get bit flag from i2c_isr for mask
    i2c-isr bit@ ;
 : i2c-sm-adr? ( -- i2ca )                \ i2c received address in slave mode
    i2c-isr @ #17 rshift $7f and ;
 : i2c-sm-dir? ( -- f )                   \ direction in slave mode
    $10000 i2c-isr-bit@ ;
-: i2c-busy? ( -- f )
+: i2c-busy? ( -- f )                     \ get busy flag from i2c_isr
    $8000 i2c-isr-bit@ ;
-: i2c-tcr? ( -- f )
+: i2c-tcr? ( -- f )                      \ get transfer complete reload flag
    $8000 i2c-isr-bit@ ;
 : i2c-set-irq-handler ( -- )             \ install irq handler
    i2c-old-irq-handler
-   0= if
+   0= if                                 \ backup original handler
      irq-collection @ i2c-handler irq-collection !
      i2c-old-irq-handler !
    then ;
