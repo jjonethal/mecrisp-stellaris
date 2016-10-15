@@ -42,17 +42,17 @@
 
   M3: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0552a/CHDCBHEE.html
   M4: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/CHDCBHEE.html
-  
+
   Address     Name   Type  Required privilege  Reset value  Description
   0xE000E008  ACTLR  RW    Privileged          0x00000000   Auxiliary Control Register
 
   Auxiliary Control Register
 
-  [0]    DISMCYCINT     Disables interruption of multi-cycle instructions. 
+  [0]    DISMCYCINT     Disables interruption of multi-cycle instructions.
          This increases the interrupt latency of the processor because load/store and
-         multiply/divide operations complete before interrupt stacking occurs. 
+         multiply/divide operations complete before interrupt stacking occurs.
 
-  M7: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0646b/CHDCBHEE.html 
+  M7: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0646b/CHDCBHEE.html
   Does not have this bit.
 
 
@@ -65,3 +65,5 @@
 
   It is still unclear why the terminal fails, as the standard input is used
   exactly the same way in both cases and should be properly buffered by the underlying OS kernel.
+
+  Cache flushing issues due to independent caches for instructions and data may cause the problem.

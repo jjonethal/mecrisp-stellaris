@@ -521,11 +521,11 @@
   - Scripts for invoking Mecrisp-Stellaris for ARM Linux with qemu-arm-static
   - Contribution by Bernd Paysan:
       New target: STM32F207ZG on Nucleo-F207ZG
-      
+
 14.05.2016, Matthias Koch, Mecrisp-Stellaris 2.2.7
 
   Linux target got an improving touch:
-  
+
     - Added cacheflush to solve difficulties with data and instruction cache flushes
     - Welcome message is omitted when command line arguments are specified
     - A check for Ctrl+D and for EOF in serial-key quits Mecrisp-Stellaris for Linux
@@ -544,5 +544,16 @@
 23.08.2016, Matthias Koch, Mecrisp-Stellaris 2.2.9
 
   - Contribution by Ralph Sahli:
-    New target: STM32F303K8 with many examples. 
+    New target: STM32F303K8 with many examples.
                 "Neopixel" driver for WS2812B LEDs and more.
+
+25.09.2016, Matthias Koch, Mecrisp-Stellaris 2.3.0
+
+  - With a lot of heavy testing out in the wild, now it is time to announce
+    the register allocator "RA" as stable and ready for general usage.
+
+  - "Dotstar" driver for APA102 LED strings connected to a LM4F120
+  - Profiler written in Forth to count usage of definitions
+  - Forth code for conditional compilation
+  - Contribution by Ilya Abdrahimov:
+      Improved 1-Wire drivers and many new examples for STM32F103 and STM32F411
