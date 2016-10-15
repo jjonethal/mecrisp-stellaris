@@ -91,7 +91,7 @@
    note-e play
    500 pause
    note-f play
-   500 pause ;   
+   500 pause ;
 : demo ( -- )
    clock-init sdram-init qspi-init sound-init
    display-init touch-init sd-card-init demo-start ;
