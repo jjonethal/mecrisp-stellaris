@@ -81,7 +81,17 @@
      i 4 + @                             \ gain
      f16* + 8 +loop
    dup 8 + @ * ;                         \ apply master gain
-      
+
+: sound-player ( a -- )                  \ play sound at address a
+   drop
+   note-c play
+   500 pause
+   note-d play
+   500 pause
+   note-e play
+   500 pause
+   note-f play
+   500 pause ;   
 : demo ( -- )
    clock-init sdram-init qspi-init sound-init
    display-init touch-init sd-card-init demo-start ;
