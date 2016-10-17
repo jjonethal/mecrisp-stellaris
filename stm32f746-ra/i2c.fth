@@ -15,6 +15,8 @@
 
 \ i2c driver
 \ file i2c.fth
+\ ********** history ********************
+\ 2016oct17jjo continue init, addresses
 \ 2016sep5jjo initial version, add docs
 \
 \ C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf
