@@ -41,6 +41,22 @@ i2c3_base     constant i2c_base
 i2c_base      constant i2c_cr1 
 i2c_base 4 or constant i2c_cr2 
 
+\ ********** i2c timings ****************
+   1   #28 lshift                        \ PRESC
+   4   #20 lshift or                     \ SCLDEL
+   $2  #16 lshift or                     \ SDADEL
+   $F   #8 lshift or                     \ SCLH
+   $13            or                     \ SCLL
+   constant i2c-8MHz-100K
+
+   3   #28 lshift                        \ PRESC
+   4   #20 lshift or                     \ SCLDEL
+   $2  #16 lshift or                     \ SDADEL
+   $F   #8 lshift or                     \ SCLH
+   $13            or                     \ SCLL
+   constant i2c-16MHz-100K
+
+
 \ ********** i2c global states **********
 
 : i2c_cr1! ( n -- )                      \ store value to i2c_cr1 
@@ -57,6 +73,11 @@ i2c_base 4 or constant i2c_cr2
 : i2c-int-dis ( p -- ) ;
 : i2c-int-handler ( -- ) ;
 
+   
+
+: i2c-timing ( -- )                      \ 8MHz i2c clock 100 khz
+   i2c-8MHz-100K I2C_TIMINGR ! ;
+
 : bis/bic! ( m a f -- )                  \ 
    if bis! else bic ! then ;
 
@@ -70,10 +91,10 @@ i2c_base 4 or constant i2c_cr2
    1 #13 lshift i2c_cr2 bis! ;
 : i2c-tx-adr ( a -- )                    \ set i2c target address
    $3ff I2C_CR2 bits! ;
-: i2c-start-7-write (  numbytes slaveadr -- ) \ start tx 7 bit adr
+: i2c-write ( numbytes slaveadr -- )     \ start tx 7 bit adr
    $FF and                               \ num bytes and slave address
    swap $FF and #16 lshift or            \
    1 #25 lshift or                       \ enable auto end
    i2c_cr2 !
    i2c-start ;                           \ start
-: i2c-receive-7
+: i2c-receive ( numbytes slaveadr -- )   \ start i2c receiving
