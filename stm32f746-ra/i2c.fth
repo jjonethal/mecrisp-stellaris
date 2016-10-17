@@ -30,10 +30,24 @@
 \ PH7 - LCD_SCL / AUDIO_SCL / I2C3_SCL
 \ PH8 - LCD_SDA / AUDIO_SDA / I2C3_SDA
 
+$40005400 constant i2c1_base
+$40005800 constant i2c2_base
+$40005C00 constant i2c3_base
+$40006000 constant i2c4_base
+
+i2c3_base     constant i2c_base 
+i2c_base      constant i2c_cr1 
+i2c_base 4 or constant i2c_cr2 
+
 \ ********** i2c global states **********
 
+: i2c_cr1! ( n -- )                      \ store value to i2c_cr1 
+   i2c_cr1 ! ;
+
 \ ********** i2c interface functions ****
-: i2c-init ( p -- ) ;
+: i2c-init ( p -- )                     \ initialize i2c interface
+   0 i2c_cr1! wait-3-clk                \ reset i2c instance wait 3 APB clk
+   1 i2c_cr1! ;                         \ enable i2c
 : i2c-stop ( p -- ) ;
 : i2c-rcc-on ( p -- ) ;
 : i2c-gpio-ena ( p -- ) ;
@@ -54,9 +68,10 @@
    1 #13 lshift i2c_cr2 bis! ;
 : i2c-tx-adr ( a -- )                    \ set i2c target address
    $3ff I2C_CR2 bits! ;
-: i2c-start-7-write (  numbytes slaveadr -- ) ;
-   $7F and                               \ num bytes and slave address
-   swap $FF and #16 lshift or
+: i2c-start-7-write (  numbytes slaveadr -- ) \ start tx 7 bit adr
+   $FF and                               \ num bytes and slave address
+   swap $FF and #16 lshift or            \
+   1 #25 lshift or                       \ enable auto end
    i2c_cr2 !
-   i2c-start ;         \ start
-   
+   i2c-start ;                           \ start
+: i2c-receive-7
