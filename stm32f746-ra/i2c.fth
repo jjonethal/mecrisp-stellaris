@@ -37,9 +37,16 @@ $40005800 constant i2c2_base
 $40005C00 constant i2c3_base
 $40006000 constant i2c4_base
 
+3 16 lshift i2c1-clk-sel
+3 18 lshift i2c2-clk-sel
+3 20 lshift i2c3-clk-sel
+3 22 lshift i2c4-clk-sel
+
+
 i2c3_base     constant i2c_base 
 i2c_base      constant i2c_cr1 
 i2c_base 4 or constant i2c_cr2 
+i2c3-clk-sel  constant i2c-clk-sel
 
 \ ********** i2c timings ****************
    1   #28 lshift                        \ PRESC
@@ -76,7 +83,8 @@ i2c_base 4 or constant i2c_cr2
    
 
 : i2c-timing ( -- )                      \ 8MHz i2c clock 100 khz
-   i2c-8MHz-100K I2C_TIMINGR ! ;
+   2 i2c-clk-sel RCC_DCKCFGR2 bits!      \ set hsi cock source
+   i2c-16MHz-100K I2C_TIMINGR ! ;
 
 : bis/bic! ( m a f -- )                  \ 
    if bis! else bic ! then ;
