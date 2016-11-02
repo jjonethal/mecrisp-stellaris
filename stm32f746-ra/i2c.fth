@@ -32,21 +32,23 @@
 \ PH7 - LCD_SCL / AUDIO_SCL / I2C3_SCL
 \ PH8 - LCD_SDA / AUDIO_SDA / I2C3_SDA
 
-$40005400 constant i2c1_base
-$40005800 constant i2c2_base
-$40005C00 constant i2c3_base
-$40006000 constant i2c4_base
+\ ********** i2c address calc ***********
+: i2c-n>a ( n -- a )                     \ calculate i2c base addres from number
+   #7 and $14 + #10 lshift               \ nr 1..4
+   $40000000 or 1-foldable ;
+: i2c-a>n ( a -- n )                     \ i2c-addr -> i2c nr
+   #10 rshift #5 - 7 and 1-foldable ;
 
-3 16 lshift i2c1-clk-sel
-3 18 lshift i2c2-clk-sel
-3 20 lshift i2c3-clk-sel
-3 22 lshift i2c4-clk-sel
+\ ********** i2c DCKCFGR2 ***************
+decimal
+: i2c-clk-m ( n -- m )                   \ calculate i2c clock mask for 
+   2 * #14 + 3 swap lshift 1-foldable ;  \ DCKCFGR2 register
 
-
-i2c3_base     constant i2c_base 
+\ ********** i2c project settings *******
+3 i2c-n>a     constant i2c_base          \ i2c base address of driver
 i2c_base      constant i2c_cr1 
 i2c_base 4 or constant i2c_cr2 
-i2c3-clk-sel  constant i2c-clk-sel
+3 i2c-clk-m   constant i2c-clk-sel
 
 \ ********** i2c timings ****************
    1   #28 lshift                        \ PRESC
@@ -54,27 +56,29 @@ i2c3-clk-sel  constant i2c-clk-sel
    $2  #16 lshift or                     \ SDADEL
    $F   #8 lshift or                     \ SCLH
    $13            or                     \ SCLL
-   constant i2c-8MHz-100K
+   constant i2c-8MHz-100K                \ input clock 8 MHz - i2c clock 100 kHz
 
-   3   #28 lshift                        \ PRESC
-   4   #20 lshift or                     \ SCLDEL
+   $3  #28 lshift                        \ PRESC
+   $4  #20 lshift or                     \ SCLDEL
    $2  #16 lshift or                     \ SDADEL
    $F   #8 lshift or                     \ SCLH
    $13            or                     \ SCLL
-   constant i2c-16MHz-100K
-
+   constant i2c-16MHz-100K               \ input clock 16 MHz - i2c clock 100 kHz
 
 \ ********** i2c global states **********
-
 : i2c_cr1! ( n -- )                      \ store value to i2c_cr1 
    i2c_cr1 ! ;
 
 \ ********** i2c interface functions ****
+: i2c-rcc-on ( n -- )                    \ turn on i2c clock
+   20 + 1 swap lshift
+   RCC_APB1ENR bis ! ;
+: i2c-in-clk ( n n -- )                 \ set timing clock source
+    i2c-clk-m DCKCFGR2 bits! ;   
 : i2c-init ( p -- )                     \ initialize i2c interface
    0 i2c_cr1! wait-3-clk                \ reset i2c instance wait 3 APB clk
    1 i2c_cr1! ;                         \ enable i2c
 : i2c-stop ( p -- ) ;
-: i2c-rcc-on ( p -- ) ;
 : i2c-gpio-ena ( p -- ) ;
 : i2c-int-ena ( p -- ) ;
 : i2c-int-dis ( p -- ) ;
