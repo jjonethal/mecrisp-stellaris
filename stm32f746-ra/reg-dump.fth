@@ -21,27 +21,53 @@
 \ 
 \
 
-: reg-dump ( v a n -- )  ;               \ dump a value with respect to cfa of
-                                         \ constant definition 
-                                         \ and number of field definitions
 : >token ( a -- a )                      \ retrieve token name address for cfa
    1- dup c@ 0= +                        \ skip the padding zero
    #256 1 do 1- dup c@ i = if leave then loop ; \ backtrack to start of counted string
 : cfa>link ( a -- a )                    \ find link address from cfa
    >token 6 - ;
-
+: >cfa ( a -- a )                        \ calculate code start link address
+   6 + dup c@ + 2 + 3 not and ;          \ 4 byte link 2 byte flags + strlen(+1) align 16bit
+: link>token ( a -- a )
+   6 + ;
 : back-search-complete? ( ap ac -- f f ) \ f match f search finished
    dictionarynext if = -1 else = dup then ;
 
    
-: dictionaryback ( a -- a f )            \ search dictionary back
+: dictionaryback ( a -- a f )            \ search dictionary back 
    dictionarystart
    begin 2dup back-search-complete?
-    if rot drop 0<> -1                   \ finished search fix flag leave loop
+    if rot drop 0= -1                    \ finished search fix flag leave loop
     else drop dictionarynext             \ back link not found yet get next link
     then
    until ;
 
-: >cfa ( a -- a )                       \ calculate code start link address
-   6 + dup c@ + 2 + 3 not and ;         \ 4 byte link 2 byte flags + strlen(+1) align 16bit
+: last-entry ( -- a )                    \ scan to last entry of dictionary
+   dictionarystart begin dictionarynext until ;
+
+: words-reverse ( -- )                   \ dump words reverse
+   last-entry begin dup 6 + ctype space dictionaryback until drop ;
+
+: .token ( a -- )                        \ print token of link address
+   link>token ctype ;
+
+: get-bits ( v m -- v )                  \ retrieve bits from value with mask
+   tuck and swap cnt0 rshift 2-foldable ;   
+
+: dump-field ( v l -- )                  \ dump field by constant dict entry
+   dup .token ."  " >cfa execute get-bits u.8 ; 
+
+: next-link ( l -- l f )                 \ get next link, in RAM search backwards
+    dup $20000000 >=
+    if  dictionaryback
+    else dictionarynext
+    then ;
+
+: dump-fields ( v l cnt -- )             \ dump value using number of consecutive
+   0 do 2dup dump-field next-link        \ constant words dictionary entries
+   if leave then loop ;
+
+: dump-reg ( v a n -- )  ;               \ dump a value with respect to cfa of
+                                         \ constant definition 
+                                         \ and number of field definitions
 
