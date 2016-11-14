@@ -67,7 +67,14 @@
    0 do 2dup dump-field next-link        \ constant words dictionary entries
    if leave then loop ;
 
-: dump-reg ( v a n -- )  ;               \ dump a value with respect to cfa of
+: dump-reg-val ( v a n -- )  ;           \ dump a value with respect to cfa of
                                          \ constant definition 
                                          \ and number of field definitions
-
+: dump-reg ( n cfa -- )                  \ dump register by cfa and field count
+   dup execute @ swap                    \ retrieve register value
+   cfa>link                              \ get dictionary entry
+   dup .token cr                         \ print out register name
+   next-link not                         \ get first bitfield definition
+   if rot dump-fields
+   else 2drop drop
+   then ;
