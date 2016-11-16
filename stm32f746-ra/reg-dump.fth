@@ -53,10 +53,12 @@
 
 : get-bits ( v m -- v )                  \ retrieve bits from value with mask
    tuck and swap cnt0 rshift 2-foldable ;   
-
+: token# ( l -- n )                      \ return length of token
+   link>token c@ ;
+: .token-fill ( l n -- )                 \ print token with fixed length fill BL
+   over .token swap token# - spaces ; 
 : dump-field ( v l -- )                  \ dump field by constant dict entry
-   dup .token ."  " >cfa execute get-bits u.8 ; 
-
+   dup #32 .token-fill SPACE >cfa execute get-bits u.8 ; 
 : next-link ( l -- l f )                 \ get next link, in RAM search backwards
     dup $20000000 >=
     if  dictionaryback
@@ -64,17 +66,20 @@
     then ;
 
 : dump-fields ( v l cnt -- )             \ dump value using number of consecutive
-   0 do 2dup dump-field next-link        \ constant words dictionary entries
-   if leave then loop ;
+   0 do 2dup space dump-field cr         
+   next-link                             \ constant words dictionary entries
+   if leave then loop 2drop ;            \ exit and clean
 
-: dump-reg-val ( v a n -- )  ;           \ dump a value with respect to cfa of
-                                         \ constant definition 
-                                         \ and number of field definitions
-: dump-reg ( n cfa -- )                  \ dump register by cfa and field count
-   dup execute @ swap                    \ retrieve register value
-   cfa>link                              \ get dictionary entry
-   dup .token cr                         \ print out register name
+   
+: dump-reg ( cfa n -- )                  \ dump register by cfa and field count
+   swap dup execute @ swap               \ retrieve register value
+   cfa>link cr                           \ get dictionary entry
+   2dup #34 .token-fill u.8 cr           \ print out register name
    next-link not                         \ get first bitfield definition
-   if rot dump-fields
-   else 2drop drop
+   if rot dump-fields                    \ if there are more fields dump them
+   else 2drop drop                       \ no more fields found clean up
    then ;
+
+
+   
+   
