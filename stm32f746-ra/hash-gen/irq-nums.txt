@@ -7,3 +7,9 @@
 111; 6; 1101111
 112; 7; 1110000
 
+: testHash ( f n -- r )
+  over * ;
+
+  
+: search -1 0 do i testHash
+  1 number numbits
