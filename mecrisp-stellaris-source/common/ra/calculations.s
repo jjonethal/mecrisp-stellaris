@@ -170,7 +170,7 @@ minus_allocator:
     @ Vergiss die bisherige Registerzuordnung
 
     bl eliminiere_tos
-    
+
     @ Den Zielregister des Gesamtergebnis bestimmen, ganz komfortabel, und möglichst in r6:
     bl tos_registerwechsel
 
@@ -317,16 +317,19 @@ allocator_not:
 
     push {lr} @ Eine Konstante wären weggefaltet worden, also muss TOS jetzt ein Register sein.
     bl expect_one_element
-    pushdaconstw 0x2800 @ cmp r0, #0
+
+    pushdaconst 0  @ lsls r0, r0, #0 @ Bereite einen movs-Opcode vor, der garantiert in einen freien Register landet und die Funktion eines CMP übernimmt.
     ldr r1, [r0, #offset_state_tos]
-    lsls r1, #8
+    lsls r1, #3
     orrs tos, r1
+    bl tos_registerwechsel
+    orrs tos, r3
     bl hkomma
 
     pushdaconstw 0xD500 @ bpl
     bl hkomma
 
-    bl allocator_negate
+    bl allocator_negate @ Negate wird keinen Registerwechsel mehr machen, weil wir hier schon einen freien Zielregister vorbereitet haben.
     pop {pc}
 
 @ -----------------------------------------------------------------------------
@@ -488,7 +491,7 @@ divmod_plus_plus:
 
     ldr r1, [r0, #offset_state_nos]
     orrs tos, tos, r1, lsl #16 @ Quellregister 2 hinzufügen
-    
+
     bl eliminiere_tos
 
     bl tos_registerwechsel

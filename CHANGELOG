@@ -557,3 +557,10 @@
   - Forth code for conditional compilation
   - Contribution by Ilya Abdrahimov:
       Improved 1-Wire drivers and many new examples for STM32F103 and STM32F411
+
+02.12.2016, Matthias Koch, Mecrisp-Stellaris 2.3.1
+
+  - A bug was found in the register allocator: Fixed abs for all RA targets.
+  - Contribution by Terry Porter:
+      svd2forth-v2 - A fresh register file generator from SVD to Forth
+
