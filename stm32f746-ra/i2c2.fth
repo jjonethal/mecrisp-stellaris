@@ -28,15 +28,54 @@
 \ require rcc.fth
 
 
-: i2c-init ( -- )   i2c-init-gpio i2c-set-timing i2c-idle i2c-state-set ;
-:   i2c-s-idle  ;
-:   i2c-s-tx-start ;
-:   i2c-s-tx-bytes ;
+: ftab: ( -- )  ( name )                 \ create a function table
+   <builds does> swap 2 lshift + @ execute ;
+: enum ( n -- n + 1 ) ( "name" )         \ enumeration constant
+   dup constant 1+ ;
+: enum; ( n -- ) drop ;                  \ finish enumeration
+
+0 enum i2c-s-init#
+enum;
+
+: i2c-next-byte  ( -- b )                \ next byte to transfer or -1 on end
+    i2c-byte-count @ i2c-len @ <
+    if i2c-byte-count @ i2c-buffer @ +
+      c@ i2c-byte-count 1 +!
+    else -1
+    then ;
+   
+: i2c-next-byte? ( -- f )                \ bytes to xfer, decr num-bytes   
+   i2c-num-bytes @ dup 0<> if dup 1- i2c-num-bytes ! then ;
+: i2c-tx-next-byte ( -- )
+   i2c-next-byte? if i2c-next-byte i2c_txdr ! i2c-s-tx-bytes# ->
+                  else i2c-stop  i2c-s-idle#  ->  then ; 
+
+
+: i2c-s-init ( -- )   i2c-init-gpio i2c-set-timing -> i2c-s-idle ;
+:   i2c-s-idle i2c-req-rx? if i2c-rx-start else i2c-tx-start then ;
+:   i2c-s-tx-started
+      i2c_isr case
+        dup i2c_isr_nackf and ?of -> i2c-s-idle     endof
+        dup i2c_isr_txis  and ?of -> i2c-s-tx-bytes endof
+      endcase ;
+:   i2c-s-tx-bytes
+      i2c_isr case
+        dup ;
 :   i2c-s-rx-start ;
 :   i2c-s-rx-send-start ;
 :   i2c-s-tx-bytes ;
 
 
+
+
+: i2c-start-write ( -- )
+   i2c-set-adr-mode i2c-set-slave-addr i2c-set-rw-mode
+   i2c-bytes-to-xfer i2c-start ;
+: i2c-s-byte-sent  ( -- ) \ a byte was sent
+   i2c-more-bytes? if i2c-send-byte else i2c-stop then ;
+: i2c-s-stopped ( -- )
+: i2c-s-started i2c-send-byte i2c-more-bytes? if -> i2c-byte-sent ;
+: i2c-s-idle 
 
 : codec-send-register ( d r -- ) 
     codec-i2c-adr i2c-start
@@ -56,3 +95,23 @@
    i2c-send-reg
    i2c-send-data
    ;
+0 variable i2c-state
+: i2c-state-sending-data
+   i2c-more-bytes?
+   if i2c-send-byte
+   else i2c-send-stop
+   then ;
+: i2c-write-sequential
+   i2c-init
+   i2c-set-dest-adr
+   i2c-set-bit-mode
+   i2c-set-num-bytes
+   i2c-start
+   ' i2c-state-sending-data i2c-state ! ;
+   
+   i2c-bytes-to-send#
+   0 do 
+      i2c-send-byte
+      i2c-wait-sent
+   loop
+   i2c-stop ;
