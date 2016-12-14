@@ -12,9 +12,17 @@
 
 \ You should have received a copy of the GNU General Public License
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-\ file i2c2-test.fth
-\ ********** history ********************
+
+\ file        : i2c2-test.fth
+\ author      : jean jonethal
+\ description : provides some general useful utilities
+
+\ ********** history *********************
+\ 2016dec14jjo rework i2c state machine
 \ 2016nov24jjo initial version
+
+\        1         2         3         4         5         6         7     
+\ 345678901234567890123456789012345678901234567890123456789012345678901234567890
 
 \ C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf
 \ http://www.st.com/resource/en/reference_manual/dm00124865.pdf
@@ -23,44 +31,55 @@
 \ Wolfson audio codec
 \ C:\Users\jeanjo\Downloads\doc\circuits\WM8994_v4.4.pdf
 \ http://www.cirrus.com/en/pubs/proDatasheet/WM8994_v4.4.pdf
+
 \ require utils.fth
 \ require gpio.fth
 \ require rcc.fth
 
 
-: ftab: ( -- )  ( name )                 \ create a function table
-   <builds does> swap 2 lshift + @ execute ;
-: enum ( n -- n + 1 ) ( "name" )         \ enumeration constant
-   dup constant 1+ ;
-: enum; ( n -- ) drop ;                  \ finish enumeration
+\ ********** i2c working variables *********************************************
+0 variable i2c-buffer                     \ base address of buffer
+0 variable i2c-buffer-next                \ next byte in buffer to transmit
+0 variable i2c-msg-len                    \ length of i2c message to transfer
+0 variable i2c-addr                       \ i2c-address of target
 
+\ ********** i2c state enumerations ********************************************
 0 enum i2c-s-init#
+  enum i2c-s-idle#
+  enum i2c-s-tx-bytes#
+  enum i2c-s-tx-started#
 enum;
 
-: i2c-next-byte  ( -- b )                \ next byte to transfer or -1 on end
-    i2c-byte-count @ i2c-len @ <
-    if i2c-byte-count @ i2c-buffer @ +
-      c@ i2c-byte-count 1 +!
+: i2c-next-byte  ( -- b )                 \ next byte to transfer or -1 on end
+    i2c-buffer-next @ i2c-msg-len @ <
+    if i2c-buffer-next @ i2c-buffer @ +
+      c@ i2c-buffer-next 1 +!
     else -1
     then ;
-   
-: i2c-next-byte? ( -- f )                \ bytes to xfer, decr num-bytes   
-   i2c-num-bytes @ dup 0<> if dup 1- i2c-num-bytes ! then ;
-: i2c-tx-next-byte ( -- )
-   i2c-next-byte? if i2c-next-byte i2c_txdr ! i2c-s-tx-bytes# ->
-                  else i2c-stop  i2c-s-idle#  ->  then ; 
-
-
-: i2c-s-init ( -- )   i2c-init-gpio i2c-set-timing -> i2c-s-idle ;
-:   i2c-s-idle i2c-req-rx? if i2c-rx-start else i2c-tx-start then ;
-:   i2c-s-tx-started
+: i2c-next-byte? ( -- f )                 \ more bytes to xfer, 
+   i2c-buffer-next @ i2c-msg-len @ < ;
+: i2c-tx-next-byte ( -- )                 \ send the next byte
+   i2c-next-byte?
+     if i2c-next-byte i2c_txdr !
+     else i2c-stop  then ;
+\ ********** i2c state machine functions ***************************************
+: i2c-s-init ( -- )                       \ initial state
+   i2c-init-gpio i2c-set-timing i2c-s-idle# -> ;
+:   i2c-s-idle  ( -- )                    \ waiting for next request
+      i2c-req-rx? if i2c-rx-start else i2c-tx-start then ;
+:   i2c-s-tx-started ( -- )               \ slave address was sent now send data
       i2c_isr case
-        dup i2c_isr_nackf and ?of -> i2c-s-idle     endof
-        dup i2c_isr_txis  and ?of -> i2c-s-tx-bytes endof
+        dup i2c_isr_nackf and ?of i2c-s-idle# ->     endof
+        dup i2c_isr_txis  and ?of 
+          i2c-next-byte? if i2c-tx-next-byte i2c-s-tx-bytes# ->
+          endof
       endcase ;
-:   i2c-s-tx-bytes
+:   i2c-s-tx-bytes ( -- )
       i2c_isr case
-        dup ;
+        dup i2c_isr_nackf and ?of i2c-s-idle# ->     endof
+        dup i2c_isr_txis  and ?of i2c-s-tx-bytes# -> endof
+      endcase ;
+\     i2c-tx-next-byte ;
 :   i2c-s-rx-start ;
 :   i2c-s-rx-send-start ;
 :   i2c-s-tx-bytes ;
