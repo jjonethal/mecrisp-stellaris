@@ -42,13 +42,15 @@
 0 variable i2c-buffer-next                \ next byte in buffer to transmit
 0 variable i2c-msg-len                    \ length of i2c message to transfer
 0 variable i2c-addr                       \ i2c-address of target
-
+0 variable i2c-state                      \ state of i2c-driver
 \ ********** i2c state enumerations ********************************************
 0 enum i2c-s-init#
   enum i2c-s-idle#
   enum i2c-s-tx-bytes#
   enum i2c-s-tx-started#
-enum;
+  enum i2c-s-rx-start#
+  enum i2c-s-rx-send-start#
+  constant i2c-states#                    \ number of i2c states
 
 : i2c-next-byte  ( -- b )                 \ next byte to transfer or -1 on end
     i2c-buffer-next @ i2c-msg-len @ <
@@ -56,7 +58,7 @@ enum;
       c@ i2c-buffer-next 1 +!
     else -1
     then ;
-: i2c-next-byte? ( -- f )                 \ more bytes to xfer, 
+: i2c-next-byte? ( -- f )                 \ more bytes to xfer? 
    i2c-buffer-next @ i2c-msg-len @ < ;
 : i2c-tx-next-byte ( -- )                 \ send the next byte
    i2c-next-byte?
@@ -84,8 +86,16 @@ enum;
 :   i2c-s-rx-send-start ;
 :   i2c-s-tx-bytes ;
 
+ftab: i2c-sm
+      ['] i2c-s-init
+      ['] i2c-s-idle
+      ['] i2c-s-tx-bytes
+      ['] i2c-s-tx-started
+      ['] i2c-s-rx-start
+      ['] i2c-s-rx-send-start
 
-
+: i2c-dispatch ( -- )
+   i2c-state @ dup i2c-states# < and i2c-sm ;
 
 : i2c-start-write ( -- )
    i2c-set-adr-mode i2c-set-slave-addr i2c-set-rw-mode
@@ -122,8 +132,8 @@ enum;
    then ;
 : i2c-write-sequential
    i2c-init
+   i2c-set-adr-7bit-mode
    i2c-set-dest-adr
-   i2c-set-bit-mode
    i2c-set-num-bytes
    i2c-start
    ' i2c-state-sending-data i2c-state ! ;
