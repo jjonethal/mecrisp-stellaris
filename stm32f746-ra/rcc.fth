@@ -17,22 +17,29 @@
 
 \ ***** rcc definitions *****************
 \ http://www.st.com/web/en/resource/technical/document/reference_manual/DM00124865.pdf#page=128&zoom=auto,67,755
-$40023800      constant RCC_BASE         \ RCC base address
-$00 RCC_BASE + constant RCC_CR           \ RCC clock control register
-$1 #18 lshift  constant RCC_CR_HSEBYP    \ HSE clock bypass
-$1 #17 lshift  constant RCC_CR_HSERDY    \ HSE clock ready flag
-$1 #16 lshift  constant RCC_CR_HSEON     \ HSE clock enable
-$1  #1 lshift  constant RCC_CR_HSIRDY    \ Internal high-speed clock ready flag
-$1             constant RCC_CR_HSION     \ Internal high-speed clock enable
-$04 RCC_BASE + constant RCC_PLLCFGR      \ RCC PLL configuration register
-$08 RCC_BASE + constant RCC_CFGR         \ RCC clock configuration register
-$20 RCC_BASE + constant RCC_APB1RSTR     \ RCC APB1 peripheral reset register
-$30 RCC_BASE + constant RCC_AHB1ENR      \ AHB1 peripheral clock register
-$40 RCC_BASE + constant RCC_APB1ENR      \ RCC APB1 peripheral clock enable register
-$44 RCC_BASE + constant RCC_APB2ENR      \ APB2 peripheral clock enable register
-$88 RCC_BASE + constant RCC_PLLSAICFGR   \ RCC SAI PLL configuration register
-$8C RCC_BASE + constant RCC_DKCFGR1      \ RCC dedicated clocks configuration register
-$90 RCC_BASE + constant RCC_DKCFGR2      \ RCC dedicated clocks configuration register
+$40023800      constant RCC_BASE          \ RCC base address
+$00 RCC_BASE + constant RCC_CR            \ RCC clock control register
+$1 #18 lshift  constant RCC_CR_HSEBYP     \ HSE clock bypass
+$1 #17 lshift  constant RCC_CR_HSERDY     \ HSE clock ready flag
+$1 #16 lshift  constant RCC_CR_HSEON      \ HSE clock enable
+$1  #1 lshift  constant RCC_CR_HSIRDY     \ Internal high-speed clock ready flag
+$1             constant RCC_CR_HSION      \ Internal high-speed clock enable
+$04 RCC_BASE + constant RCC_PLLCFGR       \ RCC PLL configuration register
+$08 RCC_BASE + constant RCC_CFGR          \ RCC clock configuration register
+$20 RCC_BASE + constant RCC_APB1RSTR      \ RCC APB1 peripheral reset register
+$30 RCC_BASE + constant RCC_AHB1ENR       \ AHB1 peripheral clock register
+$40 RCC_BASE + constant RCC_APB1ENR       \ RCC APB1 peripheral clk enable reg
+$44 RCC_BASE + constant RCC_APB2ENR       \ APB2 peripheral clk enable reg
+$88 RCC_BASE + constant RCC_PLLSAICFGR    \ RCC SAI PLL cfg reg
+$8C RCC_BASE + constant RCC_DKCFGR1       \ RCC dedicated clk cfg reg
+$90 RCC_BASE + constant RCC_DKCFGR2       \ RCC dedicated clk cfg reg
+1 #28 lshift   constant SDMMCSEL          \ SDMMC clk src sel
+1 #27 lshift   constant CK48MSEL          \ 48MHz clock source selection
+1 #26 lshift   constant CECSEL            \ HDMI-CEC clk src sel
+3 #24 lshift   constant LPTIM1SE          \ Low-power timer 1 clk src sel
+3 #22 lshift   constant I2C4SEL           \ I2C4 clock source selection
+3 #20 lshift   constant I2C3SEL           \ I2C3 clock source selection
+
 
 $0             constant PLLP/2
 $1             constant PLLP/4
