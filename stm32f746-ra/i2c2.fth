@@ -17,7 +17,7 @@
 \ author      : jean jonethal
 \ description : provides some general useful utilities
 
-\ ********** history *********************
+\ ********** history ***********************************************************
 \ 2016dec14jjo rework i2c state machine
 \ 2016nov24jjo initial version
 
@@ -36,13 +36,13 @@
 \ require gpio.fth
 \ require rcc.fth
 
-
 \ ********** i2c working variables *********************************************
 0 variable i2c-buffer                     \ base address of buffer
 0 variable i2c-buffer-next                \ next byte in buffer to transmit
 0 variable i2c-msg-len                    \ length of i2c message to transfer
 0 variable i2c-addr                       \ i2c-address of target
 0 variable i2c-state                      \ state of i2c-driver
+
 \ ********** i2c state enumerations ********************************************
 0 enum i2c-s-init#
   enum i2c-s-idle#
@@ -64,6 +64,7 @@
    i2c-next-byte?
      if i2c-next-byte i2c_txdr !
      else i2c-stop  then ;
+
 \ ********** i2c state machine functions ***************************************
 : i2c-s-init ( -- )                       \ initial state
    i2c-init-gpio i2c-set-timing i2c-s-idle# -> ;
