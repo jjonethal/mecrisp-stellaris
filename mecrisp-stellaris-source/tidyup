@@ -72,6 +72,10 @@ cd msp432p401r
 make clean
 cd ..
 
+cd msp432p401r-ra
+make clean
+cd ..
+
 cd lm4f120
 make clean
 cd ..
@@ -116,6 +120,10 @@ cd stm32l152rb
 make clean
 cd ..
 
+cd stm32l432-ra
+make clean
+cd ..
+
 cd stm32f100
 make clean
 cd ..
@@ -149,6 +157,10 @@ make clean
 cd ..
 
 cd stm32f303k8-ra
+make clean
+cd ..
+
+cd stm32f303re-ra
 make clean
 cd ..
 

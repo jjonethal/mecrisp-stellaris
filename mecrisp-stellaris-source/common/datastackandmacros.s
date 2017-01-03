@@ -302,6 +302,25 @@ psp .req r7
       .equ Code_\@, .        @ Labels for a more readable assembler listing only
 .endm
 
+@ -----------------------------------------------------------------------------
+@ Automatic erase of flash dictionary after initial boot
+@ -----------------------------------------------------------------------------
+
+.macro autoerase
+  .p2align 2        @ Align on 4-even before filling up the core space
+
+  .org FlashDictionaryAnfang, erasedword @ Synthesise a definition at the beginning of the user flash dictionary
+                                         @ which allows catching the dictionary pointers in every case
+                                         @ and erases the whole dictionary space - including itself - on the first boot.
+
+ .word  erasedword   @ Empty Link denoting end of dictionary
+ .hword Flag_visible @ Flags normal
+ .byte  4            @ Length
+ .ascii "init"       @ Name
+ .p2align 1          @ Realign
+
+  bl eraseflash
+.endm
 
 @ -----------------------------------------------------------------------------
 @ Meldungen, hier definiert, damit das Zeilenende leicht geändert werden kann
@@ -328,7 +347,7 @@ psp .req r7
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris RA 2.3.2"
+7:      .ascii "Mecrisp-Stellaris RA 2.3.3"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
@@ -338,7 +357,7 @@ psp .req r7
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris 2.3.2"
+7:      .ascii "Mecrisp-Stellaris 2.3.3"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm

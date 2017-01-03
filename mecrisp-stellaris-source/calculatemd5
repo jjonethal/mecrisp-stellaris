@@ -74,6 +74,10 @@ cd msp432p401r
 md5sum *.bin
 cd ..
 
+cd msp432p401r-ra
+md5sum *.bin
+cd ..
+
 cd lm4f120
 md5sum *.bin
 cd ..
@@ -118,6 +122,10 @@ cd stm32l152rb
 md5sum *.bin
 cd ..
 
+cd stm32l432-ra
+md5sum *.bin
+cd ..
+
 cd stm32f100
 md5sum *.bin
 cd ..
@@ -151,6 +159,10 @@ md5sum *.bin
 cd ..
 
 cd stm32f303k8-ra
+md5sum *.bin
+cd ..
+
+cd stm32f303re-ra
 md5sum *.bin
 cd ..
 

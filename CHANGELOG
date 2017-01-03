@@ -570,3 +570,14 @@
   - Contribution by Ronny Suy:
       New experimental target: ATSAME70Q21 on Atmel SAME70 X-plained,
       just still without the possibility to compile into flash.
+
+01.01.2017, Matthias Koch, Mecrisp-Stellaris 2.3.3 - 33C3 release !
+
+  - Added forgetram to all targets
+  - Added call trace utility and quotations
+  - RA binary for MSP432P401R
+  - Added autoerase macro which clears flash dictionary on the first run
+  - All EFM32 Gecko and MSP432 targets are now equipped with the autoerase feature
+  - Contribution by Ralph Sahli:
+      New targets: STM32F303RE on STM Nucleo F303RE
+                   STM32L432KC on STM Nucleo L432KC

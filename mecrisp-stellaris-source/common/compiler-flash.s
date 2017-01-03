@@ -461,6 +461,24 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 @ A small check takes care of the case if you are already in the memory you request.
 
 @ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "forgetram"
+@ -----------------------------------------------------------------------------
+  push {lr}
+  bl compiletoram
+    @ Dictionarypointer ins RAM setzen
+    @ Set dictionary pointer into RAM first
+    ldr r0, =Dictionarypointer
+    ldr r1, =RamDictionaryAnfang
+    str r1, [r0]
+
+    @ Fadenende fürs RAM vorbereiten
+    @ Set latest for RAM
+    ldr r0, =Fadenende
+    ldr r1, =CoreDictionaryAnfang
+    str r1, [r0]
+  pop {pc}
+
+@ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoram?"
 @ -----------------------------------------------------------------------------
   pushdaconst 0

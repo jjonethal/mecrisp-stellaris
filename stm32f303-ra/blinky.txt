@@ -1,0 +1,21 @@
+ 
+\ Just to have a twinkling shine :-)
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\ 			PA5   Green LED
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_systick.txt
+
+: blinky ( -- )
+    MODE_OUTPUT 5 PORTA set-moder		\ PA5 -> output mode
+	init-Systimer
+	cr ." press any key to quit"
+	begin
+		5 bit PORTA _pODR xor!			\ toggle LED
+		1000 delay-ms
+		key? 
+	until
+;
