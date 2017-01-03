@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd atsame70-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../atsame70-ra && cp *.hex ../../atsame70-ra
+cd ..
+
 cd lpc1114fn28
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28 && cp *.hex ../../lpc1114fn28
 cd ..
@@ -98,6 +102,10 @@ cd ..
 
 cd stm32l053c8
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8
+cd ..
+
+cd stm32l053c8-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8-ra
 cd ..
 
 cd stm32l152
@@ -209,6 +217,10 @@ arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-st
 cd ..
 
 cd stm32l053c8
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l053c8.bin mecrisp-stellaris-stm32l053c8.hex
+cd ..
+
+cd stm32l053c8-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l053c8.bin mecrisp-stellaris-stm32l053c8.hex
 cd ..
 

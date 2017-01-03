@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd atsame70-ra
+make clean
+cd ..
+
 cd lpc1114fn28
 make clean
 cd ..
@@ -97,6 +101,10 @@ make clean
 cd ..
 
 cd stm32l053c8
+make clean
+cd ..
+
+cd stm32l053c8-ra
 make clean
 cd ..
 

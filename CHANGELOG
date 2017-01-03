@@ -564,3 +564,9 @@
   - Contribution by Terry Porter:
       svd2forth-v2 - A fresh register file generator from SVD to Forth
 
+15.12.2016, Matthias Koch, Mecrisp-Stellaris 2.3.2
+
+  - RA binary for STM32L053C8
+  - Contribution by Ronny Suy:
+      New experimental target: ATSAME70Q21 on Atmel SAME70 X-plained,
+      just still without the possibility to compile into flash.

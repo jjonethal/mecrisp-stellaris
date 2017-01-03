@@ -20,6 +20,7 @@ Peripheral libraries and examples for STM32F407 by Ralph Sahli
 Eight queens bechmark and PLL code by Igor OM1ZZ
 Nucleo STM32F207ZG port by Bernd Paysan
 Port and examples including a "Neopixel" WS2812B driver for STM32F303K8 by Ralph Sahli
+Atmel SAME70 port by Ronny Suy
 
 Hardware donations:
 

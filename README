@@ -55,6 +55,7 @@ Contributions:
   - STM Nucleo F303K8            with STM32F303K8
   - STM L476 Discovery           with STM32L476VG
   - STM F746 Discovery           with STM32F746NG
+  - Atmel SAME70 X-plained       with ATSAME70Q21
 
 http://mecrisp.sourceforge.net/
 
@@ -1949,13 +1950,13 @@ Interrupts:
         cflash!         ( char c-addr -- )  Writes byte to "flash"
         hflash!         ( u|n a-addr -- )   Writes halfword to "flash"
 
-System:       
+System:
 
         cacheflush      ( -- ) Flushes data and instruction cache
         syscall         ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 ) Perform Syscall
         arguments       ( -- a-addr ) Gives the initial stack pointer which
                                     contains command line arguments.
         bye             ( -- ) Leave Mecrisp-Stellaris
-        
-        
+
+
 Matthias Koch, Summer 2013, updated Spring 2016
