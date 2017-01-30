@@ -17,7 +17,7 @@
 
 \ ***** rcc definitions *****************
 \ http://www.st.com/web/en/resource/technical/document/reference_manual/DM00124865.pdf#page=128&zoom=auto,67,755
-$40023800      constant RCC_BASE          \ RCC base address
+$40021000      constant RCC_BASE          \ RCC base address
 $00 RCC_BASE + constant RCC_CR            \ RCC clock control register
 $1 #18 lshift  constant RCC_CR_HSEBYP     \ HSE clock bypass
 $1 #17 lshift  constant RCC_CR_HSERDY     \ HSE clock ready flag
