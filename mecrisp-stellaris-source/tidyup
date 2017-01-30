@@ -168,7 +168,15 @@ cd stm32f401
 make clean
 cd ..
 
+cd stm32f401cd-ra
+make clean
+cd ..
+
 cd stm32f407
+make clean
+cd ..
+
+cd stm32f407-ra
 make clean
 cd ..
 

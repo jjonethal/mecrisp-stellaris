@@ -170,7 +170,15 @@ cd stm32f401
 md5sum *.bin
 cd ..
 
+cd stm32f401cd-ra
+md5sum *.bin
+cd ..
+
 cd stm32f407
+md5sum *.bin
+cd ..
+
+cd stm32f407-ra
 md5sum *.bin
 cd ..
 

@@ -22,6 +22,7 @@ Nucleo STM32F207ZG port by Bernd Paysan
 Port and examples including a "Neopixel" WS2812B driver for STM32F303K8 by Ralph Sahli
 Atmel SAME70 port by Ronny Suy
 Ports and examples for STM32F303RE and STM32L432KC by Ralph Sahli
+Port and examples for STM32F401CD on Espruino Pico by Ralph Sahli
 
 Hardware donations:
 

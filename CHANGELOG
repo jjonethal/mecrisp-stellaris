@@ -581,3 +581,9 @@
   - Contribution by Ralph Sahli:
       New targets: STM32F303RE on STM Nucleo F303RE
                    STM32L432KC on STM Nucleo L432KC
+
+21.01.2017, Matthias Koch, Mecrisp-Stellaris 2.3.4
+
+  - RA binary for STM32F407
+  - Contribution by Ralph Sahli:
+      New target: STM32F401CD on Espruino Pico

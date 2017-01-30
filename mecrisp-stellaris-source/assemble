@@ -168,8 +168,16 @@ cd stm32f401
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401
 cd ..
 
+cd stm32f401cd-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
+cd ..
+
 cd stm32f407
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407
+cd ..
+
+cd stm32f407-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407-ra
 cd ..
 
 cd stm32f411
@@ -292,7 +300,15 @@ cd stm32f401
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
 cd ..
 
+cd stm32f401cd-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401cd.bin mecrisp-stellaris-stm32f401cd.hex
+cd ..
+
 cd stm32f407
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
+cd ..
+
+cd stm32f407-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
 cd ..
 
