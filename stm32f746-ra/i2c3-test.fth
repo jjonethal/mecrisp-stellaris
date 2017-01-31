@@ -39,11 +39,19 @@
 \ require gpio.fth
 \ require rcc.fth
 
-$90 RCC_BASE + constant RCC_DKCFGR2       \ RCC dedicated clk cfg reg
-1 #28 lshift constant SDMMCSEL
+$90 RCC_BASE + constant RCC_DCKCFGR2      \ RCC dedicated clk cfg reg
+1 #28 lshift constant SDMMCSEL            \ SDMMC clk src sel
 1 #27 lshift constant CK48MSEL            \ SDMMC clk src sel
 1 #26 lshift constant CECSEL              \ HDMI-CEC clk src sel
 3 #24 lshift constant LPTIM1SE            \ Low-power timer 1 clk src sel
+3 #22 lshift constant I2C4SEL             \ I2C4 clk src sel
+3 #20 lshift constant I2C3SEL             \ I2C3 clk src sel
+3 #18 lshift constant I2C2SEL             \ I2C2 clk src sel
+3 #16 lshift constant I2C1SEL             \ I2C1 clk src sel
+3 #14 lshift constant UART8SEL            \ UART8 clk src sel
+3 #12 lshift constant UART7SEL            \ UART7 clk src sel
+3 #10 lshift constant USART6SEL           \ USART6 clk src sel
+
 
 \ ********** i2c ports *********************************************************
 $40005400 constant I2C1                   \ i2c1 port
@@ -84,6 +92,8 @@ I2C3      constant i2c-base
    I2C1 - #10 rshift 1-foldable ;
 : i2c_cr1 ( base -- a )
    0 + 1-foldable ;
+: I2C-CR2 ( -- a )
+    i2c-base 4+ ;
 : i2c-rcc-on ( -- )                       \ turn on i2c clock
    i2c-base i2c# 20 + 1 swap lshift RCC_APB1ENR bis ! ;
 : i2c-clk-m ( n -- m )                    \ calculate i2c clk mask from i2c nr 
@@ -102,8 +112,14 @@ I2C3      constant i2c-base
    begin i2c-pe? until pause loop ;
 : i2c-reset  ( -- )                       \ reset i2c interface
     0 i2c-pe! i2c-wait-pe0 1 i2c-pe! i2c-wait-pe1 ;
-: i2c-start-read  ( a -- )                \ start read on target addr
-   
+: i2c-start-read  ( n a -- )              \ start read from target addr
+   I2C_CR2_SADD      i2c-base I2C_CR2 + bit!
+   I2C_CR2_NBYTES    i2c-base I2C_CR2 + bit!
+   1 I2C_CR2_RD_WRN  i2c-base I2C_CR2 + bit!
+   1 I2C_CR2_AUTOEND i2c-base I2C_CR2 + bit!
+   0 I2C_CR2_ADD10   i2c-base I2C_CR2 + bit!
+   1 I2C_CR2_START   i2c-base I2C_CR2 + bit!
+   ;
 : i2c-write ( d n ia -- )                 \ write data to i2c port
    i2c-start-write i2c-send ;
 : i2c-read ( n ia -- )                    \ read data from i2c port
