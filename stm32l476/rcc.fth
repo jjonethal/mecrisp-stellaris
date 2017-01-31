@@ -14,14 +14,20 @@
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 \ file rcc.fth
+\ require util.fth
 
-\ ***** rcc definitions *****************
-\ http://www.st.com/web/en/resource/technical/document/reference_manual/DM00124865.pdf#page=128&zoom=auto,67,755
+\ ***** rcc definitions ******************
 $40021000      constant RCC_BASE          \ RCC base address
 $00 RCC_BASE + constant RCC_CR            \ RCC clock control register
-$1 #18 lshift  constant RCC_CR_HSEBYP     \ HSE clock bypass
-$1 #17 lshift  constant RCC_CR_HSERDY     \ HSE clock ready flag
-$1 #16 lshift  constant RCC_CR_HSEON      \ HSE clock enable
+
+$1 #29 lshift  constant RCC_CR_PLLSAI2RDY \ SAI2 PLL clock ready flag
+$1 #28 lshift  constant RCC_CR_PLLSAI2ON  \ SAI2 PLL enable
+$1 #27 lshift  constant RCC_CR_PLLSAI1RDY \ SAI1 PLL clock ready flag
+
+
+
+\ ********** old stm32f746 for reference ***************************************
+
 $1  #1 lshift  constant RCC_CR_HSIRDY     \ Internal high-speed clock ready flag
 $1             constant RCC_CR_HSION      \ Internal high-speed clock enable
 $04 RCC_BASE + constant RCC_PLLCFGR       \ RCC PLL configuration register
