@@ -1,0 +1,183 @@
+\
+\ 	USART driver, RX via DMA and circular buffer
+\
+\		Ralph Sahli, 2017
+\		
+\		resources used: 
+\			- USART1  
+\			- PB6 -> TX
+\			- PB7 -> RX
+\			- DMA2 -> stream 5, channel 4 for USART1_RX
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_dump.txt
+
+$200 constant RBLEN#		\ size must be power of 2
+RBLEN# buffer: rcvBuff
+0 variable rcvRd#
+0 variable rcvStart#
+0 variable scanPtr#
+
+: usart. ( -- )
+	USART1 $30 r-dump ;
+
+: dma. ( -- )
+	DMA2 $D0 r-dump ;
+
+: rcvBuff.
+	rcvBuff RBLEN# b-dump ;
+
+\ initialize DMA2 on stream 5 for USART1_RX
+: dma2_USART1_RX-init ( -- )
+	22 bit RCC _rAHB1ENR bis!			\ DMA2 clock enabled
+	\ dma stream 5 for USART RX
+	0 bit DMA2 5 _dSxCR bic!			\ stream disable
+	4 25 lshift DMA2 5 _dSxCR !			\ Channel 4 mapped for USART1_RX
+	8 bit DMA2 5 _dSxCR bis!			\ circular mode
+	10 bit DMA2 5 _dSxCR bis!			\ memory increment mode
+	RBLEN# DMA2 5 _dSxNDTR !			\ stream 5 number of data register 
+	USART1 _uDR DMA2 5 _dSxPAR !		\ stream 5 peripheral address register
+	rcvBuff DMA2 5 _dSxM0AR !			\ stream 5 memory 0 address register 
+	0 bit DMA2 5 _dSxCR bis!			\ stream enable
+;
+
+: usart-Init ( -- )
+    MODE_ALTERNATE 6 PORTB set-moder		\ PB6 -> Alternate function mode
+    MODE_ALTERNATE 7 PORTB set-moder		\ PB7 -> Alternate function mode  
+    7 6 PORTB set-alternate					\ PB6 -> Alternate function: AF7 (USART1) 
+    7 7 PORTB set-alternate					\ PB7 -> Alternate function: AF7 (USART1) 
+
+	4 bit RCC _rAPB2ENR bis! 				\ Enable clock for USART1
+	2 bit USART1 _uCR1 bis!					\ Receiver enable 
+	3 bit USART1 _uCR1 bis!                	\ Transmitter enable 
+	115200 baud USART1 _uBRR ! 				\ Set Baud rate divider for 115200 Baud at HCLK.	
+	6 bit USART1 _uCR3 bis!					\ DMA mode is enabled for reception 
+	13 bit USART1 _uCR1 bis!                \ USART enable
+	
+	rcvBuff RBLEN# $FF fill					\ clear buffer
+	DMA2_USART1_RX-init						\ initialize DMA for USART1 RX
+;
+
+\ transmit buffer emty ?
+: usartTxe? ( -- f )
+    pause 7 bit [ USART1 _uSR literal, ] bit@ 
+;
+
+\ byte available ?
+: usartRxne? ( -- f )
+    pause RBLEN# [ DMA2 5 _dSxNDTR literal, ] @ - rcvRd# @ <>
+;
+
+\ transmit a byte to USART
+: >usart ( byte -- )
+	begin usartTxe? until				\ wait until transmit empty
+	[ USART1 _uDR literal, ] c!			\ send byte
+;
+
+\ read a byte from USART (rcvBuff)
+: usart> (  --  byte )
+	begin usartRxne? until				\ wait until receive not empty
+	rcvRd# @ rcvBuff over + c@			\ fetch data
+	swap 1+ RBLEN# 1- and rcvRd# ! 		\ increment with rollover read pointer
+;
+
+
+\ ============== helpers =================
+
+\ wait for c-string with ms timeout
+\ return true if timeout occured
+: waitForStr ( ms cstrAddr -- f )
+	0 scanPtr# !
+	>r start-timer 										\ save string-addr and start timer
+	rcvRd# @ rcvStart# !
+	begin 
+		usartRxne? if
+			r@ count swap scanPtr# @ + c@ usart> = if	\ test for string sequence
+				1 scanPtr# +! 
+				scanPtr# @ = if 						\ string-length received -> exit with success
+					drop rdrop false exit				\ drop timer and string-addr
+				then
+			else										\ no sequence pattern
+				drop 0 scanPtr# !						\ drop string-length
+			then
+		then
+		elapsed?										\ is timeout ?
+	until 
+	drop rdrop											\ drop timer and string-addr
+	cr ." waitForStr -> timeout" cr rcvBuff.
+	true
+;
+
+\ output string since last waitfor
+: waitForStr. ( -- )
+	rcvStart# @ 
+	begin 
+		rcvRd# @ over <> 
+	while
+		rcvBuff over + c@ emit
+		1+ RBLEN# 1- and
+	repeat drop
+;
+
+\ wait for n chars with ms timeout
+\ return true if timeout occured
+: waitForN ( ms n -- f )
+	dup 0= if false exit then						\ n must be > 0
+	rcvRd# @ dup rcvStart# !
+	+ RBLEN# 1- and >r start-timer 					\ calc and save end, start timer
+	begin 
+		usartRxne? if
+			usart> drop 							\ get char and drop it -> incr rcvRd#
+			r@ rcvRd# @ = if  
+				drop rdrop false exit				\ drop timer and end
+			then
+		then
+		elapsed?									\ is timeout ?
+	until 
+	drop rdrop										\ drop timer and end
+	cr ." waitForN -> timeout" cr rcvBuff.
+	true
+;
+
+	
+\ find c-string in last waitFor section
+\ return address of last found char if string found else false 
+: findInWaitFor ( cstrAddr -- cAddr | f )
+	0 scanPtr# ! >r 								\ save string-addr
+	rcvStart# @ 
+	begin 
+		rcvRd# @ over <> 
+	while
+		rcvBuff over + c@ 
+		r@ count swap scanPtr# @ + c@ rot = if		\ test for string sequence
+			1 scanPtr# +! 
+			scanPtr# @ = if 						\ string-length received -> exit with success
+				rcvBuff + rdrop exit				\ drop string-addr
+			then
+		else										\ no sequence pattern
+			drop 0 scanPtr# !						\ drop string-length
+		then
+		1+ RBLEN# 1- and
+	repeat drop										\ drop rcvStart#
+	rdrop
+	false
+;
+	
+\ gateway between forth-io and usart1, quit with ESC
+: gateway ( -- )
+	cr ." to quit: press ESC"
+	usart-Init
+	begin
+		usartRxne? if 
+			usart> emit 
+		then
+		key? if 
+			key 27 over = if 			\ esc pressed
+				drop exit
+			else
+				>usart
+			then
+		then	
+	again
+;
+

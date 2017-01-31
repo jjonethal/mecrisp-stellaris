@@ -1,0 +1,63 @@
+\
+\ 	Servo driver 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used:
+\			- TIM16 
+\			- PA12 -> OC1
+\
+\			
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_dump.txt
+
+
+\ initialize TIM16, with DMA enabled
+: tim16Init ( -- )  
+	BIT17 RCC _rAHBENR bis!				\ IO port A clock enabled
+    MODE_ALTERNATE 12 PORTA set-moder	\ PA12 -> Alternate function mode  
+    1 12 PORTA set-alternate			\ PA12 -> Alternate function: %0001: AF1 (TIM16_CH1) 
+
+	BIT17 RCC _rAPB2ENR bis! 			\ Enable clock for TIM16
+	BIT7 TIM16 _tCR1 bis!				\ Auto-reload preload enable
+	hclk @ 1000000 / TIM16 _tPSC !		\ prescaler calculation for 1 us
+	20000 1- TIM16 _tARR !				\ period @ HCLK = 20ms
+	1500 TIM16 _tCCR1 !					\ duty cycle = 1.5 ms (middle position)
+	
+	BIT0 TIM16 _tCCER bis! 				\ OC1 signal is output on the corresponding output pin
+	BIT3 TIM16 _tCCMR1 bis!				\ OC1PE: Output compare 1 preload enable
+	%110 4 lshift TIM16 _tCCMR1 bis!	\ Output compare 1 mode -> 110: PWM mode 1
+	BIT15 TIM16 _tBDTR bis!				\ Main output enable
+	BIT0 TIM16 _tEGR bis!				\ Update generation
+	
+	BIT0 TIM16 _tCR1 bis!               \ TIM16 enable
+;
+
+
+\ initialize driver
+: tim16Init ( -- )
+	tim16Init
+;
+
+\ set servo position between 0 - 1000
+: setPosition ( pos -- )
+	1000 min 0 max 1000 +				\ add offset
+	TIM16 _tCCR1 !						\ set duty cycle in defined range
+;
+
+\ ***************** Dumps ******************
+: tim. ( -- )
+	TIM16 $50 r-dump ;
+
+	
+\ ***************** Tests ******************
+: servoTest ( -- )
+	tim16Init
+	0 setPosition
+	key
+	1000 setPosition
+	key
+	500 setPosition
+;
+
+

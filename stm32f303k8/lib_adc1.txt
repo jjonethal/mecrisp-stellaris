@@ -1,0 +1,91 @@
+\
+\ 	ADC library 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- ADC1  
+\			- PA0 -> ADC1_IN1
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_dump.txt
+
+
+
+\ Set sampletime withe time: %000 - %111 channel: 1 - 18 @ baseAddress
+: set-sampletime ( sampletime channel# baseAddr -- )
+	>R dup 10 < if 
+		3 * lshift R> _aSMPR1
+	else 
+		10 - 3 * lshift R> _aSMPR2
+	then
+	bis! 
+;
+
+\ set ADC sequence register
+: set-sequence ( seq1CH# .. seq9CH# seq# baseAddr -- )
+	_aSQR1 											\ SQR1 offset to ADC1
+	over 1- over !									\ store sequence length
+	swap 0 do
+		i 4 < if
+			swap i 1+ 6 * lshift over bis!			\ ch# of sequence to SQR1
+		else
+			swap i 4 - 6 * lshift over 4 + bis!		\ ch# of sequence to SQR2
+		then
+	loop drop
+;
+
+: adc1Init ( -- ) 
+	BIT17 RCC _rAHBENR bis!				\ IO port A clock enabled
+	MODE_ANALOG 0 PORTA set-moder		\ PA0 -> %11: Analog mode
+
+	BIT28 RCC _rAHBENR bis! 			\ Enable clock for ADC1
+	BIT17 ADC1 $308 + bis!				\ _aCCR : HCLK/2 (Synchronous clock mode)
+	\ start volatage regulator
+	BIT29 ADC1 _aCR bic!
+	." VR "
+	BIT28 ADC1 _aCR bis!
+	\ do callibration
+	Bit31 ADC1 _aCR bis!				\ start the calibration of the ADC		
+	begin 
+		pause
+		Bit31 ADC1 _aCR bit@ 0=
+	until								\ wait until calibration is complete
+	\ enable adc
+	BIT0 ADC1 _aCR bis!					\ eneable ADC
+	begin
+		pause
+		BIT0 ADC1 _aISR bit@
+	until								\ wait until adc ready
+	\ prepare channel 1
+	%100 1 ADC1 set-sampletime			\ channel 1 sampling time selection: 19.5 cycles
+	1 1 ADC1 set-sequence				\ select channel 1 in sequence 1
+;
+
+\ single conversion of adc_in1
+: adc_ch1 ( -- )
+	BIT2 [ adc1 _aCR literal, ] bis!	\ start conversion
+	begin
+		pause
+		BIT2 [ adc1 _aISR literal, ] bit@
+	until								\ wait until end of conversion complete
+	[ adc1 _aDR literal, ] @
+;
+
+\ ***************** Dumps ******************
+
+: adc. ( -- )
+	adc1 $C0 r-dump 
+	adc1 $300 + $10 r-dump
+;
+	
+: adcTest
+	adc1Init
+	begin
+		adc_ch1 hex. cr
+		key $20 =			\ leave with space
+	until
+;
+
+
+

@@ -1,0 +1,33 @@
+\
+\ 	library to use free 4 KB CCM RAM of STTM32F303K8
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used:
+\			- CCM RAM
+\			
+\		REQUIRES: lib_dump.txt
+
+
+$10000000 variable ccmRamPtr	\ pointer to free address in CCM RAM
+
+\ Creates a buffer in CCM RAM with u bytes length
+: ccmRam: 
+    <builds 		( nBytes -- )
+		ccmRamPtr @ , ccmRamPtr +!
+    does>			( pos# -- c-addr )	
+		@ + ;
+		
+\ set pointer to start address
+: free-ccmRam ( -- )
+	$10000000 ccmRamPtr ! ;
+		
+$100 ccmRam: myBuffer
+
+: ramTest ( -- )
+	0 myBuffer $100 $55 fill
+	$20 $10 do $33 i myBuffer c! loop
+	0 myBuffer $100 b-dump
+	cr ccmRamPtr @ h.s cr
+;
+	

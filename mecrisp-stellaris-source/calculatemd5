@@ -2,6 +2,10 @@
 
 cd ..
 
+cd atsame70-ra
+md5sum *.bin
+cd ..
+
 cd lpc1114fn28
 md5sum *.bin
 cd ..
@@ -70,6 +74,10 @@ cd msp432p401r
 md5sum *.bin
 cd ..
 
+cd msp432p401r-ra
+md5sum *.bin
+cd ..
+
 cd lm4f120
 md5sum *.bin
 cd ..
@@ -102,11 +110,19 @@ cd stm32l053c8
 md5sum *.bin
 cd ..
 
+cd stm32l053c8-ra
+md5sum *.bin
+cd ..
+
 cd stm32l152
 md5sum *.bin
 cd ..
 
 cd stm32l152rb
+md5sum *.bin
+cd ..
+
+cd stm32l432-ra
 md5sum *.bin
 cd ..
 
@@ -138,11 +154,31 @@ cd stm32f303-ra
 md5sum *.bin
 cd ..
 
+cd stm32f303k8
+md5sum *.bin
+cd ..
+
+cd stm32f303k8-ra
+md5sum *.bin
+cd ..
+
+cd stm32f303re-ra
+md5sum *.bin
+cd ..
+
 cd stm32f401
 md5sum *.bin
 cd ..
 
+cd stm32f401cd-ra
+md5sum *.bin
+cd ..
+
 cd stm32f407
+md5sum *.bin
+cd ..
+
+cd stm32f407-ra
 md5sum *.bin
 cd ..
 

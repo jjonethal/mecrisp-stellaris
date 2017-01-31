@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd atsame70-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../atsame70-ra && cp *.hex ../../atsame70-ra
+cd ..
+
 cd lpc1114fn28
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28 && cp *.hex ../../lpc1114fn28
 cd ..
@@ -68,6 +72,10 @@ cd msp432p401r
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r
 cd ..
 
+cd msp432p401r-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r-ra
+cd ..
+
 cd lm4f120
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
 cd ..
@@ -100,12 +108,20 @@ cd stm32l053c8
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8
 cd ..
 
+cd stm32l053c8-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8-ra
+cd ..
+
 cd stm32l152
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152
 cd ..
 
 cd stm32l152rb
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152rb
+cd ..
+
+cd stm32l432-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l432-ra
 cd ..
 
 cd stm32f100
@@ -136,12 +152,32 @@ cd stm32f303-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303-ra
 cd ..
 
+cd stm32f303k8
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303k8
+cd ..
+
+cd stm32f303k8-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303k8-ra
+cd ..
+
+cd stm32f303re-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303re-ra
+cd ..
+
 cd stm32f401
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401
 cd ..
 
+cd stm32f401cd-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
+cd ..
+
 cd stm32f407
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407
+cd ..
+
+cd stm32f407-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407-ra
 cd ..
 
 cd stm32f411
@@ -204,12 +240,20 @@ cd stm32l053c8
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l053c8.bin mecrisp-stellaris-stm32l053c8.hex
 cd ..
 
+cd stm32l053c8-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l053c8.bin mecrisp-stellaris-stm32l053c8.hex
+cd ..
+
 cd stm32l152
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l152.bin mecrisp-stellaris-stm32l152.hex
 cd ..
 
 cd stm32l152rb
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l152rb.bin mecrisp-stellaris-stm32l152rb.hex
+cd ..
+
+cd stm32l432-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l432.bin mecrisp-stellaris-stm32l432.hex
 cd ..
 
 cd stm32f100
@@ -240,11 +284,31 @@ cd stm32f303-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303.bin mecrisp-stellaris-stm32f303.hex
 cd ..
 
+cd stm32f303k8
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303k8.bin mecrisp-stellaris-stm32f303k8.hex
+cd ..
+
+cd stm32f303k8-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303k8.bin mecrisp-stellaris-stm32f303k8.hex
+cd ..
+
+cd stm32f303re-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f303re.bin mecrisp-stellaris-stm32f303re.hex
+cd ..
+
 cd stm32f401
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
 cd ..
 
+cd stm32f401cd-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401cd.bin mecrisp-stellaris-stm32f401cd.hex
+cd ..
+
 cd stm32f407
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
+cd ..
+
+cd stm32f407-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
 cd ..
 

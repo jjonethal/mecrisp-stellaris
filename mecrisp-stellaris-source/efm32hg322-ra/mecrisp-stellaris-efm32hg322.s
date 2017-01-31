@@ -79,3 +79,7 @@ Reset: @ Einsprung zu Beginn
 
    @ Ready to fly !
    .include "../common/boot.s"
+
+@ -----------------------------------------------------------------------------
+  autoerase @ Automatic erase of flash dictionary after initial boot
+@ -----------------------------------------------------------------------------

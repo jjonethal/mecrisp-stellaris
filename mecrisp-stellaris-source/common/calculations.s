@@ -19,6 +19,16 @@
 @ Kleine Rechenmeister
 @ Small calculations
 
+@ Small M0 cores have no division. Large A9 or A15 cores have no division either, for some crazy reasons.
+
+.ifdef m0core
+  .equ softwaredivision, 1
+.endif
+
+.ifdef within_os
+  .equ softwaredivision, 1
+.endif
+
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_opcodierbar_Plusminus, "+" @ ( x1 x2 -- x1+x2 )
                       @ Adds x1 and x2.
@@ -95,7 +105,7 @@
   Wortbirne Flag_foldable_2, "u/mod" @ ( u1 u2 -- rem quot )
 u_divmod:                            @ ARM provides no remainder operation, so we fake it by un-dividing and subtracting.
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
+  .ifdef softwaredivision
 
   popda r1
   @ Catch divide by zero..
@@ -149,7 +159,7 @@ u_divmod:                            @ ARM provides no remainder operation, so w
   Wortbirne Flag_foldable_2, "/mod" @ ( n1 n2 -- rem quot )
 divmod:                             @ ARM provides no remainder operation, so we fake it by un-dividing and subtracting.
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
+  .ifdef softwaredivision
 
   push {lr}
   popda r0 @ Divisor
@@ -218,7 +228,7 @@ divmod_plus_plus:
   drop
   pop {pc}
 
-  .ifdef m0core
+  .ifdef softwaredivision
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2, "/" @ ( n1 n2 -- n1/n2 )
 @ -----------------------------------------------------------------------------

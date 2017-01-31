@@ -170,7 +170,7 @@ flashpageerase:
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "eraseflash" @ ( -- )
-  @ Löscht den gesamten Inhalt des Flashdictionaries.
+eraseflash: @ Löscht den gesamten Inhalt des Flashdictionaries.
 @ -----------------------------------------------------------------------------
         ldr r0, =FlashDictionaryAnfang
 eraseflash_intern:
