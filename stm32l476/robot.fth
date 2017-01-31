@@ -23,10 +23,38 @@
 
 : KBYTE ( n -- n ) 1024 * 1-foldable ;    \ convert kbyte to byte
 
+\ ********** system memory definitions ***
+
 $10000000 CONSTANT SRAM2_START            \ start address of sram2
 $10007FFF CONSTANT SRAM2_END              \ end address of sram2
+SRAM2_END SRAM2_START - 1 +
+          CONSTANT SRAM2_SIZE             \ size of SRAM2
 $20000000 CONSTANT SRAM1_START            \ start address of sram1
 96 KBYTE  CONSTANT SRAM1_SIZE             \ size of sram1
 
 SRAM1_START SRAM1_SIZE + 1 -
           CONSTANT SRAM1_END              \ end address of sram1
+
+\ ********** L3GD20 Pins *****************
+
+PD1 CONSTANT MEMS_SCK
+PD4 CONSTANT MEMS_MOSI
+PD3 CONSTANT MEMS_MISO
+PD7 CONSTANT GYRO_CS
+PB8 CONSTANT GYRO_INT2
+PD2 CONSTANT GYRO_INT1
+
+\ ********** LSM303CTR Pins **************
+
+PD1 CONSTANT MEMS_SCK
+PE0 CONSTANT XL_CS
+PC0 CONSTANT MAG_CS
+PE1 CONSTANT XL_INT
+PC2 CONSTANT MAG_RDY
+PC1 CONSTANT MAG_INT
+
+\ ********** Robot Feeling ***************
+
+\ robot battery full
+\ robot battery low
+\ robot battery empty
