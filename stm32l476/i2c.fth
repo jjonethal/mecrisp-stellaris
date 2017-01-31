@@ -29,26 +29,26 @@
 \ require gpio.fth
 \ require rcc.fth
 
-\ ********** i2c pin definitions ********
+\ ********** i2c pin definitions *********
 \ I2C_SDA (PB9)  package pin (D14) 
 \ I2C_SCL (PB8)  package pin (D14) I2C1_SCL
 
 \ PH7 - LCD_SCL / AUDIO_SCL / I2C3_SCL
 \ PH8 - LCD_SDA / AUDIO_SDA / I2C3_SDA
 
-\ ********** i2c address calc ***********
+\ ********** i2c address calc ************
 : i2c-port ( n -- a )                     \ calculate i2c base addres from number
    #7 and $14 + #10 lshift                \ nr 1..4
    $40000000 or 1-foldable ;
 : i2c-nr ( a -- n )                       \ i2c-addr -> i2c nr
    #10 rshift #5 - 7 and 1-foldable ;
 
-\ ********** i2c DCKCFGR2 ***************
+\ ********** i2c DCKCFGR2 ****************
 decimal
 : i2c-clk-m ( n -- m )                    \ calculate i2c clock mask from i2c# 
    2 * #14 + 3 swap lshift 1-foldable ;   \ DCKCFGR2 register
 
-\ ********** i2c driver interface var ***
+\ ********** i2c driver interface var ****
 3 i2c-port variable i2c_base              \ i2c base address of port
 
 \ ********** i2c base address words ******
@@ -70,7 +70,7 @@ decimal
    $13            or                      \ SCLL
    constant i2c-16MHz-100K                \ input clock 16 MHz - i2c clock 100 kHz
 
-\ ********** i2c registers **************
+\ ********** i2c registers ***************
 : i2c_cr1! ( n -- ) i2c_base@ ! ;         \ store value to i2c_cr1 
 : i2c_cr2  ( -- a ) i2c_base@ 4 + ;       \ address of i2c_cr2 register
 : i2c_timingr ( -- a ) i2c_base@ $10 + ;  \ I2C_TIMINGR
