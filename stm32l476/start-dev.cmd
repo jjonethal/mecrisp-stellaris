@@ -1,0 +1,6 @@
+start "C:\Users\jeanjo\Downloads\stm\stm32l476 discovery\n25q_128mb_3v_65nm.pdf"
+start "C:\Users\jeanjo\Downloads\stm\stm32l476 discovery\en.DM00036465.pdf"
+start "C:\Users\jeanjo\Downloads\stm\stm32l476 discovery\en.DM00089896.pdf"
+start "C:\Users\jeanjo\Downloads\stm\DM00172179 UM1879 User manual Discovery kit with STM32L476VG MCU.pdf"
+start "C:\Users\jeanjo\Downloads\stm\en.DM00083560 RM0351 STM32L4x6 advanced ARM®-based 32-bit MCUs .pdf"
+start "C:\Users\jeanjo\Downloads\stm\en.DM00108832 STM32L476xx datasheet .pdf"
