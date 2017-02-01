@@ -83,3 +83,10 @@
    dup constant 1+ ;
 : enum; ( n -- ) drop ;                   \ finish enumeration
 
+\ Cornerstone for 2 kb Flash pages
+
+: cornerstone ( Name ) ( -- )
+  <builds begin here $7FF and while 0 h, repeat
+  does>   begin dup  $7FF and while 2+   repeat 
+          eraseflashfrom
+;
