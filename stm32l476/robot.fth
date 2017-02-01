@@ -46,6 +46,7 @@ SRAM1_START SRAM1_SIZE + 1-
 0 6 GPIO-PIN constant PORTG
 0 7 GPIO-PIN constant PORTH
 
+$0C          constant GPIO_PUPDR
 $18          constant GPIO_BSRR
 $20          constant GPIO_AFRL
 
@@ -100,7 +101,8 @@ $20          constant GPIO_AFRL
 : mode-af ( af pin -- )                   \ set alternate function mode
    #2 over gpio-mode!
    dup af-mask swap af-reg bits! ;
-   
+
+\ TODO : GPIO_PUPD ( m pin -- ) ;    
 \ ********** RCC constants ***************
 $40021000       constant RCC_BASE
 $4C RCC_BASE or constant RCC_AHB2ENR 
@@ -166,18 +168,16 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    MAG-CS-1
    MAG_CS  GPIO-OUTPUT-PP
    GYRO-CS-1
-   GYRO_CS GPIO-OUTPUT-PP ;
+   GYRO_CS GPIO-OUTPUT-PP
+   MEMS_SCK GPIO-INPUT
+   MEMS_MOSI GPIO-OUTPUT-OD ;
 
 \ ********** SPI sensor driver ***********
 : ACCEL-SPI-GPIO-INIT  ( -- )
 ;
 
 : ACCEL-INIT-SPI ( -- )                   \ initialize accelerator spi mode
-	 GYRO-CS-1                              \ deactivate GYRO first
-   MAG-CS-1                               \ deactivate magnetometer
-	 MEMS-SCK-1                             \ set clock high
-	 ACCEL-RCC-INIT                         \ turn on accel clock
-	 ACCEL-GPIO-INIT ;                      \ turn on accel gpio ports
+   GLOBAL-SENSOR-INIT-SPI ;               \ turn on sensor gpio ports
 
 \ ********** QSPI Memory *****************
 \ N25Q128A13EF840E
