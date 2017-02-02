@@ -12,7 +12,7 @@
 
 
 :: comport number for connection
-set COMPORT=7
+set COMPORT=3
 :: tempoary macrco for closing down existing connection
 set MACRO=%~dp0tempmac.ttl
 :: Teraterm installation directory
