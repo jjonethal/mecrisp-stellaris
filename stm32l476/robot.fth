@@ -15,7 +15,7 @@
 
 \ file robot.fth
 
-: KBYTE ( n -- n ) 1024 * 1-foldable ;    \ convert kbyte to byte
+: KBYTE ( n -- n ) #1024 * 1-foldable ;   \ convert kbyte to byte
 
 \ ********** system memory definitions ***
 
@@ -24,27 +24,28 @@ $10007FFF CONSTANT SRAM2_END              \ end address of sram2
 SRAM2_END SRAM2_START - 1+
           CONSTANT SRAM2_SIZE             \ size of SRAM2
 $20000000 CONSTANT SRAM1_START            \ start address of sram1
-96 KBYTE  CONSTANT SRAM1_SIZE             \ size of sram1
+#96 KBYTE CONSTANT SRAM1_SIZE             \ size of sram1
 SRAM1_START SRAM1_SIZE + 1-
           CONSTANT SRAM1_END              \ end address of sram1
 
 \ ********** GPIO interface **************
 : GPIO-PIN  ( pinNr portNr -- pin )       \ calculate PIN from pin number and port number
-   10 lshift $48000000 or or 2-foldable ; \ PortA:0 .. PortH:7
+   #10 lshift $48000000
+   or or 2-foldable ;                     \ PortA:0 .. PortH:7
 : port-nr ( a -- n )                      \ calculate port number from pin
-   10 rshift 7 and 1-foldable ; 
+   #10 rshift #7 and 1-foldable ; 
 : port-base ( pin -- a )                  \ extract port base address from pin
-   7 not and 1-foldable ;
+   #7 not and 1-foldable ;
 : pin# ( pin -- n ) $F and 1-foldable ;
   
-0 0 GPIO-PIN constant PORTA
-0 1 GPIO-PIN constant PORTB
-0 2 GPIO-PIN constant PORTC
-0 3 GPIO-PIN constant PORTD
-0 4 GPIO-PIN constant PORTE
-0 5 GPIO-PIN constant PORTF
-0 6 GPIO-PIN constant PORTG
-0 7 GPIO-PIN constant PORTH
+0 #0 GPIO-PIN constant PORTA
+0 #1 GPIO-PIN constant PORTB
+0 #2 GPIO-PIN constant PORTC
+0 #3 GPIO-PIN constant PORTD
+0 #4 GPIO-PIN constant PORTE
+0 #5 GPIO-PIN constant PORTF
+0 #6 GPIO-PIN constant PORTG
+0 #7 GPIO-PIN constant PORTH
 
 $0C          constant GPIO_PUPDR
 $18          constant GPIO_BSRR
@@ -57,7 +58,7 @@ $20          constant GPIO_AFRL
 : BSRR-MASK-RESET ( pin -- m )            \ calculate bsrr reset mask for pin
    BSRR-MASK-SET #16 lshift 1-foldable ;
 : BSRR-MASK ( pin -- m )                  \ calculate bit-set-reset mask for pin
-   BSRR-MASK-SET dup 16 lshift or
+   BSRR-MASK-SET dup #16 lshift or
    1-foldable ;
 : PIN-SET ( n -- m a )                    \ calculate bsrr set mask + bsrr adr from pin
    dup BSRR-MASK-SET swap                 \ can be optimized
@@ -72,17 +73,17 @@ $20          constant GPIO_AFRL
    0= $FFFF xor 1-foldable ;              \ pin change mask f=0: $FFFF0000 f=1:$FFFF
 : GPIO-OTYPE-PUSH-PULL ( pin -- )
    dup pin# 1 swap lshift
-   swap port-base 4 + bic! ;
+   swap port-base #4 + bic! ;
 : GPIO-OTYPE-OPEN-DRAIN ( pin -- )
    dup pin# 1 swap lshift
-   swap port-base 4 + bis! ;
+   swap port-base #4 + bis! ;
 : GPIO-OUTPUT ( pin -- )
    1 swap
-   dup $f and 2* 3 swap lshift
+   dup $f and 2* #3 swap lshift
    swap port-base bits! ;
 : GPIO-INPUT ( pin -- )
    0 swap
-   dup $f and 2* 3 swap lshift
+   dup $f and 2* #3 swap lshift
    swap port-base bits! ;
 : GPIO-OUTPUT-PP ( pin -- )               \ set pin to output mode push-pull
    dup GPIO-OTYPE-PUSH-PULL
@@ -91,7 +92,7 @@ $20          constant GPIO_AFRL
    dup GPIO-OTYPE-OPEN-DRAIN
    GPIO-OUTPUT ;
 : gpio-mode! ( mode pin -- )
-   dup pin# 2* 3 swap lshift
+   dup pin# 2* #3 swap lshift
    swap port-base bits! ;
 : af-mask  ( pin -- mask )                \ alternate function bitmask
    $7 and #2 lshift $f swap lshift 1-foldable ;
@@ -101,6 +102,9 @@ $20          constant GPIO_AFRL
 : mode-af ( af pin -- )                   \ set alternate function mode
    #2 over gpio-mode!
    dup af-mask swap af-reg bits! ;
+: dump-gpio-moder ( port -- )             \ dump gpio-moder from pin
+   cr port-base @ 0 #15 do i u.2 space -1 +loop cr
+   0 #15 do dup 3 i 2* lshift and i 2* rshift u.2 space -1 +loop  drop ;
 
 \ TODO : GPIO_PUPD ( m pin -- ) ;    
 \ ********** RCC constants ***************
@@ -183,12 +187,12 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 \ N25Q128A13EF840E
 \ https://www.micron.com/~/media/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf
 \ C:\Users\jeanjo\Downloads\stm\stm32l476 discovery\n25q_128mb_3v_65nm.pdf
-PE11 CONSTANT QSPI_CS                     \ QSPI chip select
-PE10 CONSTANT QSPI_CLK                    \ QSPI clock
-PE12 CONSTANT QSPI_D0                     \ QSPI data 0
-PE13 CONSTANT QSPI_D1                     \ QSPI data 1
-PE14 CONSTANT QSPI_D2                     \ QSPI data 2
-PE15 CONSTANT QSPI_D3                     \ QSPI data 3
+PORTE #11 + CONSTANT QSPI_CS              \ QSPI chip select
+PORTE #10 + CONSTANT QSPI_CLK             \ QSPI clock
+PORTE #12 + CONSTANT QSPI_D0              \ QSPI data 0
+PORTE #13 + CONSTANT QSPI_D1              \ QSPI data 1
+PORTE #14 + CONSTANT QSPI_D2              \ QSPI data 2
+PORTE #15 + CONSTANT QSPI_D3              \ QSPI data 3
 
 \ ********** Robot States ****************
 \ robot battery full
