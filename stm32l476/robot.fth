@@ -190,7 +190,7 @@ PE13 CONSTANT QSPI_D1                     \ QSPI data 1
 PE14 CONSTANT QSPI_D2                     \ QSPI data 2
 PE15 CONSTANT QSPI_D3                     \ QSPI data 3
 
-\ ********** Robot Feeling ***************
+\ ********** Robot States ****************
 \ robot battery full
 \ robot battery low
 \ robot battery empty
