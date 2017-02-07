@@ -29,29 +29,31 @@ SRAM1_START SRAM1_SIZE + 1-
           CONSTANT SRAM1_END              \ end address of sram1
 
 \ ********** GPIO interface **************
-: GPIO-PIN  ( pinNr portNr -- pin )       \ calculate PIN from pin number and port number
+: io.pin  ( pinNr portNr -- pin )       \ calculate PIN from pin number and port number
    #10 lshift $48000000
    or or 2-foldable ;                     \ PortA:0 .. PortH:7
-: port-nr ( a -- n )                      \ calculate port number from pin
+: io.port# ( a -- n )                      \ calculate port number from pin
    #10 rshift #7 and 1-foldable ; 
 : port-base ( pin -- a )                  \ extract port base address from pin
    #7 not and 1-foldable ;
 : pin# ( pin -- n ) $F and 1-foldable ;
   
-0 #0 GPIO-PIN constant PORTA
-0 #1 GPIO-PIN constant PORTB
-0 #2 GPIO-PIN constant PORTC
-0 #3 GPIO-PIN constant PORTD
-0 #4 GPIO-PIN constant PORTE
-0 #5 GPIO-PIN constant PORTF
-0 #6 GPIO-PIN constant PORTG
-0 #7 GPIO-PIN constant PORTH
+0 #0 io.pin constant PORTA
+0 #1 io.pin constant PORTB
+0 #2 io.pin constant PORTC
+0 #3 io.pin constant PORTD
+0 #4 io.pin constant PORTE
+0 #5 io.pin constant PORTF
+0 #6 io.pin constant PORTG
+0 #7 io.pin constant PORTH
 
 $0C          constant GPIO_PUPDR
 $18          constant GPIO_BSRR
 $20          constant GPIO_AFRL
 
-: BSRR ( pin -- a )
+: gpio-2-bit-mask ( pin -- m )            \ generate 2 bit mask for gpio
+   pin# 2* 3 swap lshift 1-foldable ;
+: BSRR ( pin -- a )                       \ calculate GPIO_BSRR reg addr from pin
    port-base $18 + 1-foldable ;
 : BSRR-MASK-SET ( pin -- m )              \ calculate bsrr set mask for pin
    $f and 1 swap lshift 1-foldable ;
@@ -71,19 +73,22 @@ $20          constant GPIO_AFRL
    port-base $18 + 1-foldable ;           \ can be optimized
 : BSRR-SEL ( f - m )                      \ BSRR set/reset selector mask
    0= $FFFF xor 1-foldable ;              \ pin change mask f=0: $FFFF0000 f=1:$FFFF
-: GPIO-OTYPE-PUSH-PULL ( pin -- )
+: GPIO-OTYPE-PUSH-PULL ( pin -- )         \ set pin output type to push-pull
    dup pin# 1 swap lshift
-   swap port-base #4 + bic! ;
-: GPIO-OTYPE-OPEN-DRAIN ( pin -- )
+   swap port-base $4 + bic! ;
+: GPIO-OTYPE-OPEN-DRAIN ( pin -- )        \ set pin output type to open drain
    dup pin# 1 swap lshift
-   swap port-base #4 + bis! ;
+   swap port-base $4 + bis! ;
 : GPIO-OUTPUT ( pin -- )
    1 swap
-   dup $f and 2* #3 swap lshift
+   dup gpio-2-bit-mask
    swap port-base bits! ;
-: GPIO-INPUT ( pin -- )
+: gpio-pupd ( m pin -- )
+   dup gpio-2-bit-mask
+   swap port-base $C + bits! ;
+: GPIO-INPUT ( pin -- )                   \ set pin to input mode
    0 swap
-   dup $f and 2* #3 swap lshift
+   dup gpio-2-bit-mask
    swap port-base bits! ;
 : GPIO-OUTPUT-PP ( pin -- )               \ set pin to output mode push-pull
    dup GPIO-OTYPE-PUSH-PULL
@@ -91,8 +96,8 @@ $20          constant GPIO_AFRL
 : GPIO-OUTPUT-OD ( pin -- )               \ set pin to output mode open drain
    dup GPIO-OTYPE-OPEN-DRAIN
    GPIO-OUTPUT ;
-: gpio-mode! ( mode pin -- )
-   dup pin# 2* #3 swap lshift
+: gpio-mode! ( mode pin -- )              \ set gpio mode for pin
+   dup gpio-2-bit-mask
    swap port-base bits! ;
 : af-mask  ( pin -- mask )                \ alternate function bitmask
    $7 and #2 lshift $f swap lshift 1-foldable ;
@@ -110,8 +115,8 @@ $20          constant GPIO_AFRL
 \ ********** RCC constants ***************
 $40021000       constant RCC_BASE
 $4C RCC_BASE or constant RCC_AHB2ENR 
-: RCC-GPIO-CLK ( f port -- )              \ enable / disable gpio port clock 
-   port-nr 1 swap lshift
+: RCC-GPIO-CLK! ( f port -- )              \ enable / disable gpio port clock 
+   io.port# 1 swap lshift
    RCC_AHB2ENR  bits! ;
 
 \ ********** L3GD20 Pins *****************
@@ -145,36 +150,45 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : MEMS-SCK-0  ( -- ) MEMS_SCK  PIN-RESET ! ;  \ reset mems clock line to 0
 : MEMS_MOSI-1 ( -- ) MEMS_MOSI PIN-SET   ! ;  \ set mems mosi signal to 1
 : MEMS_MOSI-0 ( -- ) MEMS_MOSI PIN-RESET ! ;  \ reset mems mosi signal to 0
-: XL-CS! ( f -- )
+: XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
-   and XL_CS BSRR ! ;                     \ set/reset XL_CS pin depending on flag 
-: MAG-CS! ( f -- )
+   and XL_CS BSRR ! ;
+\ : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
+\    0= 16 and XL_CS pin# +
+\    1 swap lshift
+\    XL_CS BSRR ! ;
+: MAG-CS! ( f -- )                        \ set/reset MAG_CS pin depending on flag
    BSRR-SEL MAG_CS BSRR-MASK
-   and MAG_CS BSRR ! ;                    \ set/reset MAG_CS pin depending on flag 
-: GYRO-CS! ( f -- )
+   and MAG_CS BSRR ! ;                     
+: GYRO-CS! ( f -- )                       \ set/reset GYRO_CS pin depending on flag
    BSRR-SEL GYRO_CS BSRR-MASK
-   and GYRO_CS BSRR ! ;                   \ set/reset GYRO_CS pin depending on flag 
-: MEMS-SCK! ( f -- )
+   and GYRO_CS BSRR ! ;                    
+: MEMS-SCK! ( f -- )                      \ set/reset MEMS_SCK pin depending on flag
    BSRR-SEL MEMS_SCK BSRR-MASK
-   and MEMS_SCK BSRR ! ;                  \ set/reset MEMS_SCK pin depending on flag 
-: MEMS-MOSI! ( f -- )
+   and MEMS_SCK BSRR ! ;
+: MEMS-MOSI! ( f -- )                     \ set/reset MEMS_MOSI pin depending on flag
    BSRR-SEL MEMS_MOSI BSRR-MASK
-   and MEMS_MOSI BSRR ! ;                 \ set/reset MEMS_MOSI pin depending on flag 
+   and MEMS_MOSI BSRR ! ;                  
 
 \ ********** global Sensor init **********
-: GLOBAL-SENSOR-INIT-SPI  ( -- )
-   1 PORTB RCC-GPIO-CLK
-   1 PORTC RCC-GPIO-CLK
-   1 PORTD RCC-GPIO-CLK
-   1 PORTE RCC-GPIO-CLK
+: SENSOR-GPIO-INIT  ( -- )
+   1 PORTB RCC-GPIO-CLK!
+   1 PORTC RCC-GPIO-CLK!
+   1 PORTD RCC-GPIO-CLK!
+   1 PORTE RCC-GPIO-CLK!
    XL-CS-1
    XL_CS   GPIO-OUTPUT-PP
    MAG-CS-1
    MAG_CS  GPIO-OUTPUT-PP
    GYRO-CS-1
    GYRO_CS GPIO-OUTPUT-PP
-   MEMS_SCK GPIO-INPUT
-   MEMS_MOSI GPIO-OUTPUT-OD ;
+   MEMS_MOSI GPIO-OUTPUT-OD
+   MEMS_SCK  GPIO-INPUT
+   GYRO_INT2 GPIO-INPUT
+   GYRO_INT1 GPIO-INPUT
+   XL_INT    GPIO-INPUT
+   MAG_RDY   GPIO-INPUT
+   MAG_INT   GPIO-INPUT ;
 
 \ ********** SPI sensor driver ***********
 : ACCEL-SPI-GPIO-INIT  ( -- )
@@ -187,8 +201,8 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 \ N25Q128A13EF840E
 \ https://www.micron.com/~/media/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf
 \ C:\Users\jeanjo\Downloads\stm\stm32l476 discovery\n25q_128mb_3v_65nm.pdf
-PORTE #11 + CONSTANT QSPI_CS              \ QSPI chip select
 PORTE #10 + CONSTANT QSPI_CLK             \ QSPI clock
+PORTE #11 + CONSTANT QSPI_CS              \ QSPI chip select
 PORTE #12 + CONSTANT QSPI_D0              \ QSPI data 0
 PORTE #13 + CONSTANT QSPI_D1              \ QSPI data 1
 PORTE #14 + CONSTANT QSPI_D2              \ QSPI data 2
