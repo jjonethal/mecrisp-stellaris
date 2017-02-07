@@ -14,6 +14,7 @@
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 \ file robot.fth
+\ stm32l476 discovery board robot brain ;)
 
 : KBYTE ( n -- n ) #1024 * 1-foldable ;   \ convert kbyte to byte
 
@@ -29,23 +30,23 @@ SRAM1_START SRAM1_SIZE + 1-
           CONSTANT SRAM1_END              \ end address of sram1
 
 \ ********** GPIO interface **************
-: io.pin  ( pinNr portNr -- pin )       \ calculate PIN from pin number and port number
+: gpio-pin  ( pinNr portNr -- pin )       \ calculate PIN from pin number and port number
    #10 lshift $48000000
    or or 2-foldable ;                     \ PortA:0 .. PortH:7
-: io.port# ( a -- n )                      \ calculate port number from pin
+: gpio-port# ( a -- n )                      \ calculate port number from pin
    #10 rshift #7 and 1-foldable ; 
 : port-base ( pin -- a )                  \ extract port base address from pin
    #7 not and 1-foldable ;
 : pin# ( pin -- n ) $F and 1-foldable ;
   
-0 #0 io.pin constant PORTA
-0 #1 io.pin constant PORTB
-0 #2 io.pin constant PORTC
-0 #3 io.pin constant PORTD
-0 #4 io.pin constant PORTE
-0 #5 io.pin constant PORTF
-0 #6 io.pin constant PORTG
-0 #7 io.pin constant PORTH
+0 #0 gpio-pin constant PORTA
+0 #1 gpio-pin constant PORTB
+0 #2 gpio-pin constant PORTC
+0 #3 gpio-pin constant PORTD
+0 #4 gpio-pin constant PORTE
+0 #5 gpio-pin constant PORTF
+0 #6 gpio-pin constant PORTG
+0 #7 gpio-pin constant PORTH
 
 $0C          constant GPIO_PUPDR
 $18          constant GPIO_BSRR
@@ -116,7 +117,7 @@ $20          constant GPIO_AFRL
 $40021000       constant RCC_BASE
 $4C RCC_BASE or constant RCC_AHB2ENR 
 : RCC-GPIO-CLK! ( f port -- )              \ enable / disable gpio port clock 
-   io.port# 1 swap lshift
+   gpio-port# 1 swap lshift
    RCC_AHB2ENR  bits! ;
 
 \ ********** L3GD20 Pins *****************
@@ -148,8 +149,8 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : GYRO-CS-0   ( -- ) GYRO_CS   PIN-RESET ! ;  \ reset gyro chip select to 0
 : MEMS-SCK-1  ( -- ) MEMS_SCK  PIN-SET   ! ;  \ set mems clock line to 1
 : MEMS-SCK-0  ( -- ) MEMS_SCK  PIN-RESET ! ;  \ reset mems clock line to 0
-: MEMS_MOSI-1 ( -- ) MEMS_MOSI PIN-SET   ! ;  \ set mems mosi signal to 1
-: MEMS_MOSI-0 ( -- ) MEMS_MOSI PIN-RESET ! ;  \ reset mems mosi signal to 0
+: MEMS-MOSI-1 ( -- ) MEMS_MOSI PIN-SET   ! ;  \ set mems mosi signal to 1
+: MEMS-MOSI-0 ( -- ) MEMS_MOSI PIN-RESET ! ;  \ reset mems mosi signal to 0
 : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
    and XL_CS BSRR ! ;
@@ -169,7 +170,38 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : MEMS-MOSI! ( f -- )                     \ set/reset MEMS_MOSI pin depending on flag
    BSRR-SEL MEMS_MOSI BSRR-MASK
    and MEMS_MOSI BSRR ! ;                  
-
+: ck-0 ( -- ) MEMS-SCK-0 ;                \ set clock 0
+: ck-1 MEMS-SCK-1 ;                       \ set clock 1
+: do-0 MEMS-MOSI-0 ;                      \ set data out 0
+: do-1 MEMS-MOSI-1 ;                      \ set data out 1
+: bit ( w n -- b f )                      \ extract bit number n from w
+   1 swap lshift over and 0<> 2-foldable ;
+: bit<< ( b -- b f )                      \ extract bit 31 and shift left reminder
+	dup 2* swap 0< ;
+: tx-bit ( b -- b )                       \ transfer on bit31 of a byte via spi 
+   ck-0 bit<< ck-1 ;                      \ and shift byte left by 1 bit
+: tx-2-bit ( b -- b )                     \ transfer bit 31..30 via spi 
+   tx-bit tx-bit ;                        \ and shift byte left by 2 bit
+: tx-4-bit ( b -- b )                     \ transfer bit 31..28 via spi 
+   tx-bit tx-bit tx-bit tx-bit ;          \ and shift byte left by 4 bit
+: tx-7-bit ( b -- b )                     \ transfer bit 31..25 via spi 
+   tx-4-bit tx-bit tx-bit tx-bit ;        \ and shift byte left by 7 bit
+: tx-8-bit ( b -- b )                     \ transfer bit 31..24 via spi 
+   tx-4-bit tx-4-bit ;                    \ and shift byte left by 8 bit
+: cs-1-all  ( -- )
+   mag-cs-1 gyro-cs1 xl-cs-1 ;            \ all chip select idle
+   
+: XL-WRITE  ( b adr -- )                  \ write byte to address
+   cs-1-all                               \ sensor-spi-idle
+   ck-1                                   \ clock idle
+   xl-cs-0                                \ start cs-0
+   ck-0 DO-0 ck-1                         \ R/W -write
+   #25 lshift                             \ shift AD6..0 to b31..b25
+   tx-7-bit                               \ AD6..AD0 -write
+   drop
+   #24 lshift                             \ b7..0 -> b31..24
+   tx-8-bit xl-cs-0 ;
+   
 \ ********** global Sensor init **********
 : SENSOR-GPIO-INIT  ( -- )
    1 PORTB RCC-GPIO-CLK!
@@ -195,7 +227,7 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 ;
 
 : ACCEL-INIT-SPI ( -- )                   \ initialize accelerator spi mode
-   GLOBAL-SENSOR-INIT-SPI ;               \ turn on sensor gpio ports
+   SENSOR-GPIO-INIT ;               \ turn on sensor gpio ports
 
 \ ********** QSPI Memory *****************
 \ N25Q128A13EF840E
@@ -215,4 +247,4 @@ PORTE #15 + CONSTANT QSPI_D3              \ QSPI data 3
 \ robot happyness
 \ robot sadness
 \ robot health
-\ robot love
+\ robot object-affinity
