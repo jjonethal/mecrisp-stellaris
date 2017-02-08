@@ -38,6 +38,8 @@ SRAM1_START SRAM1_SIZE + 1-
 : port-base ( pin -- a )                  \ extract port base address from pin
    #7 not and 1-foldable ;
 : pin# ( pin -- n ) $F and 1-foldable ;
+
+: 2** ( n -- n ) 1 swap lshift 1-foldable ;
   
 0 #0 gpio-pin constant PORTA
 0 #1 gpio-pin constant PORTB
@@ -111,7 +113,10 @@ $20          constant GPIO_AFRL
 : dump-gpio-moder ( port -- )             \ dump gpio-moder from pin
    cr port-base @ 0 #15 do i u.2 space -1 +loop cr
    0 #15 do dup 3 i 2* lshift and i 2* rshift u.2 space -1 +loop  drop ;
-
+: gpio-data? ( pin -- )                   \ get input data from pin
+   dup pin# 1 swap lshift swap
+   port-base $10 + bit@ ;   
+   
 \ TODO : GPIO_PUPD ( m pin -- ) ;    
 \ ********** RCC constants ***************
 $40021000       constant RCC_BASE
@@ -151,6 +156,9 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : MEMS-SCK-0  ( -- ) MEMS_SCK  PIN-RESET ! ;  \ reset mems clock line to 0
 : MEMS-MOSI-1 ( -- ) MEMS_MOSI PIN-SET   ! ;  \ set mems mosi signal to 1
 : MEMS-MOSI-0 ( -- ) MEMS_MOSI PIN-RESET ! ;  \ reset mems mosi signal to 0
+: MEMS-MOSI?  ( -- f )                    \ query mems-mosi pin, used by 3-wire
+   1 MEMS_MOSI pin# lshift                \ spi read for xl sensor
+   MEMS_MOSI port-base #10 + bit@ ;
 : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
    and XL_CS BSRR ! ;
@@ -201,6 +209,14 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    drop
    #24 lshift                             \ b7..0 -> b31..24
    tx-8-bit xl-cs-0 ;
+: XL-READ ( adr -- b )                    \ read 1 byte from sensor
+   cs-1-all                               \ all sensors idle
+   ck-1                                   \ clock idle
+   xl-cs-0                                \ activate acceleraror
+   ck-0 DO-1 ck-1                         \ signalise read mode
+   #25 lshift                             \ prepare address a6..0 .. b31..25
+   tx-7-bit                               \ transfer the address
+   mems-miso gpio-input                   \ switch miso to input
    
 \ ********** global Sensor init **********
 : SENSOR-GPIO-INIT  ( -- )
