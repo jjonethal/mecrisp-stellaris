@@ -208,35 +208,41 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    rx-4-bit rx-4-bit ;   
 : cs-1-all  ( -- )                        \ set all chip select 1 ( idle )
    mag-cs-1 gyro-cs1 xl-cs-1 ;            
-   
-: XL-WRITE  ( b adr -- )                  \ write byte to address
-   cs-1-all                               \ sensor-spi-idle
-   ck-1                                   \ clock idle
-   xl-cs-0                                \ start cs-0
-   ck-0 DO-0 ck-1                         \ R/W -write
+
+: spi-write-byte ( b adr -- ) 
+   ck-0 DO-0 ck-1                         \ signal write mode
    #25 lshift                             \ shift AD6..0 to b31..b25
    tx-7-bit                               \ AD6..AD0 -write
-   drop
+   drop                                   \ get byte to transfer
    #24 lshift                             \ b7..0 -> b31..24
-   tx-8-bit xl-cs-0 ;
+   tx-8-bit ;
+   
+: XL-WRITE  ( b adr -- )                  \ write byte to register address
+   cs-1-all                               \ sensor-spi-idle
+   mems-mosi gpio-output                  \ switch mems_mosi to output
+   ck-1                                   \ clock idle
+   xl-cs-0                                \ start cs-0
+   spi-write-byte                         \ send register and byte
+   xl-cs-0 ;
+
 : XL-READ-BYTE ( adr -- b )               \ read 1 byte from sensor at address
    cs-1-all                               \ all sensors idle
    ck-1                                   \ clock idle
    xl-cs-0                                \ activate acceleraror
-   ck-0 DO-1 ck-1                         \ signalise read mode
+   ck-0 DO-1 ck-1                         \ signal read mode
    #25 lshift                             \ prepare address a6..0 .. b31..25
    tx-7-bit                               \ transfer the address
-   mems-miso gpio-input                   \ switch miso to input
+   mems-mosi gpio-input                   \ switch miso to input
    rx-8-bit ;                             \ read in 8 bit from mosi 3-wire spi
    
    
 \ ********** global Sensor init **********
 : SENSOR-GPIO-INIT  ( -- )
-   1 PORTB RCC-GPIO-CLK!
+   1 PORTB RCC-GPIO-CLK!                  \ enable gpio clocks
    1 PORTC RCC-GPIO-CLK!
    1 PORTD RCC-GPIO-CLK!
    1 PORTE RCC-GPIO-CLK!
-   XL-CS-1
+   XL-CS-1                                \ disable accel sensor
    XL_CS   GPIO-OUTPUT-PP
    MAG-CS-1
    MAG_CS  GPIO-OUTPUT-PP
