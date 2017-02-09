@@ -197,17 +197,17 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    1 and swap 2* or 2-foldable ;
 : rx-bit ( b -- b )                       \ receive one bit
    ck-0 2* mems-mosi? 1 and or ck-1 ; 
-: rx-2-bit ( b -- b )                     \ receive bit
+: rx-2-bit ( b -- b )                     \ receive 2 bits
    rx-bit rx-bit ;   
-: rx-4-bit ( b -- b )
+: rx-4-bit ( b -- b )                     \ receive 4 bits
    rx-bit rx-bit rx-bit rx-bit ;   
-: rx-8-bit ( b -- b )                     \ receive 8 bit from spi
+: rx-8-bit ( b -- b )                     \ receive 8 bits from spi
    rx-4-bit rx-4-bit ;   
 : cs-1-all  ( -- )                        \ set all chip select 1 ( idle )
-   mag-cs-1 gyro-cs1 xl-cs-1 ;            
+   mag-cs-1 gyro-cs-1 xl-cs-1 ;            
 
 : spi-xfer-init-reg ( reg f -- )          \ init transfer to reg read/write
-   mems-mosi gpio-output                  \ switch mems_mosi to output
+   mems_mosi gpio-output                  \ switch mems_mosi to output
    ck-0 do! ck-1                          \ signal read/write mode
    #25 lshift                             \ shift AD6..0 to b31..b25
    tx-7-bit                               \ AD6..AD0 -write
@@ -220,15 +220,15 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : spi-write-bytes  ( cnt adr reg -- )     \ send buffer at adr
    0 spi-xfer-init-reg                    \ init write to reg
    tuck + swap                            \ calc loop end
-   ?do i c@ tx-8-bit                       \ b2..data 
+   ?do i c@ tx-8-bit                      \ transmit bytes 
    drop loop ;
-: spi-read-byte ( reg -- b )
+: spi-read-byte ( reg -- b )              \ read a byte from reg
    1 spi-xfer-init-reg                    \ init read from reg
-   mems-mosi gpio-input                   \ switch miso to input
+   mems_mosi gpio-input                   \ switch miso to input
    0 rx-8-bit ;                           \ read in 8 bit from mosi 3-wire spi
 : spi-read-bytes ( cnt adr reg -- )
    1 spi-xfer-init-reg                    \ init read from reg
-   mems-mosi gpio-input                   \ switch miso to input
+   mems_mosi gpio-input                   \ switch miso to input
    tuck + swap
    ?do 0 rx-8-bit i c! loop ;             \ read in 8 bit from mosi 3-wire spi
 
