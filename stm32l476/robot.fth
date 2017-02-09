@@ -162,10 +162,6 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
    and XL_CS BSRR ! ;
-\ : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
-\    0= 16 and XL_CS pin# +
-\    1 swap lshift
-\    XL_CS BSRR ! ;
 : MAG-CS! ( f -- )                        \ set/reset MAG_CS pin depending on flag
    BSRR-SEL MAG_CS BSRR-MASK
    and MAG_CS BSRR ! ;                     
@@ -179,9 +175,10 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    BSRR-SEL MEMS_MOSI BSRR-MASK
    and MEMS_MOSI BSRR ! ;
 : ck-0 ( -- ) MEMS-SCK-0 ;                \ set clock 0
-: ck-1 MEMS-SCK-1 ;                       \ set clock 1
-: do-0 MEMS-MOSI-0 ;                      \ set data out 0
-: do-1 MEMS-MOSI-1 ;                      \ set data out 1
+: ck-1 ( -- ) MEMS-SCK-1 ;                \ set clock 1
+: do-0 ( -- ) MEMS-MOSI-0 ;               \ set data out 0
+: do-1 ( -- ) MEMS-MOSI-1 ;               \ set data out 1
+: do!  ( f -- )  MEMS-MOSI! ;             \ send bit to mems_mosi
 : bit ( w n -- b f )                      \ extract bit number n from w
    1 swap lshift over and 0<> 2-foldable ;
 : <<bit ( b -- b f )                      \ extract bit 31 and shift left reminder
@@ -209,31 +206,43 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : cs-1-all  ( -- )                        \ set all chip select 1 ( idle )
    mag-cs-1 gyro-cs1 xl-cs-1 ;            
 
-: spi-write-byte ( b adr -- ) 
-   ck-0 DO-0 ck-1                         \ signal write mode
+: spi-xfer-init-reg ( reg f -- )          \ init transfer to reg read/write
+   mems-mosi gpio-output                  \ switch mems_mosi to output
+   ck-0 do! ck-1                          \ signal read/write mode
    #25 lshift                             \ shift AD6..0 to b31..b25
    tx-7-bit                               \ AD6..AD0 -write
-   drop                                   \ get byte to transfer
+   drop   ;                               \ drop reg
+
+: spi-write-reg ( b reg -- ) 
+   0 spi-xfer-init-reg                    \ init write from reg
    #24 lshift                             \ b7..0 -> b31..24
    tx-8-bit ;
-   
-: XL-WRITE  ( b adr -- )                  \ write byte to register address
+: spi-write-bytes  ( cnt adr reg -- )     \ send buffer at adr
+   0 spi-xfer-init-reg                    \ init write to reg
+   tuck + swap                            \ calc loop end
+   ?do i c@ tx-8-bit                       \ b2..data 
+   drop loop ;
+: spi-read-byte ( reg -- b )
+   1 spi-xfer-init-reg                    \ init read from reg
+   mems-mosi gpio-input                   \ switch miso to input
+   0 rx-8-bit ;                           \ read in 8 bit from mosi 3-wire spi
+: spi-read-bytes ( cnt adr reg -- )
+   1 spi-xfer-init-reg                    \ init read from reg
+   mems-mosi gpio-input                   \ switch miso to input
+   tuck + swap
+   ?do 0 rx-8-bit i c! loop ;             \ read in 8 bit from mosi 3-wire spi
+
+: XL-WRITE-REG  ( b reg -- )              \ write byte to register address
    cs-1-all                               \ sensor-spi-idle
-   mems-mosi gpio-output                  \ switch mems_mosi to output
    ck-1                                   \ clock idle
    xl-cs-0                                \ start cs-0
-   spi-write-byte                         \ send register and byte
+   spi-write-reg                          \ send register and byte
    xl-cs-0 ;
-
 : XL-READ-BYTE ( adr -- b )               \ read 1 byte from sensor at address
    cs-1-all                               \ all sensors idle
    ck-1                                   \ clock idle
    xl-cs-0                                \ activate acceleraror
-   ck-0 DO-1 ck-1                         \ signal read mode
-   #25 lshift                             \ prepare address a6..0 .. b31..25
-   tx-7-bit                               \ transfer the address
-   mems-mosi gpio-input                   \ switch miso to input
-   rx-8-bit ;                             \ read in 8 bit from mosi 3-wire spi
+   spi-read-byte ;                        \ read in 8 bit from mosi 3-wire spi
    
    
 \ ********** global Sensor init **********
