@@ -40,7 +40,7 @@ SRAM1_START SRAM1_SIZE + 1-
 : pin# ( pin -- n ) $F and 1-foldable ;
 
 : 2** ( n -- n ) 1 swap lshift 1-foldable ;
-  
+
 0 #0 gpio-pin constant PORTA
 0 #1 gpio-pin constant PORTB
 0 #2 gpio-pin constant PORTC
@@ -115,8 +115,18 @@ $20          constant GPIO_AFRL
    0 #15 do dup 3 i 2* lshift and i 2* rshift u.2 space -1 +loop  drop ;
 : gpio-data? ( pin -- )                   \ get input data from pin
    dup pin# 1 swap lshift swap
-   port-base $10 + bit@ ;   
-   
+   port-base $10 + bit@ ;
+:  moder-id ( n -- )                      \ emit symbolic gpio-moder values
+    #3 and 2* s" INOUAFAN" drop + 2 type ; \ 0-IN 1-OU 2-AF 3-AN
+: .gpio-moder ( r -- )                    \ dump gpio moder
+   base @ swap
+   decimal
+   port-base @ cr 0 #15 do i u.2 space -1 +loop cr
+   hex
+   0 #15 do dup i gpio-2-bit-mask and i 2* rshift u.2 space -1 +loop cr
+   0 #15 do dup i gpio-2-bit-mask and i 2* rshift moder-id space -1 +loop cr
+   drop
+   base ! ;
 \ TODO : GPIO_PUPD ( m pin -- ) ;    
 \ ********** RCC constants ***************
 $40021000       constant RCC_BASE
@@ -159,6 +169,12 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : MEMS-MOSI?  ( -- f )                    \ query mems-mosi pin, used by 3-wire
    1 MEMS_MOSI pin# lshift                \ spi read for xl sensor
    MEMS_MOSI port-base #10 + bit@ ;
+: SCK? ( -- f )                           \ query sck data pin
+   MEMS_SCK gpio-data? ;
+: XL-cs? ( -- f ) XL_CS gpio-data? ;
+
+: .spi ." XL-CS " XL-cs? . ." SCK " SCK? . ." MOSI " MEMS-MOSI? . cr ;
+	
 : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
    and XL_CS BSRR ! ;
@@ -174,6 +190,7 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : MEMS-MOSI! ( f -- )                     \ set/reset MEMS_MOSI pin depending on flag
    BSRR-SEL MEMS_MOSI BSRR-MASK
    and MEMS_MOSI BSRR ! ;
+: do? MEMS-MOSI? ;
 : ck-0 ( -- ) MEMS-SCK-0 ;                \ set clock 0
 : ck-1 ( -- ) MEMS-SCK-1 ;                \ set clock 1
 : do-0 ( -- ) MEMS-MOSI-0 ;               \ set data out 0
@@ -237,12 +254,13 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    ck-1                                   \ clock idle
    xl-cs-0                                \ start cs-0
    spi-write-reg                          \ send register and byte
-   xl-cs-0 ;
+   xl-cs-1 ;
 : XL-READ-BYTE ( adr -- b )               \ read 1 byte from sensor at address
    cs-1-all                               \ all sensors idle
    ck-1                                   \ clock idle
    xl-cs-0                                \ activate acceleraror
-   spi-read-byte ;                        \ read in 8 bit from mosi 3-wire spi
+   spi-read-byte                          \ read in 8 bit from mosi 3-wire spi
+   xl-cs-1 ;
    
    
 \ ********** global Sensor init **********
@@ -257,7 +275,7 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    MAG_CS  GPIO-OUTPUT-PP
    GYRO-CS-1
    GYRO_CS GPIO-OUTPUT-PP
-   MEMS_MOSI GPIO-OUTPUT-OD
+   MEMS_MOSI GPIO-OUTPUT-PP
    MEMS_SCK  GPIO-INPUT
    GYRO_INT2 GPIO-INPUT
    GYRO_INT1 GPIO-INPUT
