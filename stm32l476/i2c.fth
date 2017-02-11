@@ -20,11 +20,19 @@
 \ 2016oct17jjo continue init, addresses
 \ 2016sep5jjo initial version, add docs
 \
-\ C:\Users\jeanjo\Downloads\stm\en.DM00083560 RM0351 STM32L4x6 advanced ARM®-based 32-bit MCUs .pdf
-\ http://www.st.com/resource/en/programming_manual/dm00046982.pdf
-\ C:\Users\jeanjo\Downloads\stm\en.DM00108832 STM32L476xx datasheet .pdf
-\ http://www.st.com/resource/en/datasheet/stm32l476je.pdf
-\ C:\Users\jeanjo\Downloads\stm\DM00172179 UM1879 User manual Discovery kit with STM32L476VG MCU.pdf
+\ ********** documents online reference **
+\            offline *********************
+\ programming manual
+\   http://www.st.com/resource/en/programming_manual/dm00046982.pdf
+\ data sheet
+\   C:\Users\jeanjo\Downloads\stm\en.DM00108832 STM32L476xx datasheet .pdf
+\   http://www.st.com/resource/en/datasheet/stm32l476je.pdf
+\ Reference manual
+\   http://www.st.com/resource/en/reference_manual/dm00083560.pdf
+\   C:\Users\jeanjo\Downloads\stm\en.DM00083560 RM0351 STM32L4x6 advanced ARM®-based 32-bit MCUs .pdf
+\ discovery kit manual
+\   C:\Users\jeanjo\Downloads\stm\DM00172179 UM1879 User manual Discovery kit with STM32L476VG MCU.pdf
+\ ********** external libraries **********
 \ require utils.fth
 \ require gpio.fth
 \ require rcc.fth
