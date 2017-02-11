@@ -15,6 +15,20 @@
 
 \ file robot.fth
 \ stm32l476 discovery board robot brain ;)
+\ ********** history *********************
+\ 2017feb11jjo add gpio debugging add documentation references
+\ 2017jan31jjo initial version 
+\ ********** documents *******************
+\ programming manual
+\   http://www.st.com/resource/en/programming_manual/dm00046982.pdf
+\ data sheet
+\   C:\Users\jeanjo\Downloads\stm\en.DM00108832 STM32L476xx datasheet .pdf
+\   http://www.st.com/resource/en/datasheet/stm32l476je.pdf
+\ Reference manual
+\   http://www.st.com/resource/en/reference_manual/dm00083560.pdf
+\   C:\Users\jeanjo\Downloads\stm\en.DM00083560 RM0351 STM32L4x6 advanced ARM®-based 32-bit MCUs .pdf
+\ discovery kit manual
+\   C:\Users\jeanjo\Downloads\stm\DM00172179 UM1879 User manual Discovery kit with STM32L476VG MCU.pdf
 
 : KBYTE ( n -- n ) #1024 * 1-foldable ;   \ convert kbyte to byte
 
@@ -116,17 +130,55 @@ $20          constant GPIO_AFRL
 : gpio-data? ( pin -- )                   \ get input data from pin
    dup pin# 1 swap lshift swap
    port-base $10 + bit@ ;
-:  moder-id ( n -- )                      \ emit symbolic gpio-moder values
+
+: moder-id ( n -- )                      \ emit symbolic gpio-moder values
     #3 and 2* s" INOUAFAN" drop + 2 type ; \ 0-IN 1-OU 2-AF 3-AN
+: otyper-id ( n -- )
+    #1 and 2* s" PPOD" drop + 2 type ; \ 0-PP 1-OD
+: pupdr-id ( n -- )                      \ emit symbolic gpio-pupdr values
+    #3 and 2* s" NOPUPDXX" drop + 2 type ; \ 0-NO 1-PU 2-PD 3-XX
+
+: base-save-10 ( n -- base n )
+   base @ swap decimal ;
+: base! ( base -- ) base ! ;
+: dump15-0 ( -- ) 0 15 do i u.2 space -1 +loop ;
 : .gpio-moder ( r -- )                    \ dump gpio moder
-   base @ swap
-   decimal
-   port-base @ cr 0 #15 do i u.2 space -1 +loop cr
+   base-save-10
+   port-base @ cr dump15-0 cr
    hex
-   0 #15 do dup i gpio-2-bit-mask and i 2* rshift u.2 space -1 +loop cr
-   0 #15 do dup i gpio-2-bit-mask and i 2* rshift moder-id space -1 +loop cr
-   drop
-   base ! ;
+   0 #15 do dup i 2* rshift 3 and u.2 space -1 +loop cr
+   0 #15 do dup i 2* rshift 3 and moder-id space -1 +loop cr
+   drop base! ;
+: .gpio-otyper ( r -- )
+  base-save-10
+  cr dump15-0 cr
+  port-base 4 + @
+  0 15 do dup i rshift 1 and u.2 space -1 +loop cr
+  0 15 do dup i rshift 1 and otyper-id space -1 +loop cr 
+  drop base! ;
+: .gpio-pupdr ( r -- )                    \ dump gpio pupdr
+   base-save-10
+   port-base $c + @ cr dump15-0 cr
+   hex
+   0 #15 do dup i 2* rshift 3 and u.2 space -1 +loop cr
+   0 #15 do dup i 2* rshift 3 and pupdr-id space -1 +loop cr
+   drop base! ;
+: .gpio-idr ( r -- )
+  base-save-10
+  cr dump15-0 cr
+  port-base $10 + @
+  0 15 do dup i rshift 1 and u.2 space -1 +loop cr
+  drop base! ;
+: 4* ( n -- n )  2 lshift 1-foldable ;
+: .gpio-afr ( r -- )                    \ dump gpio pupdr
+   base-save-10
+   port-base $24 + dup @ cr dump15-0 cr
+   hex
+   0 #7 do dup i 4* rshift $f and u.2 space -1 +loop
+   drop 4 - @
+   0 #7 do dup i 4* rshift $f and u.2 space -1 +loop cr
+   drop base! ;
+
 \ TODO : GPIO_PUPD ( m pin -- ) ;    
 \ ********** RCC constants ***************
 $40021000       constant RCC_BASE
@@ -155,6 +207,15 @@ PORTD 4 or CONSTANT MEMS_MOSI             \ SDA/SDI/SDO
 PORTC 2 or CONSTANT MAG_RDY               \ Magnetometer data ready
 PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 
+$23 constant CTRL_REG4_A
+$22 constant CTRL_REG3_M
+#1 #7 lshift constant CTRL_REG3_M.I2C_DISABLE
+#1 #5 lshift constant CTRL_REG3_M.LP
+#1 #2 lshift constant CTRL_REG3_M.SIM
+#1 #1 lshift constant CTRL_REG3_M.MD1
+#1 #0 lshift constant CTRL_REG3_M.MD0
+
+
 \ ********** sensor pin functions ********
 : XL-CS-1     ( -- ) XL_CS     PIN-SET   ! ;  \ set accelerator chip select to 1 
 : XL-CS-0     ( -- ) XL_CS     PIN-RESET ! ;  \ reset accelerator chip select to 0 
@@ -168,12 +229,15 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : MEMS-MOSI-0 ( -- ) MEMS_MOSI PIN-RESET ! ;  \ reset mems mosi signal to 0
 : MEMS-MOSI?  ( -- f )                    \ query mems-mosi pin, used by 3-wire
    1 MEMS_MOSI pin# lshift                \ spi read for xl sensor
-   MEMS_MOSI port-base #10 + bit@ ;
+   MEMS_MOSI port-base $10 + @ and 0<> ;
 : SCK? ( -- f )                           \ query sck data pin
    MEMS_SCK gpio-data? ;
 : XL-cs? ( -- f ) XL_CS gpio-data? ;
 
-: .spi ." XL-CS " XL-cs? . ." SCK " SCK? . ." MOSI " MEMS-MOSI? . cr ;
+: 1& ( n -- n ) 1 and 1-foldable ;
+
+: .spi ( -- )
+   ." XL-CS " XL-cs? 1& . ." SCK " SCK? 1& . ." MOSI " MEMS-MOSI? 1& . cr ;
 	
 : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
@@ -201,7 +265,14 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : <<bit ( b -- b f )                      \ extract bit 31 and shift left reminder
 	 dup 2* swap 0< 1-foldable ;
 : tx-bit ( b -- b )                       \ transfer on bit31 of a byte via spi 
-   ck-0 <<bit mems-mosi! ck-1 ;           \ and shift byte left by 1 bit
+   ck-0
+   .spi
+   <<bit
+   mems-mosi!
+   .spi
+   ck-1
+   .spi
+   ;           \ and shift byte left by 1 bit
 : tx-2-bit ( b -- b )                     \ transfer bit 31..30 via spi 
    tx-bit tx-bit ;                        \ and shift byte left by 2 bit
 : tx-4-bit ( b -- b )                     \ transfer bit 31..28 via spi 
@@ -213,7 +284,12 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 : bit<< ( b f -- b )                      \ shift word left shift in bit from spi    <--spi
    1 and swap 2* or 2-foldable ;
 : rx-bit ( b -- b )                       \ receive one bit
-   ck-0 2* mems-mosi? 1 and or ck-1 ; 
+   .spi
+   ck-0
+   .spi
+   2* mems-mosi? 1 and or
+   ck-1
+   .spi   ; 
 : rx-2-bit ( b -- b )                     \ receive 2 bits
    rx-bit rx-bit ;   
 : rx-4-bit ( b -- b )                     \ receive 4 bits
@@ -225,7 +301,13 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 
 : spi-xfer-init-reg ( reg f -- )          \ init transfer to reg read/write
    mems_mosi gpio-output                  \ switch mems_mosi to output
-   ck-0 do! ck-1                          \ signal read/write mode
+   .spi
+   ck-0
+   .spi
+   do!
+   .spi
+   ck-1                                   \ signal read/write mode
+   .spi
    #25 lshift                             \ shift AD6..0 to b31..b25
    tx-7-bit                               \ AD6..AD0 -write
    drop   ;                               \ drop reg
@@ -241,7 +323,9 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    drop loop ;
 : spi-read-byte ( reg -- b )              \ read a byte from reg
    1 spi-xfer-init-reg                    \ init read from reg
+   .spi
    mems_mosi gpio-input                   \ switch miso to input
+   .spi
    0 rx-8-bit ;                           \ read in 8 bit from mosi 3-wire spi
 : spi-read-bytes ( cnt adr reg -- )
    1 spi-xfer-init-reg                    \ init read from reg
@@ -249,19 +333,50 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    tuck + swap
    ?do 0 rx-8-bit i c! loop ;             \ read in 8 bit from mosi 3-wire spi
 
-: XL-WRITE-REG  ( b reg -- )              \ write byte to register address
+: XL-WRITE-BYTE  ( b reg -- )              \ write byte to register address
+   .spi
    cs-1-all                               \ sensor-spi-idle
+   .spi
    ck-1                                   \ clock idle
    xl-cs-0                                \ start cs-0
+   .spi
    spi-write-reg                          \ send register and byte
-   xl-cs-1 ;
+   .spi
+   xl-cs-1
+   .spi ;
 : XL-READ-BYTE ( adr -- b )               \ read 1 byte from sensor at address
    cs-1-all                               \ all sensors idle
+   .spi
    ck-1                                   \ clock idle
+   .spi
    xl-cs-0                                \ activate acceleraror
+   .spi
    spi-read-byte                          \ read in 8 bit from mosi 3-wire spi
-   xl-cs-1 ;
-   
+   .spi
+   xl-cs-1
+   .spi ;
+: MAG-WRITE-BYTE  ( b reg -- )            \ write byte to register address
+   .spi
+   cs-1-all                               \ sensor-spi-idle
+   .spi
+   ck-1                                   \ clock idle
+   mag-cs-0                               \ start cs-0
+   .spi
+   spi-write-reg                          \ send register and byte
+   .spi
+   mag-cs-1
+   .spi ;
+: MAG-READ-BYTE ( adr -- b )              \ read 1 byte from sensor at address
+   cs-1-all                               \ all sensors idle
+   .spi
+   ck-1                                   \ clock idle
+   .spi
+   mag-cs-0                               \ activate acceleraror
+   .spi
+   spi-read-byte                          \ read in 8 bit from mosi 3-wire spi
+   .spi
+   mag-cs-1
+   .spi ;
    
 \ ********** global Sensor init **********
 : SENSOR-GPIO-INIT  ( -- )
@@ -276,7 +391,8 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
    GYRO-CS-1
    GYRO_CS GPIO-OUTPUT-PP
    MEMS_MOSI GPIO-OUTPUT-PP
-   MEMS_SCK  GPIO-INPUT
+   MEMS_SCK  GPIO-OUTPUT-PP
+   MEMS-SCK-1
    GYRO_INT2 GPIO-INPUT
    GYRO_INT1 GPIO-INPUT
    XL_INT    GPIO-INPUT
@@ -286,9 +402,25 @@ PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 \ ********** SPI sensor driver ***********
 : ACCEL-SPI-GPIO-INIT  ( -- )
 ;
+ 
+: ACCEL-SPI-INIT ( -- )                   \ initialize accelerator spi mode
+   SENSOR-GPIO-INIT                       \ turn on sensor gpio ports
+   5 CTRL_REG4_A XL-WRITE-BYTE
+   $f xl-read-byte ;                          
 
-: ACCEL-INIT-SPI ( -- )                   \ initialize accelerator spi mode
-   SENSOR-GPIO-INIT ;               \ turn on sensor gpio ports
+: xl-spi-read-enable ( -- )               \ enable spi read 
+   5 CTRL_REG4_A XL-WRITE-BYTE ;
+: mag-spi-read-enable ( -- )
+  CTRL_REG3_M.SIM CTRL_REG3_M MAG-WRITE-BYTE ;
+: test \ test acceleration-sensor 
+   SENSOR-GPIO-INIT
+   5 CTRL_REG4_A XL-WRITE-BYTE            \ enable spi read 
+   ." xl-write " cr
+   $f xl-read-byte hex ." xl who ami $41=" . cr
+   mag-spi-read-enable
+   $F mag-read-byte hex ." mag who ami $3D=" . cr
+   ;                          
+   
 
 \ ********** QSPI Memory *****************
 \ N25Q128A13EF840E
