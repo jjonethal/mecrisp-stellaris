@@ -19,8 +19,8 @@ set MACRO=%~dp0tempmac.ttl
 set tt_dir=C:\app\teraterm
 
 
-%tt_dir%\ttpmacro.exe "%~dp0upload.ttl" %*
-goto :EOF
+:: %tt_dir%\ttpmacro.exe "%~dp0upload.ttl" %*
+:: goto :EOF
 
 :: clean temporary macro
 echo. > %MACRO%
