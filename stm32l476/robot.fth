@@ -16,6 +16,7 @@
 \ file robot.fth
 \ stm32l476 discovery board robot brain ;)
 \ ********** history *********************
+\ 2017feb12jjo try spi hw block in bidi mode
 \ 2017feb11jjo add gpio debugging add documentation references
 \ 2017jan31jjo initial version 
 \ ********** documents *******************
@@ -30,6 +31,15 @@
 \ discovery kit manual
 \   C:\Users\jeanjo\Downloads\stm\DM00172179 UM1879 User manual Discovery kit with STM32L476VG MCU.pdf
 
+\ ********** Hardware concept ************
+\ hardware SPI block 2 on  stm32L476 can be used for bidi communication
+\ PD1 - serial clock
+\ PD3 - MISO
+\ PD4 - MOSI
+
+reset
+
+\ ********** Common utilities ************
 : KBYTE ( n -- n ) #1024 * 1-foldable ;   \ convert kbyte to byte
 
 \ ********** system memory definitions ***
@@ -130,7 +140,6 @@ $20          constant GPIO_AFRL
 : gpio-data? ( pin -- )                   \ get input data from pin
    dup pin# 1 swap lshift swap
    port-base $10 + bit@ ;
-
 : moder-id ( n -- )                      \ emit symbolic gpio-moder values
     #3 and 2* s" INOUAFAN" drop + 2 type ; \ 0-IN 1-OU 2-AF 3-AN
 : otyper-id ( n -- )
@@ -164,11 +173,11 @@ $20          constant GPIO_AFRL
    0 #15 do dup i 2* rshift 3 and pupdr-id space -1 +loop cr
    drop base! ;
 : .gpio-idr ( r -- )
-  base-save-10
-  cr dump15-0 cr
-  port-base $10 + @
-  0 15 do dup i rshift 1 and u.2 space -1 +loop cr
-  drop base! ;
+   base-save-10
+   cr dump15-0 cr
+   port-base $10 + @
+   0 15 do dup i rshift 1 and u.2 space -1 +loop cr
+   drop base! ;
 : 4* ( n -- n )  2 lshift 1-foldable ;
 : .gpio-afr ( r -- )                    \ dump gpio pupdr
    base-save-10
@@ -179,13 +188,21 @@ $20          constant GPIO_AFRL
    0 #7 do dup i 4* rshift $f and u.2 space -1 +loop cr
    drop base! ;
 
-\ TODO : GPIO_PUPD ( m pin -- ) ;    
 \ ********** RCC constants ***************
 $40021000       constant RCC_BASE
-$4C RCC_BASE or constant RCC_AHB2ENR 
+$38 RCC_BASE or constant RCC_APB1RSTR1
+  1 #14 lshift  constant RCC_APB1RSTR1_SPI2RST
+$4C RCC_BASE or constant RCC_AHB2ENR
+$58 RCC_BASE or constant RCC_APB1ENR1
+  1 #14 lshift  constant RCC_APB1ENR1_SPI2EN
+ 
 : RCC-GPIO-CLK! ( f port -- )              \ enable / disable gpio port clock 
    gpio-port# 1 swap lshift
    RCC_AHB2ENR  bits! ;
+: rcc-spi2-ena ( -- )                     \ enable spi2 clock
+   1 RCC_APB1ENR1_SPI2EN RCC_APB1ENR1 bits! ;
+: rcc-spi2-reset ( -- )                   \ reset spi2 block
+   1 RCC_APB1RSTR1_SPI2RST RCC_APB1RSTR1 bits! ;
 
 \ ********** L3GD20 Pins *****************
 \ http://www.st.com/resource/en/datasheet/l3gd20.pdf
@@ -207,14 +224,21 @@ PORTD 4 or CONSTANT MEMS_MOSI             \ SDA/SDI/SDO
 PORTC 2 or CONSTANT MAG_RDY               \ Magnetometer data ready
 PORTC 1 or CONSTANT MAG_INT               \ Magnetometer interrupt signal
 
+\ ********** LSM303CTR registers *********
 $23 constant CTRL_REG4_A
+#3 #6 lshift constant CTRL_REG4_A.BW
+#3 #4 lshift constant CTRL_REG4_A.FS
+#1 #3 lshift constant CTRL_REG4_A.BW_SCALE_ODR
+#1 #2 lshift constant CTRL_REG4_A.IF_ADD_INC
+#1 #1 lshift constant CTRL_REG4_A.I2C_DISABLE
+#1 #0 lshift constant CTRL_REG4_A.SIM
+
 $22 constant CTRL_REG3_M
 #1 #7 lshift constant CTRL_REG3_M.I2C_DISABLE
 #1 #5 lshift constant CTRL_REG3_M.LP
 #1 #2 lshift constant CTRL_REG3_M.SIM
 #1 #1 lshift constant CTRL_REG3_M.MD1
 #1 #0 lshift constant CTRL_REG3_M.MD0
-
 
 \ ********** sensor pin functions ********
 : XL-CS-1     ( -- ) XL_CS     PIN-SET   ! ;  \ set accelerator chip select to 1 
@@ -236,8 +260,12 @@ $22 constant CTRL_REG3_M
 
 : 1& ( n -- n ) 1 and 1-foldable ;
 
+0 variable DEBUG-SPI
+
 : .spi ( -- )
-   ." XL-CS " XL-cs? 1& . ." SCK " SCK? 1& . ." MOSI " MEMS-MOSI? 1& . cr ;
+   DEBUG-SPI @ if
+   ." XL-CS " XL-cs? 1& . ." SCK " SCK? 1& . ." MOSI " MEMS-MOSI? 1& . cr
+   then ;
 	
 : XL-CS! ( f -- )                         \ set/reset XL_CS pin depending on flag
    BSRR-SEL XL_CS BSRR-MASK
@@ -299,7 +327,7 @@ $22 constant CTRL_REG3_M
 : cs-1-all  ( -- )                        \ set all chip select 1 ( idle )
    mag-cs-1 gyro-cs-1 xl-cs-1 ;            
 
-: spi-xfer-init-reg ( reg f -- )          \ init transfer to reg read/write
+: spi-xfer-init-reg ( reg r/w -- )        \ init transfer to reg read(1)/write(0)
    mems_mosi gpio-output                  \ switch mems_mosi to output
    .spi
    ck-0
@@ -377,7 +405,6 @@ $22 constant CTRL_REG3_M
    .spi
    mag-cs-1
    .spi ;
-   
 \ ********** global Sensor init **********
 : SENSOR-GPIO-INIT  ( -- )
    1 PORTB RCC-GPIO-CLK!                  \ enable gpio clocks
@@ -403,15 +430,14 @@ $22 constant CTRL_REG3_M
 : ACCEL-SPI-GPIO-INIT  ( -- )
 ;
  
-: ACCEL-SPI-INIT ( -- )                   \ initialize accelerator spi mode
+: ACCEL-SPI-INIT ( -- f )                 \ initialize accelerator spi mode
    SENSOR-GPIO-INIT                       \ turn on sensor gpio ports
    5 CTRL_REG4_A XL-WRITE-BYTE
-   $f xl-read-byte ;                          
-
+   $f xl-read-byte $41 = ;                          
 : xl-spi-read-enable ( -- )               \ enable spi read 
    5 CTRL_REG4_A XL-WRITE-BYTE ;
 : mag-spi-read-enable ( -- )
-  CTRL_REG3_M.SIM CTRL_REG3_M MAG-WRITE-BYTE ;
+   CTRL_REG3_M.SIM CTRL_REG3_M MAG-WRITE-BYTE ;
 : test \ test acceleration-sensor 
    SENSOR-GPIO-INIT
    5 CTRL_REG4_A XL-WRITE-BYTE            \ enable spi read 
@@ -420,8 +446,169 @@ $22 constant CTRL_REG3_M
    mag-spi-read-enable
    $F mag-read-byte hex ." mag who ami $3D=" . cr
    ;                          
-   
 
+\ ********** SPI HW Operations ***********
+\ PD1 AF5 SPI2_SCK  - MEMS_SCK
+\ PD3 AF5 SPI2_MISO - MEMS_MISO
+\ PD4 AF5 SPI2_MOSI - MEMS_MOSI
+\ PD7     GPIO      - GYRO_CS               
+\ PE0     GPIO      - XL_CS                 \ 1-i2c 0- accel spi mode
+\ PC0     GPIO      - MAG_CS                \ 1-i2c 0 - mag spi mode
+MEMS_MOSI constant SPI2_MOSI
+MEMS_SCK  constant SPI2_SCK
+
+$40003800 constant SPI2_BASE
+$00 SPI2_BASE or constant SPI2_CR1
+1 #15 lshift     constant SPI_CR1_BIDIMODE \ bidi mode halft duplex M:MOSI S:MISO
+1 #14 lshift     constant SPI_CR1_BIDIOE   \ 0-bidi rx,1-bidi tx
+1 #13 lshift     constant SPI_CR1_CRCEN    \ enable crc calc
+1 #12 lshift     constant SPI_CR1_CRCNEXT  \ transfer next data fom tx crc reg
+1 #11 lshift     constant SPI_CR1_CRCL     \ 8/16 bit crc
+1 #10 lshift     constant SPI_CR1_RXONLY
+1  #9 lshift     constant SPI_CR1_SSM
+1  #8 lshift     constant SPI_CR1_SSI
+1  #7 lshift     constant SPI_CR1_LSBFIRST \ 0-msb,1-lsb first
+1  #6 lshift     constant SPI_CR1_SPE      \ SPI enable
+7  #3 lshift     constant SPI_CR1_BR       \ Bitrate = fclk / ( 2^(BR+1))
+1  #2 lshift     constant SPI_CR1_MSTR     \ master mode
+1  #1 lshift     constant SPI_CR1_CPOL     \ clock idle polarity
+1  #0 lshift     constant SPI_CR1_CPHA     \ sample on 0-first,1-second edge
+
+$04 SPI2_BASE or constant SPI2_CR2
+1 #14 lshift constant SPI_CR2_LDMA_TX
+1 #13 lshift constant SPI_CR2_LDMA_RX
+1 #12 lshift constant SPI_CR2_FRXTH
+$f #8 lshift constant SPI_CR2_DS
+1  #7 lshift constant SPI_CR2_TXEIE
+1  #6 lshift constant SPI_CR2_RXNEIE
+1  #5 lshift constant SPI_CR2_ERRIE
+1  #4 lshift constant SPI_CR2_FRF
+1  #3 lshift constant SPI_CR2_NSSP
+1  #2 lshift constant SPI_CR2_SSOE
+1  #1 lshift constant SPI_CR2_TXDMAEN
+1  #0 lshift constant SPI_CR2_RXDMAEN
+
+$08 SPI2_BASE or constant SPI2_SR
+3 #11 lshift constant SPI_SR_FTLVL
+3  #9 lshift constant SPI_SR_FRLVL
+1  #8 lshift constant SPI_SR_FRE
+1  #7 lshift constant SPI_SR_BSY
+1  #6 lshift constant SPI_SR_OVR
+1  #5 lshift constant SPI_SR_MODF
+1  #4 lshift constant SPI_SR_CRCERR
+1  #1 lshift constant SPI_SR_TXE
+1  #0 lshift constant SPI_SR_RXNE
+
+$0C SPI2_BASE or constant SPI2_DR
+: .spi2
+   hex cr
+   ." spi2_cr1 " spi2_cr1 @ u. cr 
+   ." spi2_cr2 " spi2_cr2 @ u. cr
+   ." spi2_sr  " spi2_sr  @ u. cr ;
+
+: spi2-off
+   0 SPI_CR1_SPE SPI2_CR1 bits! ;           \ enable spi
+: spi2-on
+   1 SPI_CR1_SPE SPI2_CR1 bits! ;           \ enable spi
+: spi2-bidioe  ( f -- )
+   SPI_CR1_BIDIOE SPI2_CR1 bits! ;          \ enable spi bidi output enable
+
+: sensor-hw-spi-init  ( -- )                \ initialize spi hw block   
+   SENSOR-GPIO-INIT                         \ gpio port D clock enabled
+   rcc-spi2-ena                             \ spi clock enabled
+   5 SPI2_MOSI mode-af                      \ alternate function for MOSI pin
+   5 SPI2_SCK  mode-af                      \ alternate function for spi clock
+   0 SPI2_CR1 !                             \ turn off spi2
+   1 SPI_CR1_SSM  SPI2_CR1 bits!            \ software slave select mode
+   1 SPI_CR1_SSI  SPI2_CR1 bits!            \ software slave select mode
+   1 SPI_CR1_MSTR SPI2_CR1 bits!            \ we are the master
+   1 SPI_CR1_CPOL SPI2_CR1 bits!            \ clock idle - H 
+   1 SPI_CR1_CPHA SPI2_CR1 bits!            \ sample data on rising edge
+   7 SPI_CR1_BR SPI2_CR1 bits!              \ bit rate 1/4 of APB1 clock
+   1 SPI_CR1_BIDIMODE SPI2_CR1 bits!        \ bidi mode
+   1 SPI_CR1_BIDIOE SPI2_CR1 bits!          \ output enable - we start in tx mode 
+   0 SPI2_CR2 !                             \ reset spi_cr2
+   1 SPI_CR2_FRXTH SPI2_CR2 bits!           \ trigger RXNE when one byte arrived
+   7 SPI_CR2_DS SPI2_CR2 bits!              \ 8 bit transfer unit
+   spi2-on ;                                \ enable spi
+: spi2-txe? ( -- f )
+   SPI_SR_TXE SPI2_SR bit@ ;
+: spi2-rxne? ( -- f )
+   SPI_SR_RXNE SPI2_SR bit@ ;
+: spi-pause-until-txe ( -- )
+   ." txe pause " cr
+   begin SPI2-TXE? not while pause repeat
+   ." txe pause end " cr ;
+: spi-pause-until-rxne ( -- )
+\   ." rxne pause " cr 
+   begin SPI2-RXNE? not while pause repeat
+\   ." rxne pause end " cr
+   ;
+: spi-dr-dump ( -- )
+   ." spi_dr dump " begin SPI2-RXNE? while spi2_dr c@ . space repeat cr ;
+: spi-write-reg-h ( b reg -- )
+   spi2-off
+   1 SPI_CR1_BIDIOE SPI2_CR1 bits!        \ switch to tx mode
+   spi2-on
+   SPI2_DR !                        
+   spi-pause-until-txe
+   SPI2_DR !
+   spi-pause-until-txe ;
+: spi-read-reg-h ( reg -- b )
+   spi2-off
+   1 SPI_CR1_BIDIOE SPI2_CR1 bits!        \ switch to tx mode
+   spi2-on
+   SPI2_DR !
+   ." spi-read-reg-h 1" .spi2 
+   spi-pause-until-txe
+   ." spi-read-reg-h 2" .spi2 
+   spi2-off
+   0 SPI_CR1_BIDIOE SPI2_CR1 bits!        \ switch to rx mode
+   spi2-on
+   \ ." spi-read-reg-h 4" .spi2 
+   spi-pause-until-rxne                   \ wait for incomming byte
+   1 SPI_CR1_BIDIOE SPI2_CR1 bits!        \ switch to rx mode
+   spi-dr-dump 
+   SPI2_DR c@ 
+   spi2-off ;
+: xl-write-byte-hw ( b reg -- )           \ write 1 byte via hw mode
+   XL-CS-0
+   $7F and                                \ in register write mode bit7 ->0
+   spi-write-reg-h
+   spi-pause-until-txe
+   XL-CS-1 ;
+: xl-read-byte-hw ( reg -- b )            \ read 1 byte via hw mode
+   XL-CS-0
+   $80 or                                 \ for bidi read mode set bit 7 in reg
+   spi-read-reg-h
+   XL-CS-1 ;
+: mag-write-byte-hw ( b reg -- )          \ write 1 byte via hw mode
+   MAG-CS-0
+   $7F and                                \ in register write mode bit7 ->0
+   spi-write-reg-h
+   spi-pause-until-txe
+   mag-CS-1 ;
+: mag-read-byte-hw ( reg -- b )           \ read 1 byte via hw mode
+   mag-cs-0
+   $80 or                                 \ for bidi read mode set bit 7 in reg
+   spi-read-reg-h
+   mag-cs-1 ;
+: xl-spi-read-enable-hw ( -- )            \ enable spi read 
+   CTRL_REG4_A.IF_ADD_INC
+   CTRL_REG4_A.SIM OR
+   CTRL_REG4_A xl-write-byte-hw ;
+: mag-spi-read-enable-hw ( -- )
+   CTRL_REG3_M.SIM CTRL_REG3_M mag-write-byte-hw ;
+
+: test-hw ( -- )
+   sensor-hw-spi-init
+   xl-spi-read-enable-hw
+   .spi2
+   $f xl-read-byte-hw hex ." xl who ami $41=" . cr
+   mag-spi-read-enable-hw
+   $F mag-read-byte-hw hex ." mag who ami $3D=" . cr ;
+
+   
 \ ********** QSPI Memory *****************
 \ N25Q128A13EF840E
 \ https://www.micron.com/~/media/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf
