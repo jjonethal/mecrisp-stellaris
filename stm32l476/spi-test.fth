@@ -130,3 +130,20 @@ PD1 constant SCK
 : sck@   ( -- b ) SCK gpio-data @ swap lshift 1 and ;
 : spi!   ( w -- ) SPI2_DR ! ;
 : spi@   ( -- w ) SPI2_DR @ ; 
+: clk-on ( -- ) 1 MOSI RCC-GPIO-CLK! rcc-spi2-ena ;
+: spi-gpio ( -- ) 5 MOSI mode-af 5 SCK mode-af ;
+: spi-on  ( -- )  SPI_CR1_SPE SPI2_CR1 bis! ;
+: spi-off ( -- )  SPI_CR1_SPE SPI2_CR1 bic! ;
+: spi-init ( -- ) clk-on spi-gpio
+   SPI_CR1_BIDIMODE SPI2_CR1 bis!
+   SPI_CR1_BIDIOE   SPI2_CR1 bis!
+   SPI_CR1_MSTR     SPI2_CR1 bis!
+   SPI_CR1_CPOL     SPI2_CR1 bis!
+   SPI_CR1_CPHA     SPI2_CR1 bis!
+   SPI_CR2_FRF      SPI2_CR2 bic!
+   SPI_CR2_FRXTH    SPI2_CR2 bis!
+   7 SPI_CR1_BR     SPI2_CR1 bits!
+;
+
+
+
