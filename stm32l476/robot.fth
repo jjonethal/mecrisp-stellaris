@@ -513,6 +513,10 @@ $0C SPI2_BASE or constant SPI2_DR
 : spi2-bidioe  ( f -- )
    SPI_CR1_BIDIOE SPI2_CR1 bits! ;          \ enable spi bidi output enable
 
+
+: test-hw-clk ( -- )
+   sck? begin sck? over <> until drop ." test-hw-clk toggle " cr ;
+
 : sensor-hw-spi-init  ( -- )                \ initialize spi hw block   
    SENSOR-GPIO-INIT                         \ gpio port D clock enabled
    rcc-spi2-ena                             \ spi clock enabled
@@ -529,6 +533,7 @@ $0C SPI2_BASE or constant SPI2_DR
    1 SPI_CR1_BIDIOE SPI2_CR1 bits!          \ output enable - we start in tx mode 
    0 SPI2_CR2 !                             \ reset spi_cr2
    1 SPI_CR2_FRXTH SPI2_CR2 bits!           \ trigger RXNE when one byte arrived
+   1 SPI_CR2_FRF SPI2_CR2 bits!             \ ti mode
    7 SPI_CR2_DS SPI2_CR2 bits!              \ 8 bit transfer unit
    spi2-on ;                                \ enable spi
 : spi2-txe? ( -- f )
@@ -546,11 +551,32 @@ $0C SPI2_BASE or constant SPI2_DR
    ;
 : spi-dr-dump ( -- )
    ." spi_dr dump " begin SPI2-RXNE? while spi2_dr c@ . space repeat cr ;
+
+\ ********** mini - la *******************
+0 variable cnt
+1000 buffer: la-buffer
+0 variable last-data
+0 variable do-last
+: put-sample ( c -- )
+   dup last-data !
+   cnt @ dup 1+ dup 1000 < and cnt !
+   la-buffer + c! ;
+: sample
+   sck? 1 and do? 2 and or dup
+   last-data @ <> if put-sample else drop then ;
+: mini-la-tx
+   begin sample spi2-txe? until ;
+: dump-la
+	cnt @ la-buffer + la-buffer
+	  ?do i c@ dup 1 and . 2/ 1 and . cr
+	  loop cr ;
+   
 : spi-write-reg-h ( b reg -- )
    spi2-off
    1 SPI_CR1_BIDIOE SPI2_CR1 bits!        \ switch to tx mode
    spi2-on
-   SPI2_DR !                        
+   SPI2_DR !     
+   mini-la-tx   
    spi-pause-until-txe
    SPI2_DR !
    spi-pause-until-txe ;
