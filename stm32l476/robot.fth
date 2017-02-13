@@ -57,7 +57,7 @@ SRAM1_START SRAM1_SIZE + 1-
 : gpio-pin  ( pinNr portNr -- pin )       \ calculate PIN from pin number and port number
    #10 lshift $48000000
    or or 2-foldable ;                     \ PortA:0 .. PortH:7
-: gpio-port# ( a -- n )                      \ calculate port number from pin
+: gpio-port# ( a -- n )                   \ calculate port number from pin
    #10 rshift #7 and 1-foldable ; 
 : port-base ( pin -- a )                  \ extract port base address from pin
    #7 not and 1-foldable ;
