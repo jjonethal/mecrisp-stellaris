@@ -137,6 +137,7 @@ PD1 constant SCK
 : spi-init ( -- ) clk-on spi-gpio
    SPI_CR1_BIDIMODE SPI2_CR1 bis!
    SPI_CR1_BIDIOE   SPI2_CR1 bis!
+   SPI_CR1_SSM      SPI2_CR1 bis!
    SPI_CR1_MSTR     SPI2_CR1 bis!
    SPI_CR1_CPOL     SPI2_CR1 bis!
    SPI_CR1_CPHA     SPI2_CR1 bis!
@@ -145,5 +146,8 @@ PD1 constant SCK
    7 SPI_CR1_BR     SPI2_CR1 bits!
 ;
 
+: spi-txe? 
+: spi-wait-txe  begin SPI2_SR @ SPI_SR_TXE  and until ;
+: spi-wait-rxne begin SPI2_SR @ SPI_SR_RXNE and until ;
 
 
