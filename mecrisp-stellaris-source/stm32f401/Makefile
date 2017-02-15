@@ -9,6 +9,10 @@ all : mecrisp-stellaris-stm32f401.bin
 mecrisp-stellaris-stm32f401.o : mecrisp-stellaris-stm32f401.s
 	$(ARMGNU)-as mecrisp-stellaris-stm32f401.s -o mecrisp-stellaris-stm32f401.o
 
+# offset 0x08000000 to enable flash with st-link utility
+mecrisp-stellaris-stm32f401.hex : mecrisp-stellaris-stm32f401.bin
+	$(ARMGNU)-objcopy -I binary --change-addresses 0x08000000 mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex  -O ihex
+
 mecrisp-stellaris-stm32f401.bin : memmap mecrisp-stellaris-stm32f401.o
 	$(ARMGNU)-ld -o mecrisp-stellaris-stm32f401.elf -T memmap mecrisp-stellaris-stm32f401.o
 	$(ARMGNU)-objdump -D mecrisp-stellaris-stm32f401.elf > mecrisp-stellaris-stm32f401.list

@@ -1,0 +1,137 @@
+\ terminal ANSI controls
+
+\ number are decimal
+base @
+decimal
+
+0 constant black
+1 constant red
+2 constant green
+3 constant yellow
+4 constant blue
+5 constant magenta
+6 constant cyan
+7 constant white
+
+: .u                  ( u -- )    \ unsigned decimal output without space
+  base @ swap decimal 
+  0 <# #S #> type
+  base ! ;
+
+: ESC                 ( -- )      \ emit escape
+  $1B emit ;
+
+: home                ( -- )      \ set cursor home
+  ESC ." [H" ;
+
+: ";"                 ( -- )      \ emit semicolon
+  [char] ; emit ;
+
+: "m"                 ( -- )      \ emit m
+  [char] m emit ;
+
+: ESC[                ( -- )      \ emit ESC [
+  ESC [char] [ emit ;
+
+: .param2             ( u u -- )  \ output 2 params
+  .u ";" .u ; 
+
+: .param3             ( u u u -- ) \ output 3 params
+  .u ";" .u ";" .u ; 
+
+: cursor-pos          ( l c  -- ) \ set cursor position to l-line, c-column
+  swap ESC[ .param2 [char] H emit ;
+
+: scrolling-region    ( t b -- )  \ set scrolling region t-top b-bottom
+  swap ESC[ .param2 [char] r emit ;
+
+: scroll-range        ( t b -- )  \ set scrolling region t-top b-bottom
+  scrolling-region ;              \ alias for scrolling region
+
+: cursor-restore      ( -- )      \ restore cursor to last saved pos
+  ESC ." [u" ;
+  
+: cursor-save         ( -- )      \ save cursor position
+  ESC ." [s" ;
+
+: cursor-attr-restore ( -- )      \ restore cursor attributes and position
+  ESC 8 .u ;
+
+: cursor-attr-save    ( -- )      \ save cursor attributes and position
+  ESC 7 .u ;
+
+: ctx-push            ( -- )      \ alias to cursor-attr-save
+  cursor-attr-save ;
+
+: ctx-pop             ( -- )      \ alias to cursor-attr-restore
+  cursor-attr-restore ;
+
+: cursor-demo         ( -- )      \ small test
+  base @ 
+  cursor-save 2 50 cursor-pos ." Hello" cursor-restore ;
+
+: attr1               ( u -- )    \ set 1 cursor attribute
+  ESC[ .u "m" ;
+
+: attr2               ( u u -- )  \ set 2 cursor attributes
+  ESC[ .param2 "m" ;
+
+: attr3               ( u u u -- ) \ set 3 cursor attributes
+  ESC[ .param3 "m" ;
+
+: attr-reset          ( -- )      \ reset attributes to default
+  0 attr1 ;
+
+: bright              ( -- )      \ bright fg color attribute
+  1 attr1 ;
+
+: dim                 ( -- )      \ dark bg color attribute
+  2 attr1 ;
+
+: underscore          ( -- )      \ underscore font attribute
+  4 attr1 ;
+
+: blink               ( -- )      \ blinking font attribute
+  5 attr1 ;
+
+: reverse             ( -- )      \ reverse font attribute
+  7 attr1 ;
+  
+: hidden              ( -- )      \ hidden font attribute
+  8 attr1 ;
+
+: foreground          ( color -- ) \ set foreground color attribute
+  30 + attr1 ;
+  
+: background          ( color -- ) \ set background color attribute
+  40 + attr1 ;
+
+: fg                  ( color -- ) \ shortcut to foreground
+  foreground ;
+
+: bg                  ( color -- ) \ shotcut to background
+  background ;
+
+: term-reset          ( -- )       \ reset terminal
+  ESC [char] c emit ;
+
+: demo                ( -- )       \ small terminal demo
+  ctx-push
+  3 50 cursor-pos
+  bright red fg black bg
+  ." Hello world " ctx-pop ;
+
+: hello ( n -- ) \ print n lines hello
+  0 do ." Hello " i . cr loop ;
+
+: demo-scroll ( -- ) \ scrolling demo
+\  term-reset cr
+  7 15 scrolling-region
+  7 1 cursor-pos
+  15 hello
+  16 1 cursor-pos ." ************ NON-Scroll Area" cr
+  ." ************ NON-Scroll Area 2" cr
+  9 1 cursor-pos
+  5 hello  ;
+    
+base ! \ restore number base

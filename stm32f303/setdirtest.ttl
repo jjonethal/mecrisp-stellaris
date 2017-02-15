@@ -1,0 +1,9 @@
+; setdirtest.ttl
+getdir dir
+messagebox dir "current_dir"
+setdir ".."
+getdir dir
+messagebox dir "new_dir"
+setdir "stm32f303"
+getdir dir
+messagebox dir "new_dir"

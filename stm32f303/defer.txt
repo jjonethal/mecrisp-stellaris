@@ -1,0 +1,24 @@
+\ short range defer  
+: defer (create) $FFFFFFFF , $FFFFFFFF , smudge ;
+ \ compile an empty jump
+: is ( cadr -- ) ( "name" )
+  ' swap jump, ;
+
+\ long range defer
+: BX,  ( reg -- )                              \ compile branch exchange to [reg]
+   $f and #3 lshift $4700 or h, ;
+: defer  ( "name" )                            \ create place holder for jump (bx r0)
+   (create) #10 allot smudge ;
+: is  ( a -- ) ( "name" )                      \ create jump to address a at "name"
+   '  here dup >R - allot                      \ adjust here to place holder
+   1 or                                        \ adjust jump target address to thumb mode !
+   0 registerliteral,                          \ compile address to r0
+   0 BX,                                       \ compile BX r0
+   r> here - allot ;                           \ restore dictionary pointer
+
+defer hallo
+: test hallo ;
+see hallo
+: (hallo) ." Hallo " ; ' (hallo) is hallo
+see hallo
+

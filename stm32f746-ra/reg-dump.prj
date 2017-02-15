@@ -1,0 +1,3 @@
+\ reg-dump.prj
+\ require util.fth
+\ require reg-dump.fth

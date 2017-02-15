@@ -1,0 +1,27 @@
+\ ***************************************
+\ file    : editor.txt
+\ author  : jjo
+\ created : 2016-06-30
+\ Block editor
+\ license : GPL v2
+\ ***************************************
+1024 buffer: edit-buffer
+1 variable cursor-x                      \ cursor x position first column is 1
+1 variable cursor-y                      \ cursor y position first row is 1
+: ESC #27 emit ;                         \ output escape char
+: ESC[ ESC [char] [ emit ;               \ output escape [
+: <;> [char] ; emit ;                    \ output semicolon
+: .d ( n -- 0 )                          \ decimal number output 
+   base @ swap decimal 0 <# #s #> type base ! ;
+: cursor-pos ( x y -- )                  \ set cursor to position
+   ESC[ .d <;> .d ." H" ;
+: cursor-home ( -- ) ESC[ ." H" ;        \ set cursor to top left position
+: scan-codes ( -- )                      \ scan and print key codes from uart
+   begin key dup hex. cr #32 = until ;
+\ line cache stores visible line start address and line length
+40 constant edit-max-visible-lines
+edit-max-visible-lines buffer: edit-visible-line-start-table
+edit-max-visible-lines buffer: edit-visible-line-length-table
+
+: editor ( -- )                          \
+   ;

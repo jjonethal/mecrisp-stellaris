@@ -1,0 +1,7 @@
+\ nucleo stm32f411ret6u
+\ 
+
+#8000000  constant HSE_CLK_FREQ \ hse clk freq ( from swi/jtag host )
+#16000000 constant HSI_CLK_FREQ \ internal hsi frequency
+HSEBYP    constant HSE_OSC_MODE \ oscillator mode
+

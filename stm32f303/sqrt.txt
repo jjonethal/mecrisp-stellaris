@@ -1,0 +1,83 @@
+\ Fast integer square root Copyright (C) 2015  Jean Jonethal
+\ This is free software under GNU General Public License v3.
+\ example : 1000000 sqrt .
+\ by Jean Jonethal
+
+: clz3 ( n -- n ) \ count leading zeros 118 bytes
+  dup $ffff0000 and 0= #16 and dup >R lshift
+  dup $ff000000 and 0=  #8 and dup >R lshift
+  dup $f0000000 and 0=  #4 and dup >R lshift
+  dup $c0000000 and 0=  #2 and dup >R lshift
+  dup $80000000 and 0=  #1 and dup >R lshift
+      0=                #1 and R> + R> + R> + R> + R> + ;
+: clz4 ( n -- n ) \ count leading zeros
+  dup $ffff0000 and 0= #16 and tuck lshift
+  dup $ff000000 and 0=  #8 and tuck lshift
+  dup $f0000000 and 0=  #4 and tuck lshift
+  dup $c0000000 and 0=  #2 and tuck lshift
+  dup $80000000 and 0=  #1 and tuck lshift
+      0=                #1 and + + + + + ;
+: clz5 ( n -- n ) 
+  dup $ffff0000 and not if #16 lshift 16 swap then
+  dup $ff000000 and not if  #8 lshift swap 8 + swap then
+  dup $f0000000 and not if  #4 lshift swap 4 + swap then
+  dup $c0000000 and not if  #2 lshift swap 2 + swap then
+  dup $80000000 and not if  #1 lshift swap 1+  swap then
+      0=                #1 and + ;
+
+: clz6 ( n -- n ) \ bytes ops
+   dup $10000 u>= #16 and dup >R rshift
+   dup $100   u>= #8 and dup >R rshift
+   dup $10    u>= #4 and dup >R rshift
+   dup %100   u>= #2 and dup >R rshift
+   dup %10    u>= #1 and dup >R rshift
+   dup %1     u>= #1 and R> + R> + R> + R> + R> + 32 - negate ;
+
+: clz7 ( n -- n ) \ bytes ops
+   dup $10000 u>= #16 and tuck rshift
+   dup $100   u>= #8 and tuck rshift
+   dup $10    u>= #4 and tuck rshift
+   dup %100   u>= #2 and tuck rshift
+   dup %10    u>= #1 and tuck rshift
+       %1     u>= #1 and + + + + + 32 - negate ;
+
+: ctab: <BUILDS DOES> + c@ ;
+: lh, 8 lshift or h, ;
+ctab: DeBruijn 
+    0  9 lh,
+    1 10 lh,
+   13 21 lh,
+    2 29 lh,
+   11 14 lh,
+   16 18 lh,
+   22 25 lh,
+    3 30 lh,
+    8 12 lh,
+   20 28 lh,
+   15 17 lh,
+   24  7 lh,
+   19 27 lh,
+   23  6 lh,
+   26  5 lh,
+    4 31 lh,
+   
+: bitlog-sw ( n -- n )
+   dup shr or \ 1
+   dup #2 rshift or \ 2
+   dup #4 rshift or \ 4
+   dup #8 rshift or \ 8
+   dup #16 rshift or \ 16
+   $07C4ACDD * #27 rshift  DeBruijn ;
+
+: bitlog-hw ( n -- n ) clz 32 - negate inline ;
+   
+: sqrt-step ( a xn -- a xn+1 )  \ perform one sqrt step x(n+1) = ( a/x(n) + x(n))/2 
+   2dup / + 2/ 2-foldable inline ;
+: sqrt ( n -- sqrt ) \ calc square root of signed positive number  0 <= n <= 2^31-1 
+   dup dup
+   clz 32 - negate                   \ bitlog 
+   2/ rshift                         \ first estimation
+   sqrt-step sqrt-step sqrt-step     \ sqrt-step \ sqrt-step
+   swap drop ;
+: test-sqrt ( -- )
+   32768 0 do i i * sqrt i <> if ." error "  i . leave then loop ;

@@ -1,0 +1,122 @@
+CNN : Transponder 28, mit der Frequenz 11.627 V (SR 22000, FEC 5/6) in 
+  Satellit: 	ASTRA Astra 1M 19.2°E
+  [Ausleuchtzone]
+  Ausleuchtzone / Beam: Astra 1M Widebeam
+  Transponder: 	28
+  Frequenz: 	11627 V
+  Symbolrate: 	22000
+  FEC-Wert: 	5/6
+  Service-ID: 	4422
+  PCR-Pid: 	165
+  V-Pid: 	165
+BBC
+  Satellit: 	ASTRA Astra 1L 19.2°E
+  [Ausleuchtzone]
+
+  Ausleuchtzone / Beam: ASTRA 1L
+  Transponder: 	26
+  Frequenz: 	11597 V
+  Symbolrate: 	22000
+  FEC-Wert: 	5/6
+  Service-ID: 	10050
+  PCR-Pid: 	163
+  V-Pid: 	163
+Al Jazeera english:
+  Transponder: 	28
+  Frequenz: 	11627 V
+  Symbolrate: 	22000
+  FEC-Wert: 	5/6
+  Service-ID: 	4440
+  PCR-Pid: 	3505
+  V-Pid: 	3505
+  Sprache/n: 	A-Pid:
+  
+Kalsan TV:
+  Satellit: 	EUTELSAT Eutelsat Hot Bird 13B (8) 13.0°E
+  [Ausleuchtzone]
+  Ausleuchtzone / Beam: HB 8 Europe
+  Transponder: 	14
+  Frequenz: 	11470 V
+  Symbolrate: 	27500
+  FEC-Wert: 	5/6
+  Service-ID: 	4
+  PCR-Pid: 	401
+  V-Pid: 	401
+  
+HCTV - Horn Cable TV (Somalia)
+  Internetadresse
+    
+  Technische Daten:
+  Satellit: 	EUTELSAT Eutelsat Hot Bird 13E 13.0°E
+  Ausleuchtzone / Beam: 
+  Transponder: 	115
+  Frequenz: 	10815 H
+  Symbolrate: 	27500
+  FEC-Wert: 	5/6
+  Service-ID: 	17370
+  PCR-Pid: 	2070
+  V-Pid: 	2070
+  Sprache/n: 	A-Pid:
+  Somalisch 	3070
+  
+Universal Somali TV
+  Internetadresse
+    
+  Technische Daten:
+  Satellit: 	EUTELSAT Eutelsat Hot Bird 13E 13.0°E
+  Ausleuchtzone / Beam: 
+  Transponder: 	134
+  Frequenz: 	11200 V
+  Symbolrate: 	27500
+  FEC-Wert: 	5/6
+  Service-ID: 	4762
+  PCR-Pid: 	2062
+  V-Pid: 	2062
+  Sprache/n: 	A-Pid:
+  Somalisch 	3062
+  
+Somali Cable 	
+  Technische Daten:
+  Satellit: 	EUTELSAT Eutelsat Hot Bird 13B (8) 13.0°E
+  [Ausleuchtzone]
+
+  Ausleuchtzone / Beam: HB 8 Europe
+  Transponder: 	14
+  Frequenz: 	11470 V
+  Symbolrate: 	27500
+  FEC-Wert: 	5/6
+  Service-ID: 	9
+  PCR-Pid: 	902
+  V-Pid: 	901
+  Sprache/n: 	A-Pid:
+  Somalisch 	903
+
+SNTV 	
+  Technische Daten:
+  Satellit: 	EUTELSAT Eutelsat Hot Bird 13B (8) 13.0°E
+  [Ausleuchtzone]
+
+  Ausleuchtzone / Beam: HB 8 Europe
+  Transponder: 	14
+  Frequenz: 	11470 V
+  Symbolrate: 	27500
+  FEC-Wert: 	5/6
+  Service-ID: 	32
+  PCR-Pid: 	3021
+  V-Pid: 	3021
+  Sprache/n: 	A-Pid:
+  Somalisch 	3022
+  
+SLN TV (Somaliland National TV) 	
+  Technische Daten:
+  Satellit: 	EUTELSAT Eutelsat Hot Bird 13E 13.0°E
+  Ausleuchtzone / Beam: 
+  Transponder: 	90
+  Frequenz: 	12520 V
+  Symbolrate: 	27500
+  FEC-Wert: 	3/4
+  Service-ID: 	9016
+  PCR-Pid: 	8190
+  V-Pid: 	1161
+  Sprache/n: 	A-Pid:
+  Somalisch 	1162

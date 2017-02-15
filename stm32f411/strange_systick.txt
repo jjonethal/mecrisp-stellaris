@@ -1,0 +1,129 @@
+\ strange systick
+
+\ systick timer handling
+$E000E010 constant STK_CTRL
+1 16 lshift constant STK_CTRL_COUNTFLAG                \ Returns 1 if timer counted to 0 since last time this was read.
+1  2 lshift constant STK_CTRL_CLK_DIV_1                \ Selects the clock source. 0: AHB/8 1: Processor clock (AHB)
+1  1 lshift constant STK_CTRL_TICKINT                  \ SysTick exception request enable
+                                                       \ 0: Counting down to zero does not assert the SysTick exception request
+													   \ 1: Counting down to zero to asserts the SysTick exception request.
+													   \ Note: Software can use COUNTFLAG to determine if SysTick has ever counted to zero.
+1         constant STK_CTRL_ENABLE
+
+$E000E014 constant STK_LOAD
+$E000E018 constant STK_VAL
+$E000E01C constant STK_CALIB
+
+$00FFFFFF constant SYSTICK_VAL_MASK
+$00FFFFFF constant SYSTICK_RELOAD_VAL
+$01000000 constant SYSTICK_PERIOD
+0 variable systick-counter
+
+STK_CTRL_CLK_DIV_1 constant SYSTICK_INIT_VAL \ let is run on system speed
+
+: systick-start STK_CTRL @ STK_CTRL_ENABLE or      STK_CTRL ! ;
+: systick-stop  STK_CTRL @ STK_CTRL_ENABLE not and STK_CTRL ! ;
+: sys-tick-handler STK_CTRL @ STK_CTRL_COUNTFLAG and $10 rshift systick-counter @ + systick-counter ! ;
+: systick-init  systick-stop
+				SYSTICK_RELOAD_VAL STK_LOAD !
+				0                  STK_VAL  !
+				0                  systick-counter !
+				SYSTICK_INIT_VAL   STK_CTRL ! ;
+: systick-run   systick-init systick-start ;
+: ?systick-run STK_CTRL @ STK_CTRL_ENABLE AND 0= if systick-run then ;
+\ : systicks      STK_VAL @ SYSTICK_VAL_MASK and ;
+: systicks      STK_VAL @ ;
+: .systicks     systicks . ;
+
+
+
+: fill-stack1
+    stk_val @ .s \ 1
+    stk_val @ .s \ 1 2 
+    stk_val @ .s \ 1 2 3
+    stk_val @ .s \ 1 2 3 4
+    stk_val @ .s \ 1 2 3 4 5 
+    stk_val @ .s \ 1 2 3 4 5 6
+    stk_val @ .s \ 1 2 3 4 5 6 7
+    stk_val @ .s \ 1 2 3 4 5 6 7 8
+;
+
+: test-stk-val1
+  systick-run
+  hex 
+  begin
+    fill-stack1
+    1 pick    \ 1 2 3 4 5 6 7 8 7 
+    3 pick    \ 1 2 3 4 5 6 7 8 7 6
+    5 pick    \ 1 2 3 4 5 6 7 8 7 6 5 
+    7 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 
+    9 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 
+   11 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 
+   13 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 1 
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5
+    . cr      \ 1 2 3 4 5 6 7 8 7 6
+    . cr      \ 1 2 3 4 5 6 7 8 7
+    . cr      \ 1 2 3 4 5 6 7 8
+    . cr      \ 1 2 3 4 5 6 7
+    2drop     \ 1 2 3 4 5
+    2drop     \ 1 2 3
+    2drop     \ 1
+    drop      \ 
+    key?
+  until ;
+
+  
+: fill-stack2
+    stk_val @ \ 1
+    stk_val @ \ 1 2 
+    stk_val @ \ 1 2 3
+    stk_val @ \ 1 2 3 4
+    stk_val @ \ 1 2 3 4 5 
+    stk_val @ \ 1 2 3 4 5 6
+    stk_val @ \ 1 2 3 4 5 6 7
+    stk_val @ \ 1 2 3 4 5 6 7 8
+;
+
+: dump-clear
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4 3
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5 4
+    . cr      \ 1 2 3 4 5 6 7 8 7 6 5
+    . cr      \ 1 2 3 4 5 6 7 8 7 6
+    . cr      \ 1 2 3 4 5 6 7 8 7
+    . cr      \ 1 2 3 4 5 6 7 8
+    . cr      \ 1 2 3 4 5 6 7
+    2drop     \ 1 2 3 4 5
+    2drop     \ 1 2 3
+    2drop     \ 1
+    drop      \ 
+;  
+  
+: test-stk-val2
+  systick-run
+  hex 
+  begin
+    stk_val @ \ 1
+    stk_val @ \ 1 2 
+    stk_val @ \ 1 2 3
+    stk_val @ \ 1 2 3 4
+    stk_val @ \ 1 2 3 4 5 
+    stk_val @ \ 1 2 3 4 5 6
+    stk_val @ \ 1 2 3 4 5 6 7
+    stk_val @ \ 1 2 3 4 5 6 7 8
+    1 pick    \ 1 2 3 4 5 6 7 8 7 
+    3 pick    \ 1 2 3 4 5 6 7 8 7 6
+    5 pick    \ 1 2 3 4 5 6 7 8 7 6 5 
+    7 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 
+    9 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 
+   11 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 
+   13 pick    \ 1 2 3 4 5 6 7 8 7 6 5 4 3 2 1 
+   dump-clear
+    key?
+  until ;
+
+\ test-stk-val1
+\ test-stk-val2

@@ -1,0 +1,44 @@
+
+compiletoflash
+\ systick timer handling
+$E000E010 constant STK_CTRL
+1 16 lshift constant STK_CTRL_COUNTFLAG                \ Returns 1 if timer counted to 0 since last time this was read.
+1  2 lshift constant STK_CTRL_CLK_DIV_1                \ Selects the clock source. 0: AHB/8 1: Processor clock (AHB)
+1  1 lshift constant STK_CTRL_TICKINT                  \ SysTick exception request enable
+                                                       \ 0: Counting down to zero does not assert the SysTick exception request
+													   \ 1: Counting down to zero to asserts the SysTick exception request.
+													   \ Note: Software can use COUNTFLAG to determine if SysTick has ever counted to zero.
+1         constant STK_CTRL_ENABLE
+
+$E000E014 constant STK_LOAD
+$E000E018 constant STK_VAL
+$E000E01C constant STK_CALIB
+
+$00FFFFFF constant SYSTICK_VAL_MASK
+$00FFFFFF constant SYSTICK_RELOAD_VAL
+$01000000 constant SYSTICK_PERIOD
+0 variable systick-counter
+
+STK_CTRL_CLK_DIV_1 STK_CTRL_TICKINT or constant SYSTICK_INIT_VAL
+
+: systick-start STK_CTRL @ STK_CTRL_ENABLE or      STK_CTRL ! ;
+: systick-stop  STK_CTRL @ STK_CTRL_ENABLE not and STK_CTRL ! ;
+: sys-tick-handler STK_CTRL @ STK_CTRL_COUNTFLAG and $10 rshift systick-counter @ + systick-counter ! ;
+: systick-init  systick-stop
+				SYSTICK_RELOAD_VAL STK_LOAD !
+				0                  STK_VAL  !
+				0                  systick-counter !
+				['] sys-tick-handler irq-systick   !
+				SYSTICK_INIT_VAL   STK_CTRL ! ;
+: systick-run         systick-init systick-start ;
+: systick-int-off     STK_CTRL @ STK_CTRL_TICKINT not and STK_CTRL ! ;
+: systick-run-int-off systick-init systick-int-off systick-start ;
+: ?systick-run        STK_CTRL @ STK_CTRL_ENABLE AND 0= if systick-run then ;
+\ : systicks      STK_VAL @ SYSTICK_VAL_MASK and ;
+: systicks      STK_VAL @ ;
+: .systicks     systicks . ;
+: bench systicks systicks - . ;
+
+\ compiletoram
+systick-run
+bench

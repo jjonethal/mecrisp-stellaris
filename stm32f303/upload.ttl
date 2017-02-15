@@ -1,0 +1,232 @@
+;
+;    tera term mecrisp-stellaris forth upload helper
+;    Copyright (C) 2015  Jean Jonethal
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+; small upload macro for uploading forth source via tera term tested with version 4.88
+; Tera Term website http://ttssh2.osdn.jp/index.html.en
+; tera term supports call stack up to 10 levels on my laptop so using iterative approach here
+
+; upload source file to target line by line and waits for "ok." after transmission of line.
+; supports nesting include with pathname
+; line containing include directive is not sent to target
+; max source line length is 511
+; include path\filename.ext
+
+; example project.txt :
+; include dump.txt
+; include ..\common\disassembler-m3.txt
+; include demo2.fth
+
+; TODO:
+; "require" - support for single inclusion
+; error handling for MAXLEVEL
+; path handling relative to root file
+; test path handling
+
+; global definitions
+MAXLEVEL        =  20                         ; max nesting level up to 65536 levels might be supported by tera term
+MAX_LINE_LENGTH = 511                         ; max string/line length supported by tera term
+INCLUDE_PATTERN = "include\s+([\.\w/:\\-]+)"  ; this pattern marks our include file
+REQUIRE_PATTERN = "require\s+([\.\w/:\\-]+)"  ; this pattern marks our include file
+PATH_SEP        = "\"                         ; path separator "\" in windows os
+regexoption "IGNORECASE"                      ; ignore lower uppercase for "include" and "require"
+timeout         = 0                           ; you might tune this for longer response times
+mtimeout        = 500                         ; wait 500 ms for "ok." response
+infilehandle    =  -1                         ; current file handle
+fname           = ""                          ; current filename
+newfileHandle   =  -1                         ; store the new file handle
+; parameter stack                             ; stack rised upwards
+level = 1                                     ; current include level
+intdim cfh MAXLEVEL                           ; file handle stack
+intdim clp MAXLEVEL                           ; line position stack - unused at the moment
+strdim cln MAXLEVEL                           ; line stack - unused at the moment
+strdim cfn MAXLEVEL                           ; filename stack
+MAX_INCLUDE_HIST = 1000                       ; maximum number of include files to memoize
+strdim rfnbase MAX_INCLUDE_HIST               ; memoize up MAX_INCLUDE_HIST include file names in lower case
+strdim rfndir MAX_INCLUDE_HIST                ; memoize up MAX_INCLUDE_HIST include file directories
+rfnbaseSize      = 0                          ; current size of include file list
+
+; check for macro parameter
+if paramcnt = 2 then                          ; if there is a macro parameter use it as input file name
+	fname = param2
+endif
+strlen fname 
+if result = 0 then                            ; if there is no valid parameter open file dialog for selection 
+	filenamebox "select file" 0
+	fname = inputstr
+  messagebox fname "opened"
+endif
+
+dirname prjdir fname                          ; setup current directory to fname
+setdir prjdir                                 ; set macrodir to directory containing file fname 
+
+call uploading
+goto ende
+
+:uploading
+  fileopen infilehandle fname 0 1
+  if infilehandle <> -1 then                  ; if file open successful
+    level = 1                                 ; we start at level 1
+    cfn[level] = fname                        
+    cfh[level] = infilehandle
+    while 1
+      infilehandle = cfh[level]               ; update current file handle
+      filereadln infilehandle line            ; get next line from this file
+      if result = 0 then
+        call processLine
+      else                                    ; end of file
+        call levelback                        ; close file , back one nesting level
+        if level < 1 then                     ; upper most file ended
+          messagebox fname "Finished"         ; notify user 
+          break
+        endif
+      endif
+    endwhile
+  endif
+return
+
+:levelback
+; close file and switch to previous level
+
+  fileclose infilehandle
+  infilehandle = -1
+  cfh[level]   = -1
+  level        =  level - 1
+  if level > 0 then                           ; back to previous level
+    infilehandle = cfh[level]
+    fname        = cfn[level]
+  endif
+return
+
+:processLine                                    
+; scan every line for include filename or send to target and wait for "ok."
+; line contains current line to be scanned
+
+  strmatch line INCLUDE_PATTERN               ; scan the line for include pattern
+  if result > 0 then
+    fname = groupmatchstr1                    ; found new include line
+    call openNewFile
+  else
+    strmatch line REQUIRE_PATTERN
+    if result > 0 then
+      fname = groupmatchstr1                 ; found new require line
+      call requireFile
+    else
+      send line #10
+      wait "ok."
+    endif
+  endif
+return
+
+:insertFileName
+; insert fname to rfnbase
+; insertPos - position where to insert filename
+; fname - filename to insert
+  if insertPos < 0 then     ; append
+    insertPos = rfnbaseSize
+  elseif insertPos > rfnbaseSize then ; append
+    insertPos = rfnbaseSize
+  endif
+  if insertPos < rfnbaseSize then  ; make space for new filename
+    for i rfnbaseSize insertPos
+      rfnbase[i] = rfnbase[i-1]
+    next
+  endif
+  rfnbase[insertPos] = fname ; insert new filename
+return
+
+; "CCC"
+; "BBB"  "BAA"
+; "AAA"
+
+:findInsertPos
+; linear search in rfnbase for fname
+; return new insert pos of fname in rfnbase or -1 if already exists
+  tolower fnamelc fname
+  pos = rfnbaseSize
+  for i 0 rfnbaseSize - 1
+    strcompare rfnbase[i] fnamelc 
+    if result = 0 then
+      pos = -1
+      break
+    elseif result < 0 then
+      pos = i
+      break
+    endif
+  next
+return
+
+:tryAddFname
+; try to add fname or skip if already exists
+; pos return insert position or -1 if entry exists
+  findInsertPos
+  if pos >= 0 then
+    insertPos = pos
+    call insertFileName
+  end
+return
+
+:absoluteFileName
+; make fname absolut
+; change to directory of file for relative path resolution 
+; return absolute fname 
+  dirname dir fname
+  basename bn fname
+  setdir dir 
+  getdir dir
+  strconcat dir PATH_SEP
+  strconcat dir bn
+  fname = dir
+  tolower fnamelc fname
+return
+
+
+:requireFile
+; check for reqired files
+; keep track of all included and required files
+  call absoluteFileName
+  call tryAddFname
+  if pos >= 0 then
+    call openNewFile
+  else
+    fname = cfn[level]
+    call absoluteFileName
+  end
+return
+
+:includeFile
+  call absoluteFileName
+  call tryAddFname
+  call openNewFile
+return
+
+:openNewFile
+; start a new include level when open successfull
+; fname contains new include filename
+; notify user if failed to open included file
+
+  fileopen newfileHandle fname 0 1
+  if newfileHandle <> -1 then                 ; new include file opened
+    level        = level + 1
+    infilehandle = newfileHandle
+    cfn[level]   = fname
+    cfh[level]   = infilehandle
+  else
+    messagebox fname "open failed"            ; notify user about failed file
+  endif
+return
+
+:ende

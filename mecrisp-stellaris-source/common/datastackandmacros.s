@@ -337,7 +337,7 @@ psp .req r7
 .macro writeln Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "\Meldung\n"
+7:      .ascii "\Meldung\r\n"
 8:      .p2align 1
 .endm
 
@@ -348,7 +348,7 @@ psp .req r7
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
 7:      .ascii "Mecrisp-Stellaris RA 2.3.4"
-        .ascii "\Meldung\n"
+        .ascii "\Meldung\r\n"
 8:      .p2align 1
 .endm
 
@@ -367,7 +367,7 @@ psp .req r7
 .macro Fehler_Quit Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "\Meldung\n"
+7:      .ascii "\Meldung\r\n"
 8:      .p2align 1
 
   .ifdef m0core
@@ -380,7 +380,7 @@ psp .req r7
 .macro Fehler_Quit_n Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "\Meldung\n"
+7:      .ascii "\Meldung\r\n"
 8:      .p2align 1
 
   b.n quit
