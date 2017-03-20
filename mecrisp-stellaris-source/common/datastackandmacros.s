@@ -348,7 +348,6 @@ psp .req r7
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
 7:      .ascii "Mecrisp-Stellaris RA 2.3.4"
-        .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
 
