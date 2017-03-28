@@ -145,7 +145,19 @@ $A0001000 constant QSPI_BASE
    qck-0 qck-1 2* qd0@ 1 and or ;
 : qb4@ ( n -- n )  qb@ qb@ qb@ qb@  ;     \ shifting in 1 nibble from spi
 : qb8@ ( n -- n )  qb4@ qb4@ ;            \ shifting in 1 byte from spi
+: qb32@ ( n -- n ) qb8@ qb8@ qb8@ qb8@ ;  \ read 1 32 bit word
+: q-start ( -- ) qd0> qcs-0 ;             \ start transfer
+: qc!  ( b -- 0 ) 24 lshift qb8! ;        \ write 1 byte
 
+\ ********** flash driver ****************
+$9E constant READ-ID
+: read-id ( a -- )                        \ read id to buffer 20 bytes
+   q-start READ-ID qc! qd0<
+   20 0 do 0 qb8@ dup i + ! loop qcs-1 ;
+: .id  ( -- )                             \ print id
+   q-start READ-ID qc! qd0<
+   20 0 do 0 qb8@ x.2 space loop qcs-1 cr ;
+ 
 \ ********** read-block ******************
 
 \ ********** write block *****************
