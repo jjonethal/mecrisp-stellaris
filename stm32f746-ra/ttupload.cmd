@@ -12,15 +12,15 @@
 
 
 :: comport number for connection
-set COMPORT=7
+set COMPORT=5
 :: tempoary macrco for closing down existing connection
 set MACRO=%~dp0tempmac.ttl
 :: Teraterm installation directory
 set tt_dir=C:\app\teraterm
 
 
-%tt_dir%\ttpmacro.exe "%~dp0upload.ttl" %*
-goto :EOF
+:: %tt_dir%\ttpmacro.exe "%~dp0upload.ttl" %*
+:: goto :EOF
 
 :: clean temporary macro
 echo. > %MACRO%
@@ -32,7 +32,7 @@ echo closett >> %MACRO%
 
 :: open new teraterm connection to comport with macro link
 echo connect '/C=%COMPORT%' > %MACRO%
-echo include '%~dp0upload_include.ttl' >> %MACRO%
+echo include '%~dp0upload.ttl' >> %MACRO%
 %tt_dir%\ttpmacro.exe %MACRO% %*
 
 :: pause
