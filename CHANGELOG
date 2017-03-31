@@ -587,3 +587,14 @@
   - RA binary for STM32F407
   - Contribution by Ralph Sahli:
       New target: STM32F401CD on Espruino Pico
+
+22.02.2017, Matthias Koch, Mecrisp-Stellaris 2.3.4a
+
+  No changes in binaries, just fixed a documentation flaw and new Forth features:
+
+  - Fixed glossary: c-addr length strings are used by number
+
+  - Jean-Claude Wippler conquered USB: Drivers for STM32F103 and STM32F303 included
+  - Direct digital synthesis dual sinewave function generator for STM32F407
+  - Very early experimental access to the hardware floating point unit
+

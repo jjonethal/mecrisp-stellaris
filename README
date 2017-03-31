@@ -851,9 +851,9 @@ like signed double numbers.
         f.n             ( df n -- )
                         Prints a fixpoint number with n fractional digits
 
-        number          ( Counted-String-Address -- 0 )
-                          cstr-addr              -- n 1 )
-                                                 -- n-low n-high 2 )
+        number          ( c-addr length -- 0 )
+                                        -- n 1 )
+                                        -- n-low n-high 2 )
                         Tries to convert a string to a number.
 
 ;------------------------------------------------------------------------------
