@@ -135,28 +135,37 @@ $A0001000 constant QSPI_BASE
 : qcs< QSPI_NCS gpio-input ;
 : qck< QSPI_CLK gpio-input ;
 
+: q-init ( -- )                           \ initialize sw qspi
+   qspi-gpio-init-sw qcs-1 qck-1 qcs> qck> ;
+
+: la ( -- )
+   cr qcs@ 1 and . qck@ 1 and . qd0@ 1 and . ;
 \ ******** serializing *******************
 : qb! ( n -- n )                          \ shifting out highest bit
-   qck-0 dup 0< qd0! 2* qck-1 ;
+   qck-0 la
+   dup 0< qd0! la
+   2* qck-1 la ;
 : qb4! ( n -- n )  qb! qb! qb! qb! ;      \ shifting out highest nibble
 : qb8! ( n -- n )  qb4! qb4! ;            \ shifting out highest byte
     
 : qb@ ( n -- n )                          \ shifting in 1 bit from spi
-   qck-0 qck-1 2* qd0@ 1 and or ;
+   qck-0 la qck-1 la 2* qd0@ 1 and or
+   dup .   ;
 : qb4@ ( n -- n )  qb@ qb@ qb@ qb@  ;     \ shifting in 1 nibble from spi
 : qb8@ ( n -- n )  qb4@ qb4@ ;            \ shifting in 1 byte from spi
 : qb32@ ( n -- n ) qb8@ qb8@ qb8@ qb8@ ;  \ read 1 32 bit word
-: q-start ( -- ) qd0> qcs-0 ;             \ start transfer
+: q-start ( -- ) la qd0> la qcs-0 la ;       \ start transfer
+: q-end ( -- ) qcs-1 la ;
 : qc!  ( b -- 0 ) 24 lshift qb8! ;        \ write 1 byte
 
 \ ********** flash driver ****************
-$9E constant READ-ID
+$9E constant READ_ID
 : read-id ( a -- )                        \ read id to buffer 20 bytes
-   q-start READ-ID qc! qd0<
-   20 0 do 0 qb8@ dup i + ! loop qcs-1 ;
+   q-start READ_ID qc! qd0<
+   20 0 do 0 qb8@ dup i + ! loop q-end ;
 : .id  ( -- )                             \ print id
-   q-start READ-ID qc! qd0<
-   20 0 do 0 qb8@ x.2 space loop qcs-1 cr ;
+   q-start READ_ID qc! qd0<
+   20 0 do 0 qb8@ x.2 space loop q-end cr ;
  
 \ ********** read-block ******************
 
