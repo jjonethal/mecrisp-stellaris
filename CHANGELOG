@@ -598,3 +598,10 @@
   - Direct digital synthesis dual sinewave function generator for STM32F407
   - Very early experimental access to the hardware floating point unit
 
+22.02.2017, Matthias Koch, Mecrisp-Stellaris 2.3.5
+
+  - Found a bug: If the "init" mechanism was used on RA cores, compilation of the first
+    definition after a Reset might generate a leading bogus sequence of opcodes due to
+    a not properly initialised internal variable.
+
+    Workaround, if you cannot update the core: Type "quit" before doing fresh compilations.

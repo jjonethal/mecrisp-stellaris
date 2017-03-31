@@ -24,6 +24,10 @@
    movs r1, #0    @ Clear constant folding pointer
    str r1, [r0]
 
+  .ifdef registerallocator
+    bl init_register_allocator
+  .endif
+
    @ Suche nach der init-Definition:
    @ Search for current init definition in dictionary:
    pushdatos
