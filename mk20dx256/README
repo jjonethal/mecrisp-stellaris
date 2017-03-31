@@ -1,6 +1,13 @@
 Directory Contents:
 -------------------
+
+adc.txt		Analog-to-Digital Converter
+
 asciiart.txt	ASCII art words
+
+dac.txt		Digital-to-Analog Converter
+
+dac-examples/   DAC examples, various waveforms, modulation schemes.
 
 delay.txt	Words for using the systick timer in polling mode
 
@@ -40,8 +47,15 @@ timer.txt	Words for using the systick timer in interrupt mode
 
 uart.txt: 	Words for capturing UART errors and displaying info
 
-usb.txt:  	Work-in-porogress.  Beginning of USB support.
+usbotg.txt:  	Work-in-porogress.  Beginning of USB support.
 	   	       Unusable at the moment.
+
+bitstruct.txt   structs with bitfields based on "Structured Data with Bit Fields"
+                ftp://ftp.taygeta.com/pub/forth/Archive/various/bitfield.txt
+                Enhanced with "superfields" -- fields that can contain other fields.
+
+bitstruct-example.txt  bitstruct usage demo.
+
 
 
 Files for facilitating loading the Forth system:

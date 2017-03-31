@@ -1,4 +1,0 @@
-
-\ Perform an hardware Reset just as if you had pressed the Reset button
-
-: reset ( -- ) $5FA0004 $E000ED0C ! ;

@@ -1,0 +1,332 @@
+
+
+As there is no official schematic for the Microbit, this collection of pin assignments and observations may help.
+
+The Microbit uses the nRF51822 in QFN48 style package, which has the following pinout:
+
+
+        VDD     01    48 ... 37    36   AVDD
+        DCC     02                 35   AVDD
+        P0.30   03   (DOT)         34   VSS
+        P0.00   04                 33   VSS
+        P0.01   05                 32   ANT2
+        P0.02   06                 31   ANT1
+        P0.03   07                 30   VDD_PA
+        P0.04   08                 29   DEC2
+        P0.05   09                 28   P0.20
+        P0.06   10                 27   P0.19
+        P0.07   11                 26   P0.18
+        VDD     12    13 ... 24    25   P0.17
+
+
+
+        VSS     13    12 ... 01    48   P0.29
+        P0.08   14                 47   P0.28
+        P0.09   15         (DOT)   46   P0.27
+        P0.10   16                 45   P0.26
+        P0.11   17                 44   P0.25
+        P0.12   18                 43   P0.24
+        P0.13   19                 42   P0.23
+        P0.14   20                 41   P0.22
+        P0.15   21                 40   P0.21
+        P0.16   22                 39   DEC1
+ nReset/SWDIO   23                 38   XC2
+       SWDCLK   24    25 ... 36    37   XC1
+
+
+Flattened out, this gives a more readable table, with stars denoting fixed-function pins:
+
+
+   Pin       Function             On the Microbit:
+
+B  01        VDD                  *
+O  02        DCC                  *
+T  03        P0.30                MICROBIT_PIN_P20  I2C SDA
+T  04        P0.00  AREF0         MICROBIT_PIN_P19  I2C SCL
+O  05        P0.01  AIN2          MICROBIT_PIN_P2
+M  06        P0.02  AIN3          MICROBIT_PIN_P1
+   07        P0.03  AIN4          MICROBIT_PIN_P0
+   08        P0.04  AIN5          MICROBIT_PIN_P3   Matrix Cathode 1
+   09        P0.05  AIN5          MICROBIT_PIN_P4   Matrix Cathode 2
+   10        P0.06  AIN6          MICROBIT_PIN_P10  Matrix Cathode 3
+   11        P0.07  AIN7  AREF1                     Matrix Cathode 4
+   12        VDD                  *
+
+R  13        VSS                  *
+I  14        P0.08                                  Matrix Cathode 5
+G  15        P0.09                                  Matrix Cathode 6
+H  16        P0.10                MICROBIT_PIN_P9   Matrix Cathode 7
+T  17        P0.11                MICROBIT_PIN_P7   Matrix Cathode 8
+   18        P0.12                MICROBIT_PIN_P6   Matrix Cathode 9
+   19        P0.13                                  Matrix Anode 1
+   20        P0.14                                  Matrix Anode 2
+   21        P0.15                                  Matrix Anode 3
+   22        P0.16                MICROBIT_PIN_P16
+   23 nReset/SWDIO                *
+   24       SWDCLK                *
+
+T  25        P0.17                MICROBIT_PIN_P5   MICROBIT_PIN_BUTTON_A
+O  26        P0.18                MICROBIT_PIN_P8
+P  27        P0.19                                  MICROBIT_PIN_BUTTON_RESET   Note: Reset button is NOT connected to nReset pin !
+   28        P0.20                MICROBIT_PIN_P12
+   29        DEC2                 *
+   30        VDD_PA               *
+   31        ANT1                 *
+   32        ANT2                 *
+   33        VSS                  *
+   34        VSS                  *
+   35        AVDD                 *
+   36        AVDD                 *
+
+L  37        XC1                  *
+E  38        XC2                  *
+F  39        DEC1                 *
+T  40        P0.21                MICROBIT_PIN_P15  SPI MOSI  There is no SPI peripheral on the Microbit,
+   41        P0.22                MICROBIT_PIN_P14  SPI MISO  those wires are just convention, not hardwired.
+   42        P0.23                MICROBIT_PIN_P13  SPI SCK   You can connect SPI to any pins you wish.
+   43        P0.24                Terminal TX                                  TGT_TX
+   44        P0.25                Terminal RX                                  TGT_RX
+   45        P0.26  AIN0 XL2      MICROBIT_PIN_P11  MICROBIT_PIN_BUTTON_B
+   46        P0.27  AIN1 XL1                                                   ACCEL_INT2
+   47        P0.28                MICROBIT_PIN_ACCEL_DATA_READY                ACCEL_INT1
+   48        P0.29                MICROBIT_PIN_COMPASS_DATA_READY              MAG_INT1
+
+This leaves us with 31 freely configurable pins, which I measured to reveal their connection.
+
+Peripherals include:
+
+  5x5 LED matrix - strangely wired as 3 common anodes and 9 cathodes with resistors electrically.
+  MMA8652 3-axis I2C accelerometer
+  MAG3110 3-axis I2C magnetometer
+
+It uses a Freescale Freedom KL26Z style debugger section, which provides communication and SWD debugging+flashing.
+
+The edge connector is wired as follows:
+
+-------
+    22        GND
+=== (GND)     GND
+    21        GND
+    20       P0.30   I2C1 SDA
+    19       P0.0    I2C1 SCL
+    18        VDD
+=== (3V)      VDD
+    17        VDD
+    16       P0.16
+    15       P0.21   SPI1 MOSI
+    14       P0.22   SPI1 MISO
+    13       P0.23   SPI1 SCK
+=== (2)       P0.1
+    12       P0.20
+    11       P0.26   Button B
+    10       P0.6
+     9       P0.10
+     8       P0.18
+=== (1)       P0.2
+     7       P0.11
+     6       P0.12
+     5       P0.17   Button A
+     4       P0.5
+=== (0)       P0.3
+     3       P0.4
+-------
+
+
+This is how the Microbit introduces itself:
+
+dmesg
+
+[19611.504049] usb 4-1: new full speed USB device using uhci_hcd and address 2
+[19611.722100] usb 4-1: New USB device found, idVendor=0d28, idProduct=0204
+[19611.722107] usb 4-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+[19611.722113] usb 4-1: Product: MBED CMSIS-DAP
+[19611.722117] usb 4-1: Manufacturer: MBED
+[19611.722121] usb 4-1: SerialNumber: 9900023431864e45000f100f0000003a00000000cc4d28bd
+[19611.722296] usb 4-1: configuration #1 chosen from 1 choice
+[19611.736286] generic-usb 0003:0D28:0204.0002: hiddev0,hidraw1: USB HID v1.00 Device [MBED MBED CMSIS-DAP] on usb-0000:00:1d.2-1/input3
+[19612.025754] Initializing USB Mass Storage driver...
+[19612.025961] scsi6 : SCSI emulation for USB Mass Storage devices
+[19612.026133] usbcore: registered new interface driver usb-storage
+[19612.026139] USB Mass Storage support registered.
+[19612.026148] usb-storage: device found at 2
+[19612.026151] usb-storage: waiting for device to settle before scanning
+[19612.062221] cdc_acm 4-1:1.1: ttyACM0: USB ACM device
+[19612.068857] usbcore: registered new interface driver cdc_acm
+[19612.069615] cdc_acm: v0.26:USB Abstract Control Model driver for USB modems and ISDN adapters
+[19617.027196] usb-storage: device scan complete
+[19617.030142] scsi 6:0:0:0: Direct-Access     MBED     DAPLINK VFS      0.1  PQ: 0 ANSI: 2
+[19617.030898] sd 6:0:0:0: Attached scsi generic sg2 type 0
+[19617.036126] sd 6:0:0:0: [sdb] 16512 512-byte logical blocks: (8.45 MB/8.06 MiB)
+[19617.039107] sd 6:0:0:0: [sdb] Write Protect is off
+[19617.039114] sd 6:0:0:0: [sdb] Mode Sense: 03 00 00 00
+[19617.039118] sd 6:0:0:0: [sdb] Assuming drive cache: write through
+[19617.057111] sd 6:0:0:0: [sdb] Assuming drive cache: write through
+[19617.057120]  sdb: unknown partition table
+[19617.090101] sd 6:0:0:0: [sdb] Assuming drive cache: write through
+[19617.090110] sd 6:0:0:0: [sdb] Attached SCSI removable disk
+
+
+lsusb -v
+
+Bus 003 Device 002: ID 0d28:0204
+Device Descriptor:
+  bLength                18
+  bDescriptorType         1
+  bcdUSB               1.10
+  bDeviceClass            2 Communications
+  bDeviceSubClass         0
+  bDeviceProtocol         0
+  bMaxPacketSize0        64
+  idVendor           0x0d28
+  idProduct          0x0204
+  bcdDevice           10.00
+  iManufacturer           1 MBED
+  iProduct                2 MBED CMSIS-DAP
+  iSerial                 3 9900023431864e45000f100f0000003a00000000cc4d28bd
+  bNumConfigurations      1
+  Configuration Descriptor:
+    bLength                 9
+    bDescriptorType         2
+    wTotalLength          122
+    bNumInterfaces          4
+    bConfigurationValue     1
+    iConfiguration          0
+    bmAttributes         0x80
+      (Bus Powered)
+    MaxPower              500mA
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        0
+      bAlternateSetting       0
+      bNumEndpoints           2
+      bInterfaceClass         8 Mass Storage
+      bInterfaceSubClass      6 SCSI
+      bInterfaceProtocol     80 Bulk (Zip)
+      iInterface              7 USB_MSC
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x82  EP 2 IN
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0040  1x 64 bytes
+        bInterval               0
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x02  EP 2 OUT
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0040  1x 64 bytes
+        bInterval               0
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        3
+      bAlternateSetting       0
+      bNumEndpoints           2
+      bInterfaceClass         3 Human Interface Device
+      bInterfaceSubClass      0 No Subclass
+      bInterfaceProtocol      0 None
+      iInterface              6 MBED CMSIS-DAP
+        HID Device Descriptor:
+          bLength                 9
+          bDescriptorType        33
+          bcdHID               1.00
+          bCountryCode            0 Not supported
+          bNumDescriptors         1
+          bDescriptorType        34 Report
+          wDescriptorLength      33
+         Report Descriptors:
+           ** UNAVAILABLE **
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x81  EP 1 IN
+        bmAttributes            3
+          Transfer Type            Interrupt
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0040  1x 64 bytes
+        bInterval               1
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x01  EP 1 OUT
+        bmAttributes            3
+          Transfer Type            Interrupt
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0040  1x 64 bytes
+        bInterval               1
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        1
+      bAlternateSetting       0
+      bNumEndpoints           1
+      bInterfaceClass         2 Communications
+      bInterfaceSubClass      2 Abstract (modem)
+      bInterfaceProtocol      1 AT-commands (v.25ter)
+      iInterface              4 USB_CDC
+      CDC Header:
+        bcdCDC               1.10
+      CDC Call Management:
+        bmCapabilities       0x03
+          call management
+          use DataInterface
+        bDataInterface          2
+      CDC ACM:
+        bmCapabilities       0x06
+          sends break
+          line coding and serial state
+      CDC Union:
+        bMasterInterface        1
+        bSlaveInterface         2
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x83  EP 3 IN
+        bmAttributes            3
+          Transfer Type            Interrupt
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0010  1x 16 bytes
+        bInterval              32
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        2
+      bAlternateSetting       0
+      bNumEndpoints           2
+      bInterfaceClass        10 CDC Data
+      bInterfaceSubClass      0 Unused
+      bInterfaceProtocol      0
+      iInterface              5 USB_CDC1
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x04  EP 4 OUT
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0040  1x 64 bytes
+        bInterval               0
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x84  EP 4 IN
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0040  1x 64 bytes
+        bInterval               0
+Device Status:     0x0000
+  (Bus Powered)

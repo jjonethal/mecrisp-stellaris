@@ -23,8 +23,6 @@
   Wortbirne Flag_visible, "hex." @ Print an unsigned number in Base 16, independent of number subsystem.
 hexdot: @ ( u -- ) @ Funktioniert unabhängig vom restlichen Zahlensystem.
 @ -----------------------------------------------------------------------------
-
-  .ifdef m0core
   
         push    {r0, r1, r2, lr}
         popda r1 @ Zahl holen
@@ -51,29 +49,6 @@ hexdot: @ ( u -- ) @ Funktioniert unabhängig vom restlichen Zahlensystem.
 
         bl space
         pop     {r0, r1, r2, pc}
-
-  .else
-        push    {r0, r1, lr}
-        popda r1 @ Zahl holen
-        movs    r0, #32 @ Zahl der Bits, die noch zu bearbeiten sind  Number of Bits left
-
-1:      subs    r0, #4       @ 4 Bits weniger  4 Bits less to do
-        pushdatos            @ Platz auf dem Stack schaffen  Make space on datastack
-
-        lsrs    tos, r1, r0   @ Schiebe den Wert passend   Shift accordingly
-        ands    tos, #15      @ Eine Hex-Ziffer maskieren  Mask 4 Bits
-        cmp     tos, #9       @ Ziffer oder Buchstabe ?    Number or letter ?
-        ite     hi
-          addhi   tos, #55 @ Passendes Zeichen konstruieren
-          addls   tos, #48 @ Calculate ASCII
-        bl      emit
-        cmp     r0, #0
-        bne     1b
-
-        bl space
-        pop     {r0, r1, pc}
-  .endif
-
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "h.s"  @ Prints out data stack, uses unsigned hexadecimal snumbers. 
@@ -181,7 +156,7 @@ dump:  @ Malt den Speicherinhalt beginnend ab der angegebenen Adresse
 words: @ Malt den Dictionaryinhalt
 @ -----------------------------------------------------------------------------
   push {lr}
-  writeln "words"
+  writeln ""
 
   bl dictionarystart
 

@@ -1,0 +1,24 @@
+\ square-wave.txt - A square wave of a counted string.
+\ Andreas Wagner <andreas.wagner@lowfatcomputing.org>
+\ REQUIRES: nvic.txt misc.txt delay.txt dac.txt
+
+$FFF constant amplitude \ $FFF is maximum on Teensy 3.1 (12-bit DAC)
+
+\ bit n of sliding window over byte array.
+: sliding-window@ ( addr-c n -- f )
+  $8 /mod rot + 1 rot lshift swap cbit@ 1 and ;
+
+: square-wave ( addr-c -- )
+  +dac
+  bounds ?do
+    $8 0 ?do
+    \ addr-c bit# bit
+      j      i    sliding-window@ \ first bit in sliding window over byte array.
+      dup .
+      amplitude *
+      dac
+      2 ms
+    loop
+  loop
+  0 dac ;
+

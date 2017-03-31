@@ -1,0 +1,44 @@
+
+\ Prompt by Glen Worstell
+
+\ ---------------------------------- PRINTING in DECIMAL --------------------
+
+: .# base @ swap decimal . base ! ; \ Print in decimal and restores base.
+
+\ --------------------------------- PRINTING in HEX -------------------------
+
+: .$ base @ hex swap 0 <# # # # # [char] _ hold # # # # #> type space base ! ;
+
+\ --------------------------------- PRINTING in BINARY ----------------------
+
+: .% base @ swap binary
+     0 <#
+     7 0 do # # # # [char] _ hold loop
+            # # # #
+     #> type space base ! ;
+
+\ ------------------------- GLENS PROMPT ------------------------------------
+
+\ If a "word" that calls "init" is loaded first, omit next line.
+
+: init ;
+
+: prompt ( -- ) 
+  begin 
+    compiletoram? if ." R " else ." F " then \ show where compiling.
+    base @
+    case \ show base.
+      #10 of ." # " endof
+      #16 of ." $ " endof
+      #2  of ." % " endof
+      ." B" base @ .# \ show base if not # $ %.
+    endcase
+    depth .# \ show stack depth.
+    ." > "    \ show ">" for prompt. Could show "OK."
+    query cr interpret cr 
+  again
+;
+ 
+ : init init ['] prompt hook-quit ! ; \ make new prompt 
+ 
+init quit

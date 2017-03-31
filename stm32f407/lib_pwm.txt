@@ -1,0 +1,37 @@
+\
+\ 	Pulse with generator
+\
+\		Ralph Sahli, 2016
+\		
+\
+\		timer5 used for:
+\			- generate PWM with X ms period and Y ms duty cyle -> output to PA1 (channel 2)
+\			- period / duty cyle can changed on the fly with function: set-period
+\			- only timer HW -> no CPU load
+\
+\		REQUIRES: lib_registers.txt
+
+: set-pwm ( period dutycyle -- )
+	1- TIM5_CCR2 !	\ duty cycle
+	1- TIM5_ARR !	\ period
+;
+
+: pwm-init ( -- )
+	\ --- init output PA1
+	GPIOAEN RCC_AHB1ENR bis!								\ IO port A clock enabled
+	MODE_ALTERNATE 1 PORTA_BASE set-moder 	\ PA1 -> mode: alternate function
+	SPEED_HIGH 1 PORTA_BASE set-opspeed 		\ high speed PA1
+	2 1 PORTA_BASE set-alternate						\ PA1 -> Alternate function: %0010: AF2 (TIM5) 
+	\ --- init timer 5
+	TIM5EN RCC_APB1ENR bis!								\ TIM5 clock enabled
+	ARPE TIM5_CR1 ! 												\ Auto-reload preload enable
+	HCLK 1000 / 1- TIM5_PSC !								\ prescaler -> 1000 Hz = 1 ms
+	100 50 set-pwm													\ 100ms - 50ms period - dutycycle as initial value
+	1 4 lshift TIM5_CCER ! 									\ CC2E -> OC2 signal is output on the corresponding output pin
+	1 11 lshift TIM5_CCMR1 bis!							\ OC2PE -> Output compare 2 preload enable
+	%110 12 lshift TIM5_CCMR1 bis!					\ Output compare 2 mode -> 110: PWM mode 1
+	UG TIM5_EGR !													\ Update generation
+	CEN TIM5_CR1 bis! 											\ counter enable
+;
+
+pwm-init

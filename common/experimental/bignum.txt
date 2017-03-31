@@ -1,0 +1,657 @@
+
+compiletoflash
+
+\ -----------------------------------------------------------------------------
+\   Unbounded precision integers for Mecrisp and Mecrisp-Stellaris
+\ -----------------------------------------------------------------------------
+
+8 cells constant bits/cell
+
+64 constant #bignum
+#bignum 2 cells * buffer: bignumtable
+
+: init-bignum ( -- ) bignumtable  #bignum 2 cells *  0 fill ;
+
+: bignum-addr ( u -- addr ) 2 cells * bignumtable + ;
+
+: bignum-freeelement ( -- addr )
+  #bignum 0 do i bignum-addr @ 0= if i bignum-addr  $DEADBEEF over cell+ !  unloop exit then loop
+  cr ." Bignum-Overflow" quit
+;
+
+: bignum-create ( -- pointer ) \ Create a new b-zero
+  bignum-freeelement dup dup ! 0 over cell+ !
+;
+
+\ Traverse the linked list and fill all elements along this list with zero.
+\ End is detected by having a pointer to itself.
+
+: bignum-free ( pointer -- ) \ Remove a bignum from memory
+  begin
+    dup @ over = \ Pointer to itself ? End of bignum reached.
+    swap ( Flag Pointer )
+    dup @ swap $DEADBEEF 0 rot 2! \ Fetch next element and erase current
+    swap ( Pointer* Flag )
+  until
+  drop
+;
+
+\ -----------------------------------------------------------------------------
+\   Debug insight
+\ -----------------------------------------------------------------------------
+
+: bignum-cache ( -- ) \ Show contents of the bignum cache
+  cr
+  #bignum 0 do
+    i bignum-addr @    \ 2@ 0. d<>
+    if
+      i
+      bignum-addr 
+      ." Addr: "     dup         hex.        
+      ."  Pointer: " dup       @ hex.
+      ."  Number: "  dup cell+ @ hex.
+      dup @ = if ." *" then      
+      cr
+    then
+  loop
+;
+
+: bc bignum-cache ;
+
+\ -----------------------------------------------------------------------------
+\   Small helpers
+\ -----------------------------------------------------------------------------
+
+: addelement ( addr -- addr* ) \ Insert a new element at the end of a bignum and adjust pointers accordingly.
+  bignum-freeelement ( addr addr* )
+  tuck ( addr* addr addr* ) swap !
+  ( addr* ) dup dup ! \ Pointer to itself
+;
+
+: blength ( b -- u ) \ Length in elements
+  1 swap
+  begin
+    dup @ over <>
+  while
+    swap 1+ swap @
+  repeat
+  drop
+;
+
+: bcopy ( b -- b* ) \ Make a duplicate of a bignum in cache for further consuming operations.
+
+  bignum-create ( old new )  dup >r
+  over cell+ @ ( old new data )
+  over cell+ ! ( old new )
+    
+  begin
+    over dup @ <> \ Is the old one exhausted ?
+  while \ Copy one more element.  
+    ( old new )
+    swap @ swap
+    ( old* new )    
+    addelement \ Add an element to the new one
+    ( old* new* )
+    over cell+ @ over cell+ ! \ Copy the element       
+  repeat
+  2drop
+  
+  r>
+;
+
+\ -----------------------------------------------------------------------------
+\   Print and convert bignums
+\ -----------------------------------------------------------------------------
+
+: b.step ( addr -- ) dup @ over <> if dup @ recurse then cell+ @ hex. ;
+
+: b. ( b -- )  \ Due to recursion, this has a length limit caused by return stack depth...
+  dup
+  ." [ "
+  b.step
+  ." ] "  
+  bignum-free
+;
+
+: s>b ( n -- b )
+  bignum-create >r
+  dup r@ cell+ ! ( n R: pointer )    \ Store value
+  0<             ( sign R: pointer ) \ Check sign  
+  r@ addelement cell+ ! \ Store sign into the next element
+  r> \ Give back pointer
+;
+
+: b>s ( b -- n )
+  dup cell+ @
+  swap
+  bignum-free
+;
+
+: d>b ( d-low d-high -- b )
+  bignum-create >r ( low high R: pointer )  
+  swap r@ cell+ ! ( high R: pointer ) \ Store low value
+  dup r@ addelement dup >r cell+ ! ( high R: pointer pointer* ) \ Store high value
+  0<             ( sign R: pointer pointer* ) \ Check sign
+  r> addelement cell+ ! \ Store sign into the next element
+  r> \ Give back pointer
+;
+
+: b>d ( b -- d-low h-high )
+  dup cell+ @
+  swap
+  dup @ cell+ @
+  swap
+  bignum-free
+;
+
+\ -----------------------------------------------------------------------------
+\   Bignum logic
+\ -----------------------------------------------------------------------------
+
+: bnot ( b -- /b )
+  dup
+  
+  dup blength 0 do \ Loop over all elements
+    dup cell+ dup @ not swap !
+    @
+  loop
+  drop
+;
+
+: bor ( b1 b2 -- b3 )
+  over blength over blength u> if swap then \ Make sure the longer bignum is TOS  
+  2dup 2>r
+  
+  dup blength 0 do \ Loop over all elements
+    ( Shorter Longer )
+    over cell+ @ 
+    over cell+ @ 
+    or
+    
+    ( Shorter Longer Data )
+    over cell+ !
+    @ swap @ swap  
+  loop
+  2drop
+  2r> swap   2dup = if drop else bignum-free then
+;
+
+: band ( b1 b2 -- b3 )
+  over blength over blength u> if swap then \ Make sure the longer bignum is TOS  
+  2dup 2>r
+  
+  dup blength 0 do \ Loop over all elements
+    ( Shorter Longer )
+    over cell+ @ 
+    over cell+ @ 
+    and
+    
+    ( Shorter Longer Data )
+    over cell+ !
+    @ swap @ swap  
+  loop
+  2drop
+  2r> swap   2dup = if drop else bignum-free then
+;
+
+: bxor ( b1 b2 -- b3 )
+  over blength over blength u> if swap then \ Make sure the longer bignum is TOS  
+  2dup 2>r
+  
+  dup blength 0 do \ Loop over all elements
+    ( Shorter Longer )
+    over cell+ @ 
+    over cell+ @ 
+    xor
+    
+    ( Shorter Longer Data )
+    over cell+ !
+    @ swap @ swap  
+  loop
+  2drop
+  2r> swap   2dup = if drop else bignum-free then
+;
+
+
+\ -----------------------------------------------------------------------------
+\   Bignum calculation helpers
+\ -----------------------------------------------------------------------------
+
+: last-element ( addr -- addr* )  
+  begin
+    dup @ over <>
+  while
+    @
+  repeat
+    
+;
+
+: one-before-last-element ( addr -- addr* )
+  begin
+    dup @ dup @ <>
+  while
+    @
+  repeat 
+;
+
+: btrim ( b -- b* ) \ If there is "too much sign", remove element(s).
+  begin
+    dup @ over = if exit then \ If this bignum has one element only, exit.
+       
+    dup last-element cell+ @
+    over one-before-last-element cell+ @
+    =
+  while
+    dup last-element
+    over one-before-last-element dup !
+    0 swap !    
+  repeat
+;
+
+\ -----------------------------------------------------------------------------
+\   Addition & Subtraction (both parameters can be the same bignum)
+\ -----------------------------------------------------------------------------
+
+0 variable oldlongest
+0 variable oldshortest
+
+: b+-common ( b1 b2 carry -- b3 )
+  -rot
+  over blength over blength u> if swap then \ Make sure the longer bignum is TOS  
+  2dup 2>r
+  rot ( Shorter Longer Carry )
+  
+  over blength 0 do \ Process as many elements as the longer bignum has
+    
+    >r \ Move carry out of the way
+
+    over cell+ @    dup oldshortest ! 
+    over cell+ @    dup oldlongest  !
+    0 tuck d+     \ Make double and add    
+    r> 0 d+       \ Add Carry
+    >r
+                
+    ( Shorter Longer Data )
+    over cell+ !
+    
+    ( Shorter Longer )
+    swap @ swap @
+    
+    ( Shorter* Longer* )
+        
+    r> ( Shorter* Longer* Carry )
+    
+  loop
+    
+  \ Perform one last step as result can be one bit longer
+  
+  >r ( Shorter* Longer* )
+
+  oldshortest @
+  oldlongest  @
+  r> + +
+  
+  ( Shorter* Longer* Data )
+  swap addelement cell+ !
+  drop
+  
+  2r> swap   2dup = if drop else bignum-free then
+  btrim
+;
+
+: b+ ( b1 b2 -- b3 )      0 b+-common ;
+: b- ( b1 b2 -- b3 ) bnot 1 b+-common ;
+
+: bnegate ( b -- -b ) 0 s>b swap b- ;
+
+\ -----------------------------------------------------------------------------
+\  Comparisons that do not remove the bignum(s) from cache !
+\ -----------------------------------------------------------------------------
+
+: b0< ( b -- ? ) last-element cell+ @ 0< ;
+
+: b0= ( b -- ? )
+  begin    
+    dup cell+ @ 0<> if drop false exit then
+    dup @ over <>
+  while
+    @
+  repeat
+  drop
+  
+  true
+;
+
+: b= ( b1 b2 -- ? )
+  over blength over blength u> if swap then \ Make sure the longer bignum is TOS
+  
+  dup blength 0 do \ Loop over all elements
+    ( Shorter Longer )
+    over cell+ @ 
+    over cell+ @ <> if 2drop unloop false exit then
+
+    @ swap @ swap  
+  loop
+  2drop
+  
+  true
+;
+
+: b< ( b1 b2 -- ) \ We need local copies of both bignums here as b- destroys them.
+  bcopy swap bcopy swap \ Use local copies here !
+  b- dup b0< swap bignum-free    
+;
+
+: b> swap b< ;
+
+\ -----------------------------------------------------------------------------
+\  Shifts
+\ -----------------------------------------------------------------------------
+
+: bshr.step ( addr carry -- carry* )
+  over dup @ <>
+  if
+    over @ swap ( addr-old addr-new carry-in )
+    recurse ( addr-old carry-out )
+  then
+
+  ( addr carry )  
+  swap cell+ ( carry addr* )
+  dup      ( carry addr* )
+  @        ( carry addr* value )  
+  dup      ( carry addr* value value )
+  1 and    ( carry addr* value carry-new )
+  >r       ( carry addr* value R: carry-new )
+  1 rshift ( carry addr* value* R: carry-new )
+  rot      ( addr* value* carry R: carry-new )
+  bits/cell 1- lshift or ( addr* value** R: carry-new )
+  swap ! ( R: carry-new )
+  r>  
+;
+
+: b2/ ( b -- b )
+  dup
+  dup b0< 1 and bshr.step drop
+;
+
+: b2* ( b -- 2*b ) dup b+ ;
+
+: blshift  ( b u -- ) 0 ?do b2* loop ;
+: barshift ( b u -- ) 0 ?do b2/ loop btrim ;
+
+\ -----------------------------------------------------------------------------
+\  Multiplication   (both parameters need to be different bignums)
+\ -----------------------------------------------------------------------------
+
+: bu* ( b1 b2 -- b3 ) \ Unsigned multiply of bignums (slow!)
+  2dup 2>r
+
+  bignum-create >r ( op1 op2 R: result=0 )
+  
+  begin   
+    dup cell+ @     \ Fetch element of op2
+    
+    r>    
+    bits/cell 0 do \ Loop over the bits in element
+    >r
+      dup 1 and if   \ LSB set ?                           
+                  rot dup bcopy r> b+ >r -rot
+                then      
+      
+      1 rshift          \ Scan through the bits of this op2 element
+      rot b2* -rot
+      
+    r>
+    loop
+    >r
+    
+    drop  
+       
+    ( op1 op2 )
+    dup @ over =
+    ( op1 op2 Flag )
+    swap @ swap    
+    ( op1<<bits/cell op2* Flag )
+  until
+  2drop
+  
+  r> \ Result
+  
+  2r> 2dup = if drop bignum-free else bignum-free bignum-free then  
+;
+
+: fac ( u -- b )
+  1 s>b swap
+  1+ 1 ?do  i s>b bu* loop
+;
+
+: b* ( b1 b2 -- b3 ) \ Signed multiply of bignums
+
+  dup b0< dup >r if bnegate then
+  swap
+  dup b0< dup >r if bnegate then
+
+  bu*
+  
+  r> r> xor if bnegate then
+;
+
+\ -----------------------------------------------------------------------------
+\   Division   (both parameters need to be different bignums)
+\ -----------------------------------------------------------------------------
+
+0 variable b-rem
+0 variable b-divisor
+0 variable b-quotient
+
+: bu/mod ( b1 b2 -- b-div b-rem ) \ A very, very slow unsigned bignum division
+
+  b-divisor ! dup blength bits/cell * >r b-rem ! ( R: rem-length )  
+  bignum-create b-quotient !
+ 
+  b-divisor @   r@ blshift   b-divisor !
+ 
+  0 r>  \ Number of bits in the dividend, elements * bits/cell
+  do    \ Start with maximum shift  
+    \ ." Div " i . cr
+    
+    b-rem @  b-divisor @ bcopy  b-
+    
+    dup b0< if \ Re-Add this step back 
+              b-divisor @ bcopy  b+
+            else \ Set a bit in result
+              1 s>b i blshift b-quotient @ bor b-quotient !
+            then
+    b-rem !
+    
+    b-divisor @ b2/ b-divisor !
+  -1 +loop
+  
+  b-divisor @ bignum-free \ Forget divisor, not needed anymore
+  b-rem @ b-quotient @
+;
+
+\ -----------------------------------------------------------------------------
+\   Numerical output
+\ -----------------------------------------------------------------------------
+
+128 buffer: bignumberpad
+0 variable bignumberlength
+
+: bighold (  c -- )
+  bignumberlength @ 128 u< 
+  if  
+    bignumberpad bignumberpad 1+ bignumberlength @ move
+    bignumberpad c!
+    1 bignumberlength +!
+  else drop then
+;
+ 
+: b#s ( b -- )
+    begin
+      base @ s>b bu/mod swap b>s .digit bighold
+      dup b0=
+    until
+    bignum-free
+;
+
+: bu. ( b -- )
+  0 bignumberlength !
+    b#s
+  bignumberpad bignumberlength @ type space
+;
+
+: bs. ( b -- )
+  dup b0< if bnegate [char] - emit then
+  bu.
+;
+
+\ -----------------------------------------------------------------------------
+\   Numerical input
+\ -----------------------------------------------------------------------------
+
+ 0 variable bigsign
+
+: string>big ( addr u -- b )
+  base @ >r
+  0 bigsign !
+  
+  bignum-create swap
+  
+  0 ?do  
+    over i + c@
+    
+    \ Handle Base-Prefixes and Sign !
+    \ dup space emit space
+
+    case
+      [char] - of -1 bigsign xor! endof
+      [char] $ of 16 base ! endof
+      [char] # of 10 base ! endof
+      [char] % of  2 base ! endof
+      [char] . of ( Simply ingnore for better readability ) endof
+    
+    digit if
+            swap base @ s>b bu* swap
+            s>b b+
+          else
+            ." Not a valid number" cr quit
+          then
+          
+    0 endcase      
+  loop  
+  nip
+  
+  bigsign @ if bnegate then
+  r> base !
+;
+
+: big ( -- b ) \ Parses string. Caution: Cannot compile these big numbers !
+  token string>big
+;
+
+\ -----------------------------------------------------------------------------
+\   A few tests
+\ -----------------------------------------------------------------------------
+
+compiletoram
+
+init-bignum
+
+hex
+
+42 s>b dup hex. dup blength .
+-11 s>b dup hex. dup blength .
+b+     dup hex.  dup blength .
+b.
+
+bc
+
+11 s>b 23 s>b band bnot b.
+11 s>b 23 s>b bor  b.
+
+\ Agenda: Sign and Carry on b+ !
+
+bc
+
+$7FFFFFFF s>b 4 s>b b+
+$7FFFFFFF s>b 5 s>b b+
+b+ 
+-2 s>b b+ b.
+
+bc
+
+5 s>b 6 s>b b- b.
+-5 s>b 6 s>b b- b.
+-5 s>b 5 s>b b+ b.
+
+3 s>b b2* b.
+
+1 s>b 34 blshift b.
+
+bc
+
+
+2 s>b 3 s>b bu* b.
+
+
+ 2 s>b  3 s>b b* b. \ PP
+-2 s>b  3 s>b b* b. \ NP
+ 2 s>b -3 s>b b* b. \ PN
+-2 s>b -3 s>b b* b. \ NN
+
+1 fac b.
+2 fac b.
+3 fac b.
+4 fac b.
+
+\ 9 s>b 2 s>b bu/mod b. b.
+
+ 1 s>b dup b0= . b.
+ 0 s>b dup b0= . b.
+-1 s>b dup b0= . b.
+  
+ 5 s>b 6 s>b 2dup   b= .  b. b. 
+ 5 s>b 5 s>b 2dup   b= .  b. b. 
+ 5 s>b 4 s>b 2dup   b= .  b. b. 
+  
+ -5 s>b -6 s>b 2dup   b= .  b. b. 
+ -5 s>b -5 s>b 2dup   b= .  b. b. 
+ -5 s>b -4 s>b 2dup   b= .  b. b. 
+ 
+ 5 s>b 6 s>b 2dup   b< .  b. b. 
+ 5 s>b 5 s>b 2dup   b< .  b. b. 
+ 5 s>b 4 s>b 2dup   b< .  b. b. 
+ 
+ 
+ -5 s>b -6 s>b 2dup   b< .  b. b. 
+ -5 s>b -5 s>b 2dup   b< .  b. b. 
+ -5 s>b -4 s>b 2dup   b< .  b. b. 
+ 
+\ 1234 s>b bu.
+\ 45 s>b bs.
+\ -44 s>b bs.
+
+.s bc
+
+
+\ big 1234567890abcdef00000000fedcba9876543210 b.
+
+\ big -1234567 bs.
+
+-1234567890123. d>b dup bcopy b. b>d d.
+
+-1234567890123. d>b dup bcopy b* dup bcopy b* b.
+
+$1000 s>b b2/ b2/ b2/ b.
+
+9 s>b 2 s>b bu/mod b. b.
+
+\ big 1234567890abcdef00000000fedcba9876543210 bs.
+
+decimal
+
+: hex-facs cr 30 0 do i u. ." ! = " i fac b.  cr loop ;
+: facs     cr 30 0 do i u. ." ! = " i fac bu. cr loop ;
+
+\ Agenda: Improving speed is a need !

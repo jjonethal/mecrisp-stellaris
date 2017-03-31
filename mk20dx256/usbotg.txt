@@ -1,0 +1,1062 @@
+\ usb.txt usb-serial support and maybe more..
+\ REQUIRES: struct.txt bitstruct.txt nvic.txt ../common/charcomma.txt
+\ 
+\ THIS IS WORK IN PROGRESS ... NOTHINGING REALLY WORKS
+\ DO NOT USE
+\ YOU HAVE BEEN WARNED
+\ SHOULD BE REWRITTEN
+
+\ TODO
+\ Add trace code.
+\ FACTOR!
+\ usb-tokdne
+\ usb-softoken
+\ usb-setup
+\ usb-tx
+\ usb-(transmit)
+\ usb-(receive)
+\ CDC
+\ usb-emit?
+\ usb-emit
+\ -usb
+\ Factor out array addressing with bdt: array.
+\ Factor out base plus offset code into defining words.
+\ For register field access, use bfield and align in structs. Then we won't need bitshifts everywhere.
+\ bdt-entry# stuff should really be replaced with a bitstruct.
+\ Reduce the use of flags.
+\ Get the bdt array, bdt-desc etc refactoring working.
+
+\ Get starting address of BDT. For usb-bdt-page-set.
+
+$40020000 constant FTFL_FSTAT     \ Flash Status Register
+$40020006 constant FTFL_FCCOB1    \ Flash Common Command Object Registers
+$40020007 constant FTFL_FCCOB0    \ Flash Common Command Object Registers
+$40020008 constant FTFL_FCCOB7    \ Flash Common Command Object Registers (note 6,5,4 follow in memory)
+$40048034 constant SIM_SCGC4
+$00040000 constant SIM_SCGC4_USBOTG
+$4007209C constant USB0_BDTPAGE1
+$400720B0 constant USB0_BDTPAGE2
+$400720B4 constant USB0_BDTPAGE3
+$40072080 constant USB0_ISTAT     \ Interrupt Status register
+      $80 constant USB_ISTAT_STALL      \ 
+      $40 constant USB_ISTAT_ATTACH     \ 
+      $20 constant USB_ISTAT_RESUME     \ 
+      $10 constant USB_ISTAT_SLEEP      \ 
+      $08 constant USB_ISTAT_TOKDNE     \ 
+      $04 constant USB_ISTAT_SOFTOK     \ 
+      $02 constant USB_ISTAT_ERROR      \ 
+      $01 constant USB_ISTAT_USBRST     \ 
+$40072084 constant USB0_INTEN     \ Interrupt Enable Register
+      $80 constant USB_INTEN_STALLEN  \ 
+      $40 constant USB_INTEN_ATTACHEN \ 
+      $20 constant USB_INTEN_RESUMEEN \ 
+      $10 constant USB_INTEN_SLEEPEN  \ 
+      $08 constant USB_INTEN_TOKDNEEN \ 
+      $04 constant USB_INTEN_SOFTOKEN \ 
+      $02 constant USB_INTEN_ERROREN  \ 
+      $01 constant USB_INTEN_USBRSTEN \ 
+$40072088 constant USB0_ERRSTAT   \ Error Interrupt Status register
+$4007208C constant USB0_ERREN     \ Error Interrupt Enable Register
+$40072010 constant USB0_OTGiSTAT  \ OTG Interrupt Status register (
+$40072090 constant USB0_STAT      \ 
+      $08 constant USB_STAT_TX         \ 
+      $04 constant USB_STAT_ODD        \ 
+$400720C0 constant USB0_ENDPT0         \ Endpoint Control Register
+$400720C4 constant USB0_ENDPT1
+      $80 constant USB_ENDPT_HOSTWOHUB \ host only, enable low speed
+      $40 constant USB_ENDPT_RETRYDIS  \ host only, set to disable NAK retry
+      $10 constant USB_ENDPT_EPCTLDIS  \ 0=control, 1=bulk, interrupt, isync
+      $08 constant USB_ENDPT_EPRXEN    \ enables the endpoint for RX transfers.
+      $04 constant USB_ENDPT_EPTXEN    \ enables the endpoint for TX transfers.
+      $02 constant USB_ENDPT_EPSTALL   \ set to stall endpoint
+      $01 constant USB_ENDPT_EPHSHK    \ enable handshaking during a transaction, generally set unless Isochronous
+$4007210C constant USB0_USBTRC0   \ USB Transceiver Control Register 0
+$40072094 constant USB0_CTL       \ Control register (USB0_CTL)
+      $02 constant USB_CTL_ODDRST \ 
+$40072098 constant USB0_ADDR      \ Address Register
+$40072100 constant USB0_USBCTRL   \ USB Control register
+$40072108 constant USB0_CONTROL   \ USB OTG Control register
+
+      $40 constant EP0_SIZE       \ bMaxPacketSize
+
+
+
+: +usb
+  1 USB0_CTL c! \ 1 = USB_CTL_USBENSOFEN
+ ;
+
+\ -------------
+\ USB Memory
+\ -------------
+
+struct
+  $2 field usb_packet.len
+  $2 field usb_packet.index
+  $4 field usb_packet.next
+ $40 field usb_packet.buf ( c-addr ) \ FIXME
+constant usb_packet_t
+
+
+usb_packet_t 5 * buffer: rx_first               
+usb_packet_t 5 * buffer: rx_last                
+usb_packet_t 5 * buffer: tx_first               
+usb_packet_t 5 * buffer: tx_last                
+             8   buffer: usb_rx_byte_count_data
+             4   buffer: tx_state
+
+12 constant NUM_USB_BUFFERS
+
+NUM_USB_BUFFERS usb_packet_t * buffer: usb_buffer_memory
+$FFFFFFFF variable usb_buffer_available
+EP0_SIZE cells buffer: ep0_rx0_buf
+EP0_SIZE cells buffer: ep0_rx1_buf
+0 variable ep0_tx_ptr            \ c-addr
+0 variable ep0_tx_len           
+0 variable ep0_tx_bdt_bank       \ odd=1|even=0
+0 variable ep0_tx_data_toggle   
+0 variable usb_rx_memory_needed 
+0 variable usb_configuration    
+0 variable usb_reboot_timer     
+
+
+: usb_rx_memory ( usb_packet_t -- )
+  \ TODO
+  drop
+ ;
+
+: usb-allot ( -- addr )
+  dint
+  usb_buffer_available @
+  dup clz over \ -- n avail n
+  NUM_USB_BUFFERS >= if eint exit then \ -- n avail
+  over \ - n avail n
+  $80000000 swap rshift bic and \ -- n
+  eint
+  usb_packet_t * usb_buffer_memory + dup \ p p
+  $8 $00 fill \ ?
+  eint
+ ;
+
+: usb-free ( addr -- ) \ Address of packet.
+  usb_buffer_memory - usb_packet_t /
+  dup NUM_USB_BUFFERS >= if exit then
+  usb_rx_memory_needed c@ usb_configuration c@ and if
+    usb_rx_memory exit
+  then
+  $80000000 swap rshift
+  dint
+    usb_buffer_available bis!
+  eint
+ ;
+
+\ -------------
+\ USB Descriptor
+\ -------------
+
+\ For usb-serial
+
+\ $00 constant ENDPOINT_UNUSED
+\ $15 constant ENDPOINT_TRANSMIT_ONLY
+\ $19 constant ENDPOINT_RECEIVE_ONLY
+\ $1D constant ENDPOINT_TRANSMIT_AND_RECEIVE
+
+                    \ $16C0 constant VENDOR_ID
+                    \ $0483 constant PRODUCT_ID
+                       \ 2 constant DEVICE_CLASS \ 2 = Communication Class
+                           \ create MANUFACTURER_NAME $54 h, $65 h, $65 h, $6E h, $73 h, $79 h, $64 h, $75 h, $69 h, $6E h, $6F h, \ "Teensyduino"
+                      \ $1A constant MANUFACTURER_NAME_LEN \ 2*(11+2)
+                            \ create PRODUCT_NAME      $55 h, $53 h, $42 h, $20 h, $53 h, $65 h, $72 h, $69 h, $61 h, $6C h,        \ "USB Serial"
+                       \ $A constant PRODUCT_NAME_LEN
+\ \ 12 constant NUM_USB_BUFFERS
+\ \ 2 constant NUM_INTERFACE
+\   0 constant CDC_STATUS_INTERFACE
+\   1 constant CDC_DATA_INTERFACE
+\   2 constant CDC_ACM_ENDPOINT
+   3 constant CDC_RX_ENDPOINT
+   4 constant CDC_TX_ENDPOINT
+\  16 constant CDC_ACM_SIZE
+\  64 constant CDC_RX_SIZE
+\  64 constant CDC_TX_SIZE
+\ \ 67 constant CONFIG_DESC_SIZE
+\ $15 constant ENDPOINT2_CONFIG \ $15 = ENDPOINT_TRANSMIT_ONLY
+\ $19 constant ENDPOINT3_CONFIG \ $19 = ENDPOINT_RECEIVE_ONLY
+\ $15 constant ENDPOINT4_CONFIG \ $15 = ENDPOINT_TRANSMIT_ONLY
+
+struct
+  1 field usb_string_descriptor_struct.bLength
+  1 field usb_string_descriptor_struct.bDescriptorType
+  2 field usb_string_descriptor_struct.wString
+constant usb_string_descriptor_struct
+
+
+create string0 4 c, 3 c, $0409 h, calign align
+
+create usb_string_manufacturer_name
+                                  $1A c, \ 2*(11+2)
+                                    3 c,
+  $54 h, $65 h, $65 h, $6E h, $73 h, $79 h, $64 h, $75 h, $69 h, $6E h, $6F h, calign align \ "Teensyduino"
+
+create usb_string_product_name
+                                  $18 c, \ 2*(10+2)
+                                    3 c,
+  $55 h, $53 h, $42 h, $20 h, $53 h, $65 h, $72 h, $69 h, $61 h, $6C h, calign align       \ "USB Serial"
+
+create usb_string_serial_number
+                                   12 c,
+                                    3 c,
+                                    0  , calign align
+
+create device_descriptor
+                  18 c, \ bLength
+                   1 c, \ bDescriptorType
+               $0002 h, \ bcdUSB
+                  $2 c, \ bDeviceClass \ 2 = Communication Class
+                   0 c, \ bDeviceSubClass
+                   0 c, \ bDeviceProtocol
+                 $64 c, \ bMaxPacketSize0 \ EP0_SIZE
+               $16C0 h, \ idVendor
+               $0483 h, \ idProduct
+               $0001 h, \ bcdDevice
+                   1 c, \ iManufacturer
+                   2 c, \ iProduct
+                   3 c, \ iSerialNumber
+                   1 c, \ bNumConfigurations
+           calign align
+
+create config_descriptor
+\ configuration descriptor, USB spec 9.6.3, page 264-266, Table 9-10
+                 9 c,   \ bLength;
+                 2 c,   \ bDescriptorType;
+               $43 h,   \ wTotalLength
+                $2 c,   \ bNumInterfaces
+                 1 c,   \ bConfigurationValue
+                 0 c,   \ iConfiguration
+               $C0 c,   \ bmAttributes
+                50 c,   \ bMaxPower
+         calign align
+                        \ TODO ...
+
+create usb_descriptor_list
+\ wValue, wIndex,                      address,  length
+ $0100 h, $0000 h,            device_descriptor ,  $1 h,
+ $0200 h, $0000 h,            config_descriptor ,  $1 h, \ TODO
+ $0300 h, $0000 h,                      string0 ,   0 h,
+ $0301 h, $0409 h, usb_string_manufacturer_name ,   0 h,
+ $0302 h, $0409 h,      usb_string_product_name ,   0 h,
+ $0303 h, $0409 h,     usb_string_serial_number ,   0 h,
+     0 h,     0 h,                            0 ,   0 h, \ {0, 0, NULL, 0} ???
+
+struct
+  2 field usb_descriptor_list.wValue
+  2 field usb_descriptor_list.wIndex
+  4 field usb_descriptor_list.addr ( c-addr )
+  2 field usb_descriptor_list.length
+constant usb_descriptor_list_t
+
+\ 0x00 not used
+\ 0x19 Recieve only
+\ 0x15 Transmit only
+\ 0x1D Transmit & Recieve
+create usb_endpoint_config_table
+       $00 c, $15 c, $19 c, $15 c, $00 c, $00 c, $00 c, $00 c,
+       $00 c, $00 c, $00 c, $00 c, $00 c, $00 c, $00 c, calign align
+
+\ -------------
+\ USB Serial ID
+\ -------------
+0 variable usb-serial#
+
+\ Note:  on my develop system the serial number is 0x00007B83 or 31619
+: usb-get-serial# ( -- n )
+  dint
+  %01110000    FTFL_FSTAT c! \ clear flash memory erros
+  $41         FTFL_FCCOB0 c! \ Read 4 bytes of a dedicated 64 byte field in the program flash IFR
+  15          FTFL_FCCOB1 c! \ Last 4-byte segment of the program once
+                             \ field within the IFR - holds serial number
+  $80          FTFL_FSTAT c! \ launch the command \ FIXME this resets!! No handler for ccif yet!! \ Likely a problem with this 4th source because old src works.
+  begin $80 FTFL_FSTAT cbit@ until  \ Wait for CCIF to toggle back to 1
+  FTFL_FCCOB7 @           \ Get the result
+  eint
+ ;
+
+
+
+\ -----------------------
+\ Buffer descriptor table
+\ -----------------------
+
+\ TODO check bit ordering.
+\ The format of an 8-byte Buffer Descriptor.
+\ 2 of these are needed for one endpoint, 1 for each direction.
+struct
+  4 superfield bdt.desc \ Table 41-3 from datasheet.
+   2 resbits
+   1 superfield bdt.tok_pid \ Next 4 bits.
+    1 bits bdt.bdt_stall/
+    1 bits bdt.dts/        \ Data Toggle Synchronization
+    1 bits bdt.ninc/       \ Disables the DMA engine address increment
+    1 bits bdt.keep/
+   1 bits bdt.data0/1
+   1 bits bdt.own
+   8 resbits
+   10 bits bdt.bc  \ Byte Count. Updated upon completion of an Rx Transfer with the byte count of the data received.
+   6  resbits
+  4 field bdt.addr \ Represents the 32-bit buffer address in system memory. These bits are unchanged by the USB-FS.
+constant bdt_t
+
+: aligned-512 ( addr -- even-on-512 )
+  dup $1FF and if $1FF bic $200 + then
+  1-foldable
+ ;
+
+: usb-bdt-page-set ( 512a-addr -- )
+  dup  8 rshift USB0_BDTPAGE1 c!
+  dup 16 rshift USB0_BDTPAGE2 c!
+      24 rshift USB0_BDTPAGE3 c!
+ ;
+
+                   $4 constant #ENDPOINTS
+#ENDPOINTS 1+ bdt_t * constant #BD       \ $14
+
+\ Address buffer descriptors using ( odd tx endpt ).
+: bd-offset ( odd tx endpt -- bdt-offset ) $2 lshift swap 1 lshift or or bdt_t * ;
+: bdt:                       \ ( #bd -- ) ; ( odd tx endpt -- address )
+  <builds here 4 + dup       \ Skip 4 bytes to store the offset to the 512 byte boundary
+    aligned-512 swap - dup   \ Calculate required offset
+    4 + ,                    \ Store offset (account for 4-bytes used for holding offset)
+    allot                    \ Allocate space to get to boundary
+    bdt_t * allot            \ Create space for an n-element buffer descriptor table
+  does> dup @ +              \ Get to even 512 boundary by reading offset and adding to base
+    >r bd-offset r> +        \ ( odd tx endpt even-on-512 -- address ) get the address of the buffer descriptor (bd).
+ ;
+
+#BD bdt: bdt  \ create a 5 element buffer descriptor table
+
+\ Modify the address directly
+\ FIXME This is easy to read but likely not very efficient.
+
+\ : bdt-entry ( odd tx endpt bd -- new_bd_addr )
+\   bdt sp@ >r \ get pointer to the address of bdt base
+\  \ Modify bdt address pointed to by the pointer.
+\   bdt.addr.endpt     rtbit! \ -- endpt tx/rx
+\   r@ bdt.addr.tx     rtbit!
+\   r> bdt.addr.odd    rtbit!
+\  ;
+
+\ TODO Eliminate needless named constants like these.
+0 constant RX
+1 constant TX
+0 constant EVEN
+1 constant ODD
+0 constant DATA0
+1 constant DATA1
+
+\ TODO Eliminate stat>bd and use bitstruct instead.
+: stat>bd ( stat - bd )
+  2 lshift bdt +
+ ;
+
+\ : bdt-desc ( len data -- c )
+\ : bdt-desc ( # data bd -- ) \ FIXME
+\   >r
+\   0<> \ Neccessary?
+\   bdt.data0/1 r@ rtbit!
+\   bdt.bc      r> rtbit!
+\   1      bdt.own rtbit!
+\   1     bdt.dts/ rtbit!
+\   \ TODO This DOES NOT leave n on the stack for bdt.desc. This is because we're going to skip the middleman.
+\  ;
+
+\ Set bd's descriptor given data0 or data1 (whether a data0 or data1 field was transmitted or received), count and the bd
+: bdt.desc! ( data0/1 # bd -- )
+  >r
+    r@ bdt.bc      rtbit!
+    r@ bdt.data0/1 rtbit!
+  1 r@ bdt.own     rtbit!
+  1 r> bdt.dts/    rtbit!
+;
+
+\ set buf and desc
+\ : set-buf ( addr # data bd )
+: set-buf ( addr desc bd-addr -- )
+  \ TODO bdt.addr and bdt.desc stores appear a lot together. This will factor them out.
+  dup >r bdt.desc
+  r> bdt.addr !
+ ;
+
+
+\					table[index(i, RX, ODD)].addr = p->buf;
+\					table[index(i, RX, ODD)].desc = BDT_DESC(64, 1);
+\ buf    data len bdt-desc   odd tx/rx endpt bdt_index bdt
+
+: endpoint0-stall
+  $0F USB0_ENDPT0 c! \ USB_ENDPT_EPSTALL, USB_ENDPT_EPRXEN, USB_ENDPT_EPTXEN and USB_ENDPT_EPHSHK
+ ;
+
+: endpoint0-transmit ( addr # -- ) \ FIXME
+
+ \ get the bd address
+  ep0_tx_bdt_bank c@ %010 or bdt >r \ ( -- addr len ) tx endpt0
+
+ \ Set bdt.desc (count)
+                     r@      bdt.bc rtbit!
+  ep0_tx_data_toggle r@ bdt.data0/1 rtbit!
+
+ \ Set bdt.addr (addr)
+                     r>    bdt.addr rtbit!
+
+ \ toggle
+  1 ep0_tx_data_toggle cxor!
+  1 ep0_tx_bdt_bank    cxor!
+ ;
+
+
+
+\ -------------
+\ USB Setup
+\ -------------
+
+8 buffer: reply_buffer \ c-addr
+
+: (free-all-bdt-entries)
+  #BD
+  4 do
+    i bdt bdt.own rtbit@
+    if i bdt bdt.addr 8 - usb-free then
+  loop
+  0 usb_rx_memory_needed c!
+ ;
+
+: usb-(?rx-allot) ( odd -- )
+  usb-allot dup if
+   ( odd usb_packet_t )
+    usb_packet.buf over 0 i bdt bdt.addr !
+   ( odd )
+    $40 0 bdt.desc over 0 i bdt bdt.desc !
+  else
+    drop ( -- odd )
+    0 0 i bdt bdt.desc !
+    1 usb_rx_memory_needed +!
+  then
+ ;
+
+ 0 constant TX_STATE_BOTH_FREE_EVEN_FIRST   \ %000
+ 1 constant TX_STATE_BOTH_FREE_ODD_FIRST    \ %001
+$2 constant TX_STATE_EVEN_FREE              \ %010
+$3 constant TX_STATE_ODD_FREE               \ %011
+$4 constant TX_STATE_NONE_FREE_EVEN_FIRST   \ %100
+$5 constant TX_STATE_NONE_FREE_ODD_FIRST    \ %101
+
+\ FIXME Hmm.
+\ struct
+\   1 bits tx_state.odd       \ 1 = odd, 0 = even.
+\   1 bits tx_state.one-free  \ 1 = exactly one is free
+\   1 bits tx_state.none-free \ 1 = none free, 0 = both free
+\ constant tx_state_t
+
+: (free-first-get-next-packet)
+    begin
+      dup  usb_packet.next @ ( -- packet packet.next )
+      swap usb-free          ( -- packet.next )
+    until
+ ;
+
+: (endpoint-free-all-queued-packets) ( endpoint# -- )
+  dup >r rx_first + c@
+  (free-first-get-next-packet)
+  0 r@ rx_first + !
+  0 r@  rx_last + !
+  r@ tx_first + @
+  (free-first-get-next-packet)
+  0 r@ tx_first + !
+  0 r@ tx_last  + !
+  0 r@ usb_rx_byte_count_data + h!
+  \ r@ tx_state + c@
+  \ dup $6 and if
+  $1 and r@ tx_state + c!
+  \ then
+;
+
+: (free-all-queued-packets)
+  \ How many endpoints? endpoint 0?
+  0 (endpoint-free-all-queued-packets)
+  1 (endpoint-free-all-queued-packets)
+  2 (endpoint-free-all-queued-packets)
+  3 (endpoint-free-all-queued-packets)
+  0 usb_rx_memory_needed c!
+  $4 1 \ -- #ENDPOINTS 1
+  do
+    usb_endpoint_config_table 1+ c@ dup
+    USB0_ENDPT1 c!
+    4 + !
+    USB_ENDPT_EPRXEN and if
+      0 usb-(?rx-allot) \ EVEN
+      1 usb-(?rx-allot) \ ODD
+    then
+    0    0 1 i bdt bdt.desc !
+    0    1 1 i bdt bdt.desc !
+  loop
+ ;
+
+
+struct
+  4 superfield setup.word1
+    2 superfield setup.wRequestAndType
+      1 field setup.bmRequestType
+      1 field setup.bRequest
+    2 field setup.wValue
+  4 superfield setup.word2
+    2 field setup.wIndex
+    2 field setup.wLength
+constant setup_t
+
+setup_t buffer: setup
+
+: (setup-send-/wLength) ( datalen -- datalen )
+  dup setup setup.wLength h@ > if drop setup setup.wLength then
+ ;
+
+: (setup-send-/EP0_SIZE) ( datalen -- size )
+  dup EP0_SIZE > if drop EP0_SIZE then
+ ;
+
+: (usb-setup-send)
+  2dup (setup-send-/EP0_SIZE) tuck ( addr datalen -- addr datalen size addr size )
+  2dup endpoint0-transmit \ -- addr datalen size
+  tuck >r ( addr size datalen size ) ( R: size )
+  - >r + r> ( -- addr+size datalen-size ) ( R: size )
+  dup r> EP0_SIZE < if exit then
+ ;
+
+
+: usb-setup-send ( data datalen -- )
+  ." setup send" cr
+  (setup-send-/wLength)  ( addr datalen -- addr datalen )
+  (usb-setup-send)
+  (usb-setup-send)
+  ep0_tx_len h! \ store datalen
+  ep0_tx_ptr  ! \ store data
+ ;
+
+: (usb-set-configuration)
+  ." configure" cr
+  setup.wValue usb_configuration c!
+  (free-all-bdt-entries)
+  (free-all-queued-packets)
+ ;
+
+: (config-get)
+  ." config get" cr
+  usb_configuration reply_buffer c!
+  reply_buffer 1 ( -- data len )
+ ;
+
+: (device-stat)
+  ." device stat" cr
+  0 reply_buffer h!
+  reply_buffer $2 ( -- data len )
+ ;
+
+: (endpt-stat)
+  ." endpoint stat" cr
+  setup.wIndex h@ #ENDPOINTS > if endpoint0-stall exit then
+  0 reply_buffer h!
+  USB0_ENDPT0 setup.wIndex h@ 2 lshift + c@ $2 and if 1 reply_buffer c! then
+  reply_buffer $2
+ ;
+
+: (endpt-feature-clear)
+  ." endpoint feature clear" cr
+  setup.wIndex h@ $7F and #ENDPOINTS > setup.wValue h@ or if
+    endpoint0-stall exit
+  then
+  $2   USB0_ENDPT0 setup.wIndex h@ 2 lshift +  cbic!
+ ;
+
+: (endpt-feature-set)
+  ." endpoint feature set" cr
+ \ TODO ...
+ ;
+
+: (get-descriptor)
+  ." get descriptor" cr
+  usb_descriptor_list $6 bounds ?do \ ???
+    usb_descriptor_list.addr @ 0= if leave then
+    setup setup.wValue h@ i usb_descriptor_list.wValue h@ =
+    setup setup.wIndex h@ i usb_descriptor_list.wIndex h@ =
+    and if
+      i usb_descriptor_list.addr ( data )
+      setup setup.wValue $8 rshift $3 if
+        i   usb_descriptor_list.addr  @ \ ???
+      else
+        i usb_descriptor_list.length h@
+      then
+      usb-setup-send
+    then
+  usb_descriptor_list_t +loop
+  endpoint0-stall
+ ;
+
+
+0 variable usb_cdc_line_rtsdtr
+: (cdc-set-ctrl-line-state)
+  ." cdc set ctrl line state" cr
+  setup.wValue h@ usb_cdc_line_rtsdtr c!
+  usb-setup-send
+ ;
+
+: (cdc-send-break)
+  ." cdc send break" cr
+ \ TODO ...
+  usb-setup-send
+ ;
+
+: (cdc-set-line-coding)
+  ." setting coding..." cr
+ \ TODO ...
+  ;
+
+: usb-setup ( -- )
+  ." usb-setup" cr
+  \ TODO
+  setup setup.wRequestAndType h@
+  case
+  $0500 of                           endof \ set-address
+  $0900 of (usb-set-configuration)   endof \ set-configuration
+  $0880 of (config-get)              endof \ get-configuration
+  $0080 of (device-stat)             endof \ get-status (device)
+  $0082 of (endpt-stat)              endof \ get-status (endpoint)
+  $0102 of (endpt-feature-clear)     endof \ clear-feature (endpoint)
+  $0302 of (endpt-feature-set)       endof \ set-feature (endpoint)
+  $0680 of (get-descriptor)          endof \ get-descriptor
+  $0681 of (get-descriptor)          endof \ get-descriptor
+  $2221 of (cdc-set-ctrl-line-state) endof \ CDC_SET_CONTROL_LINE_STATE
+  $2321 of (cdc-send-break)          endof \ CDC_SEND_BREAK
+  $2021 of (cdc-set-line-coding)     endof \ CDC_SET_LINE_CODING
+           endpoint0-stall
+  endcase
+ ;
+
+
+\ -------------
+\ USB Control
+\ -------------
+
+
+: (setup-tok) ( bd -- ) \ If setup token is recived.
+  ." setup token" cr
+  >r
+ \ grab the 8 byte setup info
+  bdt.addr 2@ setup 2! \ store buf and buf+4 in word1 and word2 respectively.
+ \ give the buffer back
+  DATA1 EP0_SIZE r@ bdt.desc!
+  0 ep0_tx_ptr c! \ clear any leftover pending IN transactions
+  0  EVEN TX 0 bdt bdt.desc !
+  0  ODD  TX 0 bdt bdt.desc !
+  1 ep0_tx_data_toggle c!
+  usb-setup \ --
+  +usb
+ ;
+
+: (out-tok) ( bd -- ) \ give the buffer back
+  ." out token" cr
+  >r
+  EP0_SIZE r@      bdt.bc rtbit!
+  1        r> bdt.data0/1 rtbit!
+ ;
+
+: (in-tok)
+  ." in token" cr
+  \ TODO FACTOR THIS!!!
+  ep0_tx_ptr c@ dup if \ -- data
+    ep0_tx_len h@ dup \ -- data size size
+    EP0_SIZE > if
+      drop EP0_SIZE \ -- data new_size
+    then
+    2dup \ -- data size data size
+    endpoint0-transmit \ -- data size
+    tuck + \ -- size data+size
+    swap dup \ -- data size size
+    ep0_tx_len dup h@ rot - swap h! \ -- data size
+    EP0_SIZE = ep0_tx_len c@ 0 > or 0= if drop 0 then ep0_tx_ptr c! ( data size -- )
+  then
+  setup setup.bRequest c@ 5 = setup setup.bmRequestType c@ 0= and if \ FIXME
+    0 setup setup.bRequest c!
+    setup setup.wValue h@ USB0_ADDR h!
+  then
+ ;
+
+: usb-control ( stat -- )
+  ." usb-control" cr
+  bdt.tok_pid dup  ( stat -- bd bd )
+  bdt.tok_pid rtbit@ ( bd bd -- bd pid )
+  case
+    $0D        of (setup-tok) endof \ Setup received from host
+    dup $3 and of   (out-tok) endof \ OUT transaction received from host
+    $09        of    (in-tok) endof \ ( bd -- ) IN transaction completed to host
+  endcase
+  +usb
+ ;
+
+\ -------------
+\ USB I/O
+\ -------------
+
+
+: usb-tx ( addr1 addr2 ) \ addr1=packet addr2=endpoint, where endpoint < #ENDPOINTS.
+  
+ ;
+
+: usb-rx ( endpoint -- usb_packet_t )
+  1 - dup
+  #ENDPOINTS >= if
+    drop 0 exit \ -- 0
+  then
+  dup
+  dint
+  rx_first + dup @ if \ -- endpoint rx_first+endpoint \ TODO check this deref.
+    dup dup \ -- endpoint rx_first+endpoint rx_first+endpoint rx_first+endpoint
+    usb_packet.next @ swap ! \ -- endpoint rx_first+endpoint
+    tuck \ left over for when we leave this word.
+    usb_packet.len h@ \ -- endpoint len
+    swap usb_rx_byte_count_data + \ len usb_rx_byte_count_data+endpoint
+    dup h@ rot - swap h! \ subtract len from the value in usb_rx_byte_count_data and store in usb_rx_byte_count_data.
+  then
+  eint
+ ;
+
+: usb-(+tx-packet) ( bd endpoint packet -- )
+    ." tx packet" cr
+    dup usb_packet.next \ bd endpoint packet packet.next
+    rot \ bd packet packet.next endpoint
+    dup tx_state + r> \ Store on return stack for case...endcase
+    tx_first + ! \ -- bd packet
+    usb_packet.buf \ bd packet_buf
+    over bdt.addr ! \ -- 
+    r@ c@
+    case
+      TX_STATE_BOTH_FREE_EVEN_FIRST of             TX_STATE_ODD_FREE r> c! endof \   0 -->  %11
+      TX_STATE_BOTH_FREE_ODD_FIRST  of            TX_STATE_EVEN_FREE r> c! endof \   1 -->  %10
+      TX_STATE_EVEN_FREE            of  TX_STATE_NONE_FREE_ODD_FIRST r> c! endof \ %10 --> %101
+      TX_STATE_ODD_FREE             of TX_STATE_NONE_FREE_EVEN_FIRST r> c! endof \ %11 --> %100
+    endcase
+    usb_packet.len h@ over bdt.bc rtbit! \ bd -- bd
+ ;
+
+: usb-(-tx-packet) ( bd endpoint packet -- )
+    ." tx no packet" cr
+    drop
+    tx_state + dup >r c@ \ bd tx_state+endpoint
+    case
+      TX_STATE_BOTH_FREE_EVEN_FIRST     of                               rdrop    endof \ %00 --> break
+      TX_STATE_BOTH_FREE_ODD_FIRST      of                               rdrop    endof \ %01 --> break
+      TX_STATE_EVEN_FREE                of TX_STATE_BOTH_FREE_EVEN_FIRST r>    c! endof \ %10 --> %00
+      TX_STATE_ODD_FREE                 of  TX_STATE_BOTH_FREE_ODD_FIRST r>    c! endof \ %11 --> %01
+      swap \ -- tx_state+endpoint bd
+      bdt.bc rtbit@ $2 and swap c!
+      \ FIXME what are the stack effects???
+      \ swap 8 and if TX_STATE_ODD_FREE else TX_STATE_EVEN_FREE then swap h!
+    endcase
+ ;
+
+: usb-(tx-?packet) ( bd endpoint packet -- )
+  dup \ -- bd endpoint packet packet
+  if \ -- bd endpoint packet
+    usb-(+tx-packet)
+  else
+    usb-(-tx-packet)
+  then
+ ;
+
+: usb-(transmit) ( bd endpoint packet -- ) \ TODO
+  usb-free           \ -- bd endpoint
+  dup tx_first + @   \ -- bd endpoint packet
+  usb-(tx-?packet)   ( bd endpoint packet -- )
+ ;
+
+: usb-(receive) ( endpoint packet bd -- ) \ TODO stack order
+  bdt.bc \ b desc \ FIXME Are we storing in the address or trying to store in the value???
+  over usb_packet.len ( -- endpoint packet b-desc packet-len )
+  h!                  ( -- endpoint packet )
+
+  dup usb_packet.len 0 > if
+    dup usb_packet.index           0 swap h!
+    dup usb_packet.next 0 swap  ! ( -- endpoint packet )
+    over rx_first  \ -- endpoint packet endpoint rx_first
+    over + @ 0= if \ -- endpoint packet endpoint
+      rx_first + ! ( endpoint packet rx_first+endpoint -- endpoint )
+    else
+      rx_last + usb_packet.next !
+    then
+  else ( bd -- )
+    $40 swap bdt.bc rtbit! \ Only the count changes. FIXME but do we need to set the other bits again?
+  then
+ ;
+
+: usb-(tx?) ( stat -- true=tx|false=rx ) \ The most recent transaction was a transmit operation?
+  $08 and \ TODO use bitstruct?
+ ;
+
+
+\ -------------
+\ USBOTG ISR
+\ -------------
+
+struct
+  $2 resbits
+   1 bits USB0_STAT.odd   \ This bit is set if the last buffer descriptor updated was in the odd bank of the BDT.
+   1 bits USB0_STAT.tx    \ Transmit Indicator
+  $4 bits USB0_STAT.endpt \ This four-bit field encodes the endpoint address that received or transmitted the previous token.
+                          \ This allows the processor core to determine the BDT entry that was updated by the last USB transaction.
+constant USB0_STAT_t
+
+: usb-softoken ( -- )
+  ." softoken" cr
+  usb_configuration c@ if
+    ." reboot..."
+  then
+  USB_INTEN_SOFTOKEN USB0_ISTAT c!
+ ;
+
+: usb-tokdne ( -- )
+  ." tokdne" cr
+  USB0_STAT c@ dup USB0_STAT.endpt tuck \ -- endpoint stat endpoint
+  0= if \ -- endpoint stat \ It's endpoint0
+    usb-control drop
+  else                     \ It's another endpoint
+    dup stat>bd            ( endpoint stat    -- endpoint stat bd )
+    dup bdt.addr $8 -      ( endpoint stat bd -- endpoint stat bd packet )
+    2swap                  ( endpoint stat bd packet -- bd packet endpoint   stat )
+    swap 1- swap           ( bd packet endpoint stat -- bd packet endpoint-1 stat )
+    usb-(tx?) if           ( bd packet endpoint-1 -- bd packet endpoint-1 )
+      swap
+      usb-(transmit)       ( bd endpoint-1 packet -- )
+    else
+      swap
+      usb-(receive)        ( bd endpoint-1 packet -- )
+    then
+    USB_ISTAT_TOKDNE USB0_ISTAT c!
+  then
+ ;
+
+: usb-(usbrst)
+    ." reset" cr
+    USB_CTL_ODDRST        USB0_CTL c!
+    0              ep0_tx_bdt_bank c!
+
+    \ Set up buffers for receiving Setup and OUT packets
+    0 EP0_SIZE    EVEN RX 0 bdt bdt.desc! \ TODO walk through and factor bdt-entry
+    ep0_rx0_buf   EVEN RX 0 bdt bdt.addr !
+    0 EP0_SIZE    ODD  RX 0 bdt bdt.desc!
+    ep0_rx1_buf   ODD  RX 0 bdt bdt.addr !
+    0             EVEN TX 0 bdt bdt.desc !
+    0             ODD  TX 0 bdt bdt.desc !
+
+    \ Activate endpoint 0
+    $0D USB0_ENDPT0  c!
+
+    \ Clear all ending interrupts
+    $FF USB0_ERRSTAT c!
+    $FF USB0_ISTAT   c!
+
+    \ Zero the address during enumeration.
+    0   USB0_ADDR    c!
+
+    \ Enable some interrrupts
+    $FF USB0_ERREN   c!
+    $9F USB0_INTEN   c!
+
+    +usb
+ ;
+
+: usb-?usbrst ( istat -- f )
+  $01 and dup if \ Don't check any more ISR flags from this interrupt.
+    usb-(usbrst)
+  then
+ ;
+
+: -stall ( istat -- )
+  $80 and if
+    ." stall" cr
+    $0D             USB0_ENDPT0 c!
+    USB_ISTAT_STALL USB0_ISTAT  c!
+  then
+ ;
+
+: -error ( istat -- )
+  $02 and if
+    ." error " cr
+                    USB0_ERRSTAT  @
+                    USB0_ERRSTAT  !
+    USB_ISTAT_ERROR USB0_ISTAT   c!
+  then
+ ;
+
+: -sleep ( istat -- )
+  $10 and if
+    ." sleep" cr
+    USB_ISTAT_SLEEP USB0_ISTAT c!
+  then
+ ;
+
+: tok-?restart ( -- istat )
+  begin
+    ." istat: " USB0_ISTAT c@ dup hex. cr 
+    dup $04 and if      usb-softoken -1 then
+    dup $08 and if drop usb-tokdne    0 then
+  until
+ ;
+
+: usbotg-isr ( -- )
+  ." usbotg isr" cr
+  tok-?restart
+  usb-?usbrst if drop exit then \ FIXME hide EXIT
+  -stall
+  -error
+  -sleep
+ ;
+
+
+\ -------------
+\ USB Serial I/O
+\ -------------
+
+usb_packet_t buffer: rx_packet
+
+
+: usb-rx-byte-count ( n -- n )
+  1- dup ( endpoint -- endpoint-1 endpoint-1 )
+  #ENDPOINTS >= if 0 exit then
+  usb_rx_byte_count_data + h@ \ TODO use a struct.
+ ;
+
+: usb-serial-write ( addr-c )
+  
+ ;
+
+
+: usb-emit?
+ ;
+
+: usb-emit \ send single character to host (e.g. Laptop)
+  sp@ 1 usb-serial-write
+ ;
+
+: usb-key?
+  CDC_RX_ENDPOINT usb-rx-byte-count
+  rx_packet if
+    rx_packet usb_packet.len h@
+    rx_packet usb_packet.index h@ - +
+  then
+ ;
+
+: usb-key \ receive from laptop
+  rx_packet c@ 0= if
+    usb_configuration c@ 0= if exit then
+    CDC_RX_ENDPOINT usb-rx rx_packet !
+    rx_packet c@ 0= if exit then
+  then
+    rx_packet usb_packet.index h@ dup
+    rx_packet usb_packet.buf + c@ over ( -- i buf+i i )
+    rx_packet usb_packet.len h@ >= if
+    rx_packet usb-free
+    nip
+    0 rx_packet ! \ ???
+  else
+    rx_packet usb_packet.index 1 +!
+  then
+ ;
+
+$4004A040 constant PORTB_PCR16
+$4004A044 constant PORTB_PCR17
+$00000400 constant SIM_SCGC4_UART0
+
+: usb-io ( -- )
+ \ turn on clock
+  SIM_SCGC4_UART0 SIM_SCGC4 bis!
+
+ \ configure receive pin
+ \ pfe - passive input filter
+ \ ps - pull select, enable pullup, p229
+ \ pe - pull enable, on, p229
+  $313 PORTB_PCR16 !
+
+ \ configure transmit pin
+ \ dse - drive strength enable, high, p228
+ \ sre - slew rate enable, slow, p229
+  $344 PORTB_PCR17 !
+
+ \ baud rate generator, 115200, derived from test build
+ \ reference, *RM.pdf, table 47-57, page 1275, 38400 baud?
+  $0  UART0_BDH !
+  $1A UART0_BDL !
+  $1   UART0_C4 !
+
+ \ fifo enable
+  $88 UART0_PFIFO !
+
+ \ transmitter enable, receiver enable
+  $C     UART0_C2 !
+
+  ['] usb-emit? hook-emit? !
+  ['] usb-emit  hook-emit  !
+  ['] usb-key?  hook-key?  !
+  ['] usb-key   hook-key   !
+ ;
+
+
+\ -------------
+\ USBOTG Init
+\ -------------
+
+: usb-clock-enable ( -- ) 1 18 lshift SIM_SCGC4 bis! ;
+
+: usb-reset ( -- )
+  $80 USB0_USBTRC0 c!
+  begin $80 USB0_USBTRC0 cbit@ ." waiting for reset" dup hex. cr 0= until  \ Wait for reset to end
+ ;
+
+: usbotg-init
+ \ Set up usb serial console i/o
+\  usb-io
+
+  usb-get-serial# usb-serial# !
+  0 0 0 bdt #BD 1- erase \ bdt clear
+
+  \ this basically follows the flowchart in the Kinetis
+  \ Quick Reference User Guide, 1. Rev, 03/2012, page 141
+
+  usb-clock-enable
+  usb-reset
+
+  \ set desc table base addr
+  0 0 0 bdt usb-bdt-page-set
+
+  \ clear all ISR flags
+  $FF USB0_ISTAT    c!
+  $FF USB0_ERRSTAT  c!
+  $FF USB0_OTGISTAT c!
+  $40 USB0_USBTRC0 cbis!
+
+  $40 USB0_USBTRC0 cbis! \ undocumented bit NO IDEA WHY
+
+  \ enable USB
+  1 USB0_CTL        c!
+  0 USB0_USBCTRL    c!
+
+  \ enable reset interrupt
+  1 USB0_INTEN      c!
+
+  ['] usbotg-isr irq-usbotg !
+
+  \ enable interrupt in NVIC...
+  112 73 irq-priority!
+      73 irq-enable
+
+  \ enable d+ pullup
+  $10 USB0_CONTROL  c!
+
+  \ $1000000 USBDCD_CONTROL bis! \ Enable detection of USB charger. FIXME
+ ;
+
+\ vim:set filetype=forth :

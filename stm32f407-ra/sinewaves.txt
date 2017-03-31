@@ -1,0 +1,237 @@
+
+\ -----------------------------------------------------------------------------
+\   Digital direct synthesis function generator for two analog sine waves
+\ -----------------------------------------------------------------------------
+
+\ Requires sine.txt
+
+\ -----------------------------------------------------------------------------
+\   Set clock to 150 MHz
+\ -----------------------------------------------------------------------------
+
+$40023800 constant RCC_Base
+ 
+$40023C00 constant Flash_ACR \ Flash Access Control Register
+$40004408 constant USART2_BRR
+
+\ f (VCO clock) = f (PLL clock input) * (PLLN/PLLM)
+\ f (PLL general clock output) = F (VCO clock) / PLLP
+\ f (USB, RNG und andere) = f (VCO clock) / PLLQ
+
+RCC_Base $00 + constant RCC_CR
+  1 24 lshift constant PLLON
+  1 25 lshift constant PLLRDY
+
+RCC_Base $04 + constant RCC_PLLCRGR
+   1 22 lshift constant PLLSRC
+
+RCC_Base $08 + constant RCC_CFGR
+
+
+: 150MHz ( -- )
+
+  \ Set Flash waitstates !
+  $104 Flash_ACR !   \ 4 Waitstates for 150 MHz with more than 2.7 V Vcc, Prefetch buffer enabled.
+
+  PLLSRC          \ HSE clock as 8 MHz source
+
+  8  0 lshift or  \ PLLM Division factor for main PLL and audio PLL input clock 
+                  \ 8 MHz / 8 =  1 MHz. Divider before VCO. Frequency entering VCO to be between 1 and 2 MHz.
+
+300  6 lshift or  \ PLLN Main PLL multiplication factor for VCO - between 192 and 432 MHz
+                  \ 1 MHz * 300 = 300 MHz
+
+  8 24 lshift or  \ PLLQ = 8, 300 MHz / 8 = 37.5 MHz
+
+  0 16 lshift or  \ PLLP Division factor for main system clock
+                  \ 0: /2  1: /4  2: /6  3: /8
+                  \ 300 MHz / 2 = 150 MHz 
+  RCC_PLLCRGR !
+
+  PLLON RCC_CR bis!
+    \ Wait for PLL to lock:
+    begin PLLRDY RCC_CR bit@ until
+
+  2                 \ Set PLL as clock source
+  %101 10 lshift or \ APB  Low speed prescaler (APB1) - Max 42 MHz ! Here 150/4 MHz = 37.5 MHz.
+  %100 13 lshift or \ APB High speed prescaler (APB2) - Max 84 MHz ! Here 150/2 MHz = 75 MHz.
+  RCC_CFGR !
+
+  325 USART2_BRR ! \ Set Baud rate divider for 115200 Baud at 37.5 MHz.
+;
+
+
+\ -----------------------------------------------------------------------------
+\   Registers and initialisations for the digital-analog-converters
+\ -----------------------------------------------------------------------------
+
+\ PA4: DAC1 out
+\ PA5: DAC2 out
+
+$40020000 constant PORTA_Base
+
+PORTA_Base $00 + constant PORTA_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+PORTA_Base $10 + constant PORTA_IDR      \ RO      Input Data Register
+PORTA_Base $14 + constant PORTA_ODR      \ Reset 0 Output Data Register
+
+$40023800 constant RCC_Base
+RCC_Base $40 + constant RCC_APB1ENR
+
+1 29 lshift constant DACEN
+
+$40007400 constant DAC_Base
+DAC_Base $00 + constant DAC_CR
+DAC_Base $08 + constant DAC_DHR12R1
+DAC_Base $14 + constant DAC_DHR12R2
+DAC_Base $20 + constant DAC_DHR12RD
+
+
+: dacs ( Channel1 Channel2 -- )
+  \ $FFF and DAC_DHR12R2 !
+  \ $FFF and DAC_DHR12R1 !
+  $FFF and 16 lshift
+  swap
+  $FFF and
+  or
+  DAC_DHR12RD !
+;
+
+: dac-init ( -- )
+  DACEN RCC_APB1ENR bis! \ Enable clock for DAC
+  10 0 do loop
+
+  %11 4 2* lshift
+  %11 5 2* lshift or PORTA_MODER bis! \ Set DAC Pins to analog mode
+
+  $00010001 DAC_CR ! \ Enable Channel 1 and 2
+  0 0 dacs
+;
+
+: dac1 ( Channel1 -- ) \ PA4
+  $FFF and DAC_DHR12R1 !
+;
+
+: dac2 ( Channel2 -- ) \ PA5
+  $FFF and DAC_DHR12R2 !
+;
+
+\ -----------------------------------------------------------------------------
+\   Small helpers for calculations
+\ -----------------------------------------------------------------------------
+
+: s>f ( n -- f ) 0 swap  inline 1-foldable ; \ Signed integer --> Fixpoint s31.32
+: f>s ( f -- n ) nip     inline 2-foldable ; \ Fixpoint s31.32 --> Signed integer
+
+\ -----------------------------------------------------------------------------
+\   Prepare sine table
+\ -----------------------------------------------------------------------------
+
+$10000000 constant sinetable  \ STM32F407 has an additional 64 kb block of RAM
+                               \ between $10000000 and $1000FFFF unused in Forth.
+
+4096 constant sinesamples   \ If you change this, you also need to change shift in oscillator.
+
+: sinetable-init ( -- )
+
+  sinesamples 0 do
+    i s>f pi 2,0 f* f* sinesamples s>f f/
+    widesine
+    d2/ d2/ drop    \ Shift it two places to fit nicely within 32 Bits.
+    \ i . dup . cr   \ Just to see the sine values
+    sinetable i 2 lshift + !
+  loop
+;
+
+: sine@ ( u -- n ) \ Read sine value from table
+  2 lshift sinetable + @
+  inline 1-foldable
+;
+
+
+\ -----------------------------------------------------------------------------
+\   Calibration to real world units
+\ -----------------------------------------------------------------------------
+
+2,965 2constant vcc \ Measure it on your board and set accordingly
+
+150000000 constant clock
+  1000000 constant samplerate
+
+: volt>dac       ( f -- u ) 4096 s>f f* vcc f/ f>s 2-foldable ;
+: volt>amplitude ( f -- u ) d2* volt>dac           2-foldable ;
+
+: frequency>control ( f -- u ) \  Control value = Hz * 2^32 / sample rate
+  samplerate um/mod nip
+  2-foldable
+;
+
+
+\ -----------------------------------------------------------------------------
+\   Direct digital synthesis
+\ -----------------------------------------------------------------------------
+
+                          0 variable phase-f1
+    900,0 frequency>control variable control-f1
+  vcc 3,0 f/ volt>amplitude variable amplitude-f1
+  vcc 2,0 f/ volt>dac       variable offset-f1 \ Sets DAC output voltage for zero crossings of the sines
+
+                          0 variable phase-f2
+   4200,0 frequency>control variable control-f2
+  vcc 3,0 f/ volt>amplitude variable amplitude-f2
+  vcc 2,0 f/ volt>dac       variable offset-f2
+
+
+: oscillator ( -- )
+  control-f1 @ phase-f1 @ + dup phase-f1 ! 20 rshift sine@ amplitude-f1 @ m* nip offset-f1 @ + dac1
+  control-f2 @ phase-f2 @ + dup phase-f2 ! 20 rshift sine@ amplitude-f2 @ m* nip offset-f2 @ + dac2
+;
+
+ \ Sine table has 12 bits of time resolution,
+  \ therefore shift 32 phase bits available by 20 places.
+
+
+\ -----------------------------------------------------------------------------
+\   Systick interrupt setup for the oscillator
+\ -----------------------------------------------------------------------------
+
+$E000E010 constant Systick-CTRL
+$E000E014 constant Systick-RELOAD
+$E000E018 constant Systick-CURRENT
+
+: systick-init ( -- )
+
+  ['] oscillator irq-systick !
+
+                      0 Systick-CURRENT ! \ Clear Systick counter
+  clock samplerate / 1- Systick-RELOAD !   \ Divider for clock
+                      7 Systick-CTRL !      \ System Clock, Interrupt enable, Systick enable
+
+  eint
+;
+
+
+\ -----------------------------------------------------------------------------
+\   Set this and that
+\ -----------------------------------------------------------------------------
+
+: set-f1 ( f -- ) frequency>control control-f1 ! ;
+: set-f2 ( f -- ) frequency>control control-f2 ! ;
+: set-o1 ( f -- ) volt>dac offset-f1 ! ;
+: set-o2 ( f -- ) volt>dac offset-f2 ! ;
+: set-u1 ( f -- ) volt>amplitude amplitude-f1 ! ;
+: set-u2 ( f -- ) volt>amplitude amplitude-f2 ! ;
+
+
+\ -----------------------------------------------------------------------------
+\   Let's make some waves !
+\ -----------------------------------------------------------------------------
+
+: sinewaves ( -- )
+  1 $E000E008 !  \ Take care of a core silicon bug !
+
+  150MHz
+  sinetable-init
+  dac-init
+  systick-init
+;
+

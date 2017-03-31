@@ -1,0 +1,6 @@
+\ clean-debug-flash-demo.txt
+eraseflash
+compiletoflash
+include ..\common\disassembler-m3.txt
+include ..\common\dump.txt
+include demo.fth

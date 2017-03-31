@@ -81,7 +81,7 @@ psp .req r7
   .endif
 
 .endm
-  
+
 .macro pushdaconst zahl @ Push small constant on Datastack
   pushdatos
   movs tos, #\zahl
@@ -192,6 +192,24 @@ psp .req r7
 .equ Flag_foldable_6, Flag_visible | 0x0046
 .equ Flag_foldable_7, Flag_visible | 0x0047
 
+.equ Flag_buffer, Flag_visible | 0x0100
+.equ Flag_buffer_foldable, Flag_buffer|Flag_foldable
+
+
+
+.ifdef registerallocator
+
+.equ Flag_allocator, Flag_visible | 0x200
+.equ Flag_Sprungschlucker, Flag_visible | 0x400
+.equ Flag_bxlr, Flag_visible | 0x800
+.equ Flag_inlinecache, Flag_visible | 0x1000
+.equ Flag_Literator, Flag_visible | 0x2000  @ Tritt nur im Cache für die RA-Vererbung auf !
+
+.else
+
+.equ Flag_Sprungschlucker, 0 @ Deactivated, just to unify source code for both variants.
+.equ Flag_bxlr, 0
+
 .equ Flag_opcodable,  Flag_visible | 0x0008
 
 @ Of course, some of those cases are not foldable at all. But this way their bitmask is constructed.
@@ -209,8 +227,7 @@ psp .req r7
 .equ Flag_opcodierbar_Rechenlogik_M3,    Flag_foldable|Flag_opcodable|6
   .endif
 
-.equ Flag_buffer, Flag_visible | 0x0100
-.equ Flag_buffer_foldable, Flag_buffer|Flag_foldable
+.endif
 
 @ -----------------------------------------------------------------------------
 @ Makros zum Bauen des Dictionary
@@ -285,6 +302,25 @@ psp .req r7
       .equ Code_\@, .        @ Labels for a more readable assembler listing only
 .endm
 
+@ -----------------------------------------------------------------------------
+@ Automatic erase of flash dictionary after initial boot
+@ -----------------------------------------------------------------------------
+
+.macro autoerase
+  .p2align 2        @ Align on 4-even before filling up the core space
+
+  .org FlashDictionaryAnfang, erasedword @ Synthesise a definition at the beginning of the user flash dictionary
+                                         @ which allows catching the dictionary pointers in every case
+                                         @ and erases the whole dictionary space - including itself - on the first boot.
+
+ .word  erasedword   @ Empty Link denoting end of dictionary
+ .hword Flag_visible @ Flags normal
+ .byte  4            @ Length
+ .ascii "init"       @ Name
+ .p2align 1          @ Realign
+
+  bl eraseflash
+.endm
 
 @ -----------------------------------------------------------------------------
 @ Meldungen, hier definiert, damit das Zeilenende leicht geändert werden kann
@@ -292,29 +328,44 @@ psp .req r7
 @ -----------------------------------------------------------------------------
 
 .macro write Meldung
-  bl dotgaensefuesschen 
+  bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
 7:      .ascii "\Meldung"
 8:      .p2align 1
 .endm
 
 .macro writeln Meldung
-  bl dotgaensefuesschen 
+  bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
 7:      .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
 
+
+.ifdef registerallocator
+
 .macro welcome Meldung
-  bl dotgaensefuesschen 
+  bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris 2.1.2"
+7:      .ascii "Mecrisp-Stellaris RA 2.3.6"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
 
+.else
+
+.macro welcome Meldung
+  bl dotgaensefuesschen
+        .byte 8f - 7f         @ Compute length of name field.
+7:      .ascii "Mecrisp-Stellaris 2.3.6"
+        .ascii "\Meldung\n"
+8:      .p2align 1
+.endm
+
+.endif
+
 .macro Fehler_Quit Meldung
-  bl dotgaensefuesschen 
+  bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
 7:      .ascii "\Meldung\n"
 8:      .p2align 1
@@ -327,7 +378,7 @@ psp .req r7
 .endm
 
 .macro Fehler_Quit_n Meldung
-  bl dotgaensefuesschen 
+  bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
 7:      .ascii "\Meldung\n"
 8:      .p2align 1

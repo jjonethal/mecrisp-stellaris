@@ -1,0 +1,16 @@
+\ blinky
+
+\ blinks the onboard green led about twice per second
+
+
+hex
+400e1200 constant PIOC_PER
+400e1210 constant PIOC_OER
+400e1230 constant PIOC_SODR
+400e1234 constant PIOC_CODR
+
+100 PIOC_PER !
+100 PIOC_OER !
+
+: blinky begin 100 PIOC_CODR ! 200000 0 do nop loop 100 PIOC_SODR ! 200000 0 do nop loop key? until key drop ;
+  

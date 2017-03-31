@@ -1,0 +1,187 @@
+\
+\ 	Driver for Flash memory module EN25F80
+\		8 Megabit Serial Flash Memory with 4Kbytes Uniform Sector
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- click place 2  ->  click flash memory
+\			- SPI2
+\			- PE12 -> HOLD#
+\			- PE13 -> WP#
+\			- PE14 -> CS#
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: drv_spi2.txt
+
+
+1 12 lshift constant flHOLD#
+1 13 lshift constant flWP#
+1 14 lshift constant flCS#
+
+: flCS#set ( -- )
+	flCS# PORTE_ODR bis! ;
+	
+: flCS#clear ( -- )
+	flCS# PORTE_ODR bic! ;
+		
+: flashInit ( -- )
+	GPIOEEN RCC_AHB1ENR bis!					\ IO port E clock enabled
+	MODE_OUTPUT 12 PORTE_BASE set-moder 		\ HOLD# as output
+	MODE_OUTPUT 13 PORTE_BASE set-moder 		\ WP# as output
+	MODE_OUTPUT 14 PORTE_BASE set-moder 		\ CS# as output
+	flHOLD# PORTE_ODR bis!
+	flWP# PORTE_ODR bis!
+	flCS#set
+	spi2Init
+;
+
+\ print flash ID
+: flashId. ( -- )
+	flCS#clear
+	$9F >spi2
+	spi2> .
+	spi2> .
+	spi2> .	
+	flCS#set
+;
+
+\ read flash status
+: flashStatus> ( -- n ) 
+	flCS#clear
+	$05 >spi2								\ instruction Read Status Register
+	spi2>									\ read status
+	flCS#set
+;
+
+\ send instruction & address
+: >flashInstAddr ( addr i -- )
+	flCS#clear
+	>spi2									\ instruction
+	dup 16 rshift >spi2						\ address [24:16]
+	dup 8 rshift >spi2						\ address [15:8]
+	>spi2									\ address [7:0]
+;
+
+\ read a byte from flash @ srcAddr
+: flash> ( srcAddr -- byte ) 
+	$03 >flashInstAddr						\ instruction Read Data
+	spi2>									\ read byte
+	flCS#set
+;
+
+\ read a word32 from flash @ srcAddr
+: flash@> ( srcAddr -- n ) 
+	$03 >flashInstAddr						\ instruction Read Data
+	spi2> 24 lshift							\ read MS byte
+	spi2> 16 lshift	or						\ read byte
+	spi2> 8 lshift or						\ read byte
+	spi2> or								\ read LS byte
+	flCS#set
+;
+
+\ read cnt# bytes to memory destAddr from flash @ srcAddr
+: flash>> ( destAddr cnt# srcAddr -- ) 
+	$03 >flashInstAddr						\ instruction Read Data
+	0 do 
+		spi2> over c! 1+ 					\ read cnt# bytes to destAddr
+	loop drop
+	flCS#set
+;
+
+\ recursiv search pattern $FFFFFFFF within fromPage toPage at 256 boundery (1page)
+: flashBinSearch ( fromPage toPage -- )
+	2dup swap 1+ <> if
+		swap 2dup 
+		- 2/  
+		over over + 
+		8 lshift flash@> 
+		$FFFFFFFF = if
+			over + rot drop
+		else
+			+ swap
+		then
+		recurse
+	then
+ ;
+
+\ find first address from start with pattern $FFFFFFFF
+: flashStart? ( -- addr )
+	0 flash@> -1 <> if 
+		0 $1000 flashBinSearch
+		swap drop 8 lshift
+	else
+		0 
+	then
+;
+ 
+\ wait for end of write in progress	
+: flashWipEnd ( -- )
+	flCS#clear
+	$05 >spi2						\ instruction Read Status Register
+	begin spi2> 1 and 0= until
+	flCS#set
+;
+
+\ flash Write Enable
+: flashWre ( -- ) 
+	flCS#clear
+	$06 >spi2						\ instruction Write Enable
+	flCS#set
+;
+
+\ write status to flash
+: >flashStatus ( -- status )
+	flashWre
+	flCS#clear
+	$01 >spi2						\ instruction Write Status Register
+	>spi2							\ write status byte
+	flCS#set
+;
+
+\ write a byte to flash @ destAddr
+: >flash ( byte destAddr -- )
+	flashWre
+	$02 >flashInstAddr				\ instruction Page Program
+	>spi2							\ write byte
+	flCS#set
+	flashWipEnd						\ wait for end of write in progress
+;
+
+\ write  cnt# bytes from memory srcAddr  to flash @ destAddr
+: >>flash ( srcAddr cnt# destAddr )
+	flashWre
+	$02 >flashInstAddr				\ instruction Page Program
+	0 do 
+		dup c@ >spi2 1+ 			\ write cnt# bytes to destAddr
+	loop drop
+	flCS#set
+	flashWipEnd						\ wait for end of write in progress
+;
+
+\ erase entire flash
+: flashChipErase ( -- )
+	flashWre
+	flCS#clear
+	$C7 >spi2						\ instruction Chip Erase
+	flCS#set
+	flashWipEnd						\ wait for end of write in progress
+;
+
+\ erases a 64k-byte block in a 64k boundery of address
+: flashBlockErase ( addr -- )
+	flashWre
+	$D8 >flashInstAddr				\ instruction Block Erase
+	flCS#set
+	flashWipEnd						\ wait for end of write in progress
+;
+
+\ erases a 4k-byte sector in a 4k boundery of address
+: flashSectorErase ( addr -- )
+	flashWre
+	$20 >flashInstAddr				\ instruction Sector Erase
+	flCS#set
+	flashWipEnd						\ wait for end of write in progress
+;
+
+

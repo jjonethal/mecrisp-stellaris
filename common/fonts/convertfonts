@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# A few tools to scan binary files for bitmap fonts and to extract them for usage in Forth.
+# Needs the Freepascal compiler.
+
+fpc scanbinary.pas
+
+# ./scanbinary AWARD_ATARI_PC_BIOS_3.08.img AWARD_ATARI_PC_BIOS_3.08.txt
+./scanbinary Commodore-C64-Chargen.img Commodore-C64-Chargen.txt
+
+fpc forthfont-8x8.pas
+fpc forthfont-8x8-drawing.pas
+fpc forthfont-8x16.pas
+fpc forthfont-8x16-drawing.pas
+
+# Two ancient fonts taken from ROM images:
+
+# Atari PC3 has CP437 encoding,
+
+./forthfont-8x8-drawing AWARD_ATARI_PC_BIOS_3.08.img Atari-Font.txt 0x3160 255 0
+
+# Commodore C64 has a special PETSCII encoding which is more or less remapped to ASCII here.
+# https://en.wikipedia.org/wiki/PETSCII
+
+./forthfont-8x8-drawing Commodore-C64-Chargen.img Commodore-Font-1.txt 0x900 31 32
+./forthfont-8x8-drawing Commodore-C64-Chargen.img Commodore-Font-2.txt 0xA00 31 64
+./forthfont-8x8-drawing Commodore-C64-Chargen.img Commodore-Font-3.txt 0x800 31 96
+
+cat Commodore-Font-*.txt > Commodore-Font.txt
+
+# FreeBSD system console bitmap fonts taken from http://v3.sk/~lkundrak/fonts/freebsd/fonts/
+# They are encoded in ISO-8859-1 and -15.
+
+./forthfont-8x8 iso-8x8    iso-8x8.fs    0 255 0
+./forthfont-8x8 iso15-8x8  iso15-8x8.fs  0 255 0
+
+./forthfont-8x8-drawing iso-8x8    iso-8x8.txt    0 255 0
+./forthfont-8x8-drawing iso15-8x8  iso15-8x8.txt  0 255 0
+
+./forthfont-8x16 iso-8x16    iso-8x16.fs    0 255 0
+./forthfont-8x16 iso15-8x16  iso15-8x16.fs  0 255 0
+
+./forthfont-8x16-drawing iso-8x16    iso-8x16.txt    0 255 0
+./forthfont-8x16-drawing iso15-8x16  iso15-8x16.txt  0 255 0
+
+rm scanbinary *.o *~ Commodore-Font-*.txt
+rm forthfont-8x8 forthfont-8x8-drawing forthfont-8x16 forthfont-8x16-drawing
+

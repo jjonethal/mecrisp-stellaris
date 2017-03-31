@@ -1,0 +1,178 @@
+\
+\ 	driver for ESP8266 module
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- USART1 driver 
+\
+\		REQUIRES: drv_usart_DMA.txt
+\
+
+\ @@@ TODO: change SSID and PASSWORD in 'connectAP' with yours
+\ @@@ TODO: change IP in 'ipHost' with yours host
+
+\ ip or domainname of host
+: ipHost ( -- addr len )
+	s" 192.168.1.111" 
+;
+
+\ response strings
+: rspOk ( -- cstrAddr)
+	c" OK" ;
+: rspJAP ( -- cstrAddr)
+	c" +CWJAP:" ;
+: rsp>_ ( -- cstrAddr)
+	c" > " ;
+: rspIPD ( -- cstrAddr)
+	c" +IPD," ;
+: rspCON ( -- cstrAddr)
+	c" STATUS:3" ;
+
+true variable showRcvBuff	\ display rcvBuffer content or not
+
+\ write CRLF sequence
+: >CRLF ( -- ) 
+	$0D >usart	 	\ send CR	
+	$0A >usart	 	\ send LF	
+;
+	
+: send_string ( addr len -- )
+	0 do 
+		dup c@
+		dup [char] ' = if 	\ replace char ' with " ?
+			drop [char] " 
+		then 
+		>usart				\ send char
+		1+ 					\ incr address
+	loop drop 
+;
+
+: send_atc ( addr len -- )
+	send_string >CRLF
+;
+
+\ return true if timeout
+: at_Response ( cstrAddr -- flag )
+	10000 swap waitForStr 
+	showRcvBuff @ if 
+		waitForStr.
+	then
+;
+
+\ get http response length
+: HTTPresponseLength ( -- n )
+	0
+	begin usart> digit while	\ convert until :
+		swap 10 * +
+	repeat 
+;
+
+\ http response with n ms timeout
+: HTTPresponse ( n -- )
+	5000 swap waitForN if exit then
+	showRcvBuff @ if 
+		waitForStr.
+	then
+;
+
+: setEchomode ( 0 | 1 -- f )
+	s" ATE" send_string [char] 0 + >usart >CRLF
+	rspOK at_Response
+;
+
+: setWifimode ( n -- f )
+	s" AT+CWMODE=" send_string [char] 0 + >usart >CRLF
+	rspOK at_Response 
+;
+
+: listAP ( -- f )
+	s" AT+CWLAP" send_atc
+	rspOK at_Response
+;
+
+: connectAP ( -- f )
+	listAP drop
+	s" AT+CWJAP='mySSID','myPASSWORD'" send_atc		\ TODO: change at your needs
+	rspOK at_Response if true exit then	
+	s" AT+CIFSR" send_atc
+	rspOK at_Response
+;
+
+: quitAP ( -- )
+	s" AT+CWQAP" send_atc
+	rspOK at_Response drop
+;
+
+\ Host IP address as string
+\ return true if failure
+: connectTCP ( addr len -- f )
+	begin
+		s" AT+CIPSTART='TCP','" send_string
+		send_string 							\ ip
+		s" ',80" send_atc
+		rspOK at_Response if true exit then
+		s" AT+CIPSTATUS" send_atc
+		rspCON at_Response dup if true exit then
+		0=
+	until
+	false
+;
+
+: closeTCP ( -- )
+	s" AT+CIPCLOSE" send_atc
+	rspOK at_Response drop
+;
+
+\ URL as string
+: http_GETrequest ( URLaddr len -- )
+	dup 26 + ipHost nip + 0 <# # # #>
+	ipHost connectTCP if exit then
+	s" AT+CIPSEND=" send_string ( length ) send_atc				
+	rsp>_ at_Response if exit then
+	s" GET /" send_string send_string s"  HTTP/1.1" send_string >CRLF		
+	s" Host: " send_string ipHost send_string >CRLF >CRLF	
+	showRcvBuff @ >r false showRcvBuff !
+	rspIPD at_Response if exit then HTTPresponseLength
+	r> showRcvBuff !
+	HTTPresponse
+	closeTCP
+;
+
+\ data and URL as string
+: http_POSTrequest ( data len URLaddr len -- )
+	dup 47 + ipHost nip + 3 pick + 0 <# # # # #>
+	ipHost connectTCP if exit then
+	s" AT+CIPSEND=" send_string ( length ) send_atc				
+	rsp>_ at_Response if exit then	
+	s" POST /" send_string send_string ( URL )  s"  HTTP/1.1" send_string >CRLF		
+	s" Host: " send_string ipHost send_string >CRLF
+\	s" Content-Type: application/json" send_string >CRLF	\ length 32
+	s" Content-Length: " send_string	
+	dup 0 <# # # #> send_string >CRLF >CRLF					\ content length
+	send_string ( send content )
+	showRcvBuff @ >r false showRcvBuff !
+	rspIPD at_Response if exit then HTTPresponseLength
+	r> showRcvBuff !
+	HTTPresponse
+	closeTCP
+;
+
+
+: esp-Init ( -- f )
+	usart-init
+	0 setEchomode if true exit then
+	1 setWifimode if true exit then
+	connectAP
+;
+
+\ test samples
+: httpGet ( -- )
+	s" date.php?t=26.3&h=25.6" http_GETrequest
+;
+: httpPost ( -- )
+	s" {'temp':'26.0','humi':'25.9'}" s" jsondata.php" http_POSTrequest
+;
+
+
+

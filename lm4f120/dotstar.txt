@@ -1,0 +1,245 @@
+
+reset
+
+\ -----------------------------------------------------------------------------
+\  APA102 LED string driver, hardwired for 32 bit cell size
+\ -----------------------------------------------------------------------------
+
+\ Once a device detects a start frame (more than 31 zero bits), it will interpret the next “1” bit as start of its own LED frame.
+\ 32 bits are clocked into the PWM registers, while zeroes are pushed to the output.
+\ After the entire LED frame as been read, any subsequent data is simply forwarded until another start frame is detected.
+
+\ An end frame consisting of at least (n/2) bits of 1, where n is the number of LEDs in the string.
+
+\ $00 $00 $00 $00  Start frame
+\ $FF  bb  gg  rr  LED frame
+\ 144 Leds / 2 = 72 Bits --> 9 Bytes End frame: $FF $FF $FF  $FF $FF $FF  $FF $FF $FF
+
+\ Data valid on rising edge of signal.
+
+\ -----------------------------------------------------------------------------
+
+\ LED strip is connected to PA6 (Data) and PA7 (Clock) of Stellaris Launchpad.
+
+$400043FC constant PORTA_DATA ( Ein- und Ausgaberegister )
+$40004400 constant PORTA_DIR  ( Soll der Pin Eingang oder Ausgang sein ? )
+$40004500 constant PORTA_DR2R ( 2 mA Treiber )
+$40004504 constant PORTA_DR4R ( 4 mA )
+$40004508 constant PORTA_DR8R ( 8 mA )
+$4000450C constant PORTA_ODR  ( Open Drain )
+$40004510 constant PORTA_PUR  ( Pullup Resistor )
+$40004514 constant PORTA_PDR  ( Pulldown Resistor )
+$40004518 constant PORTA_SLR  ( Slew Rate )
+$4000451C constant PORTA_DEN  ( Digital Enable )
+$40004420 constant PORTA_AFSEL ( Analog function select )
+$40004528 constant PORTA_AMSEL ( Analog Mode Select )
+
+: led-dat-high ( -- ) 1 6 lshift porta_data bis! inline ;
+: led-dat-low  ( -- ) 1 6 lshift porta_data bic! inline ;
+
+: led-clk-high ( -- ) 1 7 lshift porta_data bis! inline ;
+: led-clk-low  ( -- ) 1 7 lshift porta_data bic! inline ;
+
+: led-init ( -- )
+  1 6 lshift 1 7 lshift or porta_den bis! \ Beide Leitungen seien digitale Pins
+  1 6 lshift 1 7 lshift or porta_dir    ! \ Die beiden Anschlüsse seien Ausgänge
+  led-clk-low
+;
+
+\ -----------------------------------------------------------------------------
+
+: >ledframe ( x -- )
+  \ dup hex. cr
+  32 0 do
+    dup 0< if led-dat-high else led-dat-low then
+    led-clk-high
+    shl
+    led-clk-low
+  loop
+
+  drop
+;
+
+\ -----------------------------------------------------------------------------
+
+144 constant #leds
+#leds 2/ 32 / 1 + constant #endframes
+
+\ -----------------------------------------------------------------------------
+
+: string ( -- )
+  led-init
+
+  0 >ledframe \ Start Frame
+
+  #leds 0 do
+    $FF000000 i or >ledframe
+  loop
+
+  #endframes 0 do -1 >ledframe loop \ End Frame
+;
+
+: s1 ( -- )
+  led-init
+
+  0 >ledframe \ Start Frame
+
+  #leds 0 do
+    $FF000000 i or >ledframe
+  loop
+
+  #endframes 0 do -1 >ledframe loop \ End Frame
+;
+
+: s2 ( -- )
+  led-init
+
+  0 >ledframe \ Start Frame
+
+  #leds 0 do
+    $FF000000 i 8 lshift or >ledframe
+  loop
+
+  #endframes 0 do -1 >ledframe loop \ End Frame
+;
+
+: s3 ( -- )
+  led-init
+
+  0 >ledframe \ Start Frame
+
+  #leds 0 do
+    $FF000000 i 16 lshift or >ledframe
+  loop
+
+  #endframes 0 do -1 >ledframe loop \ End Frame
+;
+
+\ -----------------------------------------------------------------------------
+
+#leds cells buffer: ledbuffer
+
+: led! ( pattern led -- )
+  swap $FF000000 or swap cells ledbuffer + !
+;
+
+: clrled ( -- )
+  #leds 0 do 0 i led! loop
+;
+
+: show ( -- )
+  0 >ledframe \ Start Frame
+
+  #leds 0 do
+    ledbuffer i cells + @ >ledframe
+  loop
+
+  #endframes 0 do -1 >ledframe loop \ End Frame
+;
+
+\ -----------------------------------------------------------------------------
+
+: lin-demo ( -- )
+  led-init
+  clrled
+  #leds 0 do i i led! loop
+  show
+;
+
+\ -----------------------------------------------------------------------------
+
+\ #######   RANDOM   ##########################################
+
+\ setseed   sets the random number seed
+\ random    returns a random 32-bit number
+\
+\ based on "Xorshift RNGs" by George Marsaglia
+\ http://www.jstatsoft.org/v08/i14/paper
+
+$7a92764b variable seed
+
+: setseed   ( u -- )
+    dup 0= or       \ map 0 to -1
+    seed !
+;
+
+: random    ( -- u )
+    seed @
+    dup 13 lshift xor
+    dup 17 rshift xor
+    dup 5  lshift xor
+    dup seed !
+    57947 *
+;
+
+: randrange  ( u0 -- u1 ) \ u1 is a random number less than u0
+    random um* nip
+;
+
+: random-demo ( -- )
+  led-init
+
+  begin
+    clrled
+    $FFFFFF  #leds randrange  led!  \ One Random LED should be full on
+    show
+    \ clrled show 10000 0 do loop
+  key? until
+;
+
+\ -----------------------------------------------------------------------------
+
+: s>f ( n -- f ) 0 swap 1-foldable inline ;
+: f>s ( f -- n ) nip    2-foldable inline ;
+
+: sine-demo ( -- )
+  led-init
+  clrled
+
+  #leds 0 do
+    i s>f   pi 6,0 f* #leds s>f f/   f* \ Loop runs from 0 to #leds-1. Argument for sine shall run from 0 to Pi.
+    widesine \ Results from 0 to 1 should be mapped to 0 to 255.
+    2dup f*  \ Sin^2
+    80,0 f*
+    f>s abs
+    i led!
+  loop
+
+  show
+;
+
+
+\ -----------------------------------------------------------------------------
+
+\ Moving sine
+
+: ofsin ( f -- )
+
+  clrled
+
+  #leds 0 do
+  2>r
+    i s>f   pi 6,0 f* #leds s>f f/   f* \ Loop runs from 0 to #leds-1. Argument for sine shall run from 0 to Pi.
+    2r@ d+ widesine \ Results from 0 to 1 should be mapped to 0 to 255.
+    2dup f*  \ Sin^2
+    2dup f*  \ Sin^4
+    80,0 f*
+    f>s abs
+    i led!
+  2r>
+  loop
+
+  show
+  2drop
+;
+
+: mov-sin ( -- )
+  80mhz
+  led-init
+
+  0,0
+  begin
+    2dup ofsin
+    0,03 d+
+  key? until
+;

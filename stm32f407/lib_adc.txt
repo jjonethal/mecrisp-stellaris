@@ -1,0 +1,94 @@
+\
+\ 	ADC, external triggered
+\
+\		Ralph Sahli, 2016
+\		
+\
+\ ADC of 4 channels
+\ PA15 -> external trigger input for ADC
+\ PC1 -> AIN11
+\ PC2 -> AIN12
+\ PC4 -> AIN14
+\ PC5 -> AIN15
+\ PD13 -> orange LED toggles in interrupt
+\
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_pwm.txt						-> for trigger input PA15
+\		REQUIRES: lib_timer.txt						-> for delay
+
+
+%01 20 lshift constant JEXTEN 					\ External trigger enable for injected channels -> 01: Trigger on rising edge
+%1111 16 lshift constant JEXTSEL 				\ External event select for injected group -> 1111: EXTI line15
+	
+8  constant SAMPLESIZE#							\ sample size in bytes
+SAMPLESIZE# buffer: sampleBuff					\ sample buffer
+	
+: ports-init
+	GPIOAEN RCC_AHB1ENR bis!							\ IO port A clock enabled
+	GPIOCEN RCC_AHB1ENR bis!							\ IO port C clock enabled
+	GPIODEN RCC_AHB1ENR bis!							\ IO port D clock enabled
+	MODE_INPUT 15 PORTA_BASE set-moder		\ PA15 -> %00: Input mode
+	MODE_ANALOG 1 PORTC_BASE set-moder		\ PC1 -> %11: Analog mode
+	MODE_ANALOG 2 PORTC_BASE set-moder		\ PC2 -> %11: Analog mode
+	MODE_ANALOG 4 PORTC_BASE set-moder		\ PC4 -> %11: Analog mode
+	MODE_ANALOG 5 PORTC_BASE set-moder		\ PC5 -> %11: Analog mode
+	MODE_OUTPUT 13 PORTD_BASE set-moder		\ PD13 -> %01: Output mode
+;
+	
+: adc1-init ( -- )  
+	ADC1EN RCC_APB2ENR bis! 							\ Enable clock for ADC1
+	SCAN ADC1_CR1 bis!										\ Scan mode
+	15 14 12 11 4 ADC1_Base set-sequence 		\ JSQ1 JSQ2 JSQ3 JSQ4
+	SAMPLE_56 11 ADC1_Base set-sampletime	\ Channel 11 sampling time selection
+	SAMPLE_56 12 ADC1_Base set-sampletime	\ Channel 12 sampling time selection
+	SAMPLE_56 14 ADC1_Base set-sampletime	\ Channel 14 sampling time selection
+	SAMPLE_56 15 ADC1_Base set-sampletime	\ Channel 15 sampling time selection
+	JEXTEN ADC1_CR2 bis!									\ external trigger on rising edge
+	JEXTSEL ADC1_CR2 bis!								\ select line 15 for external trigger
+	ADON ADC1_CR2 bis! 										\ Enable ADC
+;
+
+: adc1-irq-handler
+	LED_ORANGE PORTD_ODR xor! 		    	\ toggle orange led
+	sampleBuff 											\ get buffer addr
+	ADC1_JDR1 @ over h!								\ save CH11
+	2+ ADC1_JDR2 @ over h!						\ save CH12
+	2+ ADC1_JDR3 @ over h!						\ save CH14
+	2+ ADC1_JDR4 @ swap h!						\ save CH15
+	JEOC ADC1_SR bic!								\ clear interrupt source
+;
+
+: adc1-irq-enable
+	JEOCIE ADC1_CR1 bis!							\ Interrupt enable for injected channels
+	['] adc1-irq-handler irq-adc !  		\ Hook for handler
+	NVIC_EN0_INT18 NVIC_EN0_R ! 			\ Enable ADC Interrupt in global Interrupt Controller
+;
+
+\ initalize hw and starts adc with intterupts -> external triggered with PA15 input
+: adc-start ( -- )
+	ports-init
+	adc1-init
+	adc1-irq-enable
+;
+
+: adc-stop ( -- )
+	ADON ADC1_CR2 bic! 					\ Disable ADC
+	JEOCIE ADC1_CR1 bic!				\ Interrupt disable for injected channels
+;
+
+
+\ example prints the ad values every 500 ms
+: sample. ( -- )
+	cr
+	begin
+		sampleBuff 							
+		dup h@ .  
+		2+ dup h@ . 
+		2+ dup h@ . 
+		2+ h@ . cr
+		500 delay-ms
+		key? 
+	until
+;
+

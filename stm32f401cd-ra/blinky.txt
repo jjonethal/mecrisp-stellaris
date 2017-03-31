@@ -1,0 +1,26 @@
+ 
+\ Just to have a twinkling shine :-)
+\
+\		Ralph Sahli, 2017
+\		
+\		resources used: 
+\ 			PB2   Red LED
+\ 			PB12  Green LED
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_systick.txt
+
+
+: blinky
+	cr ." to quit: press any key"
+    MODE_OUTPUT 2 PORTB set-moder		\ PB2 -> output mode
+	MODE_OUTPUT 12 PORTB set-moder		\ PB12 -> output mode	
+	2 bit PORTB _pODR bis!				\ red LED off
+	12 bit PORTB _pODR bic!				\ green LED on
+	begin
+		2 bit PORTB _pODR xor!			\ toggle red LED
+		12 bit PORTB _pODR xor!			\ toggle green LED
+		500 delay-ms
+		key?
+	until
+;

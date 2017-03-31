@@ -1,0 +1,39 @@
+\ Let's blink the green user LED on the Nucleo L073RZ board:
+\ - slow blink rate when the blue user button is not pressed
+\ - fast blink rate when button is pressed
+\ - press any key on terminal to exit the program
+
+decimal
+compiletoram
+
+\ the green LED is connected to PA5 (MCU pin 21)
+\ the blue user button is connected to PC13 (MCU pin 2)
+
+$50000000 constant PORTA_Base
+PORTA_BASE $00 + constant PORTA_MODER    \ port mode register - 00=input  01=iutput  10=alternate  11=analog
+PORTA_BASE $18 + constant PORTA_BSRR     \ bit set register  - set PAx output to high (x = 15..0)
+PORTA_BASE $28 + constant PORTA_BRR      \ bit reset register - clear / set PAx output to low (x = 15..0)
+
+$50000800 constant PORTC_Base
+PORTC_BASE $00 + constant PORTC_MODER    \ port mode register - 00=input  01=iutput  10=alternate  11=analog
+PORTC_BASE $10 + constant PORTC_IDR      \ input data register - read value of digital input pins (15..0)
+
+: led     ( ? -- )  \ toggle the LED
+  if 1 5 lshift PORTA_BSRR ! else 1 5 lshift PORTA_BRR ! then ;
+
+: button? ( -- ? )  \ read the button
+  1 13 lshift PORTC_IDR bit@ not ;
+
+: blinky ( -- )
+  %01 5  2* lshift PORTA_MODER bis!  \ set PA5 to output: set lo bit of pin mode
+  %10 5  2* lshift PORTA_MODER bic!   \ and clear hi bit of pin mode
+  %01 13 2* lshift PORTC_MODER bic!  \ set PC13 to input: clear lo bit of pin mode
+  %10 13 2* lshift PORTC_MODER bic!   \ set PC13 to input: clear lo bit of pin mode
+  begin
+    button? if
+      true led  600000 0 do loop false led  600000 0 do loop  \ blink fast
+    else
+      true led 1800000 0 do loop false led 3000000 0 do loop  \ blink slow
+    then
+  key? until
+;

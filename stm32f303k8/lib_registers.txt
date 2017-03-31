@@ -1,0 +1,224 @@
+\
+\ 	register definitions for STM32F303 
+\
+\		Ralph Sahli, 2016
+\		
+
+8000000 variable hclk	\ system clock: initial 8 MHz from HSI
+
+: registers ( -- )
+	0 ;				\ offset start
+
+: reg 
+    <builds 		( offset -- newoffset )
+		dup , cell+	
+    does>			( structure-base -- structure-member-address )  
+		@ + ;
+
+: regC
+    <builds 		( offset -- newoffset )
+		dup , cell+	
+    does>			( structure-base channel -- structure-member-address )  
+		@ swap 1- 20 * + + ;
+
+: end-registers ( -- )
+	drop ;			\ last offset
+
+\ bit masks
+1 0 lshift constant BIT0	
+1 1 lshift constant BIT1
+1 2 lshift constant BIT2
+1 3 lshift constant BIT3
+1 4 lshift constant BIT4
+1 5 lshift constant BIT5
+1 6 lshift constant BIT6
+1 7 lshift constant BIT7
+1 8 lshift constant BIT8
+1 9 lshift constant BIT9
+1 10 lshift constant BIT10
+1 11 lshift constant BIT11
+1 12 lshift constant BIT12
+1 13 lshift constant BIT13
+1 14 lshift constant BIT14
+1 15 lshift constant BIT15
+1 16 lshift constant BIT16
+1 17 lshift constant BIT17
+1 18 lshift constant BIT18
+1 18 lshift constant BIT19
+1 20 lshift constant BIT20
+1 21 lshift constant BIT21
+1 22 lshift constant BIT22
+1 23 lshift constant BIT23
+1 24 lshift constant BIT24
+1 25 lshift constant BIT25
+1 26 lshift constant BIT26
+1 27 lshift constant BIT27
+1 28 lshift constant BIT28
+1 29 lshift constant BIT29
+1 30 lshift constant BIT30
+1 31 lshift constant BIT31
+		
+$40021000 constant RCC
+	registers
+		reg _rCR		\ Clock control register
+		reg _rCFGR		\ Clock configuration register
+		reg _rCIR		\ Clock interrupt register
+		reg _rAPB2RSTR	\ APB2 peripheral reset register
+		reg _rAPB1RSTR	\ APB1 peripheral reset register
+		reg _rAHBENR	\ AHB peripheral clock enable register
+		reg _rAPB2ENR	\ APB2 peripheral clock enable register
+		reg _rAPB1ENR	\ APB1 peripheral clock enable register
+	end-registers
+
+$40020000 constant DMA1
+	registers
+		reg _dISR		\ interrupt status register
+		reg _dIFCR		\ interrupt flag clear register
+		regC _dCCRx		\ channel x configuration register
+		regC _dCNDTRx	\ channel x number of data register
+		regC _dCPARx	\ channel x peripheral address register
+		regC _dCMARx	\ channel x memory address register
+	end-registers
+	
+$48000400 constant PORTB
+$48000000 constant PORTA
+	registers
+		reg _pMODER   	\ Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+		reg _pOTYPER  	\ Port Output type register - (0) Push/Pull vs. (1) Open Drain
+		reg _pOSPEEDR 	\ Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+		reg _pPUPDR		\ Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+		reg _pIDR		\ Input Data Register
+		reg _pODR     	\ Output Data Register
+		reg _pBSRR		\ port bit set/reset register
+		reg _pLCKR		\ port configuration lock register		
+		reg _pAFRL		\ Alternate function  low register
+		reg _pAFRH		\ Alternate function high register
+	end-registers
+
+$40013000 constant SPI1
+	registers
+		reg _sCR1		\ SPI control register 1
+		reg _sCR2		\ SPI control register 2
+		reg _sSR		\ SPI status register
+		reg _sDR		\ SPI data register
+	end-registers
+
+$40013800 constant USART1	
+$40004400 constant USART2
+	registers
+		reg _uCR1		\ Control register 1
+		reg _uCR2		\ Control register 2
+		reg _uCR3		\ Control register 3
+		reg _uBRR		\ Baud rate register
+		reg _uGTPR		\ Guard time and prescaler register
+		reg _uRTOR		\ Receiver timeout register
+		reg _uRQR		\ Request register
+		reg _uISR		\ Interrupt and status register
+		reg _uICR		\ Interrupt flag clear register
+		reg _uRDR		\ Receive data register
+		reg _uTDR		\ Transmit data register
+	end-registers
+
+$40012C00 constant TIM1
+$40000000 constant TIM2
+$40000400 constant TIM3
+$40014000 constant TIM15
+$40014400 constant TIM16
+$40014800 constant TIM17
+	registers
+		reg _tCR1		\ TIMx control register 1
+		reg _tCR2		\ TIMx control register 2
+		reg _tSMCR		\ TIMx slave mode control register
+		reg _tDIER		\ TIMx DMA/Interrupt enable register
+		reg _tSR		\ TIMx status register
+		reg _tEGR		\ TIMx event generation register
+		reg _tCCMR1		\ TIMx capture/compare mode register 1
+		reg _tCCMR2		\ TIMx capture/compare mode register 2
+		reg _tCCER		\ TIMx capture/compare enable register
+		reg _tCNT		\ TIMx counter
+		reg _tPSC		\ TIMx prescaler
+		reg _tARR		\ TIMx auto-reload register
+		reg _tRCR		\ TIM16/TIM17 repetition counter register
+		reg _tCCR1		\ TIMx capture/compare register 1
+		reg _tCCR2		\ TIMx capture/compare register 2
+		reg _tCCR3		\ TIMx capture/compare register 3
+		reg _tCCR4		\ TIMx capture/compare register 4
+		reg _tBDTR		\ TIM16/TIM17 break and dead-time register
+		reg _tDCR		\ TIMx DMA control register
+		reg _tDMAR		\ TIMx DMA address for full transfer
+	end-registers
+
+$50000000 constant ADC1	\ master
+$50000100 constant ADC2	\ slave
+	registers
+		reg _aISR		\ ADC interrupt and status register
+		reg _aIER		\ ADC interrupt enable register
+		reg _aCR		\ ADC control register
+		reg _aCFGR		\ ADC configuration register
+		drop $14
+		reg _aSMPR1		\ ADC sample time register 1
+		reg _aSMPR2		\ ADC sample time register 2
+		drop $20
+		reg _aTR1		\ ADC watchdog threshold register 1
+		reg _aTR2		\ ADC watchdog threshold register 2
+		reg _aTR3		\ ADC watchdog threshold register 3
+		drop $30
+		reg _aSQR1		\ ADC regular sequence register 1
+		reg _aSQR2		\ ADC regular sequence register 2
+		reg _aSQR3		\ ADC regular sequence register 3
+		reg _aSQR4		\ ADC regular sequence register 4
+		reg _aDR		\ ADC regular Data Register
+		drop $4C
+		reg _aJSQR		\ ADC injected sequence register
+		drop $60
+		reg _aOFR1		\ ADC offset register 1
+		reg _aOFR2		\ ADC offset register 2
+		reg _aOFR3		\ ADC offset register 3
+		reg _aOFR4		\ ADC offset register 4
+		drop $80
+		reg _aJDR1		\ ADC injected data register 1
+		reg _aJDR2		\ ADC injected data register 2
+		reg _aJDR3		\ ADC injected data register 3
+		reg _aJDR4		\ ADC injected data register 4
+		drop $A0
+		reg _aAWD2CR	\ ADC Analog Watchdog 2 Configuration Register
+		reg _aAWD3CR	\ ADC Analog Watchdog 3 Configuration Register
+		drop $B0
+		reg _aDIFSEL	\ ADC Differential Mode Selection Register
+		reg _aCALFACT	\ ADC Calibration Factors
+		drop $308
+		reg _aCCR		\ ADC common control register ( use it only with master ADC1 baseAddr ! )
+	end-registers
+	
+
+\ Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+%00 constant MODE_Input  
+%01 constant MODE_Output  
+%10 constant MODE_Alternate  
+%11 constant MODE_Analog
+: set-moder ( mode pin# baseAddr -- )
+	>R 2* %11 over lshift r@ _pMODER bic! 	\ clear ..
+	lshift R> _pMODER bis!					\ .. set
+;
+
+\ Port Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+%00 constant SPEED_LOW 
+%01 constant SPEED_MEDIUM
+%10 constant SPEED_HIGH
+%11 constant SPEED_VERYHIGH
+: set-opspeed ( speed pin# baseAddr -- )
+	>R 2* %11 over lshift r@ _pOSPEEDR bic!	\ clear ..
+	lshift R> _pOSPEEDR bis!				\ .. set
+;
+
+\ Port alternate function
+: set-alternate ( af# pin# baseAddr -- )
+	>R dup 8 < if 
+		4 * lshift R> _pAFRL
+	else 
+		8 - 4 * lshift R> _pAFRH 
+	then
+	bis!
+;
+
+

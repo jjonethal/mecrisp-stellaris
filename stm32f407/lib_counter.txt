@@ -1,0 +1,98 @@
+\
+\ 	counter
+\
+\		Ralph Sahli, 2016
+\		
+\
+\		timer3 used for:
+\			- count PD2 -> sample input -> TIM3_ETR 
+\			- reset / capture with trigger ITR1 
+\			- triggered TRO from TIM2 as master every 1 sec
+\
+\		timer4 used for:
+\			- count PE0 -> sample input -> TIM4_ETR 
+\			- reset count on sample = 36
+\			- reset count on PB6 input TI1FP1 -> Indexer
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_timer.txt		-> 1 sec generated from timer2 TRO as master
+\		REQUIRES: lib_pwm.txt		-> generation input 
+
+
+\ initialize 
+: tim3-Init ( -- )
+	\ --- init input PD2 -> TIM3_ETR 
+	GPIODEN RCC_AHB1ENR bis!							\ IO port D clock enabled
+	MODE_ALTERNATE 2 PORTD_BASE set-moder	\ PD2 -> mode: alternate function
+	SPEED_HIGH 2 PORTD_BASE set-opspeed 	\ high speed PD2
+ 	2 2 PORTD_BASE set-alternate					\ PD2 -> Alternate function: %0010: AF2 (TIM3) 
+	\ --- init timer 3
+	TIM3EN RCC_APB1ENR bis!							\ TIM3 clock enabled
+	1 14 lshift TIM3_SMCR bis! 						\ External clock mode 2 enabled
+	%100  TIM3_SMCR bis! 									\ SMS -> Reset Mode - Rising
+	%001 4 lshift TIM3_SMCR bis! 					\ TS -> 001: Internal Trigger 1 (ITR1).
+	%11 TIM3_CCMR1 bis!									\ IC1 is mapped on TRC
+	1 TIM3_CCER bis!											\ Capture enabled
+	CEN TIM3_CR1 bis! 										\ Counter enable
+;
+	
+\ initialize 
+: tim4-Init ( -- )
+	\ --- init input PE0 -> TIM4_ETR, PB6 -> TI1
+	GPIOEEN RCC_AHB1ENR bis!							\ IO port E clock enabled
+	MODE_ALTERNATE 0 PORTE_BASE set-moder	\ PE0 -> mode: alternate function
+	SPEED_HIGH 0 PORTE_BASE set-opspeed 	\ high speed PE0
+ 	2 0 PORTE_BASE set-alternate					\ PE0 -> Alternate function: %0010: AF2 (TIM4) 
+	GPIOBEN RCC_AHB1ENR bis!							\ IO port B clock enabled
+	MODE_ALTERNATE 6 PORTB_BASE set-moder	\ PB6 -> mode: alternate function
+	SPEED_HIGH 6 PORTB_BASE set-opspeed 	\ high speed PB6
+ 	2 6 PORTB_BASE set-alternate					\ PB6 -> Alternate function: %0010: AF2 (TIM4) 
+	\ --- init timer 4
+	TIM4EN RCC_APB1ENR bis!							\ TIM4 clock enabled
+	1 14 lshift TIM4_SMCR bis! 						\ External clock mode 2 enabled
+	%100  TIM4_SMCR bis! 									\ Reset Mode - Rising edge of the selected trigger input (TRGI)
+	%101 4 lshift TIM4_SMCR bis! 					\ Filtered Timer Input 1 (TI1FP1)
+	ARPE TIM4_CR1 ! 											\ Auto-reload preload enable
+	35 TIM4_ARR !												\ reload after 36 samples
+ 	UG TIM4_EGR !												\ Update generation
+	CEN TIM4_CR1 bis! 										\ counter enable
+;
+
+
+\ examples:
+
+\ timer3 can be used, to mesure a input frequency on PD2
+\ use the pwm library to generate the input
+\ use the timer library and start the master timer2
+\ the result can get from register TIM3_CCR1
+
+\ timer4 can be used, to count a input frequency on PE0
+\ use the pwm library to generate the input
+\ resets the counter at a fix value eg. 36 counts OR by the input PB6
+\ the actual count can get from register TIM4_CNT
+
+tim3-init
+tim4-init
+
+\ print timer3 counter on his value changed
+: t3 ( -- )
+	tim3_cnt @ 
+	begin 
+		tim3_cnt @ 2dup <> if
+			dup . swap
+		then 
+		drop  
+	key? 
+	until drop ;
+
+\ print timer4 counter on his value changed
+: t4 ( -- )
+	tim4_cnt @ 
+	begin 
+		tim4_cnt @ 2dup <> if
+			dup . swap
+		then 
+		drop  
+	key? 
+	until drop ;
+	

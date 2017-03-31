@@ -83,11 +83,10 @@ awaitHSE:
 Setup_UART:
 @ -----------------------------------------------------------------------------
 
-        @ Enable GPIO peripheral clock Port A
+        @ Enable all GPIO peripheral clocks
         ldr r1, = RCC_AHB1ENR
         ldr r0, [r1]
-        and r0, 0xFFFFFFFE
-        orrs r0, 1              @ GPIOAEN
+        orrs r0, #0x9F              @ GPIO EN
         str r0, [r1]
 
         @ Set PORTA pins in alternate function mode

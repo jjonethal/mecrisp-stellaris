@@ -2,7 +2,23 @@
 
 cd ..
 
+cd atsame70-ra
+md5sum *.bin
+cd ..
+
 cd lpc1114fn28
+md5sum *.bin
+cd ..
+
+cd lpc1114fn28-ra
+md5sum *.bin
+cd ..
+
+cd lpc1114fbd48
+md5sum *.bin
+cd ..
+
+cd lpc1114fbd48-ra
 md5sum *.bin
 cd ..
 
@@ -10,7 +26,23 @@ cd lpc1115fbd48
 md5sum *.bin
 cd ..
 
+cd lpc1115fbd48-ra
+md5sum *.bin
+cd ..
+
 cd kl25z128
+md5sum *.bin
+cd ..
+
+cd kl25z128-ra
+md5sum *.bin
+cd ..
+
+cd kl46z256
+md5sum *.bin
+cd ..
+
+cd kl46z256-ra
 md5sum *.bin
 cd ..
 
@@ -18,7 +50,23 @@ cd mk20dx256
 md5sum *.bin
 cd ..
 
+cd mk64fn1m0
+md5sum *.bin
+cd ..
+
+cd mk64fn1m0-ra
+md5sum *.bin
+cd ..
+
 cd nrf51822
+md5sum *.bin
+cd ..
+
+cd microbit
+md5sum *.bin
+cd ..
+
+cd microbit-ra
 md5sum *.bin
 cd ..
 
@@ -26,7 +74,15 @@ cd msp432p401r
 md5sum *.bin
 cd ..
 
+cd msp432p401r-ra
+md5sum *.bin
+cd ..
+
 cd lm4f120
+md5sum *.bin
+cd ..
+
+cd lm4f120-ra
 md5sum *.bin
 cd ..
 
@@ -35,6 +91,10 @@ md5sum *.bin
 cd ..
 
 cd tm4c1294
+md5sum *.bin
+cd ..
+
+cd tm4c1294-ra
 md5sum *.bin
 cd ..
 
@@ -50,7 +110,27 @@ cd stm32l053c8
 md5sum *.bin
 cd ..
 
+cd stm32l053c8-ra
+md5sum *.bin
+cd ..
+
+cd stm32l073rz
+md5sum *.bin
+cd ..
+
+cd stm32l073rz
+md5sum *.bin
+cd ..
+
 cd stm32l152
+md5sum *.bin
+cd ..
+
+cd stm32l152rb
+md5sum *.bin
+cd ..
+
+cd stm32l432-ra
 md5sum *.bin
 cd ..
 
@@ -62,7 +142,35 @@ cd stm32f103
 md5sum *.bin
 cd ..
 
+cd stm32f103-ra
+md5sum *.bin
+cd ..
+
+cd stm32f207zg
+md5sum *.bin
+cd ..
+
+cd stm32f207zg-ra
+md5sum *.bin
+cd ..
+
 cd stm32f303
+md5sum *.bin
+cd ..
+
+cd stm32f303-ra
+md5sum *.bin
+cd ..
+
+cd stm32f303k8
+md5sum *.bin
+cd ..
+
+cd stm32f303k8-ra
+md5sum *.bin
+cd ..
+
+cd stm32f303re-ra
 md5sum *.bin
 cd ..
 
@@ -70,10 +178,66 @@ cd stm32f401
 md5sum *.bin
 cd ..
 
+cd stm32f401cd-ra
+md5sum *.bin
+cd ..
+
 cd stm32f407
+md5sum *.bin
+cd ..
+
+cd stm32f407-ra
+md5sum *.bin
+cd ..
+
+cd stm32f411
 md5sum *.bin
 cd ..
 
 cd stm32f429
 md5sum *.bin
+cd ..
+
+cd stm32l476
+md5sum *.bin
+cd ..
+
+cd stm32l476-ra
+md5sum *.bin
+cd ..
+
+cd stm32f746-ra
+md5sum *.bin
+cd ..
+
+cd xmc1100
+md5sum *.bin
+cd ..
+
+cd xmc1100-ra
+md5sum *.bin
+cd ..
+
+cd efm32gg990
+md5sum *.bin
+cd ..
+
+cd efm32gg990-ra
+md5sum *.bin
+cd ..
+
+cd efm32hg322
+md5sum *.bin
+cd ..
+
+cd efm32hg322-ra
+md5sum *.bin
+cd ..
+
+cd linux
+md5sum mecrisp-stellaris-linux
+cd ..
+
+cd linux-ra
+md5sum mecrisp-stellaris-linux
 cd ..

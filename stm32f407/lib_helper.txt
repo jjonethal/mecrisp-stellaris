@@ -1,0 +1,57 @@
+
+\ helper functions for dumping registers
+
+
+\ requires: lib_registers.txt
+\ requires: lib_dump.txt
+
+
+: rcc.
+	RCC_Base $48 r-dump ;
+
+	
+: portA.
+	porta_base $28 r-dump ;
+: portB.
+	portb_base $28 r-dump ;
+: portC.
+	portc_base $28 r-dump ;
+: portD.
+	portd_base $28 r-dump ;
+: portE.
+	porte_base $28 r-dump ;
+	
+
+: adc1.
+	adc1_base $52 r-dump ;
+
+
+: canregs. ( -- )
+    CAN1_Base $20 r-dump cr
+    CAN_TI0R $10 r-dump cr
+	CAN_RI0R $10 r-dump cr ;
+: canfilters. ( -- )
+	CAN_FMR  $20 r-dump cr
+    CAN_F0R1 $40 r-dump cr ;				\ $E0 -> full filterbank	
+
+
+: usart3.
+	USART3_base $10 r-dump ;
+: usart6.
+	USART6_base $10 r-dump ;
+
+: spi2.
+	spi2_base $18 r-dump ;
+: spi3.
+	SPI3_base $18 r-dump ;
+
+: tim2.
+	tim2_base $44 r-dump ;
+: tim3.
+	tim3_base $44 r-dump ;
+: tim4.
+	tim4_base $44 r-dump ;
+: tim5.
+	tim5_base $44 r-dump ;
+: tim6.
+	tim6_base $44 r-dump ;
