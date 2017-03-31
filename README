@@ -51,6 +51,7 @@ Contributions:
   - Chinese QF-LM4F232           with LM4F232H5QC
   - nRFgo Starter Kit & Microbit with nRF51822
   - STM L152 Discovery           with STM32L152RBT6
+  - STM Nucleo L073RZ            with STM32L073RZ
   - STM Nucleo F207ZG            with STM32F207ZG
   - STM Nucleo F303K8            with STM32F303K8
   - STM Nucleo F303RE            with STM32F303RE

@@ -112,6 +112,14 @@ cd stm32l053c8-ra
 make clean
 cd ..
 
+cd stm32l073rz
+make clean
+cd ..
+
+cd stm32l073rz-ra
+make clean
+cd ..
+
 cd stm32l152
 make clean
 cd ..

@@ -605,3 +605,10 @@
     a not properly initialised internal variable.
 
     Workaround, if you cannot update the core: Type "quit" before doing fresh compilations.
+
+16.03.2017, Matthias Koch, Mecrisp-Stellaris 2.3.6
+
+  - Graphics routines now draw Unicode characters.
+    Glyphs for ISO-8859-1 and ISO-8859-15 charset coverage included, you can add more.
+  - Contribution by Werner Urech:
+      New target: STM32L073RZ on STM Nucleo L073RZ
