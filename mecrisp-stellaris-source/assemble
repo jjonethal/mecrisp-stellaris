@@ -112,6 +112,14 @@ cd stm32l053c8-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8-ra
 cd ..
 
+cd stm32l073rz
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l073rz
+cd ..
+
+cd stm32l073rz-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l073rz-ra
+cd ..
+
 cd stm32l152
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152
 cd ..
@@ -242,6 +250,14 @@ cd ..
 
 cd stm32l053c8-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l053c8.bin mecrisp-stellaris-stm32l053c8.hex
+cd ..
+
+cd stm32l073rz
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l073rz.bin mecrisp-stellaris-stm32l073rz.hex
+cd ..
+
+cd stm32l073rz-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l073rz.bin mecrisp-stellaris-stm32l073rz.hex
 cd ..
 
 cd stm32l152

@@ -114,6 +114,14 @@ cd stm32l053c8-ra
 md5sum *.bin
 cd ..
 
+cd stm32l073rz
+md5sum *.bin
+cd ..
+
+cd stm32l073rz
+md5sum *.bin
+cd ..
+
 cd stm32l152
 md5sum *.bin
 cd ..
