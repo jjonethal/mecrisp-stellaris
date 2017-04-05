@@ -19,9 +19,7 @@
 \ qspi flash datasheet "C:\Users\jeanjo\Downloads\stm\n25q_128mb_3v_65nm.pdf"
 \ https://www.micron.com/~/media/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf
 \ stm32f746 user manual "C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf"
-reset
-
-\ ok.
+reset \ ok.
 
 include util.fth
 include gpio.fth
@@ -136,7 +134,12 @@ $A0001000 constant QSPI_BASE
 : qck< QSPI_CLK gpio-input ;
 
 : q-init ( -- )                           \ initialize sw qspi
-   qspi-gpio-init-sw qcs-1 qck-1 qcs> qck> ;
+   qspi-gpio-init-sw qcs-1 qck-1 qcs> qck> \ clk, cs output high
+   qd0> qd1<    \ qd0 output qd1 input
+   \ in single/dual spi qd2 is /write protect so we set it to 1
+   qd2-1 qd2> qd2-1                       
+   \ in single/dual spi qd3 this /hold so we disable hold - 1
+   qd3-1 qd3> qd3-1 ;                     
 
 : la ( -- )
    cr qcs@ 1 and . qck@ 1 and . qd0@ 1 and . ;
@@ -149,7 +152,7 @@ $A0001000 constant QSPI_BASE
 : qb8! ( n -- n )  qb4! qb4! ;            \ shifting out highest byte
     
 : qb@ ( n -- n )                          \ shifting in 1 bit from spi
-   qck-0 la qck-1 la 2* qd0@ 1 and or
+   qck-0 la qck-1 la 2* qd1@ 1 and or
    dup .   ;
 : qb4@ ( n -- n )  qb@ qb@ qb@ qb@  ;     \ shifting in 1 nibble from spi
 : qb8@ ( n -- n )  qb4@ qb4@ ;            \ shifting in 1 byte from spi
