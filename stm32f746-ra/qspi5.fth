@@ -142,7 +142,8 @@ $A0001000 constant QSPI_BASE
    qd3-1 qd3> qd3-1 ;                     
 
 : la ( -- )
-   cr qcs@ 1 and . qck@ 1 and . qd0@ 1 and . ;
+\   cr qcs@ 1 and . qck@ 1 and . qd0@ 1 and .
+   ;
 \ ******** serializing *******************
 : qb! ( n -- n )                          \ shifting out highest bit
    qck-0 la
@@ -153,7 +154,8 @@ $A0001000 constant QSPI_BASE
     
 : qb@ ( n -- n )                          \ shifting in 1 bit from spi
    qck-0 la qck-1 la 2* qd1@ 1 and or
-   dup .   ;
+\   dup .
+   ;
 : qb4@ ( n -- n )  qb@ qb@ qb@ qb@  ;     \ shifting in 1 nibble from spi
 : qb8@ ( n -- n )  qb4@ qb4@ ;            \ shifting in 1 byte from spi
 : qb32@ ( n -- n ) qb8@ qb8@ qb8@ qb8@ ;  \ read 1 32 bit word
