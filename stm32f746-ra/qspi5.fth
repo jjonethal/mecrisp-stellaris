@@ -159,17 +159,19 @@ $A0001000 constant QSPI_BASE
 : qb4@ ( n -- n )  qb@ qb@ qb@ qb@  ;     \ shifting in 1 nibble from spi
 : qb8@ ( n -- n )  qb4@ qb4@ ;            \ shifting in 1 byte from spi
 : qb32@ ( n -- n ) qb8@ qb8@ qb8@ qb8@ ;  \ read 1 32 bit word
-: q-start ( -- ) la qd0> la qcs-0 la ;       \ start transfer
+: q-start ( -- ) la qd0> la qcs-0 la ;    \ start transfer
 : q-end ( -- ) qcs-1 la ;
 : qc!  ( b -- 0 ) 24 lshift qb8! ;        \ write 1 byte
 
+: q<  ( -- ) ;                            \ switch to qspi input mode
+: q>  ( -- ) ;                            \ switch to qspi output mode
 \ ********** flash driver ****************
 $9E constant READ_ID
 : read-id ( a -- )                        \ read id to buffer 20 bytes
-   q-start READ_ID qc! qd0<
+   q-start READ_ID qc! 
    20 0 do 0 qb8@ dup i + ! loop q-end ;
 : .id  ( -- )                             \ print id
-   q-start READ_ID qc! qd0<
+   q-start READ_ID qc! drop
    20 0 do 0 qb8@ x.2 space loop q-end cr ;
  
 \ ********** read-block ******************
