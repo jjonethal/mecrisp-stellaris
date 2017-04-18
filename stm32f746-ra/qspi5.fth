@@ -55,9 +55,9 @@ PD13 constant QSPI_D3
 
 \ ********** qspi helper functions *******
 : hh/l# ( f -- m ) 0= $FFFF xor           \ Mask high/low half word low 0:$ffff0000 1:0000FFFF
-   1-foldable ;
+  1-foldable ;
 : pin-10# ( pin -- m )                    \ pin on / off mask
-   bsrr-on dup 16 lshift or 1-foldable ;
+  bsrr-on dup 16 lshift or 1-foldable ;
  
  
 \ ********** qspi registers **************
@@ -135,9 +135,9 @@ $A0001000 constant QSPI_BASE
 : qd2<-pu ( -- ) 1 QSPI_D2 dup gpio-input gpio-pupd! ;
 : qd3<-pu ( -- ) 1 QSPI_D3 dup gpio-input gpio-pupd! ;
 
-: q-init ( -- )                           \ initialize sw qspi
+: q-init ( -- )                            \ initialize sw qspi
    qspi-gpio-init-sw qcs-1 qck-1 qcs> qck> \ clk, cs output high
-   qd0> qd1<                              \ qd0 output qd1 input
+   qd0> qd1<                               \ qd0 output qd1 input
    \ in single/dual spi qd2 is /write protect so we set it to 1
    qd2<-pu                       
    \ in single/dual spi qd3 this /hold so we disable hold - 1
@@ -169,12 +169,12 @@ $A0001000 constant QSPI_BASE
    q1b8@ q1b8@ q1b8@ q1b8@ ;
 
 \ ********** dual spi mode ***************
-: q2b2! ( n -- n )                        \ dual mode qspi 2 bit shift out
+: q2b2! ( n -- n )                        \ dual mode spi 2 bit shift out
    qck-0 la
    dup 0< qd1! 2*
    dup 0< qd0! 2* qck-1 la ;
-: q2b4! ( n -- n )  q2b2! q2b2! ;         \ dual mode qspi 4 bit shift out
-: q2b8! ( n -- n )  q2b4! q2b4! ;         \ dual mode qspi 8 bit shift out
+: q2b4! ( n -- n )  q2b2! q2b2! ;         \ dual mode spi 4 bit shift out
+: q2b8! ( n -- n )  q2b4! q2b4! ;         \ dual mode spi 8 bit shift out
 
 : q2b2@ ( n -- n )                        \ dual mode read 2 bits from qspi
    qck-0 la qck-1 la
@@ -182,20 +182,20 @@ $A0001000 constant QSPI_BASE
    2* qd0@ 1 and or
 \   dup .
    ;
-: q2b4@  ( n -- n ) q2b2@ q2b2@ ;         \ dual mode shift in 4 bits from qspi  
-: q2b8@  ( n -- n ) q2b4@ q2b4@ ;         \ dual mode shift in 8 bits from qspi
+: q2b4@  ( n -- n ) q2b2@ q2b2@ ;         \ dual mode shift in 4 bits from spi  
+: q2b8@  ( n -- n ) q2b4@ q2b4@ ;         \ dual mode shift in 8 bits from spi
 
 \ ********** quad spi mode ***************
-: q4b4! ( n -- n )                        \ quad mode qspi 4 bit shift out
+: q4b4! ( n -- n )                        \ quad spi 4 bit shift out
    qck-0 la
    dup 0< qd3! 2*
    dup 0< qd2! 2*
    dup 0< qd1! 2*
    dup 0< qd0! 2*
    qck-1 la ;
-: q4b8! ( n -- n )  q4b4! q4b4! ;         \ quad mode qspi 8 bit shift out
+: q4b8! ( n -- n )  q4b4! q4b4! ;         \ quad spi 8 bit shift out
     
-: q4b4@ ( n -- n )                        \ quad mode shift in 4 bits from qspi
+: q4b4@ ( n -- n )                        \ quad spi mode shift in 4 bits
    qck-0 la qck-1 la
    2* qd3@ 1 and or
    2* qd2@ 1 and or
@@ -205,12 +205,13 @@ $A0001000 constant QSPI_BASE
    ;
 : q4b8@  ( n -- n ) q4b4@ q4b4@ ;         \ quad mode shift in 8 bits from qspi  
 
-: q1<  ( -- ) qd1< ;                      \ single qspi input mode
-: q1>  ( -- ) qd0> ;                      \ single qspi output mode
-: q2<  ( -- ) qd0< qd1< ;                 \ dual qspi input mode
-: q2>  ( -- ) qd0> qd1> ;                 \ dual qspi output mode
-: q4<  ( -- ) qd0< qd1< qd2< qd3< ;       \ quad qspi input mode
-: q4>  ( -- ) qd0> qd1> qd2> qd3> ;       \ quad qspi output mode
+\ ********** qspi mode switch ************
+: q1<  ( -- ) qd1< ;                      \ single spi input mode
+: q1>  ( -- ) qd0> ;                      \ single spi output mode
+: q2<  ( -- ) qd0< qd1< ;                 \ dual spi input mode
+: q2>  ( -- ) qd0> qd1> ;                 \ dual spi output mode
+: q4<  ( -- ) qd0< qd1< qd2< qd3< ;       \ quad spi input mode
+: q4>  ( -- ) qd0> qd1> qd2> qd3> ;       \ quad spi output mode
 
 ' q1> variable qd>-hook                   \ hook switch to output mode
 ' q1< variable qd<-hook                   \ hook switch to input mode
@@ -221,7 +222,7 @@ $A0001000 constant QSPI_BASE
 : qd<  ( -- ) qd<-hook @ execute ;        \ switch to input
 : qb8!  ( n -- n ) qb!-hook @ execute ;   \ shift out 1 byte
 : qb8@  ( n -- n ) qb@-hook @ execute ;   \ shift in 1 byte
-: q1 ( -- )                               \ set single qspi mode
+: q1 ( -- )                               \ set single spi mode
    ['] q1>   qd>-hook !
    ['] q1<   qd<-hook !
    ['] q1b8! qb!-hook !
@@ -230,7 +231,7 @@ $A0001000 constant QSPI_BASE
    qd2<-pu                       
    \ in single/dual spi qd3 this /hold so we disable hold - 1
    qd3<-pu ;
-: q2 ( -- )                               \ set dual qspi mode
+: q2 ( -- )                               \ set dual spi mode
    ['] q2>   qd>-hook !
    ['] q2<   qd<-hook !
    ['] q2b8! qb!-hook !
@@ -247,7 +248,7 @@ $A0001000 constant QSPI_BASE
 
 : q-start  ( -- ) la qd> la qcs-0 la ;    \ start transfer
 : q-end  ( -- ) qcs-1 la ;                \ finish qspi transfer
-: qc!  ( b -- 0 ) 24 lshift qb8! ;        \ write 1 byte
+: qc!  ( b -- 0 ) 24 lshift qb8! ;        \ send 1 byte
 
 \ ********** flash driver ****************
 $50 constant Q_CLEAR_FLAG_REG
@@ -266,14 +267,16 @@ $04 constant Q_WRITE_DIS
 $06 constant Q_WRITE_ENA
 
 : read-id ( a -- )                        \ read id to buffer 20 bytes
-   q-start Q_READ_ID qc! 
-   20 0 do 0 qb8@ dup i + ! loop q-end ;
+   q-start Q_READ_ID qc! drop
+   dup 20 + swap do 0 qb8@ i c! loop q-end ;
 : .id  ( -- )                             \ print id
    q-start Q_READ_ID qc! drop
    20 0 do 0 qb8@ x.2 space loop q-end cr ;
  
 \ ********** read-block ******************
-
+: q-dump ( len qa -- )
+   q-start Q_READ qc! drop 8 lshift
+   qb8! qb8! qb8! swap do qc@ 
 \ ********** write block *****************
 
 
