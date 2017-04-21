@@ -1,0 +1,100 @@
+\
+\ 	Timer library 
+\
+\		Ralph Sahli, 2016
+\		
+\		timer2 used for: 
+\			- 1sec interrupt -> counts up sec#  
+\							-> toogles green led (PD12)
+\
+\		timer6 used for:
+\			- generate delays
+\			- messure elapsed time
+\
+\		REQUIRES: lib_registers.txt
+
+\ resolution constants
+1000 		constant 1ms
+1000000 	constant 1us
+
+0 variable sec#
+
+: tim2-init ( -- )
+	MODE_OUTPUT 12 PORTD_BASE set-moder 	\ green LED as output
+	TIM2EN RCC_APB1ENR bis! 							\ TIM2 clock enabled
+	ARPE TIM2_CR1 bis! 										\ Auto-reload preload enable
+	HCLK 1ms / 1- TIM2_PSC !								\ prescaler -> 1000 Hz = 1 ms
+	1000 1- TIM2_ARR !										\ period -> reload after 1000 ms = 1 sec
+	UG TIM2_EGR !												\ Update generation
+	%010 4 lshift TIM2_CR2 !							\ The update event is selected as trigger output (TRGO)
+	CEN TIM2_CR1 bis! 										\ counter enable
+;
+
+: tim2-irq-handler
+	LED_GREEN PORTD_ODR xor! 							\ toggle green led
+	1 sec# +!
+	UIF TIM2_SR bic! 											\ clear interrupt source
+;
+
+: tim2-irq-enable
+	UIE TIM2_DIER bis!										\ Update interrupt enabled
+	['] tim2-irq-handler irq-tim2 !  			\ Hook for handler
+	NVIC_EN0_INT28 NVIC_EN0_R ! 					\ Enable TIM2 Interrupt in global Interrupt Controller
+;
+
+: tim6-init ( -- )
+	TIM6EN RCC_APB1ENR bis! 							\ TIM6 clock enabled
+	ARPE TIM6_CR1 bis! 										\ Auto-reload preload enable
+	CEN TIM6_CR1 bis! 										\ counter enable
+;
+	
+
+\ initalize hw and starts timers 
+: timer-init ( -- )
+	tim2-init
+	tim2-irq-enable
+	tim6-init
+;
+
+
+: set-resolution ( 1ms | 1us -- )
+	HCLK swap / 1- TIM6_PSC !	;						\ set prescaler 
+
+: delay-ms ( ms# -- )
+	1- TIM6_ARR !												\ preload ms 
+	1ms	set-resolution									\ prescaler -> 1000 Hz = 1 ms
+	UG TIM6_EGR !												\ Update generation
+	UIF TIM6_SR bic!											\ clear update flag
+	begin pause UIF TIM6_SR bit@ 0 <> until	\ wait for update flag
+;
+
+\ starts timer with timing resolution
+: start-timer ( 1ms | 1us -- )
+	set-resolution
+	$FFFF TIM6_ARR !											\ preload maximum 
+	UG TIM6_EGR !												\ Update generation
+;
+
+\ time difference since start of timer
+: elapsed ( -- ms# | us#	)
+	TIM6_CNT @ ;
+
+
+\ examples
+timer-init
+\ print secs from timer2
+: .sec ( -- )
+	 cr
+	begin 
+		sec# @  . 
+		1000 delay-ms
+	key? until
+;	
+
+\ prints elaspsed time in us for a empty loop
+: doloop-test ( -- )
+	1us start-timer
+	1000 0 do loop
+	elapsed .
+;
+

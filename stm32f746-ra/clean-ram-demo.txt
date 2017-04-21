@@ -1,0 +1,9 @@
+\ file: clean-ram-demo.txt
+\ project file for demo running from ram
+\ on teratem use macro upload_include.ttl with this file
+eraseflash
+compiletoflash
+include ..\common\disassembler-m3.txt
+include ..\common\dump.txt
+compiletoram
+include demo.fth

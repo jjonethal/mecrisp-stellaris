@@ -1,0 +1,18 @@
+
+0 variable zeile
+
+: print ( addr len -- )
+  0 zeile @ 8 * drawstring
+  1 zeile +!
+;
+
+: 32c3 ( -- )
+  page
+  0 zeile !
+  s" Mecrisp-Stellaris" print
+  s"   32C3" print
+  s" Matthias Koch" print
+
+  epaper 
+;
+

@@ -1,0 +1,53 @@
+\
+\ 	wait-function with Systick-Timer
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used:
+\			
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_dump.txt
+
+
+$E000E010 constant NVIC_ST_CTRL_R
+$E000E014 constant NVIC_ST_RELOAD_R      
+$E000E018 constant NVIC_ST_CURRENT_R
+
+0 variable tick#	\ tick counter of 10 ms ticks
+
+: init-systimer ( -- )
+    0 NVIC_ST_CTRL_R ! 				\ Disable SysTick during setup
+	hclk @ 8 / 100 /				\ 10 ms @ HCLK
+    1- NVIC_ST_RELOAD_R !	    	\ reload value for 24 bit timer
+    0 NVIC_ST_CURRENT_R !			\ Any write to current clears it
+    %001 NVIC_ST_CTRL_R ! 			\ Enable SysTick with HCLK/8 MHz clock
+;
+
+: systimer-irq-handler
+	1 tick# +!
+;
+
+: systimer-irq-enable
+	['] systimer-irq-handler irq-systick !  \ Hook for handler
+	%010 NVIC_ST_CTRL_R bis!				\ interrupt enabled
+;
+
+: wait ( ms --)
+	10 / tick# @ + 
+	begin
+		pause
+		dup tick# @ <= 
+	until drop 
+;
+
+: wait-test
+	init-systimer 
+	systimer-irq-enable	
+	begin
+		tick# @ .
+		100 wait
+		key? 
+	until
+
+;
+

@@ -1,0 +1,10 @@
+
+\ Cornerstone for 4 kb flash pages
+
+compiletoflash
+
+: cornerstone ( Name ) ( -- )
+  <builds begin here $FFF and while 0 h, repeat
+  does>   begin dup  $FFF and while 2 +  repeat
+          eraseflashfrom
+;

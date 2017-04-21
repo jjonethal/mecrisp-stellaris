@@ -10,7 +10,7 @@
   echo compiletoflash
 
   # First, get the clock speed up to 96 MHz
-  ssed -Rf ss < mcg.txt
+  ssed -Rf ss < ../mcg.txt
   echo fullspeed
 
   # Now, initiate basic flow control
@@ -30,20 +30,20 @@
 {
   echo compiletoflash
   
-  ssed -Rf ss < fault.txt
+  ssed -Rf ss < ../fault.txt
   echo "' .fault irq-fault !"
-  ssed -Rf ss < nvic.txt
-  ssed -Rf ss < uart.txt
+  ssed -Rf ss < ../nvic.txt
+  ssed -Rf ss < ../uart.txt
   echo "' uart0e-isr irq-uart0e !"
   echo uart0e-eint
 
-  ssed -Rf ss < gpio.txt
-  ssed -Rf ss < delay.txt
-  ssed -Rf ss < timer.txt
-  ssed -Rf ss < led.txt
-  ssed -Rf ss < asciiart.txt
-  ssed -Rf ss < init.txt
-  ssed -Rf ss < ../common/disassembler-m3.txt
+  ssed -Rf ss < ../gpio.txt
+  ssed -Rf ss < ../delay.txt
+  ssed -Rf ss < ../timer.txt
+  ssed -Rf ss < ../led.txt
+  ssed -Rf ss < ../asciiart.txt
+  ssed -Rf ss < ../init.txt
+  ssed -Rf ss < ../../common/disassembler-m3.txt
 
   echo compiletoram
 } > s1init.txt

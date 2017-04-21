@@ -1,0 +1,9 @@
+
+\ : syscall ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 )
+
+0 variable message
+: syscall-key ( -- c )   0 message 1 0 0 0 0   3 syscall drop  message @ ;
+
+: syscall-type ( addr len -- ) 1 -rot 0 0 0 0  4 syscall drop ;
+: probe s" Moin" syscall-type ;
+

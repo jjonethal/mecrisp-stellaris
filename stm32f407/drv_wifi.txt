@@ -1,0 +1,155 @@
+\
+\ 	Driver HLK-M30 for wifi2 click module
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- click place 4  ->  click wifi2
+\			- USART6
+\			- PB0 -> DEF
+\			- PD6 -> RST#
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_timer.txt
+\		REQUIRES: drv_usart6.txt
+
+1 constant DEF
+1 6 lshift constant RST#
+
+: DEFset ( -- )
+	DEF PORTB_ODR bis! ;
+	
+: DEFclear ( -- )
+	DEF PORTB_ODR bic! ;
+		
+: RST#set ( -- )
+	RST# PORTD_ODR bis! ;
+	
+: RST#clear ( -- )
+	RST# PORTD_ODR bic! ;
+
+	
+: wifi-init ( -- )
+	GPIOBEN RCC_AHB1ENR bis!							\ IO port B clock enabled
+	GPIODEN RCC_AHB1ENR bis!							\ IO port D clock enabled
+	MODE_OUTPUT 0 PORTB_BASE set-moder 		\ DEF as output
+	MODE_OUTPUT 6 PORTD_BASE set-moder 		\ RST# as output
+	DEFset
+	RST#clear
+	500 delay-ms													\ reset module
+	RST#set
+	100 delay-ms
+	usart6Init
+;
+
+\ set wifi in command mode
+: wifiSetCmdMode ( -- )
+	DEFclear
+	1000 delay-ms
+	DEFset
+	100 delay-ms
+;
+
+\ write CRLF sequence
+: >wifiCR ( -- ) 
+	$0D >usart6	 	\ send CR	
+	$0A >usart6	 	\ send LF	
+;
+
+\ write string
+: >wifiStr ( addr len -- ) 
+	0 do i over + @ >usart6 loop drop
+;
+
+\ get answer until CR received
+: wifiCmdResp> ( -- )
+	begin 
+		usart6> dup emit
+		$0D = 
+	until
+;
+
+\ write command, get answer
+: >wifiCmd ( addr len -- ) 
+	>wifiStr
+	>wifiCR
+	wifiCmdResp>			\ get echoed command
+	wifiCmdResp>			\ get OK 
+;
+
+
+\ get response from server
+: wifiResponse> ( -- )
+	begin 
+		usart6> dup EMIT
+		35 =
+	until 	\ wait for # at end of message
+;
+
+\ config module as TCP client
+: wifiTCPclient ( -- )
+	wifiSetCmdMode
+	s" at+Df=1" >wifiCmd									\ Set module to default
+	500 delay-ms
+	\ User configuration
+	s" at+WM=2" >wifiCmd									\ Select manual STA work method
+	s" at+Sssid=myWifi" >wifiCmd		\ Set gateway SSID
+	s" at+Sssidl=6" >wifiCmd						\ Set lenght of gateway SSID
+	s" at+Sam=4" >wifiCmd								\ Set gateway encryption method to AES
+	s" at+Spw=myWifiPw" >wifiCmd				\ Set gateway key
+	s" at+Spwl=8" >wifiCmd								\ Set lenght of gateway key
+	s" at+dhcp=1" >wifiCmd								\ Configure module with dynamic IP
+	s" at+UType=2" >wifiCmd							\ Set TCP Client
+	s" at+URPort=80" >wifiCmd						\ Set remote port
+	s" at+UIp=192.168.1.111" >wifiCmd		\ Set remote IP
+	s" at+WC=1" >wifiCmd									\ Calculation PMK
+	s" at+Rb=1" >wifiStr >wifiCR wifiCmdResp>	\ Reboot module (answer is only CR!)
+;
+
+\ get module configuration
+: wifiGetConfig ( -- )
+	wifiSetCmdMode
+	s" at+WM=?" >wifiCmd
+	s" at+Sssid=?" >wifiCmd
+	s" at+Sssidl=?" >wifiCmd
+	s" at+Sam=?" >wifiCmd
+	s" at+Spw=?" >wifiCmd
+	s" at+Spwl=?" >wifiCmd
+	s" at+dhcp=?" >wifiCmd
+	s" at+UType=?" >wifiCmd
+	s" at+URPort=?" >wifiCmd
+	s" at+UIp=?"  >wifiCmd
+;
+
+
+\ example: posts a "hello world" msg to the webserver (192.168.1.111) and echo this msg
+
+: >postHeader ( -- )
+	s" POST /msg.php HTTP/1.1" >wifiStr >wifiCR
+	s" Host: 192.168.1.111" >wifiStr >wifiCR
+	s" Content-Type: application/x-www-form-urlencoded" >wifiStr >wifiCR
+	s" Content-Length: 15" >wifiStr >wifiCR
+	>wifiCR
+;
+
+: >formData ( -- )
+	s" msg=Hallo world" >wifiStr
+;
+
+\ initialize and post message
+: postMsg ( -- )
+	>postHeader
+	>formData
+	wifiResponse>
+;
+
+\ usage:
+\		first: place the script msg.PHP at root on webserver
+\	 	wifi-init					\ initialize hw: USART6 & HLK-M30
+\		wifiTCPclient			\ configure module as TCP client, make connection to webserver
+\		postMsg						\ post a message to server (in transparent mode)
+
+
+
+
+

@@ -1,0 +1,177 @@
+
+\ --------------------------------------------
+\  How to use the E-Paper display GDE021A1 ?
+\ --------------------------------------------
+
+\ Connections:
+
+\ PA0   User Button    I
+\ PA5   Red LED        O
+\ PB4   Green LED      O
+
+\ PA8     ePD1_BUSY    I
+\   PB2   ePD1_RESET   O
+\   PB11  ePD1_D/C     O
+\ PA15    ePD1_CS      O
+\   PB3   ePD1_SCK     O
+\   PB5   ePD1_MOSI    O
+\   PB10  ePD1_PWR_ENn O
+
+\ ---------------------------------------------------------
+
+: epaper-io-init ( -- )
+
+\ $EBEBF4FC PORTA_MODER ! \ $EBFF FCFF is Reset value, with PA9 & PA10 alternate function. Set PA5 to output and PA0 to input.
+  $6BE9F4FC PORTA_MODER ! \ Additionally: PA8 input, PA15 output.
+
+\ $FFFFFDFF PORTB_MODER ! \ $FFFF FFFF is Reset value, set PB4 to output.
+  $FF5FF55F PORTB_MODER ! \ Additionally: PB2, PB3, PB5, PB10, PB11 output.
+
+  %10 8 2* lshift PORTA_PUPDR ! \ Pulldown for Busy line on PA8
+
+  1 10 lshift 16 lshift PORTB_BSRR ! \ Power line set to low to enable display
+
+  1 15 lshift           PORTA_BSRR ! \ Set CS line
+  1 15 lshift 16 lshift PORTA_BSRR ! \ Clear CS line
+
+  1  2 lshift           PORTB_BSRR ! \ Reset line high
+  100000 0 do loop                   \ Wait at least 10 ms
+
+  1  3 lshift           PORTB_BSRR ! \ Set SPI clock line high
+;
+
+\ ---------------------------------------------------------
+\ Bit-Bang SPI, one data wire for output only, MSB first.
+\ ---------------------------------------------------------
+
+: sck-high  ( -- ) 1 3 lshift            portb_bsrr ! inline ;
+: sck-low   ( -- ) 1 3 lshift  16 lshift portb_bsrr ! inline ;
+: mosi-high ( -- ) 1 5 lshift           portb_bsrr ! inline ;
+: mosi-low  ( -- ) 1 5 lshift 16 lshift portb_bsrr ! inline ;
+
+: >bit ( ? -- ) if mosi-high else mosi-low then sck-high sck-low ;
+
+: >epaper ( c -- )
+  dup 128 and >bit
+  dup  64 and >bit
+  dup  32 and >bit
+  dup  16 and >bit
+  dup   8 and >bit
+  dup   4 and >bit
+  dup   2 and >bit
+        1 and >bit
+;
+
+
+\ ---------------------------------------------------------
+\  Communication primitives
+\ ---------------------------------------------------------
+
+: epaper-sel   ( -- ) 1 15 lshift 16 lshift porta_bsrr ! inline ;
+: epaper-unsel ( -- ) 1 15 lshift           porta_bsrr ! inline ;
+: epaper-cmd   ( -- ) 1 11 lshift 16 lshift PORTB_BSRR ! inline ;
+: epaper-data  ( -- ) 1 11 lshift           PORTB_BSRR ! inline ;
+
+: epaper-reg!  ( c -- ) epaper-cmd  epaper-sel >epaper epaper-unsel ;
+: epaper-data! ( c -- ) epaper-data epaper-sel >epaper epaper-unsel ;
+
+\ ---------------------------------------------------------
+\  E-Paper controller configuration and access
+\ ---------------------------------------------------------
+
+: epaper-init ( -- )
+
+  16 epaper-reg!  \ Deep sleep mode disable
+ $00 epaper-data!
+
+  17 epaper-reg!  \ Data Entry Mode Setting
+ $03 epaper-data!
+
+  68 epaper-reg!  \ Set the RAM X start/end address
+ $00 epaper-data! \ RAM X address start = 00h
+ $11 epaper-data! \ RAM X adress end = 11h (17 * 4pixels by address = 72 pixels)
+
+  69 epaper-reg!  \ Set the RAM Y start/end address
+ $00 epaper-data! \ RAM Y address start = 0
+ $AB epaper-data! \ RAM Y adress end = 171
+
+  78 epaper-reg!  \ Set RAM X Address counter
+ $00 epaper-data!
+
+  79 epaper-reg!  \ Set RAM Y Address counter
+ $00 epaper-data!
+
+ 240 epaper-reg!  \ Booster Set Internal Feedback Selection
+ $1F epaper-data!
+
+  33 epaper-reg!  \ Disable RAM bypass and set GS transition to GSA = GS0 and GSB = GS3
+ $03 epaper-data!
+
+  44 epaper-reg!  \ Write VCOMregister
+ $A0 epaper-data!
+
+  60 epaper-reg!  \ Border waveform
+ $64 epaper-data!
+
+  50 epaper-reg!  \ Write LUT register
+
+  $82 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $AA epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! 
+  $AA epaper-data! $AA epaper-data! $00 epaper-data! $00 epaper-data! $AA epaper-data! $AA epaper-data! $AA epaper-data! $00 epaper-data! 
+  $55 epaper-data! $AA epaper-data! $AA epaper-data! $00 epaper-data! $55 epaper-data! $55 epaper-data! $55 epaper-data! $55 epaper-data! 
+  $AA epaper-data! $AA epaper-data! $AA epaper-data! $AA epaper-data! $55 epaper-data! $55 epaper-data! $55 epaper-data! $55 epaper-data! 
+  $AA epaper-data! $AA epaper-data! $AA epaper-data! $AA epaper-data! $15 epaper-data! $15 epaper-data! $15 epaper-data! $15 epaper-data! 
+  $05 epaper-data! $05 epaper-data! $05 epaper-data! $05 epaper-data! $01 epaper-data! $01 epaper-data! $01 epaper-data! $01 epaper-data! 
+  $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! 
+  $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! 
+  $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! 
+  $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! $00 epaper-data! 
+  $41 epaper-data! $45 epaper-data! $F1 epaper-data! $FF epaper-data! $5F epaper-data! $55 epaper-data! $01 epaper-data! $00 epaper-data! 
+  $00 epaper-data! $00 epaper-data!
+;
+
+: epaper-update ( -- )
+
+  34 epaper-reg! \ Write on the Display update control register
+ $C4 epaper-data! \ Display update data sequence option
+  32 epaper-reg!   \ Launching the update: Nothing should interrupt this sequence in order to avoid display corruption
+;
+
+: epaper-shutdown ( -- )
+
+  34 epaper-reg! \ Write on the Display update control register
+ $03 epaper-data! \ Disable CP then Disable Clock signal
+  32 epaper-reg!   \ Launching the update: Nothing should interrupt this sequence in order to avoid display corruption
+;
+
+
+\ ---------------------------------------------------------
+\   Low-Level Graphics for E-Paper display
+\ ---------------------------------------------------------
+
+18 172 * buffer: graphic
+
+: page ( -- ) graphic 18 172 * $FF fill ;
+
+: epaper-transmit-image ( -- )
+  36 epaper-reg! \ Prepare the register to write data on the RAM
+
+  18    \ 18*4 Pixels/Byte = 72 Pixels
+  172 *  \ * 172 Pixels
+  0 do graphic i + c@ epaper-data! loop
+;
+
+: putpixel ( x y -- ) \ X ist die lange Seite, Y die kurze. 0.0 ist am schwarzen Taster.
+
+  swap negate 172 + 18 *  graphic +  ( y addr )
+  swap dup 3 and 192 swap 2* rshift ( addr y bitmuster )
+  >r 2 rshift + r> swap
+  cbic!
+;
+
+: epaper ( -- ) \ Just draw contents of buffer
+  epaper-io-init
+  epaper-init
+  epaper-transmit-image
+  epaper-update
+  epaper-shutdown
+;

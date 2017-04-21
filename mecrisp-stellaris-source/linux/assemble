@@ -1,0 +1,2 @@
+#!/bin/bash
+arm-linux-gnueabi-as -o mecrisp-stellaris-linux.o mecrisp-stellaris-linux.s && arm-linux-gnueabi-ld -o mecrisp-stellaris-linux mecrisp-stellaris-linux.o

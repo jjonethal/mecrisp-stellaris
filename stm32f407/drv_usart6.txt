@@ -1,0 +1,43 @@
+\
+\ 	USART6 driver 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- USART6  
+\			- PC6 -> TX
+\			- PC7 -> RX
+\
+\		REQUIRES: lib_registers.txt
+
+: USART6Init ( -- )  
+	GPIOCEN RCC_AHB1ENR bis!								\ IO port C clock enabled
+    MODE_ALTERNATE 6 PORTC_BASE set-moder		\ PC6 -> Alternate function mode
+    MODE_ALTERNATE 7 PORTC_BASE set-moder		\ PC7 -> Alternate function mode    MODE_ALTERNATE 5 PORTB_BASE set-moder      \ PB5 -> Alternate function mode
+    8 6 PORTC_BASE set-alternate						\ PC6 -> Alternate function: %1000: AF8 (USART6) 
+    8 7 PORTC_BASE set-alternate						\ PC7 -> Alternate function: %1000: AF8 (USART6) 
+
+	USART6EN RCC_APB2ENR bis! 	\ Enable clock for USART6
+	RE USART6_CR1 bis!					\ Receiver enable 
+	TE USART6_CR1 bis!                	\ Transmitter enable 
+	$46 USART6_BRR ! 					\ Set Baud rate divider for 115200 Baud at 8 MHz.	
+	UE USART6_CR1 bis!                	\ USART enable
+;
+
+: usart6Txe? ( -- f )
+    uTXE USART6_SR bit@ inline ;
+
+: usart6Rxne? ( -- f )
+    uRXNE USART6_SR bit@ inline ;
+
+\ transmit a byte to USART
+: >usart6 ( byte -- )
+	begin pause usart6Txe? until			\ wait until transmit buffer is empty
+	USART6_DR h!											\ send byte
+;
+
+\ read a byte from USART
+: usart6> (  --  byte )
+	begin pause usart6Rxne? until			\ wait until receive buffer is not empty
+	USART6_DR h@											\ fetch data
+;

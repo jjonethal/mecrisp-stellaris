@@ -1,0 +1,49 @@
+\ STM32F100 VLDiscovery 
+\ 48MHz fcpu settings
+\ 2x overclocked with 0 waitstates
+\ uart 115k2
+\ may not work with your chip reliably
+\ by Igor de om1zz, 2015
+\ no warranties of any kind
+
+$40021000 constant RCC_Base
+
+$40013808 constant USART1_BRR
+
+RCC_Base $00 + constant RCC_CR
+  1 24 lshift constant PLLON
+  1 25 lshift constant PLLRDY
+  1 16 lshift constant HSEON
+  1 17 lshift constant HSERDY
+
+RCC_Base $04 + constant RCC_PLLCFGR
+   1 16 lshift constant PLLSRC
+
+: 48MHz ( -- )
+
+  HSEON RCC_CR bis!   \ switch HSE ON
+    \ Wait for HSE to be ready
+  begin HSERDY RCC_CR bit@ until 
+
+  PLLSRC            \ HSE clock is 8 MHz Xtal source
+
+  4  18 lshift or  \ PLL multiplication factor
+                    \ 8 MHz * 6 = 48 MHz = HCLK
+		    
+  4  11 lshift or  \ PCLK2 = HCLK/2
+
+  4  08 lshift or  \ PCLK1 = HCLK/2		    
+
+  1  14 lshift or  \ ADCPRE = PCLK2/4
+  
+  2  or  \ PLL is the system clock
+  
+  RCC_PLLCFGR !
+
+  PLLON RCC_CR bis!   \ switch PLL ON
+  
+  \ Wait for PLL to lock:
+  begin PLLRDY RCC_CR bit@ until  
+  
+  $0d0 USART1_BRR ! \ Set Baud rate divider for 115200 Baud at PCLK2=24MHz (13.02)
+;

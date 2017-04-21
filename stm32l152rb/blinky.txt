@@ -1,0 +1,18 @@
+\ adapted to STM32L-DISCOVERY
+\ buton - pa0
+\ led3 - pb6
+\ led4 - pb7
+
+: button? ( -- ? )  1 0 lshift gpioa_idr bit@ not ;
+: led     ( ? -- )  if 1 6 lshift gpiob_bsrr ! else 1 6 lshift 16 lshift gpiob_bsrr ! then ;
+
+: blinky ( -- )
+ 
+  %01 6 2* lshift gpiob_moder bis!  \ Set LED Pin mode to output
+
+  begin
+    button? if    true led  500000 0 do loop false led  500000 0 do loop
+            else  true led 1000000 0 do loop false led 1000000 0 do loop
+            then
+  key? until
+;

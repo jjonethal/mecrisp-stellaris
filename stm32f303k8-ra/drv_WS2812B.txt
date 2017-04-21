@@ -1,0 +1,119 @@
+\
+\ 	WS2812B driver 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used:
+\			- DMA1
+\			- SPI1 
+\			- PB3 -> SCK
+\			- PB5 -> MOSI
+\			
+\		SPI timing is configured for a 20 MHz HCLK
+\		timing: T0H = 0.4 us T1H = 0.8 us -> TH+TL = 1.2 us\		2 color bits are coded in 6-bit SPI data -> 24-bit GRB color are coded in 12 bytes
+\		the code-buffer contains the NRZ coded colors of all leds in sprip + the reset-time
+\		DMA streams circular the code-buffer to SPI
+\		new colors are set with function >codeBuff at led-position ( 0 - maxLed-1 )
+\
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_pll.txt
+\		REQUIRES: lib_dump.txt
+
+
+16  constant LEDS#					\ number of LEDs in Strip
+LEDS# 2 + 12 * constant CBLEN#		\ led code buffer length incl. 24 byte reset-time: > 50 us
+CBLEN# buffer: codeBuff				\ led code buffer
+
+
+\ initialize SPI1, only TX used with DMA enabled
+: spi1Init ( -- )  
+	BIT18 RCC _rAHBENR bis!				\ IO port B clock enabled
+    MODE_ALTERNATE 3 PORTB set-moder	\ PB3 -> Alternate function mode
+    MODE_ALTERNATE 5 PORTB set-moder	\ PB5 -> Alternate function mode
+    5 3 PORTB set-alternate				\ PB3 -> Alternate function: %0101: AF5 (SPI1) 
+    5 5 PORTB set-alternate				\ PB5 -> Alternate function: %0101: AF5 (SPI1) 
+
+	BIT12 RCC _rAPB2ENR bis! 			\ Enable clock for SPI1
+	BIT2 SPI1 _sCR1 bis!				\ Master selection 
+	BIT4 SPI1 _sCR1 bis!				\ 010: fPCLK/8 @ 20 MHz 
+	BIT8 SPI1 _sCR1 bis!                \ Internal slave select 
+	BIT9 SPI1 _sCR1 bis!				\ Software slave management
+	BIT1 SPI1 _sCR2 bis!               	\ TX DMA enable
+	%0101 8 lshift SPI1 _sCR2 bis!		\ Data size 6-bit @ 20 MHz
+	BIT6 SPI1 _sCR1 bis!                \ SPI enable
+;
+
+\ initialize DMA1 on channel 3 for SPI1_TX
+: dma1Init ( -- )
+	BIT0 RCC _rAHBENR bis!				\ DMA1 clock enabled
+	\ dma channel 3 for SPI
+	BIT4 DMA1 3 _dCCRx bis!				\ data transfer direction (read from memory)
+	BIT5 DMA1 3 _dCCRx bis!				\ circular mode
+	BIT7 DMA1 3 _dCCRx bis!				\ memory increment mode
+	CBLEN# DMA1 3 _dCNDTRx !			\ DMA_CNDTR3 
+	SPI1 _sDR DMA1 3 _dCPARx !			\ DMA_CPAR3 
+	codeBuff DMA1 3 _dCMARx !			\ DMA_CMAR3 	
+	BIT0 DMA1 3 _dCCRx bis!				\ DMA enable
+;
+
+
+\ initialize driver
+: WS2812BInit ( -- )
+	20 PLLsysclk				\ run with 20 MHz
+	codeBuff CBLEN# $00 fill
+	spi1Init
+	dma1Init
+;
+
+
+create codePattern \ 6-bit code
+	%0010011000100100 h,	\  01-code, 00-code
+	%0011011000110100 h,	\  11-code, 10-code
+
+\ write GRB color to codeBuff @ position (0..LEDS#-1) as NRZ byte stream
+: >codeBuff ( GRB pos -- )
+	12 * codeBuff + 		\ position offset in buffer
+	11 over + do 			\ buffer address
+		%11 over and 		\ mask out 2 LSB of GRB
+		[ codePattern literal, ]
+		+ c@				\ get pattern
+		i c!				\ store to buffer
+		2 rshift			\ shift right 2 bit position of GRB
+	-1 +loop drop
+;
+
+\ write GRB color to code buffer ( all leds )
+: stripColor ( GRB -- )
+	LEDS# 0 do dup i >codeBuff loop drop ;
+
+
+
+\ ***************** Dumps ******************
+: buff. ( -- )
+	codeBuff CBLEN# b-dump ;
+
+: spi. ( -- )
+	SPI1 $10 r-dump ;
+
+: dma. ( -- )
+	DMA1 $60 r-dump ;
+
+	
+\ ***************** Tests ******************
+
+\ first 3 leds with GRB color
+: grbTest ( -- )
+	WS2812BInit
+	$FF0000 0 >codeBuff 
+	$00FF00 1 >codeBuff 
+	$0000FF 2 >codeBuff
+	buff. ;
+
+\ whole strip leds green
+: stripGreen
+	$ff0000 stripColor ;
+	
+\ whole strip leds OFF
+: stripOff
+	$000000 stripColor ;
+	

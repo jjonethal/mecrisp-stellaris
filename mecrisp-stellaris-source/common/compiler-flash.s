@@ -31,7 +31,7 @@ smudge:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs smudge_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n smudge_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Smudge for Flash
@@ -66,7 +66,7 @@ smudge:
     ldr r0, =FlashFlags
     ldr r0, [r0]
     pushda r0
-    
+
     ldr r1, =Fadenende
     ldr r1, [r1]
     adds r1, #4 @ Skip Link field
@@ -78,7 +78,7 @@ smudge:
 
       str r1, [r2] @ Dictionarypointer umbiegen  Change pointer
       bl hkomma    @ Flags einfügen              Insert Flags
-      str r3, [r2] @ Dictionarypointer wieder zurücksetzen.  
+      str r3, [r2] @ Dictionarypointer wieder zurücksetzen.
 
     .ifdef emulated16bitflashwrites
       bl sammeltabelleleerprobe @ Did all 16-Bit Flash writes found their address pair value ?
@@ -114,7 +114,7 @@ smudge_ram:
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "setflags" @ ( x -- )
-setflags: @ Setflags collects the Flags if compiling for Flash, because we can write Flash field only once. 
+setflags: @ Setflags collects the Flags if compiling for Flash, because we can write Flash field only once.
           @ For RAM, the bits are simply set directly.
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -125,7 +125,7 @@ setflags_intern:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs setflags_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n setflags_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Setflags for Flash
@@ -151,17 +151,11 @@ setflags_ram:
   ldr r3, =0xFFFF
   cmp r1, r3
 
-  .ifdef m0core
   bne 1f
-  movs r1, r2
+  movs r1, r2 @ Direkt setzen, falls an der Stelle noch -1 steht  Set directly, if there are no Flags before
   b 2f
-1:orrs r1, r2
+1:orrs r1, r2 @ Hinzuverodern, falls schon Flags da sind          If there already are Flags, OR them together.
 2:
-  .else
-  ite eq
-    moveq r1, r2 @ Direkt setzen, falls an der Stelle noch -1 steht  Set directly, if there are no Flags before
-    orrne r1, r2 @ Hinzuverodern, falls schon Flags da sind          If there already are Flags, OR them together.
-  .endif
 
   strh r1, [r0]
   pop {pc}
@@ -169,12 +163,7 @@ setflags_ram:
  .ltorg
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align" @ ( -- ) 
-@ -----------------------------------------------------------------------------
-  b.n align4komma
-
-@ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_foldable_1, "aligned" @ ( c-addr -- a-addr ) 
+  Wortbirne Flag_visible|Flag_foldable_1, "aligned" @ ( c-addr -- a-addr )
 @ -----------------------------------------------------------------------------
   movs r0, #1
   ands r0, tos
@@ -185,13 +174,13 @@ setflags_ram:
   adds tos, r0
   bx lr
 
-@ If your particular Flash controller doesn't support byte write access, 
+@ If your particular Flash controller doesn't support byte write access,
 @ you can remove align, and c, without breaking anything.
 @ They are available for the joy of the user, the core only depends on even aligned 16-Bit Flash writes.
 
   .ifdef charkommaavailable
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align," @ ( -- ) 
+  Wortbirne Flag_visible, "halign" @ ( -- )
 alignkomma: @ Macht den Dictionarypointer gerade
 @ -----------------------------------------------------------------------------
   ldr r0, =Dictionarypointer
@@ -209,7 +198,7 @@ alignkomma: @ Macht den Dictionarypointer gerade
   .endif
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align4," @ ( -- ) 
+  Wortbirne Flag_visible, "align" @ ( -- )
 align4komma: @ Macht den Dictionarypointer auf 4 gerade
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -234,7 +223,7 @@ align4komma: @ Macht den Dictionarypointer auf 4 gerade
     movw tos, #writtenhalfword
     .endif
     bl hkomma
-  .else 
+  .else
     pushdaconst 0
     bl hkomma
   .endif
@@ -245,7 +234,7 @@ align4komma: @ Macht den Dictionarypointer auf 4 gerade
 
   .ifdef flash16bytesblockwrite @ Needed for LPC1114FN28...
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "align16," @ ( -- ) 
+  Wortbirne Flag_visible, "align16," @ ( -- )
 align16komma: @ Macht den Dictionarypointer auf 16 gerade
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -259,7 +248,7 @@ align16komma: @ Macht den Dictionarypointer auf 16 gerade
 
     pushdaconst 0
     bl hkomma
-    b 1b    
+    b 1b
 
 2:pop {pc}
   .endif
@@ -267,7 +256,7 @@ align16komma: @ Macht den Dictionarypointer auf 16 gerade
 
   .ifdef charkommaavailable
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "c," @ ( x -- ) 
+  Wortbirne Flag_visible, "c," @ ( x -- )
 ckomma:  @ Fügt 8 Bits an das Dictionary an.
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -294,18 +283,33 @@ ckomma_fertig:
   .endif
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "h," @ ( x -- ) 
+  Wortbirne Flag_visible, "h," @ ( x -- )
 hkomma: @ Fügt 16 Bits an das Dictionary an.
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, lr}
   uxth tos, tos @ Mask low 16 Bits, just in case.
+
+  @ dup
+  @ bl hexdot
+
+  .ifdef registerallocator
+    @ Schon geschriebene Opcodes zählen !
+    ldr r0, =state
+    ldr r1, [r0]
+    cmp r1, #0        @ Nicht aus dem Execute-Zustand herausschalten
+    beq 1f
+    adds r1, #1
+    beq 1f            @ Das normale True-Flag nicht erhöhen :-)
+      str r1, [r0]
+1:
+  .endif
 
   ldr r0, =Dictionarypointer @ Fetch Dictionarypointer to decide if compiling for RAM or for Flash
   ldr r1, [r0] @ Hole den Dictionarypointer
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs hkomma_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n hkomma_ram @ Befinde mich im Ram. Schalte um !
 
   @ hkomma for Flash:
   pushda r1 @ Adresse auch auf den Stack  Put target address on datastack, too !
@@ -321,11 +325,15 @@ hkomma_fertig:
   pushdaconst 2
   bl allot
 
+  .ifdef within_os
+  bl cacheflush
+  .endif
+
   pop {r0, r1, r2, r3, pc}
 
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "," @ ( x -- ) 
+  Wortbirne Flag_visible, "," @ ( x -- )
 komma: @ Fügt 32 Bits an das Dictionary an  Write 32 bits in Dictionary using 16 bit write access only.
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -338,7 +346,7 @@ komma: @ Fügt 32 Bits an das Dictionary an  Write 32 bits in Dictionary using 1
 
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "><," @ ( x -- ) 
+  Wortbirne Flag_visible, "><," @ ( x -- )
 reversekomma: @ Fügt 32 Bits an das Dictionary an   Write 32 bits in Dictionary using 16 bit write access only, but reverse high and low order before.
 @ -----------------------------------------------------------------------------
   push {lr}
@@ -352,7 +360,7 @@ reversekomma: @ Fügt 32 Bits an das Dictionary an   Write 32 bits in Dictionary
 
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "string," @ ( c-addr length -- ) 
+  Wortbirne Flag_visible, "string," @ ( c-addr length -- )
 stringkomma: @ Fügt ein String an das Dictionary an  Write a string in Dictionary.
 @ -----------------------------------------------------------------------------
    push {r0, r1, r2, lr}
@@ -405,7 +413,7 @@ stringkomma: @ Fügt ein String an das Dictionary an  Write a string in Dictiona
 4: @ One character left
    pushdatos
    ldrb tos, [r0]
-   bl hkomma   
+   bl hkomma
    pop {r0, r1, r2, pc}
 
 @------------------------------------------------------------------------------
@@ -425,7 +433,7 @@ allot:  @ Überprüft auch gleich, ob ich mich noch im Ram befinde.
   adds r1, r2  @ Pointer vorrücken
 
   ldr r2, =FlashDictionaryEnde
- 
+
   cmp r1, r2
   blo.n allot_ok
     Fehler_Quit "Flash full"
@@ -453,6 +461,24 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 @ A small check takes care of the case if you are already in the memory you request.
 
 @ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "forgetram"
+@ -----------------------------------------------------------------------------
+  push {lr}
+  bl compiletoram
+    @ Dictionarypointer ins RAM setzen
+    @ Set dictionary pointer into RAM first
+    ldr r0, =Dictionarypointer
+    ldr r1, =RamDictionaryAnfang
+    str r1, [r0]
+
+    @ Fadenende fürs RAM vorbereiten
+    @ Set latest for RAM
+    ldr r0, =Fadenende
+    ldr r1, =CoreDictionaryAnfang
+    str r1, [r0]
+  pop {pc}
+
+@ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoram?"
 @ -----------------------------------------------------------------------------
   pushdaconst 0
@@ -469,6 +495,7 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoram"
+compiletoram:
 @ -----------------------------------------------------------------------------
   @ Prüfe, ob der Dictionarypointer im Ram oder im Flash ist:
   ldr r0, =Dictionarypointer
@@ -481,6 +508,7 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoflash"
+compiletoflash:
 @ -----------------------------------------------------------------------------
   @ Prüfe, ob der Dictionarypointer im Ram oder im Flash ist:
   ldr r0, =Dictionarypointer
@@ -509,7 +537,7 @@ Zweitpointertausch:
 
   @ In R3 ist nun der aktuelle DictionaryPointer.
   @ Der muss immer unterhalb des VariablenPointers sein !
-  @ Compare Dictionarypointer to Variablepointer and give warning if they collide. 
+  @ Compare Dictionarypointer to Variablepointer and give warning if they collide.
   @ That happens if your already have a lot of definitions in RAM,
   @ then define a lot of variables in Flash and then switch back for compiling to RAM.
 
@@ -517,13 +545,13 @@ Zweitpointertausch:
   ldr r0, [r0]
   cmp r3, r0
   blo 1f
-   push {lr} 
+   push {lr}
    writeln " Variables collide with dictionary"
    pop {pc}
 
 1:bx lr
 
-  .ltorg 
+  .ltorg
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "(create)"
@@ -549,8 +577,8 @@ create: @ Nimmt das nächste Token aus dem Puffer,
   bl find
   @ ( Tokenadresse Länge Einsprungadresse Flags )
   drop @ Benötige die Flags hier nicht. Möchte doch nur schauen, ob es das Wort schon gibt.  No need for the Flags...
-  @ ( Tokenadresse Länge Einsprungadresse )  
-    
+  @ ( Tokenadresse Länge Einsprungadresse )
+
   @ Prüfe, ob die Suche erfolgreich gewesen ist.  Do we have a search result ?
   cmp tos, #0
   drop
@@ -559,7 +587,7 @@ create: @ Nimmt das nächste Token aus dem Puffer,
     ddup
     write "Redefine "
     bl stype @ Den neuen Tokennamen nochmal ausgeben
-    writeln "."
+    write ". "
 
 2:@ ( -- )
 
@@ -580,7 +608,7 @@ create: @ Nimmt das nächste Token aus dem Puffer,
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
-  bhs create_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n create_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Create for Flash
@@ -608,7 +636,7 @@ create: @ Nimmt das nächste Token aus dem Puffer,
 
   pushdaconst 6 @ Lücke für die Flags und Link lassen  Leave space for Flags and Link - they are not known yet at this time.
   bl allot
-  
+
   bl minusrot
   bl stringkomma @ Den Namen einfügen  Insert Name
   @ ( Neue-Linkadresse )
@@ -700,7 +728,7 @@ create_ende: @ Save code entry point of current definition for recurse and dodoe
   Wortbirne Flag_visible, "nvariable" @ ( Init-Values Length -- )
 nvariable: @ Creates an initialised variable of given length.
 @------------------------------------------------------------------------------
-  
+
   push {lr}
   bl create
 
@@ -709,23 +737,23 @@ nvariable: @ Creates an initialised variable of given length.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs variable_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n variable_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Variable Flash
-  
+
   @ Variablenpointer erniedrigen und zurückschreiben
   @ Stelle initialisieren
   @ Code für diese Stelle schreiben
 
   @ Decrement variable pointer and write back
   @ Initialise allocated location
-  @ Write code into Flash for that location - it is ensured that catchflashpointers will 
-  @ initialise exactly that physical address again on next Reset. 
+  @ Write code into Flash for that location - it is ensured that catchflashpointers will
+  @ initialise exactly that physical address again on next Reset.
   @ Order of instructions carefully choosen to not corrupt RAM management in any case.
 
       @ Eine echte Flash-Variable entsteht so, dass Platz im Ram angefordert wird.
-      @ Prüfe hier, ob genug Ram da ist !? 
+      @ Prüfe hier, ob genug Ram da ist !?
       @ Maybe check in future if there is enough RAM left ?
 
   movs r0, #0x0F @ Maximum length for flash variables !
@@ -835,7 +863,7 @@ variable_ram:
   Wortbirne Flag_visible, "buffer:" @ ( Length -- )
   @ Creates an uninitialised buffer of given bytes length.
 @------------------------------------------------------------------------------
-  
+
   push {lr}
   bl create
 
@@ -853,11 +881,11 @@ variable_ram:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
-  bhs rambuffer_ram @ Befinde mich im Ram. Schalte um !
+  bhs.n rambuffer_ram @ Befinde mich im Ram. Schalte um !
 
   @ -----------------------------------------------------------------------------
   @ Buffer Flash
-  
+
   @ Variablenpointer erniedrigen und zurückschreiben   Decrement variable pointer
 
   ldr r0, =VariablenPointer
@@ -868,7 +896,7 @@ variable_ram:
     bhs 1f
       Fehler_quit "Not enough RAM"
 1:str r1, [r0]
- 
+
   @ Code schreiben:  Write code
   pushda r1
   bl literalkomma    @ Adresse im Ram immer mit movt --> 12 Bytes
@@ -991,7 +1019,7 @@ dictionarynext: @ Scans dictionary chain and returns true if end is reached.
 
 @ : dictionarynext ( address -- address flag )
 @     @ dup $FFFFFFFF =                \ Check if link points to another definition or into free space.
-@     if -1 else dup 6 + c@ $FF = then \ $FF instead of Name length denotes end of dictionary in Flash, too.  
+@     if -1 else dup 6 + c@ $FF = then \ $FF instead of Name length denotes end of dictionary in Flash, too.
 @ ;
 
 
@@ -1006,7 +1034,7 @@ dictionarynext: @ Scans dictionary chain and returns true if end is reached.
     ands r2, r1
 
     adds r1, r2
-    adds tos, r1  
+    adds tos, r1
     bx lr
 
 @ -----------------------------------------------------------------------------
@@ -1021,7 +1049,7 @@ skipstring: @ Überspringt einen String, dessen Adresse in r0 liegt.  Skip strin
     ands r2, r1
 
     adds r1, r2
-    adds r0, r1  
+    adds r0, r1
   pop {r1, r2}
   bx lr
 
@@ -1030,7 +1058,7 @@ skipstring: @ Überspringt einen String, dessen Adresse in r0 liegt.  Skip strin
 find: @ ( address length -- Code-Adresse Flags )
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, r4, r5, lr}
-  
+
   @ r0  Helferlein      Scratch
   @ r1  Flags           Flags
 
@@ -1068,7 +1096,7 @@ find: @ ( address length -- Code-Adresse Flags )
   cmp tos, #0 @ Flag vom Vergleich prüfen  Ckeck for Flag from string comparision
   drop
   beq 2f
-                
+
     @ Gefunden ! Found !
     @ String überlesen und Pointer gerade machen   Skip name string
     adds r0, tos, #6
@@ -1080,7 +1108,7 @@ find: @ ( address length -- Code-Adresse Flags )
     @ Prüfe, ob ich mich im Flash oder im Ram befinde.  Check if in RAM or in Flash.
     ldr r0, =Backlinkgrenze
     cmp r2, r0
-    bhs 3f @ Im Ram beim ersten Treffer ausspringen. Search is over in RAM with first hit. 
+    bhs 3f @ Im Ram beim ersten Treffer ausspringen. Search is over in RAM with first hit.
            @ Im Flash wird weitergesucht, ob es noch eine neuere Definition mit dem Namen gibt.
            @ If in Flash, whole dictionary has to be searched because of backwards link dictionary structure.
 

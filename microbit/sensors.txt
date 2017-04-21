@@ -1,0 +1,244 @@
+
+\ -------------------------------------------------------------
+\  How to read magnetometer and accelerometer on Microbit
+\ -------------------------------------------------------------
+
+$50000504 constant gpio_out         \ Write GPIO port
+$50000508 constant gpio_outset      \ Set individual bits in GPIO port
+$5000050C constant gpio_outclr      \ Clear individual bits in GPIO port
+$50000510 constant gpio_in          \ Read GPIO port
+$50000514 constant gpio_dir         \ Direction of GPIO pins
+$50000518 constant gpio_dirset      \ Setting DIR register
+$5000051c constant gpio_dirclr      \ Clearing DIR register
+$50000700 constant gpio_cnf         \ Configuration of pin 0, add 4*n for other pins.
+
+\ Pin config:
+\ Bits 17 and 16:    0: No sense 1: Sense for high level 2: Sense for low level
+\ Bits 10, 9, 8:
+\                    0: Standard 0,   standard 1
+\                    1: High drive 0, standard 1
+\                    2: Standard 0,   high drive 1
+\                    3: High drive 0, high drive 1
+\                    4: Disconnect 0, standard 1
+\                    5: Disconnect 0, high drive 1
+\                    6: Standard 0,   disconnect 1
+\                    7: High drive 0, disconnect 1
+
+\ Bits 3 and 2:      0: No pull 1: Pull down 2: Pull up
+\ Bit 1:             0: Connect input buffer 1: Disconnect input buffer
+\ Bit 0:             0: Input, 1: Output
+
+
+\ -----------------------------------------------------
+\  Connections of Inertial Sensors to Pins of Microbit
+\ -----------------------------------------------------
+
+\ P0.00: SCL
+\ P0.30: SDA
+
+\ P0.27: Accel INT2
+\ P0.28: Accel INT1
+\ P0.29: Mag INT1
+
+\ -----------------------------
+\  Bit-Bang I2C Implementation
+\ -----------------------------
+
+\ Low-level target specific pin configurations
+
+: scl-high ( -- ) 1  0 lshift gpio_outset ! ;
+: scl-low  ( -- ) 1  0 lshift gpio_outclr ! ;
+: sda-high ( -- ) 1 30 lshift gpio_outset ! ;
+: sda-low  ( -- ) 1 30 lshift gpio_outclr ! ;
+
+: scl-@    ( -- f ) 20 0 do loop 1  0 lshift gpio_in bit@ ;
+: sda-@    ( -- f ) 20 0 do loop 1 30 lshift gpio_in bit@ ;
+
+: I2C-Init ( -- )
+  $601 gpio_cnf  0 cells + ! \ Standard 0, Disconnect 1 --> Open Drain output.
+  $601 gpio_cnf 30 cells + ! \ Standard 0, Disconnect 1 --> Open Drain output.
+  scl-high sda-high \ Bus free default state. During communication, SCL is low for default.
+;
+
+\ Low-Level I2C-Protocol
+
+: I2C-Start ( -- ) sda-high scl-high sda-low scl-low ;
+: I2C-Stop  ( -- ) sda-low scl-high sda-high ;
+
+: I2C-Bit-TX ( f -- )
+  if sda-high else sda-low then
+  scl-high begin scl-@ until
+  scl-low
+;
+
+: I2C-Bit-RX ( -- f )
+  sda-high
+
+  scl-high begin scl-@ until
+  sda-@
+  scl-low
+;
+
+\ Higher level I2C-Protocol
+
+: I2C-TX ( b -- f )
+  dup $80 and I2C-Bit-TX
+  dup $40 and I2C-Bit-TX
+  dup $20 and I2C-Bit-TX
+  dup $10 and I2C-Bit-TX
+  dup $08 and I2C-Bit-TX
+  dup $04 and I2C-Bit-TX
+  dup $02 and I2C-Bit-TX
+      $01 and I2C-Bit-TX
+
+  I2C-Bit-RX 0=
+;
+
+: I2C-RX ( f -- b )
+  I2C-Bit-RX $80 and
+  I2C-Bit-RX $40 and or
+  I2C-Bit-RX $20 and or
+  I2C-Bit-RX $10 and or
+  I2C-Bit-RX $08 and or
+  I2C-Bit-RX $04 and or
+  I2C-Bit-RX $02 and or
+  I2C-Bit-RX $01 and or
+
+  swap 0= I2C-Bit-TX
+;
+
+\ I2C device detection
+
+: u.2 s>d <# # # #> type ;
+
+: i2c-ping? ( addr - f ) i2c-start shl i2c-tx i2c-stop ;
+: i2c-7bitaddr? ( addr -- f ) dup $7 u>= swap $77 u<= and ;
+
+: i2c-detect   ( -- )
+  i2c-init cr
+    base @ hex
+    4 spaces $10 0 do i space u.2 loop
+
+    $80 0 do
+      i $0f and 0= if
+        cr i u.2 [char] : emit space
+      then
+      i i2c-7bitaddr? if
+        i i2c-ping? if \ does device respond?
+            i space u.2
+          else
+            ."  --"
+        then
+      else
+         ."    "
+      then
+    loop
+    cr base !
+;
+
+\ I2C Register primitives
+
+: i2c-reg! ( data register address -- )
+  i2c-start
+  shl i2c-tx not if ."  I2C device not connected." cr quit then  \ Transmit address
+  i2c-tx drop \ Transmit register
+  i2c-tx drop \ Transmit data
+  i2c-stop
+;
+
+: i2c-first-reg@ ( register address -- data )
+  shl tuck ( address register address )
+  i2c-start
+  i2c-tx not if ."  I2C device not connected." cr quit then  \ Transmit address
+  i2c-tx drop \ Transmit register
+  i2c-start
+  1 or \ Set Read bit in address
+  i2c-tx drop
+  true i2c-rx
+;
+
+: i2c-next-reg@ ( -- data )  true i2c-rx ;
+: i2c-last-reg@ ( -- data ) false i2c-rx i2c-stop ;
+
+
+: i2c-reg@ ( register address -- data )
+  shl tuck ( address register address )
+  i2c-start
+  i2c-tx not if ."  I2C device not connected." cr quit then  \ Transmit address
+  i2c-tx drop \ Transmit register
+  i2c-start
+  1 or \ Set Read bit in address
+  i2c-tx drop
+  false i2c-rx
+  i2c-stop
+;
+
+\ ------------------------
+\  Magnetometer Interface
+\ ------------------------
+
+: sign16 ( s16 -- n ) [ $b236 h, ] inline ; \ sxth r6, r6 Opcode
+
+$0E constant i2c-addr-mag
+
+: mag-init ( -- )
+  i2c-init
+  $80 $11 i2c-addr-mag i2c-reg!      \ Control register 2: Enable auto resets
+  $01 $10 i2c-addr-mag i2c-reg!      \ Control register 1: Active mode
+;
+
+: mag-xyz ( -- x y z )
+
+  $01 i2c-addr-mag i2c-first-reg@ 8 lshift
+                   i2c-next-reg@ or sign16
+
+                   i2c-next-reg@ 8 lshift
+                   i2c-next-reg@ or sign16
+
+                   i2c-next-reg@ 8 lshift
+                   i2c-last-reg@ or sign16
+;
+
+\ -------------------------
+\  Accelerometer Interface
+\ -------------------------
+
+$1D constant i2c-addr-accel
+
+: accel-init ( -- )
+  i2c-init
+  $00 $2A i2c-addr-accel i2c-reg!      \ Control register 1: Standby for configuration
+  $00 $0E i2c-addr-accel i2c-reg!      \ XYZ data config: 2g full range mode. 1: 4g, 2: 8g
+  $01 $2A i2c-addr-accel i2c-reg!      \ Control register 1: 800 Hz continuous
+;
+
+: accel-xyz ( -- x y z )
+
+  $01 i2c-addr-accel i2c-first-reg@ 8 lshift
+                     i2c-next-reg@ or sign16
+
+                     i2c-next-reg@ 8 lshift
+                     i2c-next-reg@ or sign16
+
+                     i2c-next-reg@ 8 lshift
+                     i2c-last-reg@ or sign16
+;
+
+\ -------------------------------------
+\  Demos to try out individual sensors
+\ -------------------------------------
+
+: mag-demo ( -- )
+  mag-init
+  begin
+    mag-xyz ." z: " . ." y: " . ." x: " . cr
+  key? until
+;
+
+: accel-demo ( -- )
+  accel-init
+  begin
+    accel-xyz ." z: " . ." y: " . ." x: " . cr
+  key? until
+;
+

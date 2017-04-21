@@ -1,0 +1,61 @@
+\
+\ 	USART1 driver 
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used: 
+\			- USART1  
+\			- PA9 -> TX
+\			- PA10 -> RX
+\
+\		REQUIRES: lib_registers.txt
+
+: USART1Init ( -- )  
+	BIT17 RCC _rAHBENR bis!				\ IO port A clock enabled
+    MODE_ALTERNATE 9 PORTA set-moder	\ PA9 -> Alternate function mode
+    MODE_ALTERNATE 10 PORTA set-moder	\ PA10 -> Alternate function mode  
+    7 9 PORTA set-alternate				\ PA9 -> Alternate function: %0111: AF7 (USART1) 
+    7 10 PORTA set-alternate			\ PA10 -> Alternate function: %0111: AF7 (USART1) 
+
+	BIT14 RCC _rAPB2ENR bis! 			\ Enable clock for USART1
+	BIT2 USART1 _uCR1 bis!				\ Receiver enable 
+	BIT3 USART1 _uCR1 bis!              \ Transmitter enable 
+	hclk @ 4800 / USART1 _uBRR ! 		\ Set Baud rate divider for 4800 Baud at HCLK.
+	BIT12 USART1 _uCR3 bis!				\ disable Overrun 
+	BIT0 USART1 _uCR1 bis!              \ USART enable
+;
+
+: usart1Txe? ( -- f )
+    pause BIT7 [ USART1 _uISR literal, ] bit@ ;
+
+: usart1Rxne? ( -- f )
+    pause BIT5 [ USART1 _uISR literal, ] bit@ ;
+
+\ transmit a byte to USART
+: >usart1 ( byte -- )
+	begin usart1Txe? until			\ wait until transmit empty
+	[ USART1 _uTDR literal, ] h!					\ send byte
+;
+
+\ read a byte from USART
+: usart1> (  --  byte )
+	begin usart1Rxne? until			\ wait until receive not empty
+	[ USART1 _uRDR literal, ] h@					\ fetch data
+;
+
+\ bridge between forth-io and usart1, quit with ESC
+: bridge ( -- )
+	begin
+		usart1Rxne? if 
+			usart1> emit 
+		then
+		key? if 
+			key 27 over = if 		\ esc pressed
+				drop exit
+			else
+				>usart1
+			then
+		then	
+	again
+;
+

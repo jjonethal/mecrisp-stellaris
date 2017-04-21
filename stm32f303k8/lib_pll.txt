@@ -1,0 +1,29 @@
+\
+\ 	system clock handling for use PLL as systemclock
+\
+\		Ralph Sahli, 2016
+\		
+\		resources used:
+\			
+\		REQUIRES: lib_registers.txt
+\		REQUIRES: lib_dump.txt
+
+
+\ set PLL as system clock with hclk = n MHZ
+: PLLsysclk ( MHz -- )
+	dup 1000000 * hclk !				\ save new system clock variable
+	4 / 								\ HSI/2 or HSE/2 = 4 MHz
+	2- 18 lshift RCC _rCFGR bis!		\ PLL input clock x n 
+
+	BIT24 RCC _rCR bis!					\ PLL enable
+	begin BIT25 RCC _rCR bit@ until		\ wait for PLL ready flag
+
+	BIT0 RCC _rCFGR bic! 				\ HSE deselected as system clock
+	BIT1 RCC _rCFGR bis! 				\ System clock switch: PLL selected as system clock
+	begin BIT3 RCC _rCFGR bit@ until	\ PLL used as system clock
+		
+	hclk @ 115200 / USART2 _uBRR h! 	\ Set Baud rate divider for 115200 Baud @ HCLK
+;
+
+: RCC.
+	RCC $40 r-dump ;

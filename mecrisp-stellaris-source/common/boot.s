@@ -24,6 +24,10 @@
    movs r1, #0    @ Clear constant folding pointer
    str r1, [r0]
 
+  .ifdef registerallocator
+    bl init_register_allocator
+  .endif
+
    @ Suche nach der init-Definition:
    @ Search for current init definition in dictionary:
    pushdatos
@@ -35,10 +39,10 @@
    beq 1f
      @ Gefunden ! Found !
      bl execute
-     b.n quit_intern
+     b quit_intern
 1:
    drop @ Die 0-Adresse von find. Wird hier heruntergeworfen, damit der Startwert AFFEBEEF erhalten bleibt !
-   b.n quit @ Drop 0-address of find to keep magic TOS value intact.
+   b quit @ Drop 0-address of find to keep magic TOS value intact.
 
 init_name: .byte 105, 110, 105, 116 @ "init"
 

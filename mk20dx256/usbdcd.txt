@@ -1,0 +1,48 @@
+\ usbdcd.txt
+\ REQUIRES: usbotg.txt
+\ 
+\ The USBDCD module works with the USB transceiver to detect whether the USB device
+\ is attached to a charging port, either a dedicated charging port or a charging host.
+
+\ -------------
+\ USB Device Charger Detection Module (DCD)
+\ -------------
+
+$40035000 constant USBDCD_CONTROL
+$40035004 constant USBDCD_CLOCK
+$40035008 constant USBDCD_STATUS
+      $D8 constant UDINT
+$4004803C constant SIM_SCGC6
+
+: usbdcd-isr
+  cr ." usbdcd "
+  \ USB0_ISTAT c@ .
+  1 USBDCD_CONTROL bis! \ IACK
+  \ USBDCD_STATUS @ u.
+  $01000000 USBDCD_CONTROL bis! \ START
+  USBDCD_STATUS @ dup $C0000 and $80000 = if
+    ." USB_ENABLE_PULLUP"
+    $10 USB0_CONTROL c!
+  then
+  dup $00400000 and not swap $00300000 and or if
+    ." DCD SET"
+  then
+  cr
+ ;
+
+: usbdcd-init
+  $200000 SIM_SCGC6 bis!
+  ['] usbdcd-isr irq-usbdcd !
+  74 irq-enable
+  \ $10000 USBDCD_CONTROL
+  1 $10 lshift USBDCD_CONTROL bis! \ IE
+  96 2 lshift 1 or USBDCD_CLOCK !
+ ;
+
+: usb-attached? ( -- 0=disconnected|-1=connected )
+  \ $FF00 USBDCD_STATUS bit@
+ ;
+
+
+\ vim:set filetype=forth foldmarker=\:,; foldmethod=marker :
+
