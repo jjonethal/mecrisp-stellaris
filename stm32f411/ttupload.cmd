@@ -10,7 +10,7 @@
 ::    upload file as parameter
 
 :: comport number for connection
-set COMPORT=10
+set COMPORT=3
 :: tempoary macrco for closing down existing connection
 set MACRO=%~dp0tempmac.ttl
 :: Teraterm installation directory
