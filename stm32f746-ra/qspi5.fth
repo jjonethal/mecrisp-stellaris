@@ -249,6 +249,7 @@ $A0001000 constant QSPI_BASE
 : q-start  ( -- ) la qd> la qcs-0 la ;    \ start transfer
 : q-end  ( -- ) qcs-1 la ;                \ finish qspi transfer
 : qc!  ( b -- 0 ) 24 lshift qb8! ;        \ send 1 byte
+: qc@  ( -- c ) 0 qb8@ ;                  \ get 1 char from qspi
 
 \ ********** flash driver ****************
 $50 constant Q_CLEAR_FLAG_REG
@@ -273,11 +274,39 @@ $06 constant Q_WRITE_ENA
    q-start Q_READ_ID qc! drop
    20 0 do 0 qb8@ x.2 space loop q-end cr ;
  
-\ ********** read-block ******************
+\ ********** dump-block ******************
 : q-dump ( len qa -- )
    q-start Q_READ qc! drop 8 lshift
-   qb8! qb8! qb8! swap do qc@ 
+   qb8! qb8! qb8! qd<
+   do
+     qc@ x.2 space
+     i $f and $f =
+	 if cr then
+   loop
+   q-end ;
+
+\ ********** read block ******************
+: q-block@ ( len bu qa -- )
+   q-start Q_READ qc! drop 8 lshift
+   qb8! qb8! qb8! qd<
+   drop tuck + swap
+   do
+     qc@ i c!
+   loop
+   q-end ;
 \ ********** write block *****************
 
+
+\ ********** dump ************************
+: c. ( n -- )                             \ emit printable character or "."
+   dup #32 >= and dup #127 < and dup 0= [char] . and or emit ;
+	 
+: dump-line ( n -- )
+   abs #16 min dup dup   ( -- n n n )     \ max 16 items in one line
+   0 ?do c@+-hook @ execute tuck x.2 space loop ( -- n c c .. c n )
+   16 over - 0 ?do 3 spaces loop          ( -- n c c .. c n ) \ fill remaining space
+   [char] | emit
+   0 ?do swap >R loop   ( -- n ) ( R: -- c c .. c )
+   0 ?do r> c. loop ;   ( -- ) ( R: -- )
 
 \ ********** soft reset ******************
