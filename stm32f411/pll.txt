@@ -19,8 +19,8 @@
 
 \ include util.txt
 
-#8000000 constant HSE_CLK                \ 8 MHz system HSE clock on Nucleo
-
+ #8000000 constant HSE_CLK               \ 8 MHz system HSE clock on Nucleo
+#16000000 constant HSI_CLK               \ 16 MHz system HSI clock
 
 \ ***** USART access ********************
 $40011000 constant USART1                \ base address for usart1
@@ -154,10 +154,17 @@ RCC_Base $08 + constant RCC_CFGR
    PLLSRC RCC_PLLCFGR bis! ;
 : pllm!  ( m -- )                        \ set PLL predivider
    PLLM RCC_PLLCFGR bits! ;
+: pllm@  ( -- m )                        \ get PLL predivider
+   PLLM RCC_PLLCFGR bits@ ;
 : plln!  ( n -- )                        \ set PLL multiplier
    PLLN RCC_PLLCFGR bits! ;
+: plln@  ( -- n )                        \ get pll multiplier
+   PLLN RCC_PLLCFGR bits@ ;
 : pllp!  ( p -- )                        \ set PLL output divider
    PLLP RCC_PLLCFGR bits! ;
+: pllp@/ ( -- p )                        \ calculate PLLP divider
+   PLLP RCC_PLLCFGR bits@
+   1+ 2* ;
 : hpre!  ( n -- ) HPRE RCC_CFGR bits! ;  \ set AHB prescaler
 : ppre2!  ( n -- )                       \ set highspeed APB prescaler (APB2)
    PPRE2 RCC_CFGR bits! ;
@@ -177,6 +184,20 @@ RCC_Base $08 + constant RCC_CFGR
 : sys-clk  ( mhz -- )                    \ set system clock to MHZ
    hse-on? if sys-clk-hse
    else sys-clk-hsi then ;
+: rcc-sws@ ( -- n )                      \ get system clock mode
+   SWS RCC_CFGR bits@ ;
+: pllsrc? ( -- f )                       \ get pll clock source true on hse clk
+   PLLSRC RCC_PLLCFGR bit@ ;
+: pllsrc-hse? ( -- f )  pllsrc? ;        \ pll clock source hse , else hsi
+: pll-freq  ( -- f )                     \ output frequency of pll
+   PLLSRC? dup HSE_CLK and
+   swap not HSI_CLK and or
+   PLLN@ * PLLM@ / PLLP@/ / ;
+: get-sys-clk ( -- f )                   \ return system clock frequency
+   rcc-sws@ dup 0= HSI_CLK and           \ calculate from register settings
+   over 1 = HSE_CLK and or
+   swap 2 = pll-freq and or ;
+   
 : clk-mhz-hse  ( mhz latency -- )        \ set system clock and flash latency
    USART_TERM wait-usart-tx-complete     \ wait until usart tx is idle
    hse-on! sys-clk-hse                   \ switch system clock over to hse
