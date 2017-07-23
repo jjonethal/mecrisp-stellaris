@@ -1,8 +1,10 @@
 reset
-eraseflash
-compiletoflash
-include ..\common\disassembler-m3.txt
-include ..\common\dump.txt
-include util.txt
+\ eraseflash
+\ compiletoflash
+\ inc-lude ..\common\disassembler-m3.txt
+\ inc-lude ..\common\dump.txt
+\ include util.txt
 compiletoram
-include pll
+include pll.txt
+include gpio.txt
+include i2ctest.fth

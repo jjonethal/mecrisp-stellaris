@@ -143,6 +143,8 @@ RCC_Base $08 + constant RCC_CFGR
       3  2 lshift constant SWS     \ System clock switch status 0:HSI 1:HSE 2:PLL 3:not applicable
       3           constant SW      \ System clock switch	  0:HSI 1:HSE 2:PLL 3:not allowed
 
+RCC_Base $40 + constant RCC_APB1ENR  \ RCC APB1 peripheral clock enable register
+      1           constant TIM2EN    \  TIM2 clock enable 
 
 : HSE_BYPASS  ( -- )                     \ external clock source
   HSEBYP HSEON RCC_CR BIS! ;

@@ -46,7 +46,7 @@ $24         constant GPIO_AFRH
    $f bic 1-foldable ;
 : port# ( pin -- n )                     \ return gpio port number A:0 .. K:10
    #10 rshift $f and 1-foldable ;
-: mode-mask  ( pin -- m )
+: gpio-mode-mask  ( pin -- m )
    #3 swap pin# 2* lshift 1-foldable ;
 : mode-shift ( mode pin -- mode<< )      \ shift mode by pin number * 2 for gpio_moder
    pin# 2* lshift 2-foldable ;
@@ -74,5 +74,5 @@ $24         constant GPIO_AFRH
 : mode-af-fast ( af pin -- )             \ select alternate function high speed io mode
    #2 over gpio-speed! mode-af ;
 : gpio-pupd! ( mode pin -- )             \ set gpio pull/up/down 0-no,1-pull up, 2 pull-down
-   dup mode-mask
+   dup gpio-mode-mask
    swap port-base GPIO_PUPDR + bits! ;
