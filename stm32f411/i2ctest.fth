@@ -26,7 +26,7 @@ $40000000 constant TIMER2          \ timer2 constants
 
 TIMER2 TIMx_CNT + constant TIMER_CNT
 : dt ( -- n )
-   lastTime dup @ swap  TIMER_CNT @ tuck swap ! swap - ;
+    TIMER_CNT @ lastTime @ over lastTime ! - ;
 
 
 \ ********** logic analyser ****************************************************
