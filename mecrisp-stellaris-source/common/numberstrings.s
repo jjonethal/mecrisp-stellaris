@@ -31,7 +31,7 @@ digit:  @ ( c -- false / u true ) Converts a character into a digit.
 @ -----------------------------------------------------------------------------
   ldr r3, =base
   ldr r3, [r3]
-  
+
 digit_base_r3:  @ Erwartet Base in r3  Base has to be in r3 if you enter here.
   subs tos, #48 @ "0" abziehen.  Subtract "0"
   blo 5f        @ negativ --> Zeichen war "unter Null"  Negative ? --> Invalid character.
@@ -41,7 +41,7 @@ digit_base_r3:  @ Erwartet Base in r3  Base has to be in r3 if you enter here.
 
   @ Nein: Also ist die Ziffer nicht in den Zahlen 0-9 enthalten gewesen.
   @ Prüfe Buchstaben.
-  @ Character is a letter. 
+  @ Character is a letter.
 
   subs tos, #7  @ Anfang der Großbuchstaben, "A"   Beginning of capital letters "A"
   cmp tos, #10  @ Buchstabenwerte beginnen bei 10  Values of letters start with 10
@@ -72,7 +72,7 @@ digit_base_r3:  @ Erwartet Base in r3  Base has to be in r3 if you enter here.
   movs tos, #0    @ False-Flag
   bx lr
 
-4: @ Korrekt erkannt. Ziffer in tos 
+4: @ Korrekt erkannt. Ziffer in tos
 
   @ Prüfe nun noch, ob die Ziffer innerhalb der Basis liegt !
   @ Do not accept digits greater than current base
@@ -187,19 +187,19 @@ number: @ Tries to convert a string in one of the supported number formats.
   pushdaconst 0 @ Base-High
 
   push {r0, r1, r2, r3}
-    bl ud_short_star
+    bl ud_star
   pop {r0, r1, r2, r3}
 
   popda r5 @ High
   popda r4 @ Low
-  
+
   movs r2, #0 @ For addition with Carry
   adds r4, tos
   adcs r5, r2
   drop
 
   b 1b
-  
+
 
 4:@ String ist leer und wurde korrekt umgewandelt.  String is empty. Almost done...
   @ Vorzeichen beachten:  Take care of sign.
@@ -243,7 +243,7 @@ number_nachkommastellen: @ Digits after the decimal point.
   @ Fetch a character from end of string:
   ldrb r2, [r0, r1] @ Zeichen holen.
   subs r1, #1 @ Länge um eins verringern
-  
+
   cmp r2, #46   @ . ?
   beq 1b        @ Accept more dots for clarity, already double result.
 
@@ -289,7 +289,7 @@ digitausgeben: @ ( u -- c ) Converts a digit into a character.
     bx lr
 
 1:cmp tos, #36   @ Von A-Z:
-  bhs 2f 
+  bhs 2f
     adds tos, #55 @ Alternative für Kleinbuchstaben: 87.                 For small letters: 87.
     bx lr
 
@@ -316,10 +316,10 @@ hold: @ ( Zeichen -- )  Insert one character at the beginning of number buffer
   popda r3 @ Das einzufügende Zeichen
 
   ldr r0, =Zahlenpuffer
-  ldrb r1, [r0] @ Länge holen  
+  ldrb r1, [r0] @ Länge holen
 
   cmp r1, #Zahlenpufferlaenge  @ Ist der Puffer voll ? Number buffer full ?
-  bhs 3f                       @ Keine weiteren Zeichen mehr annehmen.  
+  bhs 3f                       @ Keine weiteren Zeichen mehr annehmen.
 
   @ Länge des Puffers um 1 erhöhen  Increment length
   adds r1, #1
@@ -355,10 +355,10 @@ zahlanhaengen: @ ( Character -- ) Insert one character at the end of number buff
   popda r3 @ Das einzufügende Zeichen
 
   ldr r0, =Zahlenpuffer
-  ldrb r1, [r0] @ Länge holen  
+  ldrb r1, [r0] @ Länge holen
 
   cmp r1, #Zahlenpufferlaenge  @ Ist der Puffer voll ? Number buffer full ?
-  bhs 3f                       @ Keine weiteren Zeichen mehr annehmen.  
+  bhs 3f                       @ Keine weiteren Zeichen mehr annehmen.
 
     adds r1, #1 @ Ein Zeichen mehr
     strb r1, [r0] @ Neue Länge schreiben
@@ -399,7 +399,7 @@ falleziffern: @ ( u -- u=0 )
 @------------------------------------------------------------------------------
   push {r4, lr}
   movs r4, #32
-  
+
 1:bl fziffer
   subs r4, #1
   bne 1b
@@ -424,7 +424,7 @@ fziffer: @ ( u -- u )
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible, "#S"
-alleziffern: @ ( d-Zahl -- d-Zahl=0 )      
+alleziffern: @ ( d-Zahl -- d-Zahl=0 )
       @ Fügt alle Ziffern, jedoch mindestens eine,
       @ an den im Aufbau befindlichen String an.
       @ Inserts all digits, at least one, into number buffer.
@@ -476,7 +476,7 @@ zifferstringanfang: @ Eröffnet einen neuen Ziffernstring.
   ldr r0, =Zahlenpuffer @ Länge löschen, bisherige Länge Null.
   movs r1, #0
   strb r1, [r0]
-  bx lr  
+  bx lr
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible, "f."
@@ -572,4 +572,4 @@ udot:
 dot:
   pushdatos
   movs tos, tos, asr #31    @ s>d - Turn MSB into 0xffffffff or 0x00000000
-  b.n ddot  
+  b.n ddot

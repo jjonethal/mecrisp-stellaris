@@ -68,7 +68,7 @@ dnip:
   pushdatos
   subs psp, #4
   str r0, [psp]
-  ldr tos, [psp, #12]  
+  ldr tos, [psp, #12]
   bx lr
 
 @ -----------------------------------------------------------------------------
@@ -129,13 +129,13 @@ dnip:
 @ --- Double return stack jugglers ---
 @------------------------------------------------------------------------------
 
-@  : p 3 4 .s 2>r .s 2r@ .s . . 2r> .s 2drop .s ; 
+@  : p 3 4 .s 2>r .s 2r@ .s . . 2r> .s 2drop .s ;
 @  : 2>r swap >r >r inline ;
 @  : 2r> r> r> swap inline ;
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_inline, "2>r" @ Puts the two top elements of stack on returnstack.
-                               @ Equal to swap >r >r 
+                               @ Equal to swap >r >r
 @------------------------------------------------------------------------------
   ldm psp!, {r0}
   push {r0}
@@ -156,7 +156,7 @@ dnip:
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_inline, "2r@" @ Copies the two top elements of returnsteack
-@------------------------------------------------------------------------------  
+@------------------------------------------------------------------------------
   pushdatos
   ldr tos, [sp, #4]
   pushdatos
@@ -264,7 +264,7 @@ dnegate:
   subs psp, #4
   str r2, [psp]
   bx lr
-  
+
 @------------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_1, "s>d" @ ( n - dl dh ) Single --> Double conversion
 @------------------------------------------------------------------------------
@@ -285,32 +285,12 @@ dnegate:
   @ ( u u -- ud )
 um_star:
 @------------------------------------------------------------------------------
-    ldr r0, [psp]  @ To be calculated: Tos * r0
+  ldm psp!, {r0}
+  movs r2, tos
+  movs tos, #0
 
-    @ Calculate low part in hardware:
-    movs r3, r0    @ Save the low part for later
-    muls r3, tos   @ Gives complete low-part of result
-    str r3, [psp]  @ Store low part
+  b.n ud_star_late_entry
 
-    @ Calculate high part:
-    lsrs r1, r0,  #16 @ Shifted half
-    lsrs r2, tos, #16 @ Shifted half
-
-    movs r3, r1  @ High-High
-    muls r3, r2
-
-    @ Low-High and High-Low
-    uxth tos, tos
-    uxth r0, r0
-
-    muls tos, r1
-    muls r0, r2
-    adds tos, r0
-
-    lsrs tos, #16 @ Shift accordingly
-    adds tos, r3  @ Add together
-    bx lr
-   
   .else
 
 @------------------------------------------------------------------------------
@@ -337,31 +317,13 @@ um_star:
 m_star:
 @------------------------------------------------------------------------------
 
-    ldr r0, [psp]
-    movs r1, r0, asr #31 @ Turn MSB into 0xffffffff or 0x00000000
-    beq 1f
-    @ - * ?
-      rsbs r0, r0, #0
-      str r0, [psp]
+  movs r0, tos
+  movs tos, tos, asr #31 @ Turn MSB into 0xffffffff or 0x00000000
 
-      movs r0, tos, asr #31 @ Turn MSB into 0xffffffff or 0x00000000
-      beq 2f @ - * +
+  ldm psp!, {r2}
+  movs r1, r2, asr #31 @ Turn MSB into 0xffffffff or 0x00000000
 
-      @ - * -
-      rsbs tos, tos, #0
-      b.n um_star
-
-1:  @ + * ?
-    movs r0, tos, asr #31 @ Turn MSB into 0xffffffff or 0x00000000
-    beq.n um_star @ + * +
-    @ + * -
-    rsbs tos, tos, #0
-
-    @ - * + or + * -
-2:  push {lr}
-    bl um_star
-    bl dnegate
-    pop {pc}
+  b.n ud_star_registers
 
   .else
 
@@ -381,22 +343,26 @@ m_star:
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_foldable_4, "ud*"
-ud_short_star:
+ud_star:
          @ Unsigned multiply 64*64 = 64
          @ ( ud1 ud2 -- ud )
 @------------------------------------------------------------------------------
   @ Multiply r1:r0 and r3:r2 and return the product in r1:r0
-  @          tos w      x y  
+  @          tos w      x y
 
 @ r1:r0  r3:r2 -->  r1:r0
 @ tos r0 r1 r2 -->  tos r0
 
         ldm psp!, {r0, r1, r2}
 
+ud_star_registers:
+
 	muls	tos, r2        @ High-1 * Low-2 --> tos
 	muls	r1, r0         @ High-2 * Low-1 --> r1
 	adds	tos, r1        @                    Sum into tos
-	
+
+ud_star_late_entry:
+
 	lsrs	r1, r0, #16
 	lsrs	r3, r2, #16
 	muls	r1, r3
@@ -408,13 +374,13 @@ ud_short_star:
 	muls	r1, r2
 	muls	r3, r0
 	muls	r0, r2
-	
+
 	movs	r2, #0
 	adds	r1, r3
 	adcs	r2, r2
 	lsls	r2, #16
 	adds	tos, r2
-	
+
 	lsls	r2, r1, #16
 	lsrs	r1, #16
 	adds	r0, r2
@@ -427,8 +393,8 @@ ud_short_star:
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_foldable_4, "udm*"
-ud_star: @ Unsigned multiply 64*64 = 128
-         @ ( ud1 ud2 -- udl udh )
+udm_star: @ Unsigned multiply 64*64 = 128
+          @ ( ud1 ud2 -- udl udh )
 @------------------------------------------------------------------------------
   @ Auf dem Datenstack: ( 1L 1H 2L 2H -- LL  L  H HH )
   @                       12  8  4  0 nach pushdatos
@@ -755,7 +721,7 @@ f_star: @ Signed multiply s31.32
     bl dnegate
 
 3:  @ + * +, - * -
-    bl ud_star
+    bl udm_star
     @ ( LL L H HH )
     drop
     ldmia psp!, {r0}
@@ -766,12 +732,12 @@ f_star: @ Signed multiply s31.32
 1:@ + * ?
     bl dswap
     movs r0, tos, asr #31 @ Turn MSB into 0xffffffff or 0x00000000
-    beq 3b @ + * +  
+    beq 3b @ + * +
 
     bl dnegate
 
     @ - * + or + * -
-2:  bl ud_star
+2:  bl udm_star
     @ ( LL L H HH )
     drop
     ldmia psp!, {r0}

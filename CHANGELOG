@@ -623,3 +623,8 @@
       Svd2gas - converts SVD register definition files into assembler include files
   - Contribution by Ralph Sahli:
       New target: STM32F042F6
+
+23.07.2017, Matthias Koch, Mecrisp-Stellaris 2.3.8
+
+  - Bugfix for all multiplications involving double numbers on M0 targets. Only ud* was fine.
+  - Added hook-find and (find) to RA cores
