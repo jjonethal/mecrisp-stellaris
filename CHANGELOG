@@ -612,3 +612,14 @@
     Glyphs for ISO-8859-1 and ISO-8859-15 charset coverage included, you can add more.
   - Contribution by Werner Urech:
       New target: STM32L073RZ on STM Nucleo L073RZ
+
+28.06.2017, Matthias Koch, Mecrisp-Stellaris 2.3.7
+
+  - RA binary for STM32F051
+  - More readable cordic code with arctangent
+  - Routing tool to replace running definitions for debugging
+  - Multitask debug tools
+  - Contribution by Terry Porter:
+      Svd2gas - converts SVD register definition files into assembler include files
+  - Contribution by Ralph Sahli:
+      New target: STM32F042F6

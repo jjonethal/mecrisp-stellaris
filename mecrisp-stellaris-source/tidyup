@@ -100,7 +100,19 @@ cd stm32f030f4
 make clean
 cd ..
 
+cd stm32f042f6
+make clean
+cd ..
+
+cd stm32f042f6-ra
+make clean
+cd ..
+
 cd stm32f051
+make clean
+cd ..
+
+cd stm32f051-ra
 make clean
 cd ..
 

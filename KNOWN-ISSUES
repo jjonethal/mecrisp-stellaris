@@ -56,14 +56,12 @@
   Does not have this bit.
 
 
-****************************************
-* Terminal running on Android / Linux:
-****************************************
+*******************************
+* Running on Android / Linux:
+*******************************
 
-  The linux port is known to work on both Linux and Android, but on some kernels, pasting into
-  the terminal causes problems. Manual typing always works.
-
-  It is still unclear why the terminal fails, as the standard input is used
-  exactly the same way in both cases and should be properly buffered by the underlying OS kernel.
+  The linux port is known to work on both Linux and Android, but on some kernels and/or CPU cores,
+  sudden segfaults may happen when directly executing freshly compiled definitions.
 
   Cache flushing issues due to independent caches for instructions and data may cause the problem.
+

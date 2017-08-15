@@ -25,6 +25,8 @@ Ports and examples for STM32F303RE and STM32L432KC by Ralph Sahli
 Port and examples for STM32F401CD on Espruino Pico by Ralph Sahli
 STM32 USB driver by Jean-Claude Wippler
 Port for STM32L073RZ by Werner Urech
+Assembler include file generator svd2gas by Terry Porter
+Port for STM32F042F6 by Ralph Sahli
 
 Hardware donations:
 
