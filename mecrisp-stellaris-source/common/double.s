@@ -808,109 +808,57 @@ f_star: @ Signed multiply s31.32
 @------------------------------------------------------------------------------
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_foldable_4, "du<"
+Wortbirne Flag_visible|Flag_foldable_4, "du<"
   @ ( 2L 2H 1L 1H -- Flag )
-  @   8y 4x 0w tos
+  @   r2 r1 r0 tos
 @------------------------------------------------------------------------------
+
   ldm psp!, {r0, r1, r2}
+  subs r2, r0    @  Low-part first
+  sbcs r1, tos   @ High-part with carry
 
-  @ Check High:
-  cmp tos, r1
-  bhi 2f @ True
-  bne 1f @ False - Not bigger, not equal --> Lower.
-  @ Fall through if high part is equal
-
-  @ Check Low:
-  cmp r0, r2
-  bhi 2f
-
-@ False:
-1:movs tos, #0
+  sbcs tos, tos  @ Create carry flag on TOS
   bx lr
 
-@ True
-2:movs tos, #0
+@------------------------------------------------------------------------------
+Wortbirne Flag_visible|Flag_foldable_4, "du>"  @ Just swapped the order of registers
+@------------------------------------------------------------------------------
+
+  ldm psp!, {r0, r1, r2}
+  subs r0, r2    @  Low-part first
+  sbcs tos, r1   @ High-part with carry
+
+  sbcs tos, tos  @ Create carry flag on TOS
+  bx lr
+
+
+@------------------------------------------------------------------------------
+Wortbirne Flag_visible|Flag_foldable_4, "d<"
+@------------------------------------------------------------------------------
+
+  ldm psp!, {r0, r1, r2}
+  subs r2, r0    @  Low-part first
+  sbcs r1, tos   @ High-part with carry
+
+  blt 1f
+  movs tos, #0
+  bx lr
+
+@------------------------------------------------------------------------------
+Wortbirne Flag_visible|Flag_foldable_4, "d>"  @ Just swapped the order of registers
+@------------------------------------------------------------------------------
+
+  ldm psp!, {r0, r1, r2}
+  subs r0, r2    @  Low-part first
+  sbcs tos, r1   @ High-part with carry
+
+  blt 1f
+  movs tos, #0
+  bx lr
+
+1:movs tos, #0   @ True
   mvns tos, tos
   bx lr
-
-@------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_foldable_4, "du>"
-  @ ( 2L 2H 1L 1H -- Flag )
-  @   8y 4x 0w tos
-@------------------------------------------------------------------------------
-  ldm psp!, {r0, r1, r2}
-
-  @ Check High:
-  cmp r1, tos
-  bhi 2f @ True
-  bne 1f @ False - Not bigger, not equal --> Lower.
-  @ Fall through if high part is equal
-
-  @ Check Low:
-  cmp r2, r0
-  bhi 2f
-
-@ False:
-1:movs tos, #0
-  bx lr
-
-@ True
-2:movs tos, #0
-  mvns tos, tos
-  bx lr
-
-@------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_foldable_4, "d<"
-  @ ( 2L 2H 1L 1H -- Flag )
-  @   8y 4x 0w tos
-@------------------------------------------------------------------------------
-  ldm psp!, {r0, r1, r2}
-
-  @ Check High:
-  cmp tos, r1
-  bgt 2f @ True
-  bne 1f @ False - Not bigger, not equal --> Lower.
-  @ Fall through if high part is equal
-
-  @ Check Low:
-  cmp r0, r2
-  bgt 2f
-
-@ False:
-1:movs tos, #0
-  bx lr
-
-@ True
-2:movs tos, #0
-  mvns tos, tos
-  bx lr
-
-@------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_foldable_4, "d>"
-  @ ( 2L 2H 1L 1H -- Flag )
-  @   8y 4x 0w tos
-@------------------------------------------------------------------------------
-  ldm psp!, {r0, r1, r2}
-
-  @ Check High:
-  cmp r1, tos
-  bgt 2f @ True
-  bne 1f @ False - Not bigger, not equal --> Lower.
-  @ Fall through if high part is equal
-
-  @ Check Low:
-  cmp r2, r0
-  bgt 2f
-
-@ False:
-1:movs tos, #0
-  bx lr
-
-@ True
-2:movs tos, #0
-  mvns tos, tos
-  bx lr
-
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2, "d0<" @ ( 1L 1H -- Flag ) Is double number negative ?
