@@ -1,0 +1,254 @@
+[0;37;40m[0;37;40m[2J[0;0H[0;33;40;1me4thcom-0.6.1 : A Serial Terminal for Embedded Forth Systems[0;37;40m[0;37;40m
+Copyright (C) 2016 manfred.mahlow@forth-ev.de. This is free software under the
+conditions of the GNU General Public License with ABSOLUTELY NO WARRANTY.
+[0;33;40m* Loading Plugin for Mecrisp-Stellaris (mecrisp-st.efc)[0;37;40m[0;37;40m
+   Use the [0;37;40;1mTAB [0;37;40m[0;37;40mkey to cancel an upload process.
+[0;33;40m* Loading config file (.e4thcom-0.6.1)[0;37;40m[0;37;40m
+     editor command :  /usr/bin/pluma +
+
+SIO : /dev/ttyACM0 open  hdl=3 B115200 8N1 CLOCAL ONLCR full-duplex  
+      Type '\ [Enter]' to close the Terminal
+
+  ok.
+[s [u#[s [ur[s [u [s [uV[s [uO[s [uC[s [u-[s [uH[s [uO[s [uW[s [uT[s [uO[s [u-[s [uR[s [ue[s [ug[s [ui[s [us[s [ut[s [ue[s [ur[s [us[s [u.[s [ut[s [ux[s [ut[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  Uploading: ./mcu/VOC-HOWTO-Registers.txt
+[0;37;40m[0;37;40m
+[0;33;40m\ VOC-HOWTO-Registers                                                  MM-170618
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\              HOWTO for Mecrisp-Stellaris for VOC Version 0.6.2-FR
+[0;37;40m[0;37;40m
+[0;33;40m\     A short demo to show how to use VOCs to define register identifiers.
+[0;37;40m[0;37;40m
+[0;33;40m\                  Copyright (C) 2017 Manfred Mahlow
+[0;37;40m[0;37;40m
+[0;33;40m\        This is free software under the GNU General Public License v3.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Modern MCUs have lots of peripheral units to be controlled with many register
+[0;37;40m[0;37;40m[0;33;40m\ identifiers. In Forth this identifiers are often implemented as constants,
+[0;37;40m[0;37;40m[0;33;40m\ cluttering the dictionary.
+[0;37;40m[0;37;40m
+[0;33;40m\ With good hardware designs, the register identifiers should be a combination
+[0;37;40m[0;37;40m[0;33;40m\ of a unit specific base addres and a register specific offset address. Then
+[0;37;40m[0;37;40m[0;33;40m\ they can be implemented as such, significantly reducing the number of
+[0;37;40m[0;37;40m[0;33;40m\ required words.
+[0;37;40m[0;37;40m
+[0;33;40m\ But earlier or later name conflict may arise when different units use the
+[0;37;40m[0;37;40m[0;33;40m\ same register name for a different offset address.
+[0;37;40m[0;37;40m
+[0;33;40m\ Using VOCs to implement register identifiers can avoid such conflicts and can
+[0;37;40m[0;37;40m[0;33;40m\ significantly reduce the number of identifiers to be implemented.
+[0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  compiletoram[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Loading vocs.txt    ** Please first read the preamble in that file. **
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ #require das.txt
+[0;37;40m[0;37;40m
+[0;32;40;1m#require vocs.txt[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  ok [0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Some tools used:
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ??     Displays the top wordlist of the search order. In the context Forth
+[0;37;40m[0;37;40m[0;33;40m\         the core words are ignored. To also see the core words use ???.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ..     Returns from a VOC context to the Forth context.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  ??[0;37;40;1m 
+RAM: forth
+               wtag: 00005024 lfa: 20000AE0 xt: 20000AF0 name: vocs.txt 
+               wtag: 00005024 lfa: 20000AC8 xt: 20000AD4 name: init 
+               wtag: 00005024 lfa: 20000A5C xt: 20000A6C name: voc-init 
+               wtag: 00005024 lfa: 20000A40 xt: 20000A4A name: ['] 
+               wtag: 00005024 lfa: 20000A1C xt: 20000A24 name: ' 
+               wtag: 00005024 lfa: 200009F0 xt: 20000A02 name: definitions 
+               wtag: 00005024 lfa: 200009DC xt: 200009E6 name: .. 
+               wtag: 00005024 lfa: 20000984 xt: 2000098E name: __ 
+               wtag: 00005024 lfa: 20000968 xt: 20000976 name: casted 
+               wtag: 00005024 lfa: 2000094C xt: 20000956 name: voc 
+               wtag: 00005024 lfa: 20000390 xt: 2000039C name: abort 
+
+context: forth forth 
+current: forth compiletoram
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ lfa: = Address: , xt: = Code:  in the original Mecrisp Listing
+[0;37;40m[0;37;40m
+
+[0;33;40m\ First we create a VOC and words to define unit and register identifiers
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  voc GPIO  GPIO definitions  hex[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : port: ( "name" base-addr -- ) ( GPIO ) casted constant ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : reg: ( "name" offset-addr -- ) <builds , does> @ or ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ then we define the required register identfiers as members of the GPIO VOC
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+  $3FC GPIO reg: DATA ( Ein- und Ausgaberegister )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $400 GPIO reg: DIR  ( Soll der Pin Eingang oder Ausgang sein ? )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $500 GPIO reg: DR2R ( 2 mA Treiber )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $504 GPIO reg: DR4R ( 4 mA )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $508 GPIO reg: DR8R ( 8 mA )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $50C GPIO reg: ODR  ( Open Drain )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $510 GPIO reg: PUR  ( Pullup Resistor )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $514 GPIO reg: PDR  ( Pulldown Resistor )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $518 GPIO reg: PORTA_SLR  ( Slew Rate )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $51C GPIO reg: PORTA_DEN  ( Digital Enable )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $420 GPIO reg: PORTA_AFSEL ( Analog function select )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $528 GPIO reg: PORTA_AMSEL ( Analog Mode Select )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ and finally we define the required unit identifers in the Forth context.
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  $40004000 GPIO port: PORTA[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $40005000 GPIO port: PORTB[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  $40006000 GPIO port: PORTC[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ Only the VOC and the unit identifiers are visible in the Forth context.
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  ??[0;37;40;1m 
+RAM: forth
+ctag: 20000B00 wtag: 00005025 lfa: 20000D48 xt: 20000D54 name: PORTC 
+ctag: 20000B00 wtag: 00005025 lfa: 20000D24 xt: 20000D30 name: PORTB 
+ctag: 20000B00 wtag: 00005025 lfa: 20000D04 xt: 20000D10 name: PORTA 
+ctag: 20000B00 wtag: 00005025 lfa: 20000B00 xt: 20000B0C name: GPIO 
+               wtag: 00005024 lfa: 20000AE0 xt: 20000AF0 name: vocs.txt 
+               wtag: 00005024 lfa: 20000AC8 xt: 20000AD4 name: init 
+               wtag: 00005024 lfa: 20000A5C xt: 20000A6C name: voc-init 
+               wtag: 00005024 lfa: 20000A40 xt: 20000A4A name: ['] 
+               wtag: 00005024 lfa: 20000A1C xt: 20000A24 name: ' 
+               wtag: 00005024 lfa: 200009F0 xt: 20000A02 name: definitions 
+               wtag: 00005024 lfa: 200009DC xt: 200009E6 name: .. 
+               wtag: 00005024 lfa: 20000984 xt: 2000098E name: __ 
+               wtag: 00005024 lfa: 20000968 xt: 20000976 name: casted 
+               wtag: 00005024 lfa: 2000094C xt: 20000956 name: voc 
+               wtag: 00005024 lfa: 20000390 xt: 2000039C name: abort 
+
+context: forth forth 
+current: forth compiletoram
+ ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ All unit identifiers share the same set of register identifiers
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  PORTA ?? .. drop[0;37;40;1m 
+RAM: GPIO
+               wtag: 20000B00 lfa: 20000CD8 xt: 20000CEA name: PORTA_AMSEL 
+               wtag: 20000B00 lfa: 20000CB0 xt: 20000CC2 name: PORTA_AFSEL 
+               wtag: 20000B00 lfa: 20000C8C xt: 20000C9C name: PORTA_DEN 
+               wtag: 20000B00 lfa: 20000C68 xt: 20000C78 name: PORTA_SLR 
+               wtag: 20000B00 lfa: 20000C48 xt: 20000C52 name: PDR 
+               wtag: 20000B00 lfa: 20000C28 xt: 20000C32 name: PUR 
+               wtag: 20000B00 lfa: 20000C08 xt: 20000C12 name: ODR 
+               wtag: 20000B00 lfa: 20000BE8 xt: 20000BF4 name: DR8R 
+               wtag: 20000B00 lfa: 20000BC8 xt: 20000BD4 name: DR4R 
+               wtag: 20000B00 lfa: 20000BA8 xt: 20000BB4 name: DR2R 
+               wtag: 20000B00 lfa: 20000B88 xt: 20000B92 name: DIR 
+               wtag: 20000B00 lfa: 20000B68 xt: 20000B74 name: DATA 
+               wtag: 20000B00 lfa: 20000B34 xt: 20000B40 name: reg: 
+               wtag: 20000B00 lfa: 20000B14 xt: 20000B20 name: port: 
+FLASH: GPIO
+ ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  PORTB ?? .. drop[0;37;40;1m 
+RAM: GPIO
+               wtag: 20000B00 lfa: 20000CD8 xt: 20000CEA name: PORTA_AMSEL 
+               wtag: 20000B00 lfa: 20000CB0 xt: 20000CC2 name: PORTA_AFSEL 
+               wtag: 20000B00 lfa: 20000C8C xt: 20000C9C name: PORTA_DEN 
+               wtag: 20000B00 lfa: 20000C68 xt: 20000C78 name: PORTA_SLR 
+               wtag: 20000B00 lfa: 20000C48 xt: 20000C52 name: PDR 
+               wtag: 20000B00 lfa: 20000C28 xt: 20000C32 name: PUR 
+               wtag: 20000B00 lfa: 20000C08 xt: 20000C12 name: ODR 
+               wtag: 20000B00 lfa: 20000BE8 xt: 20000BF4 name: DR8R 
+               wtag: 20000B00 lfa: 20000BC8 xt: 20000BD4 name: DR4R 
+               wtag: 20000B00 lfa: 20000BA8 xt: 20000BB4 name: DR2R 
+               wtag: 20000B00 lfa: 20000B88 xt: 20000B92 name: DIR 
+               wtag: 20000B00 lfa: 20000B68 xt: 20000B74 name: DATA 
+               wtag: 20000B00 lfa: 20000B34 xt: 20000B40 name: reg: 
+               wtag: 20000B00 lfa: 20000B14 xt: 20000B20 name: port: 
+FLASH: GPIO
+ ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  PORTC ?? .. drop[0;37;40;1m 
+RAM: GPIO
+               wtag: 20000B00 lfa: 20000CD8 xt: 20000CEA name: PORTA_AMSEL 
+               wtag: 20000B00 lfa: 20000CB0 xt: 20000CC2 name: PORTA_AFSEL 
+               wtag: 20000B00 lfa: 20000C8C xt: 20000C9C name: PORTA_DEN 
+               wtag: 20000B00 lfa: 20000C68 xt: 20000C78 name: PORTA_SLR 
+               wtag: 20000B00 lfa: 20000C48 xt: 20000C52 name: PDR 
+               wtag: 20000B00 lfa: 20000C28 xt: 20000C32 name: PUR 
+               wtag: 20000B00 lfa: 20000C08 xt: 20000C12 name: ODR 
+               wtag: 20000B00 lfa: 20000BE8 xt: 20000BF4 name: DR8R 
+               wtag: 20000B00 lfa: 20000BC8 xt: 20000BD4 name: DR4R 
+               wtag: 20000B00 lfa: 20000BA8 xt: 20000BB4 name: DR2R 
+               wtag: 20000B00 lfa: 20000B88 xt: 20000B92 name: DIR 
+               wtag: 20000B00 lfa: 20000B68 xt: 20000B74 name: DATA 
+               wtag: 20000B00 lfa: 20000B34 xt: 20000B40 name: reg: 
+               wtag: 20000B00 lfa: 20000B14 xt: 20000B20 name: port: 
+FLASH: GPIO
+ ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ and the combination of unit and register name returns the register identifier.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  PORTA DATA .[0;37;40;1m 400043FC  ok.
+[0;37;40m[0;37;40m  PORTB DATA .[0;37;40;1m 400053FC  ok.
+[0;37;40m[0;37;40m  PORTC DATA .[0;37;40;1m 400063FC  ok.
+[0;37;40m[0;37;40m
+  PORTA DIR .[0;37;40;1m 40004400  ok.
+[0;37;40m[0;37;40m  PORTB DIR .[0;37;40;1m 40005400  ok.
+[0;37;40m[0;37;40m  PORTC DIR .[0;37;40;1m 40006400  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ The GPIO implementation uses 644 Bytes.
+[0;37;40m[0;37;40m[0;33;40m\ Creating the same register identfiers as constants uses 1292 Bytes.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Done. Please also see VOC-HOWTO-Classes-x.txt
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ Last Revision: MM-170709  voc.txt --> vocs.txt (v0.6.2)
+[0;37;40m[0;37;40m
+[0;33;40mClosing: ./mcu/VOC-HOWTO-Registers.txt [0;37;40m[0;37;40m[0;33;40m ok [0;37;40m[0;37;40m
+[0;37;40;1m[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m  ok.
+[s [u\
+[0;37;40m[0;37;40mSIO : /dev/ttyACM0 closed hdl=-1 
+[0;33;40mConnection closed.[0;37;40m[0;37;40m

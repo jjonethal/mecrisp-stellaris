@@ -1,0 +1,403 @@
+[0;37;40m[0;37;40m[2J[0;0H[0;33;40;1me4thcom-0.6.1 : A Serial Terminal for Embedded Forth Systems[0;37;40m[0;37;40m
+Copyright (C) 2016 manfred.mahlow@forth-ev.de. This is free software under the
+conditions of the GNU General Public License with ABSOLUTELY NO WARRANTY.
+[0;33;40m* Loading Plugin for Mecrisp-Stellaris (mecrisp-st.efc)[0;37;40m[0;37;40m
+   Use the [0;37;40;1mTAB [0;37;40m[0;37;40mkey to cancel an upload process.
+[0;33;40m* Loading config file (.e4thcom-0.6.1)[0;37;40m[0;37;40m
+     editor command :  /usr/bin/pluma +
+
+SIO : /dev/ttyACM0 open  hdl=3 B115200 8N1 CLOCAL ONLCR full-duplex  
+      Type '\ [Enter]' to close the Terminal
+
+  ok.
+[s[u#ls[s [u[s [u[s [ur[s [u [s [uV[s [uO[s [uC[s [u-[s [uH[s [uO[s [uW[s [uT[s [uO[s [u-[s [uC[s [ul[s [ua[s [us[s [us[s [ue[s [us[s [u-[s [u2[s [u.[s [ut[s [ux[s [ut[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  Uploading: ./mcu/VOC-HOWTO-Classes-2.txt
+[0;37;40m[0;37;40m
+[0;33;40m\ VOC-HOWTO-Classes-2.txt                                             MM-170618
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\               HOWTO for Mecrisp-Stellaris for VOCs Version 0.6.2
+[0;37;40m[0;37;40m
+[0;33;40m\                Using VOCs based CLASSes and OBJECTs, Chapter 2
+[0;37;40m[0;37;40m
+[0;33;40m\                      Copyright (C) 2017 Manfred Mahlow
+[0;37;40m[0;37;40m
+[0;33;40m\        This is free software under the GNU General Public License v3.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Requires  Mecrisp-Stellaris 2.3.6-hook-find or 2.3.8-ra
+[0;37;40m[0;37;40m[0;33;40m\           e4thcom-0.6.1 -t mecrisp-st
+[0;37;40m[0;37;40m[0;33;40m\           VOC-HOWTO-Classes-1.txt
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ You can find a recording of this HOWTO in the file VOC-HOWTO-Classes-2.log.
+[0;37;40m[0;37;40m
+key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ In VOC-HOWTO-Classes-1 we saw how to create a simple class and how to use
+[0;37;40m[0;37;40m[0;33;40m\ inheritance to define a new class, based on an existing one.
+[0;37;40m[0;37;40m
+[0;33;40m\ Now we will see, how to create classes, using instance variables, defined in
+[0;37;40m[0;37;40m[0;33;40m\ other classes.
+[0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Some tools used:
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ??     Displays the top wordlist of the search order. In the context Forth
+[0;37;40m[0;37;40m[0;33;40m\         it ignors words that were defined before loading the VOC extension.
+[0;37;40m[0;37;40m[0;33;40m\         lfa: = Address: , xt: = Code:
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ..     Returns from a VOC/CLASS context to the Forth context.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Loading VOC-HOWTO-Classes-1.txt     ( Loading the classes from chapter 1. )
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;32;40;1m#require VOC-HOWTO-Classes-1.txt[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  ok [0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ Defining a new class using instance variables defined in another class:
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ We use the class INT that was defined by VOC-HOWTO-Clases-1.txt.
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+class point  point definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+ __ivar[0;37;40;1m  ok.
+[0;37;40m[0;37;40m   int ivar x[0;37;40;1m  ok.
+[0;37;40m[0;37;40m   int ivar y[0;37;40;1m  ok.
+[0;37;40m[0;37;40m __seal[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Lets take a look at the new class and its instance data size
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+  point ??[0;37;40;1m 
+RAM: point
+               wtag: 20000834 lfa: 20000888 xt: 20000892 name: u/i 
+ctag: 20000714 wtag: 20000835 lfa: 2000086C xt: 20000874 name: y 
+ctag: 20000714 wtag: 20000835 lfa: 2000084C xt: 20000854 name: x 
+FLASH: point
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+  u/i .[0;37;40;1m 8  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ and at the points parameters
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+  point x ??[0;37;40;1m 
+RAM: int
+               wtag: 20000714 lfa: 2000077C xt: 20000788 name: show 
+               wtag: 20000714 lfa: 2000075C xt: 20000766 name: set 
+               wtag: 20000714 lfa: 20000740 xt: 2000074A name: get 
+               wtag: 20000714 lfa: 20000728 xt: 20000732 name: u/i 
+FLASH: int
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+  u/i .[0;37;40;1m 4  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  point y ??[0;37;40;1m 
+RAM: int
+               wtag: 20000714 lfa: 2000077C xt: 20000788 name: show 
+               wtag: 20000714 lfa: 2000075C xt: 20000766 name: set 
+               wtag: 20000714 lfa: 20000740 xt: 2000074A name: get 
+               wtag: 20000714 lfa: 20000728 xt: 20000732 name: u/i 
+FLASH: int
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+  u/i .[0;37;40;1m 4  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ An instance/object of a class is created with the method OBJECT :
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ <class> object <name>
+[0;37;40m[0;37;40m
+  point object p1[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ The points memory is uninitialized, we have to initialize it explicitly:
+[0;37;40m[0;37;40m
+  #100 p1 x set  #200 p1 y set[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ To see that the initialisation was successful we use the show method (defined
+[0;37;40m[0;37;40m[0;33;40m\ in class int).
+[0;37;40m[0;37;40m
+  p1 x show[0;37;40;1m 100  ok.
+[0;37;40m[0;37;40m  p1 y show[0;37;40;1m 200  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ We can add more methods to the class POINT but we can not change a sealed
+[0;37;40m[0;37;40m[0;33;40m\ ivar definition.
+[0;37;40m[0;37;40m
+  point definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : get ( a-addr -- x y ) dup __ y get  swap __ x get swap ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : set ( x y a-addr -- ) dup >r __ y set r> __ x set ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : show ( a-addr -- )    dup __ x show __ y show ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Remember that __ is a generic class prefix, that gives access to the class
+[0;37;40m[0;37;40m[0;33;40m\ under definition. We could also have used the class name POINT here.
+[0;37;40m[0;37;40m
+
+
+
+[0;33;40m\ Now let's see the POINT class again, with the new methods in it
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  point ?? ..[0;37;40;1m 
+RAM: point
+               wtag: 20000834 lfa: 20000920 xt: 2000092C name: show 
+               wtag: 20000834 lfa: 200008F8 xt: 20000902 name: set 
+               wtag: 20000834 lfa: 200008C4 xt: 200008CE name: get 
+               wtag: 20000834 lfa: 20000888 xt: 20000892 name: u/i 
+ctag: 20000714 wtag: 20000835 lfa: 2000086C xt: 20000874 name: y 
+ctag: 20000714 wtag: 20000835 lfa: 2000084C xt: 20000854 name: x 
+FLASH: point
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Note: ?? stays in the POINT context.  .. switches back to the FORTH context.
+[0;37;40m[0;37;40m
+[0;33;40m\ Now lets try the new methods.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p1 show[0;37;40;1m 100 200  ok.
+[0;37;40m[0;37;40m
+  #1 #2 p1 set[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p1 show[0;37;40;1m 1 2  ok.
+[0;37;40m[0;37;40m
+  p1 get .s[0;37;40;1m Stack: [2 ] 4 1  TOS: 2  *>
+ ok.
+[0;37;40m[0;37;40m
+  2drop  .s[0;37;40;1m Stack: [0 ]  TOS: 4  *>
+ ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Now let's assume we need 3 coordinates to describe points. We can create a
+[0;37;40m[0;37;40m[0;33;40m\ new class 3DPOINT that inherits from class POINT
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+  point class 3dpoint  3dpoint definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ and then we have to extend its ivar definition
+[0;37;40m[0;37;40m
+  __ivar[0;37;40;1m  ok.
+[0;37;40m[0;37;40m    int ivar z[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  __seal[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ and we can also extend the GET , SET and SHOW methods
+[0;37;40m[0;37;40m
+  : get ( a-addr -- x y z ) dup __ get rot __ z get ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : set ( x y z a-addr -- ) dup >r __ z set  r> __ set ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : show ( a-addr -- ) dup __ show  __ z show ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Please notice: The phrase __ <method>  represets the inherited methods here.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Now let's see the class and its instance size
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  3dpoint ??[0;37;40;1m 
+RAM: 3dpoint
+               wtag: 20000950 lfa: 200009F0 xt: 200009FC name: show 
+               wtag: 20000950 lfa: 200009CC xt: 200009D6 name: set 
+               wtag: 20000950 lfa: 200009A0 xt: 200009AA name: get 
+               wtag: 20000950 lfa: 20000988 xt: 20000992 name: u/i 
+ctag: 20000714 wtag: 20000951 lfa: 2000096C xt: 20000974 name: z 
+FLASH: 3dpoint
+
+RAM: point
+               wtag: 20000834 lfa: 20000920 xt: 2000092C name: show 
+               wtag: 20000834 lfa: 200008F8 xt: 20000902 name: set 
+               wtag: 20000834 lfa: 200008C4 xt: 200008CE name: get 
+               wtag: 20000834 lfa: 20000888 xt: 20000892 name: u/i 
+ctag: 20000714 wtag: 20000835 lfa: 2000086C xt: 20000874 name: y 
+ctag: 20000714 wtag: 20000835 lfa: 2000084C xt: 20000854 name: x 
+FLASH: point
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+  u/i .[0;37;40;1m 12  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Creating an object of class 3DPOINT and using it
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  3dpoint object p2[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  10 20 30 p2 set[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p2 get .s   2drop drop[0;37;40;1m Stack: [3 ] 4 10 20  TOS: 30  *>
+ ok.
+[0;37;40m[0;37;40m
+  p2 show[0;37;40;1m 10 20 30  ok.
+[0;37;40m[0;37;40m
+  p2 x show[0;37;40;1m 10  ok.
+[0;37;40m[0;37;40m
+  p2 y show[0;37;40;1m 20  ok.
+[0;37;40m[0;37;40m
+  p2 z show[0;37;40;1m 30  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Please notice you can execute a command like   p2 z show  step by step to
+[0;37;40m[0;37;40m[0;33;40m\ see what goes on:
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p2 .s ??[0;37;40;1m Stack: [1 ] 4  TOS: 536873516  *>
+
+RAM: 3dpoint
+               wtag: 20000950 lfa: 200009F0 xt: 200009FC name: show 
+               wtag: 20000950 lfa: 200009CC xt: 200009D6 name: set 
+               wtag: 20000950 lfa: 200009A0 xt: 200009AA name: get 
+               wtag: 20000950 lfa: 20000988 xt: 20000992 name: u/i 
+ctag: 20000714 wtag: 20000951 lfa: 2000096C xt: 20000974 name: z 
+FLASH: 3dpoint
+
+RAM: point
+               wtag: 20000834 lfa: 20000920 xt: 2000092C name: show 
+               wtag: 20000834 lfa: 200008F8 xt: 20000902 name: set 
+               wtag: 20000834 lfa: 200008C4 xt: 200008CE name: get 
+               wtag: 20000834 lfa: 20000888 xt: 20000892 name: u/i 
+ctag: 20000714 wtag: 20000835 lfa: 2000086C xt: 20000874 name: y 
+ctag: 20000714 wtag: 20000835 lfa: 2000084C xt: 20000854 name: x 
+FLASH: point
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+  z .s ??[0;37;40;1m Stack: [1 ] 4  TOS: 536873524  *>
+
+RAM: int
+               wtag: 20000714 lfa: 2000077C xt: 20000788 name: show 
+               wtag: 20000714 lfa: 2000075C xt: 20000766 name: set 
+               wtag: 20000714 lfa: 20000740 xt: 2000074A name: get 
+               wtag: 20000714 lfa: 20000728 xt: 20000732 name: u/i 
+FLASH: int
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+  show  .s ??[0;37;40;1m 30 Stack: [0 ]  TOS: 4  *>
+
+RAM: forth
+ctag: 20000950 wtag: 00005025 lfa: 20000A18 xt: 20000A22 name: p2 
+ctag: 20000950 wtag: 00005025 lfa: 20000950 xt: 2000095E name: 3dpoint 
+ctag: 20000834 wtag: 00005025 lfa: 200008A4 xt: 200008AE name: p1 
+ctag: 20000834 wtag: 00005025 lfa: 20000834 xt: 20000840 name: point 
+               wtag: 00005024 lfa: 20000808 xt: 20000826 name: VOC-HOWTO-Classes-1.txt 
+ctag: 200007C0 wtag: 00005025 lfa: 200007C0 xt: 200007CC name: uint 
+ctag: 20000714 wtag: 00005025 lfa: 2000079C xt: 200007A6 name: i1 
+ctag: 20000714 wtag: 00005025 lfa: 20000714 xt: 2000071E name: int 
+               wtag: 00005024 lfa: 200006F4 xt: 20000706 name: classes.txt 
+               wtag: 00005024 lfa: 200006CC xt: 200006D8 name: class 
+               wtag: 00005024 lfa: 200005A4 xt: 200005AE name: __ 
+               wtag: 00005024 lfa: 20000568 xt: 20000576 name: __seal 
+               wtag: 00005024 lfa: 200004D8 xt: 200004E6 name: __ivar 
+               wtag: 00005024 lfa: 200003D8 xt: 200003EA name: struct.txt 
+               wtag: 00005024 lfa: 20000390 xt: 2000039E name: +field 
+
+context: forth forth 
+current: forth compiletoram
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Please scroll up, to see the targets response for each step.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Now you have seen the basics of VOCs based classes and objects. Try it, if
+[0;37;40m[0;37;40m[0;33;40m\ you think it's for you. Otherwise ignore it.
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Last Revision: MM-170708
+[0;37;40m[0;37;40m
+[0;33;40mClosing: ./mcu/VOC-HOWTO-Classes-2.txt [0;37;40m[0;37;40m[0;33;40m ok [0;37;40m[0;37;40m
+[0;37;40;1m[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m  ok.
+[s [u\
+[0;37;40m[0;37;40mSIO : /dev/ttyACM0 closed hdl=-1 
+[0;33;40mConnection closed.[0;37;40m[0;37;40m

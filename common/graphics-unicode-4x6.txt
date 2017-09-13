@@ -1,0 +1,412 @@
+
+\ -------------------------------------------------------------
+\  Interface to real graphics hardware necessary.
+\  This is just for ASCII art in terminal !
+\ -------------------------------------------------------------
+
+  : u.base10 ( u -- ) base @ decimal swap 0 <# #s #> type base ! ;
+  : ESC[ ( -- ) 27 emit 91 emit ;
+  : at-xy ( column row -- ) 1+ swap 1+ swap ESC[ u.base10 ." ;" u.base10 ." H" ;
+  : page ESC[ ." 2J" 0 0 at-xy ;
+
+: putpixel ( x y -- )  at-xy [char] * emit ;
+
+\ -------------------------------------------------------------
+\  Bresenham line
+\ -------------------------------------------------------------
+
+0 variable line-x1   0 variable line-y1
+0 variable line-sx   0 variable line-sy
+0 variable line-dx   0 variable line-dy
+0 variable line-err
+
+: line ( x0 y0 x1 y1 -- )
+
+  line-y1 ! line-x1 !
+
+  over line-x1 @ -   dup 0< if 1 else -1 then line-sx !   abs        line-dx !
+  dup  line-y1 @ -   dup 0< if 1 else -1 then line-sy !   abs negate line-dy !  
+  line-dx @ line-dy @ + line-err !
+  
+  begin
+    2dup putpixel
+    2dup line-x1 @ line-y1 @ d<>
+  while
+    line-err @ 2* >r
+    r@ line-dy @ > if line-dy @ line-err +! swap line-sx @ + swap then
+    r> line-dx @ < if line-dx @ line-err +!      line-sy @ +      then
+  repeat
+  2drop
+;
+
+\ -------------------------------------------------------------
+\  Bresenham ellipse
+\ -------------------------------------------------------------
+
+0 variable ellipse-xm   0 variable ellipse-ym
+0 variable ellipse-dx   0 variable ellipse-dy
+0 variable ellipse-a    0 variable ellipse-b
+0 variable ellipse-a^2  0 variable ellipse-b^2
+0 variable ellipse-err
+
+: ellipse-putpixel ( y x -- ) ellipse-xm @ + swap ellipse-ym @ + putpixel ;
+
+: ellipse-step ( -- )
+    ellipse-dy @        ellipse-dx @        ellipse-putpixel
+    ellipse-dy @ negate ellipse-dx @        ellipse-putpixel
+    ellipse-dy @ negate ellipse-dx @ negate ellipse-putpixel
+    ellipse-dy @        ellipse-dx @ negate ellipse-putpixel
+  
+    ellipse-err @ 2* >r
+    r@  ellipse-dx @ 2* 1+ ellipse-b^2 @ *        < if  1 ellipse-dx +! ellipse-dx @ 2* 1+ ellipse-b^2 @ *        ellipse-err +! then
+    r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate > if -1 ellipse-dy +! ellipse-dy @ 2* 1+ ellipse-a^2 @ * negate ellipse-err +! then
+;
+
+
+: ellipse ( xm ym a b -- )
+
+  0 ellipse-dx ! dup ellipse-dy !
+
+  dup ellipse-b ! dup * ellipse-b^2 !
+  dup ellipse-a ! dup * ellipse-a^2 !
+  ellipse-ym ! ellipse-xm !
+  
+  ellipse-b^2 @ ellipse-b @ 2* 1- ellipse-a^2 @ * - ellipse-err !
+  
+  begin
+    ellipse-step       
+    ellipse-dy @ 0<
+  until
+  
+  ellipse-dx @
+  begin
+    1+
+    dup ellipse-a @ <
+  while
+    0 over        ellipse-putpixel
+    0 over negate ellipse-putpixel
+  repeat
+  drop
+;
+
+: circle ( xm ym r -- ) dup ellipse ;
+
+\ -------------------------------------------------------------
+\  Artwork for 4x6 Bitmap font, taken from "Tom Thumb"
+\  https://robey.lag.net/2010/01/23/tiny-monospace-font.html
+\ -------------------------------------------------------------
+
+decimal
+create font
+
+\ Unicode point, Bitmap Data
+
+32 h,  $00000000 ,   \  
+33 h,  $44404000 ,   \ !
+34 h,  $AA000000 ,   \ "
+35 h,  $AEAEA000 ,   \ #
+36 h,  $6C6C4000 ,   \ $
+37 h,  $82482000 ,   \ %
+38 h,  $CCEA6000 ,   \ &
+39 h,  $44000000 ,   \ '
+40 h,  $24442000 ,   \ (
+41 h,  $84448000 ,   \ )
+42 h,  $A4A00000 ,   \ *
+43 h,  $04E40000 ,   \ +
+44 h,  $00048000 ,   \ ,
+45 h,  $00E00000 ,   \ -
+46 h,  $00004000 ,   \ .
+47 h,  $22488000 ,   \ /
+48 h,  $6AAAC000 ,   \ 0
+49 h,  $4C444000 ,   \ 1
+50 h,  $C248E000 ,   \ 2
+51 h,  $C242C000 ,   \ 3
+52 h,  $AAE22000 ,   \ 4
+53 h,  $E8C2C000 ,   \ 5
+54 h,  $68EAE000 ,   \ 6
+55 h,  $E2488000 ,   \ 7
+56 h,  $EAEAE000 ,   \ 8
+57 h,  $EAE2C000 ,   \ 9
+58 h,  $04040000 ,   \ :
+59 h,  $04048000 ,   \ ;
+60 h,  $24842000 ,   \ <
+61 h,  $0E0E0000 ,   \ =
+62 h,  $84248000 ,   \ >
+63 h,  $E2404000 ,   \ ?
+64 h,  $4AE86000 ,   \ @
+65 h,  $4AEAA000 ,   \ A
+66 h,  $CACAC000 ,   \ B
+67 h,  $68886000 ,   \ C
+68 h,  $CAAAC000 ,   \ D
+69 h,  $E8E8E000 ,   \ E
+70 h,  $E8E88000 ,   \ F
+71 h,  $68EA6000 ,   \ G
+72 h,  $AAEAA000 ,   \ H
+73 h,  $E444E000 ,   \ I
+74 h,  $222A4000 ,   \ J
+75 h,  $AACAA000 ,   \ K
+76 h,  $8888E000 ,   \ L
+77 h,  $AEEAA000 ,   \ M
+78 h,  $AEEEA000 ,   \ N
+79 h,  $4AAA4000 ,   \ O
+80 h,  $CAC88000 ,   \ P
+81 h,  $4AAE6000 ,   \ Q
+82 h,  $CAECA000 ,   \ R
+83 h,  $6842C000 ,   \ S
+84 h,  $E4444000 ,   \ T
+85 h,  $AAAA6000 ,   \ U
+86 h,  $AAA44000 ,   \ V
+87 h,  $AAEEA000 ,   \ W
+88 h,  $AA4AA000 ,   \ X
+89 h,  $AA444000 ,   \ Y
+90 h,  $E248E000 ,   \ Z
+91 h,  $E888E000 ,   \ [
+92 h,  $08420000 ,   \ \
+93 h,  $E222E000 ,   \ ]
+94 h,  $4A000000 ,   \ ^
+95 h,  $0000E000 ,   \ _
+96 h,  $84000000 ,   \ `
+97 h,  $0C6AE000 ,   \ a
+98 h,  $8CAAC000 ,   \ b
+99 h,  $06886000 ,   \ c
+100 h,  $26AA6000 ,   \ d
+101 h,  $06AC6000 ,   \ e
+102 h,  $24E44000 ,   \ f
+103 h,  $06AE2400 ,   \ g
+104 h,  $8CAAA000 ,   \ h
+105 h,  $40444000 ,   \ i
+106 h,  $2022A400 ,   \ j
+107 h,  $8ACCA000 ,   \ k
+108 h,  $C444E000 ,   \ l
+109 h,  $0EEEA000 ,   \ m
+110 h,  $0CAAA000 ,   \ n
+111 h,  $04AA4000 ,   \ o
+112 h,  $0CAAC800 ,   \ p
+113 h,  $06AA6200 ,   \ q
+114 h,  $06888000 ,   \ r
+115 h,  $06C6C000 ,   \ s
+116 h,  $4E446000 ,   \ t
+117 h,  $0AAA6000 ,   \ u
+118 h,  $0AAE4000 ,   \ v
+119 h,  $0AEEE000 ,   \ w
+120 h,  $0A44A000 ,   \ x
+121 h,  $0AA62400 ,   \ y
+122 h,  $0E6CE000 ,   \ z
+123 h,  $64846000 ,   \ {
+124 h,  $44044000 ,   \ |
+125 h,  $C424C000 ,   \ }
+126 h,  $6C000000 ,   \ ~
+161 h,  $40444000 ,   \ ¡
+162 h,  $4E8E4000 ,   \ ¢
+163 h,  $64E4E000 ,   \ £
+164 h,  $A4E4A000 ,   \ €
+165 h,  $AA4E4000 ,   \ ¥
+166 h,  $44044000 ,   \ Š
+167 h,  $64A4C000 ,   \ §
+168 h,  $A0000000 ,   \ š
+169 h,  $68600000 ,   \ ©
+170 h,  $6AE0E000 ,   \ ª
+171 h,  $48400000 ,   \ «
+172 h,  $0E200000 ,   \ ¬
+173 h,  $00C00000 ,   \ ­
+174 h,  $CCA00000 ,   \ ®
+175 h,  $E0000000 ,   \ ¯
+176 h,  $4A400000 ,   \ °
+177 h,  $4E40E000 ,   \ ±
+178 h,  $C4600000 ,   \ ²
+179 h,  $E6E00000 ,   \ ³
+180 h,  $24000000 ,   \ Ž
+181 h,  $AAAC8000 ,   \ µ
+182 h,  $6A666000 ,   \ ¶
+183 h,  $0EEE0000 ,   \ ·
+184 h,  $0042C000 ,   \ ž
+185 h,  $44400000 ,   \ ¹
+186 h,  $4A40E000 ,   \ º
+187 h,  $42400000 ,   \ »
+188 h,  $88062000 ,   \ Œ
+189 h,  $880C6000 ,   \ œ
+190 h,  $CC062000 ,   \ Ÿ
+191 h,  $4048E000 ,   \ ¿
+192 h,  $424EA000 ,   \ À
+193 h,  $484EA000 ,   \ Á
+194 h,  $E04EA000 ,   \ Â
+195 h,  $6C4EA000 ,   \ Ã
+196 h,  $A4AEA000 ,   \ Ä
+197 h,  $CCAEA000 ,   \ Å
+198 h,  $6CECE000 ,   \ Æ
+199 h,  $68862400 ,   \ Ç
+200 h,  $42ECE000 ,   \ È
+201 h,  $48ECE000 ,   \ É
+202 h,  $E0ECE000 ,   \ Ê
+203 h,  $A0ECE000 ,   \ Ë
+204 h,  $42E4E000 ,   \ Ì
+205 h,  $48E4E000 ,   \ Í
+206 h,  $E0E4E000 ,   \ Î
+207 h,  $A0E4E000 ,   \ Ï
+208 h,  $CAEAC000 ,   \ Ð
+209 h,  $C6AEA000 ,   \ Ñ
+210 h,  $42EAE000 ,   \ Ò
+211 h,  $48EAE000 ,   \ Ó
+212 h,  $E0EAE000 ,   \ Ô
+213 h,  $C6EAE000 ,   \ Õ
+214 h,  $A0EAE000 ,   \ Ö
+215 h,  $0A4A0000 ,   \ ×
+216 h,  $6AEAC000 ,   \ Ø
+217 h,  $84AAE000 ,   \ Ù
+218 h,  $24AAE000 ,   \ Ú
+219 h,  $E0AAE000 ,   \ Û
+220 h,  $A0AAE000 ,   \ Ü
+221 h,  $24AE4000 ,   \ Ý
+222 h,  $8EAE8000 ,   \ Þ
+223 h,  $6ACAC800 ,   \ ß
+224 h,  $426AE000 ,   \ à
+225 h,  $486AE000 ,   \ á
+226 h,  $E06AE000 ,   \ â
+227 h,  $6C6AE000 ,   \ ã
+228 h,  $A06AE000 ,   \ ä
+229 h,  $666AE000 ,   \ å
+230 h,  $06EEC000 ,   \ æ
+231 h,  $06862400 ,   \ ç
+232 h,  $426E6000 ,   \ è
+233 h,  $486E6000 ,   \ é
+234 h,  $E06E6000 ,   \ ê
+235 h,  $A06E6000 ,   \ ë
+236 h,  $42444000 ,   \ ì
+237 h,  $48444000 ,   \ í
+238 h,  $E0444000 ,   \ î
+239 h,  $A0444000 ,   \ ï
+240 h,  $6C6A6000 ,   \ ð
+241 h,  $C6CAA000 ,   \ ñ
+242 h,  $424A4000 ,   \ ò
+243 h,  $484A4000 ,   \ ó
+244 h,  $E04A4000 ,   \ ô
+245 h,  $C64A4000 ,   \ õ
+246 h,  $A04A4000 ,   \ ö
+247 h,  $40E04000 ,   \ ÷
+248 h,  $06EAC000 ,   \ ø
+249 h,  $84AA6000 ,   \ ù
+250 h,  $24AA6000 ,   \ ú
+251 h,  $E0AA6000 ,   \ û
+252 h,  $A0AA6000 ,   \ ü
+253 h,  $24A62400 ,   \ ý
+254 h,  $08CAC800 ,   \ þ
+255 h,  $A0A62400 ,   \ ÿ
+285 h,  $00000000 , 
+338 h,  $6CEC6000 , 
+339 h,  $06ECE000 , 
+352 h,  $A6C6C000 , 
+353 h,  $A6C6C000 , 
+376 h,  $A0A44000 , 
+381 h,  $AE6CE000 , 
+382 h,  $AE6CE000 , 
+3748 h,  $00000000 , 
+5024 h,  $00000000 , 
+8226 h,  $00400000 , 
+8230 h,  $0000A000 , 
+8364 h,  $6EEC6000 , 
+65533 h,  $EAAAE000 , 
+
+0000 h,  $EAAAE000 ,  \ End of font marker, replacement glyph.
+
+align decimal
+
+
+: unicode>bitmap ( x -- c-addr ) \ Translates Unicode character to address of 8x8 bitmap.
+
+  font ( x addr )
+  begin
+    2dup h@ = if nip 2 + exit then \ Character found, skip character number, give back bitmap data
+  dup h@ while \ As long as there are more characters left in the glyph collection...
+    6 + \ Not this one, skip it and its bitmap
+  repeat
+
+  nip 2 + \ Character not found within available collection of glyphs. Display replacement.
+
+1-foldable ;
+
+\ -------------------------------------------------------------
+\  Write an Unicode character with 4x6 bitmap font
+\ -------------------------------------------------------------
+
+0 variable font-x   0 variable font-y
+
+: drawbitpattern ( x -- )
+  4 0 do dup 0< if font-x @ font-y @ putpixel then shl 1 font-x +! loop
+  -4 font-x +!
+;
+
+: drawcharacterbitmap ( c-addr -- )
+  dup h@ swap 2+ h@ 16 lshift or   \ Fetch 32 bits on an 2-aligned location
+    6 0 do drawbitpattern 1 font-y +! loop
+  drop
+  -6 font-y +! 4 font-x +!
+;
+
+: drawunicode ( x -- ) unicode>bitmap drawcharacterbitmap ;
+
+\ -------------------------------------------------------------
+\  Unicode UTF-8 encoding decoder
+\ -------------------------------------------------------------
+
+0 variable utf8collection
+0 variable utf8continuation
+
+: utf8-character-length ( c -- c u )
+  dup %11000000 and %11000000 = if dup 24 lshift not clz else 1 then ;
+
+: drawcharacter ( c -- ) \ Handles a stream of UTF-8 bytes and translates this into Unicode letters.
+
+  utf8continuation @
+  if   \ Continue to receive an extended character into buffer
+
+    %00111111 and utf8collection @ 6 lshift or utf8collection !  \ Six more bits
+    -1 utf8continuation +!                                       \ One less continuation byte to expect
+    utf8continuation @ 0= if utf8collection @ drawunicode then   \ Draw character if complete encoding was buffered.    
+
+  else \ Begin of a new character
+
+    utf8-character-length 1- ?dup
+
+    if \ Start of a new character or a sequence
+      dup utf8continuation !
+      25 + tuck lshift swap rshift \ Remove the length encoding by shifting it out of the register temporarily
+      utf8collection !
+    else \ One byte characters are classic 7 bit ASCII and can be drawn immediately
+      drawunicode
+    then
+
+  then
+;
+
+\ -------------------------------------------------------------
+\  Write a string and split into individual characters
+\ -------------------------------------------------------------
+
+: get-first-char ( addr len -- addr   len c ) over c@ ;
+: cut-first-char ( addr len -- addr+1 len-1 ) 1- swap 1+ swap ;
+
+: drawstring ( addr u x y -- )
+  font-y ! font-x !
+
+  begin
+    dup 0<>
+  while
+    get-first-char
+    drawcharacter
+    cut-first-char
+  repeat
+  2drop
+;
+
+\ -------------------------------------------------------------
+\  A small demo
+\ -------------------------------------------------------------
+
+: demo ( -- )
+  page
+  50 14 32 10 ellipse
+  50 14 34 12 ellipse
+  s" Mecrisp" 22 10 drawstring
+  2 4 12 24 line
+  4 4 14 24 line
+;

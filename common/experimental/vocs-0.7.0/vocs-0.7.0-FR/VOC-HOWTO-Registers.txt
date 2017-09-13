@@ -1,0 +1,149 @@
+
+\ VOC-HOWTO-Registers                                                  MM-170618
+\ ------------------------------------------------------------------------------
+\              HOWTO for Mecrisp-Stellaris for VOC Version 0.6.2-FR
+
+\     A short demo to show how to use VOCs to define register identifiers.
+
+\                  Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+
+  key drop
+
+
+\ Modern MCUs have lots of peripheral units to be controlled with many register
+\ identifiers. In Forth this identifiers are often implemented as constants, 
+\ cluttering the dictionary.
+
+\ With good hardware designs, the register identifiers should be a combination
+\ of a unit specific base addres and a register specific offset address. Then
+\ they can be implemented as such, significantly reducing the number of 
+\ required words.
+
+\ But earlier or later name conflict may arise when different units use the 
+\ same register name for a different offset address.
+
+\ Using VOCs to implement register identifiers can avoid such conflicts and can
+\ significantly reduce the number of identifiers to be implemented.
+
+
+  key drop
+
+  compiletoram
+
+\ Loading vocs.txt    ** Please first read the preamble in that file. **
+\ -----------------------------------------------------------------------------
+  key drop
+
+\ #require das.txt
+
+#require vocs.txt
+
+  key drop
+
+
+\ Some tools used:
+\ -----------------------------------------------------------------------------
+\
+\  ??     Displays the top wordlist of the search order. In the context Forth
+\         the core words are ignored. To also see the core words use ???.
+\
+\  ..     Returns from a VOC context to the Forth context.
+\
+\ -----------------------------------------------------------------------------
+  key drop
+
+  ??
+
+\ lfa: = Address: , xt: = Code:  in the original Mecrisp Listing
+
+ 
+\ First we create a VOC and words to define unit and register identifiers
+\ -----------------------------------------------------------------------------
+  key drop
+
+
+  forth definitions
+
+  voc GPIO  GPIO definitions  hex
+
+  : port: ( "name" base-addr -- ) ( GPIO ) casted constant ;
+
+  : reg: ( "name" offset-addr -- ) <builds , does> @ or ;
+
+
+\ then we define the required register identfiers as members of the GPIO VOC
+\ -----------------------------------------------------------------------------
+  key drop
+
+
+  $3FC GPIO reg: DATA ( Ein- und Ausgaberegister )  
+  $400 GPIO reg: DIR  ( Soll der Pin Eingang oder Ausgang sein ? )
+  $500 GPIO reg: DR2R ( 2 mA Treiber )
+  $504 GPIO reg: DR4R ( 4 mA )
+  $508 GPIO reg: DR8R ( 8 mA )
+  $50C GPIO reg: ODR  ( Open Drain )
+  $510 GPIO reg: PUR  ( Pullup Resistor )
+  $514 GPIO reg: PDR  ( Pulldown Resistor )
+  $518 GPIO reg: PORTA_SLR  ( Slew Rate )
+  $51C GPIO reg: PORTA_DEN  ( Digital Enable )
+  $420 GPIO reg: PORTA_AFSEL ( Analog function select )
+  $528 GPIO reg: PORTA_AMSEL ( Analog Mode Select )
+
+\ and finally we define the required unit identifers in the Forth context.
+\ -----------------------------------------------------------------------------
+  key drop
+
+
+  forth definitions
+
+  $40004000 GPIO port: PORTA
+  $40005000 GPIO port: PORTB
+  $40006000 GPIO port: PORTC
+
+
+
+\ Only the VOC and the unit identifiers are visible in the Forth context.
+\ -----------------------------------------------------------------------------
+  key drop
+
+  ??
+
+
+\ All unit identifiers share the same set of register identifiers
+\ -----------------------------------------------------------------------------
+  key drop
+
+  PORTA ?? .. drop
+
+  key drop
+
+  PORTB ?? .. drop
+
+  key drop
+
+  PORTC ?? .. drop
+
+  key drop 
+
+\ and the combination of unit and register name returns the register identifier.
+\ ------------------------------------------------------------------------------
+  key drop
+
+  PORTA DATA .
+  PORTB DATA .
+  PORTC DATA .
+
+  PORTA DIR .
+  PORTB DIR .
+  PORTC DIR .
+
+\ The GPIO implementation uses 644 Bytes.
+\ Creating the same register identfiers as constants uses 1292 Bytes.
+\ ------------------------------------------------------------------------------
+\ Done. Please also see VOC-HOWTO-Classes-x.txt
+\
+\ Last Revision: MM-170709  voc.txt --> vocs.txt (v0.6.2)
+

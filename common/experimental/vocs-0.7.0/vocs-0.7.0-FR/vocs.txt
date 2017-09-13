@@ -1,0 +1,338 @@
+\ vocs.txt         Source Code Library for Mecrisp-Stellaris           MM-170628
+\ ------------------------------------------------------------------------------
+\              Vocabulary Prefix ( VOC ) Extension Version 0.7.0-FR
+
+\                     Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\ Vocabulary prefixes ( VOCs ) help to structure the dictionary, make it more 
+\ readable and can reduce the code size because of shorter word names.
+\
+\ Like vocabularies VOCs are context switching words. While a vocabulary changes
+\ the search order permanently, a VOC changes it only temporarily until the next
+\ word from the input stream is interpreted. VOCs are immediate NOOP words.
+\
+\ Vocabularies and VOCs are words for explicit context switching.
+\
+\ This extension also supports implicit VOC context switching for VOCs ( see 
+\ the word CASTED ) and also it supports (single) inheritanc for VOCs.
+
+\ Implicit Context Switching:
+
+\ Implicit context switching means that a "normal" Forth word is tagged with
+\ the wordlist identfier (wid) of a VOC. When Forths outer interpreter FINDs
+\ such a word, it is executed or compiled as normal (depending on STATE) and
+\ the VOCs search order is set as the new search context. The next word from 
+\ the imput stream is then found in this context and afterwards the search
+\ context is reset to the "normal" Forth search order.
+
+\ Inheritance:
+
+\ Inheritance means that a new VOC can inherit from (can extend) an existing
+\ one. The search order of the new VOC is then the VOCs wordlist plus the 
+\ inherited VOCs search order.
+
+\ So VOCs can be used to create libraries, register identifiers, data types
+\ and to define classes for objects with early binding methods and (single)
+\ inheritance.
+
+\ Give it a try and you will find that VOCs are an easy to use and powerful
+\ tool to write well factored code and code modules.
+
+\ Glossary:
+
+\ voc ( "name" -- )  Create a vocabulary prefix that only inherits the wordlist
+\                    voc-root.
+
+\ <voc> voc ( "name" -- )  Create a vocabulary prefix that extends (inherits 
+\                          from) the given VOC.
+
+\ <voc> ?? ( -- )   Show all words of the actual VOC search order and stay in
+\                   that VOC context.
+
+\ <voc> ??? ( -- )  Same as ?? but also shows all words of voc-root.
+
+\ .. ( -- )  Switch back from the actual VOC search order to the Forth search
+\            order.
+
+\ <voc> .s ( -- )  Print the data stack and stay in the actual VOC context.
+
+\ <voc> definitions ( -- )  Make <voc> the current compilation context.
+
+\ <voc> casted ( -- )  Make the next created word a context switching one, i.e. 
+\                      #123 int casted variable int1
+
+\ __ ( -- )  Make the current VOC compilation context the actual search context.
+
+\ init ( -- )  Initialize the VOC extension.
+
+
+\ For further information please see the enclosed VOC-HOWTOs.
+
+\ ------------------------------------------------------------------------------
+
+\ This version can be compiled in RAM or FLASH.
+
+#require wordlists.txt
+#require abort
+
+  inside definitions hex
+
+\ The root wordlist for voc search orders.
+  wordlist constant voc-root ( -- wid )
+
+\ VOC context pointer for the compiletoflash mode.
+  voc-root variable c2f-voc-context
+
+\ VOC context pointer for the compiletoram mode.
+  voc-root variable c2r-voc-context
+
+: voc-context ( -- a-addr )
+  compiletoram? if c2r-voc-context else c2f-voc-context then ;
+
+0 variable _vcm_        \ 1/2 in voc/class compile mode, 0 otherwise
+
+  voc-root set-current
+
+: definitions ( -- ) voc-context @ set-current 1 _vcm_ ! ;
+
+  inside definitions
+
+\ Make the next FIND ignore the tags (the context switching request) of the 
+\ word found.
+: nocsr ( -- ) -1 _nocsr_ ! ;
+
+
+\ MM-170625
+\ Save the context switching request of the word with address lfa.
+: _!csr_ ( lfa -- )
+    0 _csr_ !  _nocsr_ @ if drop 0 _nocsr_ ! exit then ( lfa ) dup
+    if ( lfa ) \ found
+      \ *** for context switching debugging only
+      \  ."  found: " dup .header 
+      ( lfa ) dup forth-wordlist >   \ tagged word ?
+      if ( lfa ) 
+        dup lfa>wtag ( lfa wtag ) 3 and ( lfa wflags ) 1 =   \ word with ctag ?
+        if dup lfa>ctag 1 or  ( csr ) _csr_ ! then ( lfa )
+      then ( lfa )
+    then ( lfa )
+    drop 
+;
+
+\ MM-170625
+\ Process the last saved context switching request. 
+: _?csr_ ( -- )
+    \ *** for context switching debugging only
+    \  cr _csr_ @ ." _csr_=" .
+    _csr_ @ dup  \ context switching requested ?
+    if ( csr )
+      -4 and ( wid ) \ of the new context
+      dup voc-root <>
+      if ( wid )
+        \ *** for context switching debugging only
+        \  dup
+        voc-context !
+        \ *** for context switching debugging only
+        \  dictionarynext ." voc:" if drop s"  ?" else lfa>nfa count then type space 
+      else ( wid )
+        drop
+      then 
+      voc-context _sop_ !  0 _csr_ !
+    else ( 0 )
+      drop context _sop_ !
+    then
+;
+
+\ Given a VOCs wid return the wid of the parent voc or zero if no voc was
+\ inherited.
+: vocnext ( wid1 -- wid2|0 )
+  [ 3 cells literal, ] - @
+;
+
+\ Search the VOCs search order (voc-context) at a-addr for a match with the
+\ string c-addr,len. If found return the address (lfa) of the dictionary entry,
+\ otherwise return 0.
+: search-in-vocs ( c-addr len a-addr -- lfa|0 )
+  @
+  begin
+  \ dup .
+   >r 2dup r@ search-in-wordlist dup if nip nip r> drop exit then drop
+   r> vocnext dup 0=
+  until
+  drop voc-root search-in-wordlist
+;
+
+\ Search the dictionary for a match with the given string. If found return the
+\ lfa of the dictionary entry, otherwise return 0.
+\ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+: search-in-dictionary ( c-addr len -- lfa|0 )
+  _sop_ @ dup context =
+  if
+    search-in-order
+  else
+    search-in-vocs
+  then
+;
+
+\ Search the dictionary for a match with the given string. If found return the 
+\ xt and the flags of the dictionary entry, otherwise return 0 and flags.
+\ Note: Based on mecrisps case insensitive non-ANS compare.
+: vocs-find ( c-addr len -- xt|0 flags )
+  _indic_ @ 
+  if
+    _?csr_
+    \  ." voc-find "              \ *** for debugging only
+    search-in-dictionary ( lfa )
+    dup _!csr_
+    \  ."  csr=" _csr_ @ . cr     \ *** for debugging only
+  else ( lfa )
+    -1 _indic_ ! current @ search-in-wordlist
+  then
+  lfa>xt,flags
+;
+
+\ Create a VOC that extends the VOC wid (inherits from VOC wid).
+: voc-extend ( "name" wid -- )
+  \ compile the VOCs itag ( the wid of the inherited VOC )
+    align ,
+  \ compile the VOCs ctag ( the wid of the new VOC )
+    wordlist cell+ ,
+  \ set bit 0 of the wflags in the VOCs wtag (make it a context switching one)
+  1 wflags !
+  \ create the VOC as an immediate NOOP word
+\  : ( "name" -- ) 10 setflags ( postponed immediate ) postpone ;
+   : ( "name" -- ) postpone immediate postpone ;  \ MM-170725  wg RA core
+;
+
+: vocs-quit ( -- )
+  0 _csr_ !  context _sop_ !  0 _nocsr_ !
+  \ ." reset "  \ only for debugging
+  [ hook-quit @ literal, ] execute
+;
+
+
+\ Some tools needed in VOC contexts ( voc-root definitions )
+  voc-root set-current
+
+\ Switch back from a VOC search order (voc-context) to the FORTH search order.
+: .. ( -- )
+  context _sop_ ! immediate
+;
+
+\ Create a VOC that extends (inherits from) the actual VOC context.
+ : voc ( "name" -- )
+ voc-context @ voc-extend 
+;
+
+\ Show all wordlists of a the actual VOCs search order but not voc-root.
+\ Stay in that search order.
+  voc-root , 1 wflags !
+: ?? ( -- ) 
+  voc-context @ ( wid )
+  begin
+    dup show-wordlist cr
+    vocnext dup 0=
+  until
+  drop
+;
+
+\ Show all wordlists of a the actual VOCs search order incl. voc-root.
+\ Stay in that search order.
+  voc-root , 1 wflags !
+: ??? ( -- )
+  [ voc-root set-context ] ?? ..
+  [ inside ] voc-root ( voc-show-wordlist ) show-wordlist
+;
+
+\ Print the data stack. Stay in the actual VOC context.
+  voc-root , 1 wflags !
+: .s ( -- )
+  .s
+;
+
+\ Make the next created word a context switching one (assign a ctag).
+\ Usage: <voc> casted <defining word> ...   i.e.:  123 int casted variable i1
+: casted ( -- )
+  _sop_ @ voc-context <> if ." ? VOC or Class context missing" abort then  \ MM-170714
+  \ compile the actual VOCs wid as the next created words ctag
+    align voc-context @ ,
+  \ set bit 0 of the wflags in the next created words wtag
+    1 wflags !
+; 
+
+\ Return the execution token of the VOC member "name" on the stack.
+  voc-root , 1 wflags !
+: ' ( "name" -- xt )
+  nocsr '
+;
+
+\ Compile the execution token of the VOC member "name" as literal.
+  voc-root , 1 wflags !
+: ['] ( "name" -- )
+  ' literal, immediate 
+;
+
+forth definitions inside
+
+\ Create a VOC that only inherits voc-root.  
+: voc ( "name" -- )
+  0 voc-extend
+;
+
+
+\ MM-170704
+\ Make the next created word a context switching one (assign a ctag).
+\ Usage in definitions outsite a VOC context:   casted <defining word> 
+\ e.g. : port: ( "name" -- base-addr ) casted constant ;
+\        addr <voc> port: name
+: casted ( -- ) [ voc-root set-context ] casted [ inside ] ;
+
+
+\ MM-170712
+\ Make the current voc compilation context the actual search context.
+: __ ( -- )
+  _vcm_ @ 0= if  ." voc compile mode missing" abort then
+  get-current _csr_ ! immediate
+;
+
+: .. ( -- ) immediate ;
+
+: definitions ( -- )  definitions 0 _vcm_ ! ;
+
+\ Tick must inform FIND not to record a context switching request if the found
+\ word is a context switching one.
+: ' ( "name" -- xt )
+  nocsr '
+;
+
+: ['] ( "name" -- ) ' literal, immediate ;
+
+\ defered ??????
+
+
+\ Initialize Mecrisp with wordlist and voc extension.
+: voc-init ( -- )
+  init  ['] vocs-quit hook-quit !  ['] vocs-find hook-find !
+  ." vocs.txt 0.7.0-FR" cr
+;
+
+: init ( -- ) voc-init ;
+
+  init
+
+  forth definitions
+
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-170729 c2x-context changed from nvariable to variable
+\                MM-170725 voc-extend changed, failed with RA 2.3.x
+\                          new version 0.6.3-FR
+\                MM-170714 casted added to Forth
+\                MM-170713 voc-show-wordlist removed , ?? and ??? redefined
+\                MM-170712 _vcm_ and __ added, definitions rdefined
+\                MM-170710 show-voc-wordlist , vocnext , voc-extend redefined
+\                MM-170705 wordlist.txt --> wordlists.txt
+\                MM-170704 Code revision, comments added
+\                MM-170702 voc.txt-0.6.1 and vocs.txt-0.6.1 merged
+\                          to vocs.txt 0.6.2 , voc-extend added
+

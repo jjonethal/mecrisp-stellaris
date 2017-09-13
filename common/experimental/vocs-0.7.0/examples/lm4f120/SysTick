@@ -1,0 +1,18 @@
+\ SysTick            Mecrisp-Stellaris Example using VOCs             MM-170712
+\ ------------------------------------------------------------------------------
+
+#require vocs.txt
+
+forth definitions
+
+voc SysTick  SysTick definitions
+
+  $E000E010 constant CONTROL
+  $E000E014 constant RELOAD
+  $E000E018 constant CURRENT
+
+forth definitions
+
+\index  SysTick 
+ 
+
