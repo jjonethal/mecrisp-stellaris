@@ -60,6 +60,7 @@ Contributions:
   - STM L476 Discovery           with STM32L476VG
   - STM F746 Discovery           with STM32F746NG
   - Atmel SAME70 X-plained       with ATSAME70Q21
+  -                                   STM32F042F6
 
 http://mecrisp.sourceforge.net/
 
@@ -1177,7 +1178,7 @@ begin ... flag while ... repeat
         while           ( flag -- ) Check a flag in the middle of a loop
 
         until           ( flag -- ) begin ... flag until
-                                    loops as long flag is true
+                                    loops until flag is true
         again           ( -- )  begin ... again
                                 is an endless loop
         begin           ( -- )

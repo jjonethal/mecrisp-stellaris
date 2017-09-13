@@ -1,0 +1,91 @@
+
+\ --------------------------------------------------
+\  Multitasking debug tools
+\ --------------------------------------------------
+
+:  depth ( -- n ) up @ boot-task = if  depth    else up @ 4 cells stackspace    + + sp@ - 2 arshift then ;
+: rdepth ( -- n ) up @ boot-task = if rdepth 1- else up @ 4 cells stackspace 2* + + rp@ - 2 arshift then ;
+
+: .s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick .
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup . ."  *>" cr
+;
+
+: u.s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick u.
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup u. ."  *>" cr
+;
+
+: h.s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick hex.
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup hex. ."  *>" cr
+;
+
+\ --------------------------------------------------
+\  Multitasking insight, also printing task names
+\ --------------------------------------------------
+
+: link>codestart ( addr -- addr* ) 6 + count + even ;
+
+: variable-name. ( addr -- ) \ Tries to find a variable or a buffer with this RAM location address.
+  >r
+  dictionarystart
+  begin
+
+    dup 4 + h@ \ Fetch Flags of current definition
+      dup dup $40 = swap $FF80 and $80 = or swap $140 = or
+      if \ Task buffers are either plain "0-foldable" in RAM or "initialised variable" or "0-foldable and reserves uninitialised memory" when defined in flash memory.
+        dup swap link>codestart execute r@ = \ Execute the variable or buffer to get its RAM address and compare with the address we search for.
+        if dup 6 + ctype then \ Found !
+      then
+
+    dictionarynext
+  until
+  drop rdrop
+;
+
+: tasks ( -- ) \ Show tasks currently in round-robin list
+  hook-pause @ singletask \ Stop multitasking as this list may be changed during printout.
+
+  \ Start with current task.
+  next-task cr
+
+  begin
+    ( Task-Address )
+    dup             ." Task Address: " hex.
+    dup           @ ." Next Task: " hex.
+    dup 1 cells + @ ." State: " hex.
+    dup 2 cells + @ ." Stack: " hex.
+    dup 3 cells + @ ." Handler: " hex.
+    dup             ." Name: " variable-name. cr
+
+    @ dup next-task = \ Stop when end of circular list is reached
+  until
+  drop
+
+  hook-pause ! \ Restore old state of multitasking
+;
