@@ -1,0 +1,233 @@
+
+\ VOC-HOWTO-Classes-2.txt                                             MM-170618
+\ ------------------------------------------------------------------------------
+\               HOWTO for Mecrisp-Stellaris for VOCs Version 0.6.2
+
+\                Using VOCs based CLASSes and OBJECTs, Chapter 2
+
+\                      Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\ Requires  Mecrisp-Stellaris 2.3.6-hook-find or 2.3.8-ra
+\           e4thcom-0.6.1 -t mecrisp-st
+\           VOC-HOWTO-Classes-1.txt
+\
+\ You can find a recording of this HOWTO in the file VOC-HOWTO-Classes-2.log.
+
+key drop
+
+\ In VOC-HOWTO-Classes-1 we saw how to create a simple class and how to use
+\ inheritance to define a new class, based on an existing one.
+
+\ Now we will see, how to create classes, using instance variables, defined in
+\ other classes.
+
+
+  key drop
+
+
+\ Some tools used:
+\ -----------------------------------------------------------------------------
+\
+\  ??     Displays the top wordlist of the search order. In the context Forth
+\         it ignors words that were defined before loading the VOC extension.
+\         lfa: = Address: , xt: = Code:
+\
+\  ..     Returns from a VOC/CLASS context to the Forth context.
+\
+\ -----------------------------------------------------------------------------
+  key drop
+
+
+\ Loading VOC-HOWTO-Classes-1.txt     ( Loading the classes from chapter 1. )
+
+  key drop
+
+#require VOC-HOWTO-Classes-1.txt
+
+  key drop
+
+
+
+\ Defining a new class using instance variables defined in another class:
+\ ------------------------------------------------------------------------------
+\ We use the class INT that was defined by VOC-HOWTO-Clases-1.txt.
+
+forth definitions
+
+class point  point definitions
+
+ __ivar
+   int ivar x
+   int ivar y
+ __seal
+
+forth definitions
+
+  key drop
+
+\ Lets take a look at the new class and its instance data size
+\ ------------------------------------------------------------------------------
+
+  point ??
+
+  u/i .
+
+  key drop
+
+
+\ and at the points parameters
+\ ------------------------------------------------------------------------------
+
+  point x ??
+
+  u/i .
+
+  key drop 
+
+  point y ??
+
+  u/i .
+ 
+  key drop
+
+
+\ An instance/object of a class is created with the method OBJECT :
+\ ------------------------------------------------------------------------------
+\ <class> object <name>
+
+  point object p1
+
+\ The points memory is uninitialized, we have to initialize it explicitly:
+
+  #100 p1 x set  #200 p1 y set
+
+\ To see that the initialisation was successful we use the show method (defined
+\ in class int).
+
+  p1 x show
+  p1 y show
+
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+\ We can add more methods to the class POINT but we can not change a sealed
+\ ivar definition.
+
+  point definitions
+
+  : get ( a-addr -- x y ) dup __ y get  swap __ x get swap ;
+
+  : set ( x y a-addr -- ) dup >r __ y set r> __ x set ;
+
+  : show ( a-addr -- )    dup __ x show __ y show ;
+
+  forth definitions
+
+  key drop
+
+\ Remember that __ is a generic class prefix, that gives access to the class
+\ under definition. We could also have used the class name POINT here.
+
+
+
+
+\ Now let's see the POINT class again, with the new methods in it
+
+  key drop
+
+  point ?? ..
+
+\ Note: ?? stays in the POINT context.  .. switches back to the FORTH context.
+
+\ Now lets try the new methods.
+\ ------------------------------------------------------------------------------
+  key drop
+
+  p1 show
+
+  #1 #2 p1 set
+
+  p1 show
+
+  p1 get .s 
+
+  2drop  .s
+
+  key drop
+
+\ Now let's assume we need 3 coordinates to describe points. We can create a
+\ new class 3DPOINT that inherits from class POINT
+\ ------------------------------------------------------------------------------
+ 
+  point class 3dpoint  3dpoint definitions
+
+\ and then we have to extend its ivar definition
+
+  __ivar
+    int ivar z
+  __seal
+
+\ and we can also extend the GET , SET and SHOW methods
+
+  : get ( a-addr -- x y z ) dup __ get rot __ z get ;
+
+  : set ( x y z a-addr -- ) dup >r __ z set  r> __ set ;
+
+  : show ( a-addr -- ) dup __ show  __ z show ;
+
+\ Please notice: The phrase __ <method>  represets the inherited methods here.
+
+  key drop
+
+
+\ Now let's see the class and its instance size
+\ ------------------------------------------------------------------------------
+  key drop
+
+  3dpoint ??
+
+  u/i .
+
+  key drop
+
+\ Creating an object of class 3DPOINT and using it
+\ -----------------------------------------------------------------------------
+  forth definitions
+
+  3dpoint object p2
+
+  10 20 30 p2 set
+
+  p2 get .s   2drop drop
+
+  p2 show
+
+  p2 x show
+
+  p2 y show
+
+  p2 z show
+  
+\ Please notice you can execute a command like   p2 z show  step by step to
+\ see what goes on:
+  key drop
+
+  p2 .s ??
+
+  z .s ??
+
+  show  .s ??
+
+\ Please scroll up, to see the targets response for each step.
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+\ Now you have seen the basics of VOCs based classes and objects. Try it, if
+\ you think it's for you. Otherwise ignore it.
+\ -----------------------------------------------------------------------------
+\ Last Revision: MM-170708
+

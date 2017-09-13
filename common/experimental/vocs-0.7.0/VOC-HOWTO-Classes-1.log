@@ -1,0 +1,281 @@
+[0;37;40m[0;37;40m[2J[0;0H[0;33;40;1me4thcom-0.6.1 : A Serial Terminal for Embedded Forth Systems[0;37;40m[0;37;40m
+Copyright (C) 2016 manfred.mahlow@forth-ev.de. This is free software under the
+conditions of the GNU General Public License with ABSOLUTELY NO WARRANTY.
+[0;33;40m* Loading Plugin for Mecrisp-Stellaris (mecrisp-st.efc)[0;37;40m[0;37;40m
+   Use the [0;37;40;1mTAB [0;37;40m[0;37;40mkey to cancel an upload process.
+[0;33;40m* Loading config file (.e4thcom-0.6.1)[0;37;40m[0;37;40m
+     editor command :  /usr/bin/pluma +
+
+SIO : /dev/ttyACM0 open  hdl=3 B115200 8N1 CLOCAL ONLCR full-duplex  
+      Type '\ [Enter]' to close the Terminal
+
+  ok.
+[s [u#[s [ur[s [u [s [uV[s [uO[s [uC[s [u-[s [uH[s [uO[s [uW[s [uT[s [uO[s [u-[s [uC[s [ul[s [ua[s [us[s [us[s [ue[s [us[s [u-[s [u1[s [u.[s [ut[s [ux[s [ut[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  Uploading: ./mcu/VOC-HOWTO-Classes-1.txt
+[0;37;40m[0;37;40m
+[0;33;40m\ VOC-HOWTO-Classes-1.txt                                             MM-170618
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\              HOWTO for Mecrisp-Stellaris for VOCs Version 0.6.2
+[0;37;40m[0;37;40m
+[0;33;40m\       A short demo to show how to use VOCs based CLASSes and OBJECTs.
+[0;37;40m[0;37;40m
+[0;33;40m\                      Copyright (C) 2017 Manfred Mahlow
+[0;37;40m[0;37;40m
+[0;33;40m\        This is free software under the GNU General Public License v3.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Requires  Mecrisp-Stellaris 2.3.6-hook-find or 2.3.8-ra
+[0;37;40m[0;37;40m[0;33;40m\           e4thcom-0.6.1 -t mecrisp-st
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ You can find a recording of this HOWTO in the file VOC-HOWTO-Classes-1.log.
+[0;37;40m[0;37;40m
+key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ The VOC-HOWTO-DataTypes.txt showed how VOCs can be used to create data types.
+[0;37;40m[0;37;40m[0;33;40m\ Since version 0.6.2 VOCs also support inheritance. This opens up another
+[0;37;40m[0;37;40m[0;33;40m\ dimension in using VOCs.
+[0;37;40m[0;37;40m
+[0;33;40m\ The data type approach can be generalised by extending VOCs to CLASSes. This
+[0;37;40m[0;37;40m[0;33;40m\ is done in classes.txt.
+[0;37;40m[0;37;40m
+[0;33;40m\ This HOWTO shows some basics of VOCs based OOP. The examples are taken from
+[0;37;40m[0;37;40m[0;33;40m\ VOC-HOWTO-DataTypes.txt as far as it makes sence.
+[0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Please remember that VOCs are immediate words representing a name space.
+[0;37;40m[0;37;40m[0;33;40m\ CLASSes are simply VOCs with some additional OOP related METHODS in their
+[0;37;40m[0;37;40m[0;33;40m\ name space.
+[0;37;40m[0;37;40m
+[0;33;40m\ A CLASS/VOC does not compile anything. It just gives the outer interpreter
+[0;37;40m[0;37;40m[0;33;40m\ of the Forth system a hint, to lookup the next word in the CLASSes/VOCs
+[0;37;40m[0;37;40m[0;33;40m\ name space.
+[0;37;40m[0;37;40m
+[0;33;40m\ An instance of a class can be created as an OBJECT or as an instance variable
+[0;37;40m[0;37;40m[0;33;40m\ IVAR inside an instance definition of a class.
+[0;37;40m[0;37;40m
+[0;33;40m\ At run-time a class instance returns ist data address on the stack. In
+[0;37;40m[0;37;40m[0;33;40m\ execute- or compile-time it additionally behaves like a CLASS, e.g. it gives
+[0;37;40m[0;37;40m[0;33;40m\ the outer interpreter the hint to lookup the next word in it's class name
+[0;37;40m[0;37;40m[0;33;40m\ space. This hint is not compiled.
+[0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ Some tools used:
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ??     Displays the top wordlist of the search order. In the context Forth
+[0;37;40m[0;37;40m[0;33;40m\         it ignors words that were defined before loading the VOC extension.
+[0;37;40m[0;37;40m[0;33;40m\         lfa: = Address: , xt: = Code:
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ..     Returns from a VOC context to the Forth context.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Loading vocs.txt and classes.txt .
+[0;37;40m[0;37;40m
+[0;33;40m\ Please first read the preamble in that files.
+[0;37;40m[0;37;40m
+
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;32;40;1m#require vocs.txt[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  ok [0;37;40m[0;37;40m
+[0;32;40;1m#require classes.txt[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  ok [0;37;40m[0;37;40m
+
+  ??[0;37;40;1m 
+RAM: forth
+               wtag: 00005024 lfa: 200006F4 xt: 20000706 name: classes.txt 
+               wtag: 00005024 lfa: 200006CC xt: 200006D8 name: class 
+               wtag: 00005024 lfa: 200005A4 xt: 200005AE name: __ 
+               wtag: 00005024 lfa: 20000568 xt: 20000576 name: __seal 
+               wtag: 00005024 lfa: 200004D8 xt: 200004E6 name: __ivar 
+               wtag: 00005024 lfa: 200003D8 xt: 200003EA name: struct.txt 
+               wtag: 00005024 lfa: 20000390 xt: 2000039E name: +field 
+
+context: forth forth 
+current: forth compiletoram
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ lfa: = Address: , xt: = Code:  in the original Mecrisp Listing
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+
+[0;33;40m\ Defining a simple CLASS for cell sized data (to show the basics).
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+class int  int definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+ __ivar[0;37;40;1m  ok.
+[0;37;40m[0;37;40m   cell+[0;37;40;1m  ok.
+[0;37;40m[0;37;40m __seal[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : get ( a -- n ) @ inline ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  : set ( n a -- ) ! inline  ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  : show ( a -- )  @ . ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ We could have used the names @ and ! for the fetch and store method but for
+[0;37;40m[0;37;40m[0;33;40m\ the demo it's better to use different names.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ Lets take a look at the new class:
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  int ?? ..[0;37;40;1m 
+RAM: int
+               wtag: 20000714 lfa: 2000077C xt: 20000788 name: show 
+               wtag: 20000714 lfa: 2000075C xt: 20000766 name: set 
+               wtag: 20000714 lfa: 20000740 xt: 2000074A name: get 
+               wtag: 20000714 lfa: 20000728 xt: 20000732 name: u/i 
+FLASH: int
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ The new class extends the class class-root and there is the word  U/I , that
+[0;37;40m[0;37;40m[0;33;40m\ was not explicitly defined. It was defined implicitly by __seal  at the
+[0;37;40m[0;37;40m[0;33;40m\ end of the instance data definition. It's a constant, the size of the data
+[0;37;40m[0;37;40m[0;33;40m\ memory that is allocated in RAM when an object of the class is created.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Here the data size should be four, the size of a cell.
+[0;37;40m[0;37;40m
+  int u/i .[0;37;40;1m 4  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+
+[0;33;40m\ To create an instance/object of a class, we can use the method OBJECT.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  int object i1[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ The objects data memory is allocated but not initialized. This must be done
+[0;37;40m[0;37;40m[0;33;40m\ explicitly. Here we can use the method SET to do it.
+[0;37;40m[0;37;40m
+  12345 i1 set[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  i1 show[0;37;40;1m 12345  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Sometimes we need to know an objects data addr. It's returned by the method
+[0;37;40m[0;37;40m[0;33;40m\ _ADDR_ .
+[0;37;40m[0;37;40m
+  i1 _addr_  dup .  @ .[0;37;40;1m 536872880 12345  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Often it will be nessesary to define an init method for objects. My proposal
+[0;37;40m[0;37;40m[0;33;40m\ is to use the name NEW for it. NEVER !!!!! use the name INIT because this is
+[0;37;40m[0;37;40m[0;33;40m\ already used by the Mecrisp Core. The Mecrisp Core does not know anything
+[0;37;40m[0;37;40m[0;33;40m\ about WORDLISTs, VOCs and CLASSes and will missuse an INIT that is defined
+[0;37;40m[0;37;40m[0;33;40m\ in a WORDLIST, VOC or CLASS.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ Inheritance:
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Creating a class UINT that inherits from class INT
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Only the show method is different.
+[0;37;40m[0;37;40m
+  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  int class uint  uint definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  __ivar[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  __seal[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : show ( a-addr -- ) __ get u. ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ The instance data definition is inherited from class int and unchanged.
+[0;37;40m[0;37;40m
+[0;33;40m\ The new method SHOW uses the GET method that was inherited from class int
+[0;37;40m[0;37;40m[0;33;40m\ (it's visible in the context of the new class).
+[0;37;40m[0;37;40m
+[0;33;40m\ The prefix __ is a generic class prefix. It gives access to the current class
+[0;37;40m[0;37;40m[0;33;40m\ compilation context to take the next word from its search order.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  __ ?? ..[0;37;40;1m 
+RAM: uint
+               wtag: 200007C0 lfa: 200007EC xt: 200007F8 name: show 
+               wtag: 200007C0 lfa: 200007D4 xt: 200007DE name: u/i 
+FLASH: uint
+
+RAM: int
+               wtag: 20000714 lfa: 2000077C xt: 20000788 name: show 
+               wtag: 20000714 lfa: 2000075C xt: 20000766 name: set 
+               wtag: 20000714 lfa: 20000740 xt: 2000074A name: get 
+               wtag: 20000714 lfa: 20000728 xt: 20000732 name: u/i 
+FLASH: int
+
+RAM: class-root
+               wtag: 20000618 lfa: 200006B0 xt: 200006BC name: class 
+               wtag: 20000618 lfa: 20000690 xt: 2000069E name: object 
+               wtag: 20000618 lfa: 20000670 xt: 2000067C name: ivar 
+               wtag: 20000618 lfa: 2000064C xt: 2000065A name: _addr_ 
+               wtag: 20000618 lfa: 20000634 xt: 2000063E name: u/i 
+FLASH: class-root
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Here the search order is  UINT  INT  CLASS-ROOT  (and VOC-ROOT)
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Inheritance is not restricted to simple classes. You can inherit from any
+[0;37;40m[0;37;40m[0;33;40m\ well defined class, may it be as simple as in this example or may it contain
+[0;37;40m[0;37;40m[0;33;40m\ the code for a complex unit or a whole application.
+[0;37;40m[0;37;40m
+[0;33;40m\ Inheritance is one way to reuse code when defining classes. Another one is to
+[0;37;40m[0;37;40m[0;33;40m\ use instance variables defined in one class to create the instance variable
+[0;37;40m[0;37;40m[0;33;40m\ of another class.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ Please see VOC-HOWTO-Classes-2.txt for some basic examples.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Last Revision: MM-170709 preamble extended
+[0;37;40m[0;37;40m
+[0;33;40mClosing: ./mcu/VOC-HOWTO-Classes-1.txt [0;37;40m[0;37;40m[0;33;40m ok [0;37;40m[0;37;40m
+[0;37;40;1m[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m  ok.
+[s [u\
+[0;37;40m[0;37;40mSIO : /dev/ttyACM0 closed hdl=-1 
+[0;33;40mConnection closed.[0;37;40m[0;37;40m

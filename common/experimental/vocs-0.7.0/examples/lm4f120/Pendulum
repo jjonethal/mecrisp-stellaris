@@ -1,0 +1,35 @@
+\ Pendulum             Mecrisp-Stellaris Example using VOCs           MM-170712
+\ ------------------------------------------------------------------------------
+\ Based on Pendeluhr at Forth-Magazin Vierte Dimension 2015 arm, S. 21
+\
+
+#require vocs.txt
+#require SysTick
+
+forth definitions
+
+voc Pendulum  Pendulum definitions
+
+  true variable tick
+
+  : isr ( -- )
+    __ tick @ dup if ." Tick" else ." Tack" then 0= __ tick ! cr ;
+
+  : stop ( -- )
+    \ deactivate systick timer
+      #0 systick control !
+  ;
+
+  : start ( -- )
+      __ stop
+    \ set systick interrupt vector
+      __ ['] isr irq-systick !
+    \ set reload value for 1 Hz with 16 MHz
+      #16000000 systick reload !
+    \ activate systick timer
+      #7 systick control !
+  ;
+
+forth definitions
+ 
+\index  SysTick  Pendulum  start  stop 

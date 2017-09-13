@@ -1,0 +1,8 @@
+\ abort to be recognized by e4thcom                                   MM-170705
+
+#require wordlists.txt
+
+forth definitions
+
+: abort ( -- ) CR quit ;
+

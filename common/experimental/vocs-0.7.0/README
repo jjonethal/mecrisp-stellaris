@@ -1,0 +1,78 @@
+\ README           Source Code Library for Mecrisp-Stellaris           MM-170715
+--------------------------------------------------------------------------------
+                         (C) 2017 Manfred Mahlow
+
+                     (firstname.lastname@forth-ev.de)
+
+A collection of source code modules to add wordlists, vocabularies, vocabulary
+prefixes and classes (for context switching objects) to Mecrisp-Stellaris Forth.
+
+Vocabulary prefixes (VOCs) and implicit context switching may be new concepts
+for most Forth users.
+
+VOCs can be used to create library name spaces and in combination with implicit
+context switching data types and register identifiers can be created.
+
+Finally adding inheritance to VOCs makes it easy to use VOCs to define classes
+of context switching objects.
+
+For further informations please read the intros of the module files. 
+
+The code modules were originally written and are maintained to be used with the
+e4thcom terminal program (vocs-0.7.x-FR), so that they can be loaded on demand
+as required.
+
+For those of you that prefer to use a vanilla terminal, the basic code modules
+have been concatenated into one file (vocs.txt in vocs-0.7.x-FRV). 
+
+The VOC-HOWTO files enclosed in vocs-0.7.0-FR can only be executed with the
+e4thcom terminal but vanilla terminal users can display the related .log files
+with the cat command in an ANSI terminal emulator.
+
+Some code examples are added in the examples folder. To use this with a vanilla 
+terminal comment out the #require and the \index tags and load the required 
+files by hand.
+
+Please notice that this is not a final release but code under development.
+
+--------------------------------------------------------------------------------
+
+Requires :    mecrisp-stellaris-2.3.6-hook-find
+              or
+              mecrisp-steallaris-2.3.8-ra
+
+Recommends :  e4thcom-0.6.1 Terminal Program (to load the modules)
+
+Modules hierachy :  Mecrisp-Stellaris Core
+                      |
+                      wordlists.txt           
+                        |
+                        search-order.txt
+                        |
+                        vocs.txt
+                          |
+                          VOC-HOWTO-Registers.txt
+                          |
+                          VOC-HOWTO-DataTypes.txt
+                          |
+                          classes.txt
+                            |
+                            VOC-HOWTO-Classes-x.txt
+
+Tested with:  TI Stellaris LauchPad
+              STM Discovery F0 (Thanks to Terry Porter)
+--------------------------------------------------------------------------------
+
+License : This is free software: You can redistribute it and/or modify
+          it under the terms of the GNU General Public License as published by
+          the Free Software Foundation, either version 3 of the License, or
+          (at your option) any later version.
+
+          This program is distributed in the hope that it will be useful,
+          but WITHOUT ANY WARRANTY; without even the implied warranty of
+          MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+          GNU General Public License for more details.
+
+--------------------------------------------------------------------------------
+Last Revision: MM-170809
+

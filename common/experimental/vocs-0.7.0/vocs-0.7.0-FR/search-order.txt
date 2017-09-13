@@ -1,0 +1,69 @@
+\ search-order.txt      Search Order for Mecrisp-Stellaris             MM-170504
+\ ------------------------------------------------------------------------------
+\                               Version 0.7.0
+
+\                      Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\      Adds the following words from the SEARCH and SEARCH EXT Word Sets 
+\  
+\                   ALSO  ONLY  PREVIOUS  VOCABULARY
+\
+\ ------------------------------------------------------------------------------
+
+#require wordlists.txt
+
+  forth definitions  inside
+
+: vocabulary ( "name" -- )
+    wordlist <builds , does> @ set-context
+;
+
+
+: only ( -- )
+\ context 7 cells 0 fill forth-wordlist set-context
+  context #vocs 1+ cells 0 fill forth-wordlist set-context
+;
+
+
+: also ( -- )
+  context #vocs 1- cells + @ if ." search order overflow " quit then
+  context dup cell+ #vocs 1- cells move
+;
+
+
+: previous ( -- )
+  context cell+ @ 0= if ." search order underflow " quit then
+  context cell+ context #vocs cells move
+;
+
+
+{ moved to wordlists.txt
+: order ( -- )
+    context
+    begin
+      dup @ dup
+    while
+      wid>name type space cell+
+    repeat
+    2drop
+;
+}
+
+  only forth also definitions 
+
+\index  only  also  previous  order  vocabulary
+
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-170728 #vocs added, requires wordlists 0.7.0-FR
+\                MM-170624 VOCABULARY added from vocabulary.txt , ORDER moved
+\                          to wordlist.txt , ?? deleted, new version 0.6.1
+\                MM-170618 file renamed from order.txt to search-order.txt
+\                          new version 0.4.2
+\                MM-170615 root-wordlist removed, new version 0.4.1
+\                MM-170614 Code factored out from file wordlists.txt
+
+
+
+

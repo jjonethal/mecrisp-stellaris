@@ -1,0 +1,32 @@
+\ das3.txt          Source Code Library for Mecrisp-Stellaris          MM-170710
+\
+\ Loads the disassembler in a separate vocabulary das and adds synonyms for
+\ see to the contexts FORTH and VOC-ROOT.
+
+#require wordlists.txt
+
+#require search-order.txt
+
+forth definitions
+
+vocabulary das  das definitions
+
+#require disassembler-m3.txt
+
+forth definitions inside
+
+: see ( "name" -- ) [ das ] see [ forth ] ;
+
+
+#require vocs.txt
+
+forth also inside
+
+voc-root set-current
+
+voc-root , 1 wflags ! : see ( "name" -- ) see ;
+
+previous forth definitions
+
+
+

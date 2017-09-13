@@ -27,6 +27,7 @@ STM32 USB driver by Jean-Claude Wippler
 Port for STM32L073RZ by Werner Urech
 Assembler include file generator svd2gas by Terry Porter
 Port for STM32F042F6 by Ralph Sahli
+Vocabularies and classes by Manfred Mahlow
 
 Hardware donations:
 
