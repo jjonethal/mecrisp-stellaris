@@ -1,0 +1,26 @@
+ 
+\ Just to have a twinkling shine :-)
+\
+\		Ralph Sahli, 2017
+\		
+\		resources used: 
+\ 			PA0   Green LED
+\
+
+$48000000 constant GPIOA.MODER
+$48000014 constant GPIOA.ODR
+
+: delay 800000 0 do i drop loop ;
+
+
+: blinky ( -- )
+	1 GPIOA.MODER bis!				\ PA0 -> output mode
+	cr ." press any key to quit"
+	begin
+		1 GPIOA.ODR bis!			\ clear LED
+		delay
+		1 GPIOA.ODR bic!			\ set LED
+		delay
+		key? 
+	until
+;

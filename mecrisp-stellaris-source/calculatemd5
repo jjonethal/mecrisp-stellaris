@@ -102,7 +102,19 @@ cd stm32f030f4
 md5sum *.bin
 cd ..
 
+cd stm32f042f6
+md5sum *.bin
+cd ..
+
+cd stm32f042f6-ra
+md5sum *.bin
+cd ..
+
 cd stm32f051
+md5sum *.bin
+cd ..
+
+cd stm32f051-ra
 md5sum *.bin
 cd ..
 

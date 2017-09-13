@@ -1053,11 +1053,41 @@ skipstring: @ Überspringt einen String, dessen Adresse in r0 liegt.  Skip strin
   pop {r1, r2}
   bx lr
 
+
+.ifdef registerallocator
+
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "find"
 find: @ ( address length -- Code-Adresse Flags )
 @ -----------------------------------------------------------------------------
-  push {r0, r1, r2, r3, r4, r5, lr}
+  ldr r0, =hook_find
+  ldr r0, [r0]
+  mov pc, r0
+
+@------------------------------------------------------------------------------
+  Wortbirne Flag_visible|Flag_variable, "hook-find" @ ( -- addr )
+  CoreVariable hook_find
+@------------------------------------------------------------------------------
+  pushdatos
+  ldr tos, =hook_find
+  bx lr
+  .word core_find
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "(find)"
+core_find: @ ( address length -- Code-Adresse Flags )
+@ -----------------------------------------------------------------------------
+
+.else
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "find"
+find: @ ( address length -- Code-Adresse Flags )
+@ -----------------------------------------------------------------------------
+
+.endif
+
+  push {r4, r5, lr}
 
   @ r0  Helferlein      Scratch
   @ r1  Flags           Flags
@@ -1123,7 +1153,7 @@ find: @ ( address length -- Code-Adresse Flags )
   movs tos, r2  @ Zieladresse    oder 0, falls nichts gefunden            Address = 0 means: Not found. Check for that !
   pushda r3     @ Zielflags      oder 0  --> @ ( 0 0 - Nicht gefunden )   Push Flags on Stack. ( Destination-Code Flags ) or ( 0 0 ).
 
-  pop {r0, r1, r2, r3, r4, r5, pc}
+  pop {r4, r5, pc}
 
 @ -----------------------------------------------------------------------------
 find_not_found: @ Internal use. Gives "not found." message if find is not successful.
@@ -1133,7 +1163,10 @@ find_not_found: @ Internal use. Gives "not found." message if find is not succes
   movs r1, tos  @ Save string address for later use
   ldr r0, [psp]
 
-  bl find
+  push {r0, r1}
+    bl find
+  pop {r0, r1}
+
   ldr r2, [psp] @ Probe entry address
   cmp r2, #0
   bne 1f
