@@ -297,7 +297,7 @@ $06 constant Q_WRITE_ENA
    q-end ;
 \ ********** write block *****************
 : q-write-ena ( -- )                      \ enable qspi write
-   q-start Q_WRITE_ENA qc1! ;
+   q-start Q_WRITE_ENA qc1! q-end ;
 
 \ ********** dump ************************
 : c. ( n -- )                             \ emit printable character or "."
