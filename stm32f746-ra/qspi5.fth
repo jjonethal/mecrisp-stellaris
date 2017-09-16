@@ -162,7 +162,7 @@ $A0001000 constant QSPI_BASE
    qck-0 la qck-1 la 2* qd1@ 1 and or
 \   dup .
    ;
-: q1b2@  ( n -- n )  q1b1@ q1b1@ ;        \ shifting in 1 nibble from spi
+: q1b2@  ( n -- n )  q1b1@ q1b1@ ;        \ shifting in 2 bit from spi
 : q1b4@  ( n -- n )  q1b2@ q1b2@ ;        \ shifting in 1 nibble from spi
 : q1b8@  ( n -- n )  q1b4@ q1b4@ ;        \ shifting in 1 byte from spi
 : q1b32@  ( n -- n )                      \ read 1 32 bit word
@@ -249,6 +249,7 @@ $A0001000 constant QSPI_BASE
 : q-start  ( -- ) la qd> la qcs-0 la ;    \ start transfer
 : q-end  ( -- ) qcs-1 la ;                \ finish qspi transfer
 : qc!  ( b -- 0 ) 24 lshift qb8! ;        \ send 1 byte
+: qc1! ( b -- ) qc! drop ;                \ send 1 byte clear stack
 : qc@  ( -- c ) 0 qb8@ ;                  \ get 1 char from qspi
 
 \ ********** flash driver ****************
@@ -276,8 +277,8 @@ $06 constant Q_WRITE_ENA
  
 \ ********** dump-block ******************
 : q-dump ( len qa -- )
-   q-start Q_READ qc! drop 8 lshift
-   qb8! qb8! qb8! qd<
+   q-start Q_READ qc! drop 8 lshift       \ shift address 1 byte left .. this qspi has 3 address bytes only
+   qb8! qb8! qb8! qd<                     \ qb8! start whith highest bit 31
    do
      qc@ x.2 space
      i $f and $f =
@@ -295,18 +296,20 @@ $06 constant Q_WRITE_ENA
    loop
    q-end ;
 \ ********** write block *****************
-
+: q-write-ena ( -- )                      \ enable qspi write
+   q-start Q_WRITE_ENA qc1! ;
 
 \ ********** dump ************************
 : c. ( n -- )                             \ emit printable character or "."
    dup #32 >= and dup #127 < and dup 0= [char] . and or emit ;
-	 
-: dump-line ( n -- )
-   abs #16 min dup dup   ( -- n n n )     \ max 16 items in one line
-   0 ?do c@+-hook @ execute tuck x.2 space loop ( -- n c c .. c n )
-   16 over - 0 ?do 3 spaces loop          ( -- n c c .. c n ) \ fill remaining space
-   [char] | emit
-   0 ?do swap >R loop   ( -- n ) ( R: -- c c .. c )
-   0 ?do r> c. loop ;   ( -- ) ( R: -- )
-
+: qc@.x ( -- b ) qc@ dup x.2 space ;      \ dump byte 2 digit hex and store on stack
+: 16qc@.x ( -- 16xb )                     \ dump 16 byte 2 digit hex and store on stack
+   16 0 do qc@.x loop ;
+: dump-line16 ( -- )
+   16qc@.x space space 
+   sp@ dup 15 cells + do
+     i @ c. -1 cells
+   +loop
+   16 0 do drop loop cr ;
+   
 \ ********** soft reset ******************
