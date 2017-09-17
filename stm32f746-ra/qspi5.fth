@@ -248,8 +248,7 @@ $A0001000 constant QSPI_BASE
 
 : q-start  ( -- ) la qd> la qcs-0 la ;    \ start transfer
 : q-end  ( -- ) qcs-1 la ;                \ finish qspi transfer
-: qc!  ( b -- 0 ) 24 lshift qb8! ;        \ send 1 byte
-: qc1! ( b -- ) qc! drop ;                \ send 1 byte clear stack
+: qc!  ( b -- 0 ) 24 lshift qb8! drop ;   \ send 1 byte
 : qc@  ( -- c ) 0 qb8@ ;                  \ get 1 char from qspi
 
 \ ********** flash driver ****************
@@ -267,17 +266,23 @@ $66 constant Q_RESET_ENABLE
 $99 constant Q_RESET_MEM
 $04 constant Q_WRITE_DIS
 $06 constant Q_WRITE_ENA
+$20 constant Q_ERASE_SUB_SEC
+$D8 constant Q_ERASE_SEC
+$C7 constant Q_ERASE_BULK
+$7A constant Q_WRITE_RESUME
+$75 constant Q_WRITE_SUSPEND
+$02 constant Q_PAGE_PROG
 
 : read-id ( a -- )                        \ read id to buffer 20 bytes
-   q-start Q_READ_ID qc! drop
+   q-start Q_READ_ID qc!
    dup 20 + swap do 0 qb8@ i c! loop q-end ;
 : .id  ( -- )                             \ print id
-   q-start Q_READ_ID qc! drop
+   q-start Q_READ_ID qc!
    20 0 do 0 qb8@ x.2 space loop q-end cr ;
  
 \ ********** dump-block ******************
 : q-dump ( len qa -- )
-   q-start Q_READ qc! drop 8 lshift       \ shift address 1 byte left .. this qspi has 3 address bytes only
+   q-start Q_READ qc! 8 lshift            \ shift address 1 byte left .. this qspi has 3 address bytes only
    qb8! qb8! qb8! qd<                     \ qb8! start whith highest bit 31
    do
      qc@ x.2 space
@@ -288,7 +293,7 @@ $06 constant Q_WRITE_ENA
 
 \ ********** read block ******************
 : q-block@ ( len bu qa -- )
-   q-start Q_READ qc! drop 8 lshift
+   q-start Q_READ qc! 8 lshift
    qb8! qb8! qb8! qd<
    drop tuck + swap
    do
@@ -297,7 +302,19 @@ $06 constant Q_WRITE_ENA
    q-end ;
 \ ********** write block *****************
 : q-write-ena ( -- )                      \ enable qspi write
-   q-start Q_WRITE_ENA qc1! q-end ;
+   q-start Q_WRITE_ENA qc! q-end ;
+: q-write-dis ( -- )                      \ disable qspi write
+   q-start Q_WRITE_DIS qc! q-end ;
+: q-erase-subsector ( a -- )
+   q-write-ena q-start Q_ERASE_SUB_SEC qc!
+   8 lshift qb8! qb8! qb8! drop q-end ;
+: q-program-page ( n a a -- )
+   q-write-ena q-start Q_PAGE_PROG qc!
+   8 lshift qb8! qb8! qb8!
+   tuck + swap do c@ qc! loop q-end ;
+: q-status@ ( -- b )                      \ get status byte
+   q-start Q_READ_STAT_REG qc! qd< qc@ q-end ;
+
 
 \ ********** dump ************************
 : c. ( n -- )                             \ emit printable character or "."
