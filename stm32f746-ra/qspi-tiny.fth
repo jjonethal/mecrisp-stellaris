@@ -78,10 +78,10 @@ PD13 constant QD3                                   \ QSPI_D3
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
 
-: qb0! ( n -- n ) dup 0< if QD0-1 else QD0-0 then 2* ;
-: qb1! ( n -- n ) dup 0< if QD1-1 else QD1-0 then 2* ;
-: qb2! ( n -- n ) dup 0< if QD2-1 else QD2-0 then 2* ;
-: qb3! ( n -- n ) dup 0< if QD3-1 else QD3-0 then 2* ;
+: qd0! ( n -- n ) dup 0< if QD0-1 else QD0-0 then 2* ;
+: qd1! ( n -- n ) dup 0< if QD1-1 else QD1-0 then 2* ;
+: qd2! ( n -- n ) dup 0< if QD2-1 else QD2-0 then 2* ;
+: qd3! ( n -- n ) dup 0< if QD3-1 else QD3-0 then 2* ;
 : qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
 : qd1> ( -- ) QD1 q-g> ;                          \ QD1 output mode
 : qd2> ( -- ) QD2 q-g> ;                          \ QD2 output mode
@@ -101,7 +101,7 @@ PD13 constant QD3                                   \ QSPI_D3
 : q1b2@ ( n -- n )  q1b1@ q1b1@ ;                 \ single input 2 bit
 : q1b4@ ( n -- n )  q1b2@ q1b2@ ;                 \ single input 4 bit
 : q1b8@ ( n -- n )  q1b4@ q1b4@ ;                 \ single input 8 bit
-: q1b1! ( n -- n )  qc-0 qb0! qc-1 ;              \ single output 1 bit
+: q1b1! ( n -- n )  qc-0 qd0! qc-1 ;              \ single output 1 bit
 : q1b2! ( n -- n )  q1b1! q1b1! ;                 \ single output 2 bit
 : q1b4! ( n -- n )  q1b2! q1b2! ;                 \ single output 4 bit
 : q1b8! ( n -- n )  q1b4! q1b4! ;                 \ single output 8 bit
@@ -111,7 +111,7 @@ PD13 constant QD3                                   \ QSPI_D3
 : q2-init ( -- ) q1-init qd1> ;                   \ same as q1 init but q1 as output
 : q2>   (   --   ) QD0-1 QD1-1 qd0> qd1> ;        \ dual output mode
 : q2<   (   --   ) QD0-1 QD1-1 qd0< qd1< ;        \ dual input mode
-: q2b2! ( n -- n ) qc-0 qb1! qb0! qc-1 ;          \ dual output 2 bit
+: q2b2! ( n -- n ) qc-0 qd1! qd0! qc-1 ;          \ dual output 2 bit
 : q2b8! ( n -- n ) q2b2! q2b2! q2b2! q2b2! ;      \ dual output 8 bit
 : q2b2@ ( n -- n ) qc-0 qc-1 qd1@ qd0@ ;            \ dual input 2 bit
 : q2b8@ ( n -- n ) q2b2@ q2b2@ q2b2@ q2b2@ ;      \ dual input 8 bit
@@ -122,7 +122,7 @@ PD13 constant QD3                                   \ QSPI_D3
 : q4> ( -- ) QD2-1 QD3-1 qd2> qd3> q2> ;         \ quad output mode
 : q4< ( -- ) qd2< qd3< q2< ;                       \ quad input mode
 : q4b4! ( n -- n )                                 \ quad mode 4 bit transfer
-   qc-0 qb3! qb2! qb1! qb0! qc-1 ;
+   qc-0 qd3! qd2! qd1! qd0! qc-1 ;
 : q4b8! ( n -- n ) q4b4! q4b4! ;                   \ quad output 8 bit
 : q4b4@ ( n -- n ) qc-0 qc-1 qd3@ qd2@ qd1@ qd0@ ;     \ quad input 4 bit
 : q4b8@ ( n -- n ) q4b4@ q4b4@ ;                   \ quad input 8 bit
