@@ -88,9 +88,6 @@ PD13 constant QD3                                   \ QSPI_D3
 : qd2! ( n -- n ) dup #31 rshift dup 1 xor #16 lshift or QD2 pin# lshift QD2 gpio-bsrr ! 2* ;
 : qd3! ( n -- n ) dup #31 rshift dup 1 xor #16 lshift or QD3 pin# lshift QD3 gpio-bsrr ! 2* ;
 
-: qd0c! ( -- ) dup #31 rshift 1 xor 4 lshift 1 swap lshift QD0 pin# lshift QD0 gpio-bsrr ! 2* ;
-: qd0d! ( -- ) dup 0< not $FFFF xor QD0 bsrr-on QD0 bsrr-off or and QD0 gpio-bsrr ! 2* ;
-
 
 : qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
 : qd1> ( -- ) QD1 q-g> ;                          \ QD1 output mode
