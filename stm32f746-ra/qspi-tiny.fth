@@ -78,10 +78,16 @@ PD13 constant QD3                                   \ QSPI_D3
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
 
-: qd0! ( n -- n ) dup 0< if QD0-1 else QD0-0 then 2* ;
-: qd1! ( n -- n ) dup 0< if QD1-1 else QD1-0 then 2* ;
-: qd2! ( n -- n ) dup 0< if QD2-1 else QD2-0 then 2* ;
-: qd3! ( n -- n ) dup 0< if QD3-1 else QD3-0 then 2* ;
+\ : qd0! ( n -- n ) dup 0< if QD0-1 else QD0-0 then 2* ;
+\ : qd1! ( n -- n ) dup 0< if QD1-1 else QD1-0 then 2* ;
+\ : qd2! ( n -- n ) dup 0< if QD2-1 else QD2-0 then 2* ;
+\ : qd3! ( n -- n ) dup 0< if QD3-1 else QD3-0 then 2* ;
+
+: qd0! ( n -- n ) dup #30 rshift dup 1 xor #16 lshift or QD0 pin# lshift QD0 gpio-bsrr ! 2* ;
+: qd1! ( n -- n ) dup #30 rshift dup 1 xor #16 lshift or QD1 pin# lshift QD1 gpio-bsrr ! 2* ;
+: qd2! ( n -- n ) dup #30 rshift dup 1 xor #16 lshift or QD2 pin# lshift QD2 gpio-bsrr ! 2* ;
+: qd3! ( n -- n ) dup #30 rshift dup 1 xor #16 lshift or QD3 pin# lshift QD3 gpio-bsrr ! 2* ;
+
 : qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
 : qd1> ( -- ) QD1 q-g> ;                          \ QD1 output mode
 : qd2> ( -- ) QD2 q-g> ;                          \ QD2 output mode
@@ -97,7 +103,7 @@ PD13 constant QD3                                   \ QSPI_D3
 : q1>  ( -- )  ;                                  \ q1-write mode
 : q1<  ( -- )  ;                                  \ q1-read mode
 
-: q1b1@ ( n -- n )  qc-0 qc-1 qd1@ ;               \ single input 1 bit
+: q1b1@ ( n -- n )  qc-0 qc-1 qd1@ ;              \ single input 1 bit
 : q1b2@ ( n -- n )  q1b1@ q1b1@ ;                 \ single input 2 bit
 : q1b4@ ( n -- n )  q1b2@ q1b2@ ;                 \ single input 4 bit
 : q1b8@ ( n -- n )  q1b4@ q1b4@ ;                 \ single input 8 bit
@@ -113,7 +119,7 @@ PD13 constant QD3                                   \ QSPI_D3
 : q2<   (   --   ) QD0-1 QD1-1 qd0< qd1< ;        \ dual input mode
 : q2b2! ( n -- n ) qc-0 qd1! qd0! qc-1 ;          \ dual output 2 bit
 : q2b8! ( n -- n ) q2b2! q2b2! q2b2! q2b2! ;      \ dual output 8 bit
-: q2b2@ ( n -- n ) qc-0 qc-1 qd1@ qd0@ ;            \ dual input 2 bit
+: q2b2@ ( n -- n ) qc-0 qc-1 qd1@ qd0@ ;          \ dual input 2 bit
 : q2b8@ ( n -- n ) q2b2@ q2b2@ q2b2@ q2b2@ ;      \ dual input 8 bit
 : q2c!  ( n --   ) #24 lshift q2b8! ;
 : q2c@  (   -- n ) 0 q2b8@ ;
