@@ -43,88 +43,93 @@ require gpio.fth
 #13 GPIOD + constant PD13
  #2 GPIOE + constant PE2
 
-PB6  constant QS 
-PB2  constant QC 
-PD11 constant QD0
-PD12 constant QD1
-PE2  constant QD2
-PD13 constant QD3
-: times ( a n -- ) 0 do dup >r execute r> loop drop ; \ invoke adr n times
-: q>  ( pin -- ) gpio-output ;
-: q<  ( pin -- ) 0 over gpio-pupd! gpio-input ;   \ input no pull up/down
-: q<U ( pin -- ) 1 over gpio-pupd! gpio-input ;   \ input pullup
-: q<D ( pin -- ) 2 over gpio-pupd! gpio-input ;   \ input pulldown
-: g-on ( pin -- ) 1 swap gpio-clk! ;              \ gpio clock on
-: q-on<U ( pin -- ) dup g-on q<U ;                \ gpio clk on input pullup
-: q-on<Ux2 ( 2xpin -- ) q-on<U q-on<U ;
-: q-on<Ux4 ( 4xpin -- ) q-on<Ux2 q-on<Ux2 ;
-: q-on<Ux6 ( 6xpin -- ) q-on<Ux4 q-on<Ux2 ;
-: q-ini ( -- ) QS QC QD0 QD1 QD2 QD3 q-on<Ux6 ;   \ gpio clk on input pullup
-: Q0-1 ( -- ) QD0 pin-on ! ;
-: Q0-0 ( -- ) QD0 pin-off ! ;
-: Q1-1 ( -- ) QD1 pin-on ! ;
-: Q1-0 ( -- ) QD1 pin-off ! ;
-: Q2-1 ( -- ) QD2 pin-on ! ;
-: Q2-0 ( -- ) QD2 pin-off ! ;
-: Q3-1 ( -- ) QD3 pin-on ! ;
-: Q3-0 ( -- ) QD3 pin-off ! ;
-: QS-1 ( -- ) QS  pin-on ! ;
-: QS-0 ( -- ) QS  pin-off ! ;
-: QC-1 ( -- ) QC  pin-on ! ;
-: QC-0 ( -- ) QC  pin-off ! ;
+PB6  constant QS                                    \ QSPI_NCS
+PB2  constant QC                                    \ QSPI_CLK
+PD11 constant QD0                                   \ QSPI_D0
+PD12 constant QD1                                   \ QSPI_D1
+PE2  constant QD2                                   \ QSPI_D2
+PD13 constant QD3                                   \ QSPI_D3
+
+: q-g>  ( pin -- ) gpio-output ;                    \ configure pin as gpio output
+: q-g<  ( pin -- ) 0 over gpio-pupd! gpio-input ;   \ input no pull up/down
+: q-g<U ( pin -- ) 1 over gpio-pupd! gpio-input ;   \ input pullup
+: q-g<D ( pin -- ) 2 over gpio-pupd! gpio-input ;   \ input pulldown
+: g-on  ( pin -- ) 1 swap gpio-clk! ;               \ gpio clock on
+: q-on<U ( pin -- ) dup g-on q-g<U ;                \ gpio clk on input pullup
+: q-on<Ux2 ( 2xpin -- ) q-on<U q-on<U ;             \ 2 pins inp pu - p p 
+: q-on<Ux4 ( 4xpin -- ) q-on<Ux2 q-on<Ux2 ;         \ 4 pins inp pu - p p p p
+: q-on<Ux6 ( 6xpin -- ) q-on<Ux4 q-on<Ux2 ;         \ 6 pins inp pu - p p p p p p
+: q-ini ( -- ) QS QC QD0 QD1 QD2 QD3 q-on<Ux6 ;     \ gpio clk on input pullup
+: QD0-1 ( -- ) QD0 pin-on  ! ;                      \ set QD0 to 1
+: QD0-0 ( -- ) QD0 pin-off ! ;                      \ set QD0 to 0
+: QD1-1 ( -- ) QD1 pin-on  ! ;                      \ set QD1 to 1
+: QD1-0 ( -- ) QD1 pin-off ! ;                      \ set QD1 to 0
+: QD2-1 ( -- ) QD2 pin-on  ! ;                      \ set QD2 to 1
+: QD2-0 ( -- ) QD2 pin-off ! ;                      \ set QD2 to 0
+: QD3-1 ( -- ) QD3 pin-on  ! ;                      \ set QD3 to 1
+: QD3-0 ( -- ) QD3 pin-off ! ;                      \ set QD3 to 0
+: QS-1  ( -- ) QS  pin-on  ! ;                      \ set CS  to 1
+: QS-0  ( -- ) QS  pin-off ! ;                      \ set CS  to 0
+: QC-1  ( -- ) QC  pin-on  ! ;                      \ set CLK to 1
+: QC-0  ( -- ) QC  pin-off ! ;                      \ set CLK to 0
 : q0@ ( n -- n ) 2* QD0  gpio-in# QD0  gpio-idr bit@ 1 and or ;
 : q1@ ( n -- n ) 2* QD1  gpio-in# QD1  gpio-idr bit@ 1 and or ;
 : q2@ ( n -- n ) 2* QD2  gpio-in# QD2  gpio-idr bit@ 1 and or ;
 : q3@ ( n -- n ) 2* QD3  gpio-in# QD3  gpio-idr bit@ 1 and or ;
-: qb0! ( n -- n ) dup 0< if Q0-1 else Q0-0 then 2* ;
-: qb1! ( n -- n ) dup 0< if Q1-1 else Q1-0 then 2* ;
-: qb2! ( n -- n ) dup 0< if Q2-1 else Q2-0 then 2* ;
-: qb3! ( n -- n ) dup 0< if Q3-1 else Q3-0 then 2* ;
-: q0> QD0 Q> ;
-: q1> QD1 Q> ;
-: q2> QD2 Q> ;
-: q3> QD3 Q> ;
-: q0< QD0 Q< ;
-: q1< QD1 Q< ;
-: q2< QD2 Q< ;
-: q3< QD3 Q< ;
-: q-1-init ( -- )                                 \ single mode init
-   Q0-1 Q1-1 QS-1 QC-1                            \ all lines to idle
-   Q0 QS QC q> q> q>                              \ q0,qc,qs output
-   Q1 q< ;                                        \ q1 input 
-: q-1>  ( -- )  ;                                 \ q1-write mode
-: q-1<  ( -- )  ;                                 \ q1-read mode
+: qb0! ( n -- n ) dup 0< if QD0-1 else QD0-0 then 2* ;
+: qb1! ( n -- n ) dup 0< if QD1-1 else QD1-0 then 2* ;
+: qb2! ( n -- n ) dup 0< if QD2-1 else QD2-0 then 2* ;
+: qb3! ( n -- n ) dup 0< if QD3-1 else QD3-0 then 2* ;
+: qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
+: qd1> ( -- ) QD1 q-g> ;                          \ QD1 output mode
+: qd2> ( -- ) QD2 q-g> ;                          \ QD2 output mode
+: qd3> ( -- ) QD3 q-g> ;                          \ QD3 output mode
+: qd0< ( -- ) QD0 q-g< ;                          \ QD0 input  mode
+: qd1< ( -- ) QD1 q-g< ;                          \ QD1 input  mode
+: qd2< ( -- ) QD2 q-g< ;                          \ QD2 input  mode
+: qd3< ( -- ) QD3 q-g< ;                          \ QD3 input  mode
+: q1-init ( -- )                                  \ single mode init
+   QD0-1 QD1-1 QS-1 QC-1                          \ all lines to idle
+   Q0 QS QC q-g> q-g> q-g>                        \ q0,qc,qs output
+   Q1 q-g< ;                                      \ q1 input 
+: q1>  ( -- )  ;                                  \ q1-write mode
+: q1<  ( -- )  ;                                  \ q1-read mode
 
-: q1b1@ ( n -- n )  qc-0 qc-1 q1@ ;
-: q1b8@ ( n -- n )  q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ ;
-: q1b1! ( n -- n )  qc-0 qb0! qc-1 ;              \ output single bit via qd0
-: q1b8! ( n -- n )  q1b1! q1b1! q1b1! q1b1! q1b1! q1b1! q1b1! q1b1! ;
-: q1c! ( n -- ) #24 lshift q1b8! ;
-: q1c@ ( -- n ) 0 q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ q1b1@ ;
+: q1b1@ ( n -- n )  qc-0 qc-1 q1@ ;               \ single input 1 bit
+: q1b2@ ( n -- n )  q1b1@ q1b1@ ;                 \ single input 2 bit
+: q1b4@ ( n -- n )  q1b2@ q1b2@ ;                 \ single input 4 bit
+: q1b8@ ( n -- n )  q1b4@ q1b4@ ;                 \ single input 8 bit
+: q1b1! ( n -- n )  qc-0 qb0! qc-1 ;              \ single output 1 bit
+: q1b2! ( n -- n )  q1b1! q1b1! ;                 \ single output 2 bit
+: q1b4! ( n -- n )  q1b2! q1b2! ;                 \ single output 4 bit
+: q1b8! ( n -- n )  q1b4! q1b4! ;                 \ single output 8 bit
+: q1c!  ( n --   )  #24 lshift q1b8! ;            \ single output 1 byte
+: q1c@  (   -- n )  0 q1b8@ ;                     \ single input 1 byte
 
-: q-2-init ( -- ) q-1-init q1 q> ;                \  same as q1 init but q1 as output
-: q-2> ( -- ) Q0-1 Q1-1 Q0> Q1> ;                 \ dual output mode
-: q-2< ( -- ) Q0-1 Q1-1 Q0< Q1< ;                 \ dual input mode
-: q2b2! ( n -- n ) qc-0 qb1! qb0! qc-1 ;
+: q2-init ( -- ) q1-init qd1> ;                   \ same as q1 init but q1 as output
+: q2>   (   --   ) QD0-1 QD1-1 qd0> qd1> ;        \ dual output mode
+: q2<   (   --   ) QD0-1 QD1-1 qd0< qd1< ;        \ dual input mode
+: q2b2! ( n -- n ) qc-0 qb1! qb0! qc-1 ;          \ dual output 2 bit
 : q2b8! ( n -- n ) q2b2! q2b2! q2b2! q2b2! ;      \ dual output 8 bit
 : q2b2@ ( n -- n ) qc-0 qc-1 q1@ q0@ ;            \ dual input 2 bit
-: q2b8@ ( n -- n ) q2b2@ q2b2@ q2b2@ q2b2@ ;      \ dual output 8 bit
-: q2c! ( n -- ) #24 lshift q2b8! ;
-: q2c@ ( -- n ) 0 q2b8@ ;
+: q2b8@ ( n -- n ) q2b2@ q2b2@ q2b2@ q2b2@ ;      \ dual input 8 bit
+: q2c!  ( n --   ) #24 lshift q2b8! ;
+: q2c@  (   -- n ) 0 q2b8@ ;
 
-: q-4-init ( -- ) q2-1 q3-1 q2> q3> q-2-init ;    \ quad mode init
-: q-4> ( -- ) q2-1 q3-1 Q2> Q3> q-2> ;            \ quad output mode
-: q-4< ( -- ) Q2< Q3< Q-2< ;                      \ quad input mode
-: q4b4! ( n -- n ) qc-0 qb3! qb2! qb1! qb0! qc-1 ;
-: q4b8! ( n -- n ) q4b4! q4b4! ;                  \ dual output 8 bit
-: q4b4@ ( n -- n ) qc-0 qc-1 q3@ q2@ q1@ q0@ ;    \ dual input 2 bit
-: q4b8@ ( n -- n ) q4b4@ q4b4@ ;
-: q4c! ( n -- ) #24 lshift q4b8! ;
-: q4c@ ( -- n ) 0 q4b8@ ;
+: q4-init ( -- ) QD2-1 QD3-1 qd2> qd3> q2-init ; \ quad mode init
+: q4> ( -- ) QD2-1 QD3-1 qd2> qd3> q2> ;         \ quad output mode
+: q4< ( -- ) qd2< qd3< q2< ;                       \ quad input mode
+: q4b4! ( n -- n )                                 \ quad mode 4 bit transfer
+   qc-0 qb3! qb2! qb1! qb0! qc-1 ;
+: q4b8! ( n -- n ) q4b4! q4b4! ;                   \ quad output 8 bit
+: q4b4@ ( n -- n ) qc-0 qc-1 q3@ q2@ q1@ q0@ ;     \ quad input 4 bit
+: q4b8@ ( n -- n ) q4b4@ q4b4@ ;                   \ quad input 8 bit
+: q4c! ( n -- ) #24 lshift q4b8! ;                 \ quad mode output 1 byte
+: q4c@ ( -- n ) 0 q4b8@ ;                          \ quad mode read one byte
 
-: q-block@ ( ba len qa -- ) \ read a block from qspi
-   q-read over + swap do qc@ i c! loop q-end ;
-  ;
-: q-block! ( ba l qa -- ) \ write a block to qspi
-  q-write-ena q-write over + swap do i c@ qc! loop q-end ;
-  ;
+\ : q-block@ ( ba len qa -- )                        \ read a block from qspi
+\    q-read over + swap do qc@ i c! loop q-end ;
+\   ;
+\ : q-block! ( ba l qa -- )                          \ write a block to qspi
+\   q-write-ena q-write over + swap do i c@ qc! loop q-end ;
+\   ;
