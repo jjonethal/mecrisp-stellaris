@@ -43,47 +43,53 @@ require gpio.fth
 #13 GPIOD + constant PD13
  #2 GPIOE + constant PE2
 
-PB6  constant QS                                    \ QSPI_NCS
-PB2  constant QC                                    \ QSPI_CLK
-PD11 constant QD0                                   \ QSPI_D0
-PD12 constant QD1                                   \ QSPI_D1
-PE2  constant QD2                                   \ QSPI_D2
-PD13 constant QD3                                   \ QSPI_D3
+PB6  constant QS                                   \ QSPI_NCS
+PB2  constant QC                                   \ QSPI_CLK
+PD11 constant QD0                                  \ QSPI_D0
+PD12 constant QD1                                  \ QSPI_D1
+PE2  constant QD2                                  \ QSPI_D2
+PD13 constant QD3                                  \ QSPI_D3
 
-: q-g>  ( pin -- ) gpio-output ;                    \ configure pin as gpio output
-: q-g<  ( pin -- ) 0 over gpio-pupd! gpio-input ;   \ input no pull up/down
-: q-g<U ( pin -- ) 1 over gpio-pupd! gpio-input ;   \ input pullup
-: q-g<D ( pin -- ) 2 over gpio-pupd! gpio-input ;   \ input pulldown
-: g-on  ( pin -- ) 1 swap gpio-clk! ;               \ gpio clock on
-: q-on<U ( pin -- ) dup g-on q-g<U ;                \ gpio clk on input pullup
-: q-on<Ux2 ( 2xpin -- ) q-on<U q-on<U ;             \ 2 pins inp pu - p p 
-: q-on<Ux4 ( 4xpin -- ) q-on<Ux2 q-on<Ux2 ;         \ 4 pins inp pu - p p p p
-: q-on<Ux6 ( 6xpin -- ) q-on<Ux4 q-on<Ux2 ;         \ 6 pins inp pu - p p p p p p
-: q-ini ( -- ) QS QC QD0 QD1 QD2 QD3 q-on<Ux6 ;     \ gpio clk on input pullup
-: QD0-1 ( -- ) QD0 pin-on  ! ;                      \ set QD0 to 1
-: QD0-0 ( -- ) QD0 pin-off ! ;                      \ set QD0 to 0
-: QD1-1 ( -- ) QD1 pin-on  ! ;                      \ set QD1 to 1
-: QD1-0 ( -- ) QD1 pin-off ! ;                      \ set QD1 to 0
-: QD2-1 ( -- ) QD2 pin-on  ! ;                      \ set QD2 to 1
-: QD2-0 ( -- ) QD2 pin-off ! ;                      \ set QD2 to 0
-: QD3-1 ( -- ) QD3 pin-on  ! ;                      \ set QD3 to 1
-: QD3-0 ( -- ) QD3 pin-off ! ;                      \ set QD3 to 0
-: QS-1  ( -- ) QS  pin-on  ! ;                      \ set CS  to 1
-: QS-0  ( -- ) QS  pin-off ! ;                      \ set CS  to 0
-: QC-1  ( -- ) QC  pin-on  ! ;                      \ set CLK to 1
-: QC-0  ( -- ) QC  pin-off ! ;                      \ set CLK to 0
+: q-g>  ( pin -- ) gpio-output ;                   \ configure pin as gpio output
+: q-g<  ( pin -- ) 0 over gpio-pupd! gpio-input ;  \ input no pull up/down
+: q-g<U ( pin -- ) 1 over gpio-pupd! gpio-input ;  \ input pullup
+: q-g<D ( pin -- ) 2 over gpio-pupd! gpio-input ;  \ input pulldown
+: g-on  ( pin -- ) 1 swap gpio-clk! ;              \ gpio clock on
+: q-on<U ( pin -- ) dup g-on q-g<U ;               \ gpio clk on input pullup
+: q-on<Ux2 ( 2xpin -- ) q-on<U q-on<U ;            \ 2 pins inp pu - p p 
+: q-on<Ux4 ( 4xpin -- ) q-on<Ux2 q-on<Ux2 ;        \ 4 pins inp pu - p p p p
+: q-on<Ux6 ( 6xpin -- ) q-on<Ux4 q-on<Ux2 ;        \ 6 pins inp pu - p p p p p p
+: q-ini ( -- ) QS QC QD0 QD1 QD2 QD3 q-on<Ux6 ;    \ gpio clk on input pullup
+: QD0-1 ( -- ) QD0 pin-on  ! ;                     \ set QD0 to 1
+: QD0-0 ( -- ) QD0 pin-off ! ;                     \ set QD0 to 0
+: QD1-1 ( -- ) QD1 pin-on  ! ;                     \ set QD1 to 1
+: QD1-0 ( -- ) QD1 pin-off ! ;                     \ set QD1 to 0
+: QD2-1 ( -- ) QD2 pin-on  ! ;                     \ set QD2 to 1
+: QD2-0 ( -- ) QD2 pin-off ! ;                     \ set QD2 to 0
+: QD3-1 ( -- ) QD3 pin-on  ! ;                     \ set QD3 to 1
+: QD3-0 ( -- ) QD3 pin-off ! ;                     \ set QD3 to 0
+: QS-1  ( -- ) QS  pin-on  ! ;                     \ set CS  to 1
+: QS-0  ( -- ) QS  pin-off ! ;                     \ set CS  to 0
+: QC-1  ( -- ) QC  pin-on  ! ;                     \ set CLK to 1
+: QC-0  ( -- ) QC  pin-off ! ;                     \ set CLK to 0
 
 : qd0@ ( n -- n ) 2* QD0  gpio-idr @ QD0 pin# rshift 1 and or ;
 : qd1@ ( n -- n ) 2* QD1  gpio-idr @ QD1 pin# rshift 1 and or ;
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
 
-: bsrr-mask ( pin -- m ) dup bsrr-on swap bsrr-off or 1-foldable ;
-: qd0! ( n -- n ) dup 0< #16 rshift not QD0 bsrr-mask and QD0 gpio-bsrr ! 2* ;
-: qd1! ( n -- n ) dup 0< #16 rshift not QD1 bsrr-mask and QD1 gpio-bsrr ! 2* ;
-: qd2! ( n -- n ) dup 0< #16 rshift not QD2 bsrr-mask and QD2 gpio-bsrr ! 2* ;
-: qd3! ( n -- n ) dup 0< #16 rshift not QD3 bsrr-mask and QD3 gpio-bsrr ! 2* ;
-
+: bsrr-mask ( pin -- m )                           \ r/s bits for bsrr reg
+   dup bsrr-on swap bsrr-off or 1-foldable ;
+: msb-bsrr-mask ( n -- n n )                       \ h/l word mask for bsrr
+   dup 0< #16 rshift not 1-foldable ; 
+: qd0! ( n -- n )                                  \ set pin QD0
+   msb-bsrr-mask QD0 bsrr-mask and QD0 gpio-bsrr ! 2* ;
+: qd1! ( n -- n )                                  \ set pin QD1
+   msb-bsrr-mask QD1 bsrr-mask and QD1 gpio-bsrr ! 2* ;
+: qd2! ( n -- n )                                  \ set pin QD2
+   msb-bsrr-mask QD2 bsrr-mask and QD2 gpio-bsrr ! 2* ;
+: qd3! ( n -- n )                                  \ set pin QD3
+   msb-bsrr-mask QD3 bsrr-mask and QD3 gpio-bsrr ! 2* ;
 
 : qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
 : qd1> ( -- ) QD1 q-g> ;                          \ QD1 output mode
