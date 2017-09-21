@@ -78,15 +78,11 @@ PD13 constant QD3                                   \ QSPI_D3
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
 
-\ : qd0! ( n -- n ) dup 0< if QD0-1 else QD0-0 then 2* ;
-\ : qd1! ( n -- n ) dup 0< if QD1-1 else QD1-0 then 2* ;
-\ : qd2! ( n -- n ) dup 0< if QD2-1 else QD2-0 then 2* ;
-\ : qd3! ( n -- n ) dup 0< if QD3-1 else QD3-0 then 2* ;
-
-: qd0! ( n -- n ) dup #31 rshift dup 1 xor #16 lshift or QD0 pin# lshift QD0 gpio-bsrr ! 2* ;
-: qd1! ( n -- n ) dup #31 rshift dup 1 xor #16 lshift or QD1 pin# lshift QD1 gpio-bsrr ! 2* ;
-: qd2! ( n -- n ) dup #31 rshift dup 1 xor #16 lshift or QD2 pin# lshift QD2 gpio-bsrr ! 2* ;
-: qd3! ( n -- n ) dup #31 rshift dup 1 xor #16 lshift or QD3 pin# lshift QD3 gpio-bsrr ! 2* ;
+: bsrr-mask ( pin -- m ) dup bsrr-on swap bsrr-off or 1-foldable ;
+: qd0! ( n -- n ) dup 0< #16 rshift not QD0 bsrr-mask and QD0 gpio-bsrr ! 2* ;
+: qd1! ( n -- n ) dup 0< #16 rshift not QD1 bsrr-mask and QD1 gpio-bsrr ! 2* ;
+: qd2! ( n -- n ) dup 0< #16 rshift not QD2 bsrr-mask and QD2 gpio-bsrr ! 2* ;
+: qd3! ( n -- n ) dup 0< #16 rshift not QD3 bsrr-mask and QD3 gpio-bsrr ! 2* ;
 
 
 : qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
