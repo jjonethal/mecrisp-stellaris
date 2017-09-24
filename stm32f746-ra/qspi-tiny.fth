@@ -78,18 +78,18 @@ PD13 constant QD3                                  \ QSPI_D3
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
 
-: bsrr-mask ( pin -- m )                           \ r/s bits for bsrr reg
+: bsrr-mask ( pin -- m )                           \ greate mask for bsr reg ae p0 = $10001, p2 = $20002 etc.
    dup bsrr-on swap bsrr-off or 1-foldable ;
-: msb-bsrr-mask ( n -- n n )                       \ h/l word mask for bsrr
-   dup 0< #16 rshift not 1-foldable ; 
+: msb-bsrr-shift ( n -- n n )                      \ h/l word mask for bsrr b31?$$10:$00
+   dup 0< #16 and 1-foldable ; 
 : qd0! ( n -- n )                                  \ set pin QD0
-   msb-bsrr-mask QD0 bsrr-mask and QD0 gpio-bsrr ! 2* ;
+   dup #31 rshift #4 lshift QD0 bsrr-off swap rshift QD0 gpio-bsrr ! 2* ;
 : qd1! ( n -- n )                                  \ set pin QD1
-   msb-bsrr-mask QD1 bsrr-mask and QD1 gpio-bsrr ! 2* ;
+   dup #31 rshift #4 lshift QD1 bsrr-off swap rshift QD1 gpio-bsrr ! 2* ;
 : qd2! ( n -- n )                                  \ set pin QD2
-   msb-bsrr-mask QD2 bsrr-mask and QD2 gpio-bsrr ! 2* ;
+   dup #31 rshift #4 lshift QD2 bsrr-off swap rshift QD2 gpio-bsrr ! 2* ;
 : qd3! ( n -- n )                                  \ set pin QD3
-   msb-bsrr-mask QD3 bsrr-mask and QD3 gpio-bsrr ! 2* ;
+   dup #31 rshift #4 lshift QD3 bsrr-off swap rshift QD3 gpio-bsrr ! 2* ;
 
 : qd0> ( -- ) QD0 q-g> ;                          \ QD0 output mode
 : qd1> ( -- ) QD1 q-g> ;                          \ QD1 output mode
