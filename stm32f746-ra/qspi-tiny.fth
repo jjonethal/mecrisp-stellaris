@@ -75,15 +75,22 @@ PD13 constant QD3                                  \ QSPI_D3
 : QC-1  ( -- ) QC  pin-on  ! ;                     \ set CLK to 1
 : QC-0  ( -- ) QC  pin-off ! ;                     \ set CLK to 0
 
-: qd0@ ( n -- n ) 2* QD0  gpio-idr @ QD0 pin# rshift 1 and or ;
-: qd1@ ( n -- n ) 2* QD1  gpio-idr @ QD1 pin# rshift 1 and or ;
-: qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
-: qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
+: qd0@ ( n -- n )                                  \ shift in qd0
+   2* QD0  gpio-idr @ QD0 pin# rshift 1 and or ;
+: qd1@ ( n -- n )                                  \ shift in qd1
+   2* QD1  gpio-idr @ QD1 pin# rshift 1 and or ;
+: qd2@ ( n -- n )                                  \ shift in qd2
+   2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
+: qd3@ ( n -- n )                                  \ shift in qd3
+   2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
 
-: qp-table <builds does> swap 3 lshift + dup @ swap 4 + @ ;
+\ building fast access table an entry consists of 2 words
+\ one b32 for qd0,qd1, qd3 and 2nd for qd2
+: qp-table ( n -- q0q1q3 q2 )
+   <builds does> swap $f and 3 lshift + dup @ swap 4 + @ ;
 
 : qd-bsrr# ( f pin -- n ) pin# 1 swap lshift swap 0= #16 and lshift 2-foldable ;
-: qp-013,2,+ ( n -- n )
+: qp-013,2,+ ( n -- n )              \ compiling 2 bitmasks for qd0,q,3 and qd2 incrementing counter
    dup dup 1 and qd0 qd-bsrr#
    over    2 and qd1 qd-bsrr# or
    over    8 and qd3 qd-bsrr# or ,
@@ -157,7 +164,25 @@ qp-table q-tab
 : q4c! ( n -- ) #24 lshift q4b8! ;                 \ quad mode output 1 byte
 : q4c@ ( -- n ) 0 q4b8@ ;                          \ quad mode read one byte
 
-: q-read ;
+0 variable #q-init                                 \ hook for init
+0 variable #q>                                     \ hook for output mode
+0 variable #q<                                     \ hook for input mode
+0 variable #qb8!
+0 variable #qb8@
+0 variable #qc!
+0 variable #qc@
+
+: qc! #qc! @ execute ;
+: qc@ #qc@ @ execute ;
+: qb8@ #qb8@ @ execute ;
+: qb8! #qb8! @ execute ;
+: q-init #q-init @ execute ;
+: q> #q> @ execute ;
+: q< #q< @ execute ;
+
+: q-read ( a -- )
+   q> qs-0 $B qc! #8 lshift qb8! qb8! qb8! ;
+;
 
 \ : q-block@ ( ba len qa -- )                        \ read a block from qspi
 \    q-read over + swap do qc@ i c! loop q-end ;
