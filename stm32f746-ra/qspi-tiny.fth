@@ -19,10 +19,12 @@
 \ qspi flash datasheet "C:\Users\jeanjo\Downloads\stm\n25q_128mb_3v_65nm.pdf"
 \ https://www.micron.com/~/media/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf
 \ stm32f746 user manual "C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf"
-reset \ ok.
 
-include util.fth
-include gpio.fth
+reset
+
+
+require util.fth
+require gpio.fth
 require gpio.fth
 
 \ QSPI_NCS - PB6  - AF10                 \ chip select
@@ -77,6 +79,23 @@ PD13 constant QD3                                  \ QSPI_D3
 : qd1@ ( n -- n ) 2* QD1  gpio-idr @ QD1 pin# rshift 1 and or ;
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
+
+: qp-table <builds does> swap 3 lshift + dup @ swap 4 + @ ;
+
+: qd-bsrr# ( f pin -- n ) pin# 1 swap lshift swap 0= #16 and lshift 2-foldable ;
+: qp-013,2,+ ( n -- n )
+   dup dup 1 and qd0 qd-bsrr#
+   over    2 and qd1 qd-bsrr# or
+   over    8 and qd3 qd-bsrr# or ,
+   4 and qd2 qd-bsrr# , 1+ ;
+
+qp-table q-tab
+   0 qp-013,2,+ qp-013,2,+ qp-013,2,+ qp-013,2,+
+   qp-013,2,+ qp-013,2,+ qp-013,2,+ qp-013,2,+ 
+   qp-013,2,+ qp-013,2,+ qp-013,2,+ qp-013,2,+ 
+   qp-013,2,+ qp-013,2,+ qp-013,2,+ qp-013,2,+ drop
+
+: qd!! ( n -- ) q-tab qd2 gpio-bsrr ! qd0 gpio-bsrr ! ;
 
 : bsrr-mask ( pin -- m )                           \ greate mask for bsr reg ae p0 = $10001, p2 = $20002 etc.
    dup bsrr-on swap bsrr-off or 1-foldable ;
@@ -137,6 +156,8 @@ PD13 constant QD3                                  \ QSPI_D3
 : q4b8@ ( n -- n ) q4b4@ q4b4@ ;                   \ quad input 8 bit
 : q4c! ( n -- ) #24 lshift q4b8! ;                 \ quad mode output 1 byte
 : q4c@ ( -- n ) 0 q4b8@ ;                          \ quad mode read one byte
+
+: q-read ;
 
 \ : q-block@ ( ba len qa -- )                        \ read a block from qspi
 \    q-read over + swap do qc@ i c! loop q-end ;
