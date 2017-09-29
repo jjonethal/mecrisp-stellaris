@@ -109,6 +109,28 @@ require gpio.fth
 : qc! ( n -- )  #24 lshift qb8! drop ;
 : qc@ ( -- n ) 0 qb8@ ;
 
+\ ********** flash driver ****************
+$50 constant Q_CLEAR_FLAG_REG
+$70 constant Q_READ_FLAG_REG
+$03 constant Q_READ
+$0B constant Q_READ_FAST
+$9E constant Q_READ_ID
+$B5 constant Q_READ_NV_CFG_REG
+$B1 constant Q_WRITE_NV_CFG_REG
+$05 constant Q_READ_STAT_REG
+$85 constant Q_READ_VOL_CFG_REG
+$81 constant Q_WRITE_VOL_CFG_REG
+$66 constant Q_RESET_ENABLE
+$99 constant Q_RESET_MEM
+$04 constant Q_WRITE_DIS
+$06 constant Q_WRITE_ENA
+$20 constant Q_ERASE_SUB_SEC
+$D8 constant Q_ERASE_SEC
+$C7 constant Q_ERASE_BULK
+$7A constant Q_WRITE_RESUME
+$75 constant Q_WRITE_SUSPEND
+$02 constant Q_PAGE_PROG
+
 : read-id ( a -- )                        \ read id to buffer 20 bytes
    qs0 q> Q_READ_ID qc! q<
    dup 20 + swap do 0 qb8@ i c! loop qc1 qs1 ;
