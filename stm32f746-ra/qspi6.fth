@@ -83,18 +83,35 @@ require gpio.fth
 : q4b4!  ( n -- n )                       \ dual mode shifting 4 highest bits
    qc0 qd3! qd2! qd1! qd0! qc1 ;
 : q4b8!  ( n -- n ) q4b4! q4b4! ;         \ quad mode shifting 8 highest bits
-: qd0<< ( n -- n ) qd0 pin@<< ;
-: qd1<< ( n -- n ) qd1 pin@<< ;
-: qd2<< ( n -- n ) qd2 pin@<< ;
-: qd4<< ( n -- n ) qd4 pin@<< ;
+: qd0@ ( n -- n ) qd0 pin@<< ;
+: qd1@ ( n -- n ) qd1 pin@<< ;
+: qd2@ ( n -- n ) qd2 pin@<< ;
+: qd4@ ( n -- n ) qd4 pin@<< ;
 \ input bit shifting
-: q1b1<< ( n -- n ) qc0 qc1 qd1<< ;       \ single shifting in 1 bit from spi
-: q1b2<< ( n -- n ) q1b1@ q1b1@ ;         \ single shifting in 2 bit from spi
-: q1b4<< ( n -- n ) q1b2@ q1b2@ ;         \ single shifting in 4 bit from spi
-: q1b8<< ( n -- n ) q1b4@ q1b4@ ;         \ single shifting in 8 bit from spi
-: q2b2<< ( n -- n ) qc0 qc1 qd1<< qd0<< ; \ dual shifting in 2 bit from spi
-: q2b4<< ( n -- n ) q2b2@ q2b2@ ;         \ dual shifting in 4 bit from spi
-: q2b8<< ( n -- n ) q2b4@ q2b4@ ;         \ dual shifting in 8 bit from spi
-: q4b4<< ( n -- n ) qc0 qc1               \ quad shifting in 4 bit from spi
-   qd3<< qd2<< qd1<< qd0<< ;
-: q4b8<< ( n -- n ) q4b4@ q4b4@ ;         \ quad shifting in 8 bit from spi
+: q1b1@ ( n -- n ) qc0 qc1 qd1@ ;         \ single shifting in 1 bit from spi
+: q1b2@ ( n -- n ) q1b1@ q1b1@ ;          \ single shifting in 2 bit from spi
+: q1b4@ ( n -- n ) q1b2@ q1b2@ ;          \ single shifting in 4 bit from spi
+: q1b8@ ( n -- n ) q1b4@ q1b4@ ;          \ single shifting in 8 bit from spi
+: q2b2@ ( n -- n ) qc0 qc1 qd1@ qd0@ ;    \ dual shifting in 2 bit from spi
+: q2b4@ ( n -- n ) q2b2@ q2b2@ ;          \ dual shifting in 4 bit from spi
+: q2b8@ ( n -- n ) q2b4@ q2b4@ ;          \ dual shifting in 8 bit from spi
+: q4b4@ ( n -- n ) qc0 qc1                \ quad shifting in 4 bit from spi
+   qd3@ qd2@ qd1@ qd0@ ;
+: q4b8@ ( n -- n ) q4b4@ q4b4@ ;          \ quad shifting in 8 bit from spi
+
+' q1b8@ variable qb8@-hook
+' q1b8! variable qb8!-hook
+' q1<>  variable q>-hook
+' q1<>  variable q<-hook
+
+: qb8! qb8!-hook @ execute ;
+: qb8@ qb8@-hook @ execute ;
+: qc! ( n -- )  #24 lshift qb8! drop ;
+: qc@ ( -- n ) 0 qb8@ ;
+
+: read-id ( a -- )                        \ read id to buffer 20 bytes
+   qs0 q> Q_READ_ID qc! q<
+   dup 20 + swap do 0 qb8@ i c! loop qc1 qs1 ;
+: .id  ( -- )                             \ print id
+   qs0 q> Q_READ_ID qc! q<
+   20 0 do 0 qb8@ x.2 space loop qc1 qs1 cr ;
