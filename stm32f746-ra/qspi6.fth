@@ -86,7 +86,7 @@ require gpio.fth
 : qd0@ ( n -- n ) qd0 pin@<< ;
 : qd1@ ( n -- n ) qd1 pin@<< ;
 : qd2@ ( n -- n ) qd2 pin@<< ;
-: qd4@ ( n -- n ) qd4 pin@<< ;
+: qd3@ ( n -- n ) qd3 pin@<< ;
 \ input bit shifting
 : q1b1@ ( n -- n ) qc0 qc1 qd1@ ;         \ single shifting in 1 bit from spi
 : q1b2@ ( n -- n ) q1b1@ q1b1@ ;          \ single shifting in 2 bit from spi
@@ -106,6 +106,8 @@ require gpio.fth
 
 : qb8! qb8!-hook @ execute ;
 : qb8@ qb8@-hook @ execute ;
+: q< q<-hook @ execute ;
+: q> q>-hook @ execute ;
 : qc! ( n -- )  #24 lshift qb8! drop ;
 : qc@ ( -- n ) 0 qb8@ ;
 
