@@ -137,3 +137,5 @@ $02 constant Q_PAGE_PROG
 : .id  ( -- )                             \ print id
    qs0 q> Q_READ_ID qc! q<
    20 0 do 0 qb8@ x.2 space loop qc1 qs1 cr ;
+
+: test.id ( -- ) q-init .id ;
