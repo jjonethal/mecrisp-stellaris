@@ -180,8 +180,9 @@ qp-table q-tab
 : q> #q> @ execute ;
 : q< #q< @ execute ;
 
-: q-read ( a -- )
-   q> qs-0 $B qc! #8 lshift qb8! qb8! qb8! ;
+: q-read ( ad l a -- ) \ read to address ad from qspi address a length l
+   q> qs-0 $B qc! #8 lshift qb8! qb8! qb8! q<
+   over + swap do qc@ i c! loop q-end ;
 ;
 
 \ : q-block@ ( ba len qa -- )                        \ read a block from qspi
