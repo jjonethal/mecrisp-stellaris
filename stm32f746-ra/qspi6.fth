@@ -38,65 +38,65 @@ require gpio.fth
 3 gpio #13 + constant qd3 \ QSPI_D3
 4 gpio   2 + constant qd2 \ QSPI_D2
 
-: qspi-gpio-clk-on ( -- )                 \ turn on gpio clock
-   1 qs gpio-clk! 1 qd0 gpio-clk! 1 qd2 gpio-clk! ;
-: qspi-gpio-init-sw ( -- )                \ qspi bitbang
-   qspi-gpio-clk-on qs  1 gpio-mode! qc  1 gpio-mode! 
-   qs gpio-output qc gpio-output qd0 1 gpio-mode!
-   qd1 1 gpio-mode! qd2 1 gpio-mode! qd3 1 gpio-mode! ;
 : q1<>  ( -- ) qd0  gpio-output qd1  gpio-input ;  \ single mode data io
 : q2>   ( -- ) qd0  gpio-output qd1  gpio-output ; \ dual output
 : q2<   ( -- ) qd0  gpio-input  qd1  gpio-input ;  \ dual input
 : q4>   ( -- ) qd3  gpio-output qd2  gpio-output q2> ; \ quad out
 : q4<   ( -- ) qd3  gpio-input  qd3  gpio-input q2< ;  \ quad in
+: qs> qs gpio-output ;
+: qc> qc gpio-output ;
 
 : pin! ( f pin -- )                       \ output flag to pin
-   swap 0<> #16 and over bsrr-off rshift swap gpio-bsrr ! ;
+   tuck swap if bsrr-on else bsrr-off then swap gpio-bsrr ! ;
 : pin!<< ( n pin -- n )                   \ output bit 31 to pin and << value
    over 0< swap pin! 2* ;
 : qd0! ( n -- n ) qd0 pin!<< ;            \ set pin QD0
 : qd1! ( n -- n ) qd1 pin!<< ;            \ set pin QD1
 : qd2! ( n -- n ) qd2 pin!<< ;            \ set pin QD2
 : qd3! ( n -- n ) qd3 pin!<< ;            \ set pin QD3
-: qc!  ( n -- n ) qc  pin! ;              \ set pin qc
-: qs!  ( n -- n ) qs  pin! ;              \ set pin qs to b31
+: qck! ( n -- n ) qc  pin! ;              \ set pin qc
+: qen!  ( n -- n ) qs  pin! ;              \ set pin qs to b31
 : qc0  ( -- ) qc bsrr-off qc gpio-bsrr ! ; \ set qc 0
 : qc1  ( -- ) qc bsrr-on qc gpio-bsrr ! ;  \ set qc 1
 : qs0  ( -- ) qs bsrr-off qs gpio-bsrr ! ; \ set qs 0
 : qs1  ( -- ) qs bsrr-on qs gpio-bsrr ! ;  \ set qs 1
 
-: q-init ( -- )                           \ initialize qspi 
-   qspi-gpio-init-sw q4> -1 qd0! qd1! qd2! qd3! drop qc1 qs1 ;
 : pin@ ( pin -- f )                       \ get pin value
-   dup gpio-idr swap gpio-in# bit@ ;
+   dup gpio-idr swap gpio-in# swap bit@ ;
 : pin@<< ( n pin -- n )                   \ shift in pin value
    pin@ 1 and swap 2* or ; 
 
+: .pin ( pin -- ) pin@ 1 and . ;
+
+: LA ( -- )
+\  cr qs .pin space qc .pin space
+\  qd0 .pin space qd1 .pin space qd2 .pin space qd3 .pin space
+  ;
 \ output bit shifting
-: q1b1!  ( n -- n ) qc0 qd0! qc1 ;        \ single mode shifting out highest bit
+: q1b1!  ( n -- n ) LA qc0 LA qd0! LA qc1 LA ;        \ single mode shifting out highest bit
 : q1b2!  ( n -- n ) q1b1! q1b1! ;
 : q1b4!  ( n -- n ) q1b2! q1b2! ;         \ single mode shifting out highest 4 bit s
 : q1b8!  ( n -- n ) q1b4! q1b4! ;         \ single mode shifting out highest 8 bit s
-: q2b2!  ( n -- n ) qc0 qd1! qd0! qc1 ;   \ dual mode shifting 2 highest bits
+: q2b2!  ( n -- n ) LA qc0 LA qd1! qd0! LA qc1 LA ;   \ dual mode shifting 2 highest bits
 : q2b4!  ( n -- n ) q2b2! q2b2! ;         \ dual mode shifting 4 highest bits
 : q2b8!  ( n -- n ) q2b4! q2b4! ;         \ dual mode shifting 8 highest bits
 : q4b4!  ( n -- n )                       \ dual mode shifting 4 highest bits
-   qc0 qd3! qd2! qd1! qd0! qc1 ;
+   LA qc0 LA qd3! qd2! qd1! qd0! LA qc1 LA ;
 : q4b8!  ( n -- n ) q4b4! q4b4! ;         \ quad mode shifting 8 highest bits
 : qd0@ ( n -- n ) qd0 pin@<< ;
 : qd1@ ( n -- n ) qd1 pin@<< ;
 : qd2@ ( n -- n ) qd2 pin@<< ;
 : qd3@ ( n -- n ) qd3 pin@<< ;
 \ input bit shifting
-: q1b1@ ( n -- n ) qc0 qc1 qd1@ ;         \ single shifting in 1 bit from spi
+: q1b1@ ( n -- n ) LA qc0 LA qc1 LA qd1@ LA ;         \ single shifting in 1 bit from spi
 : q1b2@ ( n -- n ) q1b1@ q1b1@ ;          \ single shifting in 2 bit from spi
 : q1b4@ ( n -- n ) q1b2@ q1b2@ ;          \ single shifting in 4 bit from spi
 : q1b8@ ( n -- n ) q1b4@ q1b4@ ;          \ single shifting in 8 bit from spi
-: q2b2@ ( n -- n ) qc0 qc1 qd1@ qd0@ ;    \ dual shifting in 2 bit from spi
+: q2b2@ ( n -- n ) LA qc0 LA qc1 LA qd1@ qd0@ LA ;    \ dual shifting in 2 bit from spi
 : q2b4@ ( n -- n ) q2b2@ q2b2@ ;          \ dual shifting in 4 bit from spi
 : q2b8@ ( n -- n ) q2b4@ q2b4@ ;          \ dual shifting in 8 bit from spi
-: q4b4@ ( n -- n ) qc0 qc1                \ quad shifting in 4 bit from spi
-   qd3@ qd2@ qd1@ qd0@ ;
+: q4b4@ ( n -- n ) LA qc0 LA qc1 LA                \ quad shifting in 4 bit from spi
+   qd3@ qd2@ qd1@ qd0@ LA ;
 : q4b8@ ( n -- n ) q4b4@ q4b4@ ;          \ quad shifting in 8 bit from spi
 
 ' q1b8@ variable qb8@-hook
@@ -104,12 +104,36 @@ require gpio.fth
 ' q1<>  variable q>-hook
 ' q1<>  variable q<-hook
 
+: q1 ['] q1b8@ qb8@-hook !
+     ['] q1b8! qb8!-hook !
+     ['] q1<>  q>-hook !
+     ['] q1<>  q<-hook ! ;
+: q2 ['] q2b8@ qb8@-hook !
+     ['] q2b8! qb8!-hook !
+     ['] q2>  q>-hook !
+     ['] q2<  q<-hook ! ;
+: q4 ['] q4b8@ qb8@-hook !
+     ['] q4b8! qb8!-hook !
+     ['] q4>  q>-hook !
+     ['] q4<  q<-hook ! ;
+
 : qb8! qb8!-hook @ execute ;
 : qb8@ qb8@-hook @ execute ;
 : q< q<-hook @ execute ;
 : q> q>-hook @ execute ;
 : qc! ( n -- )  #24 lshift qb8! drop ;
 : qc@ ( -- n ) 0 qb8@ ;
+
+: qspi-gpio-clk-on ( -- )                 \ turn on gpio clock
+   1 qs gpio-clk! 1 qd0 gpio-clk! 1 qd2 gpio-clk! ;
+: qspi-gpio-init-sw ( -- )                \ qspi bitbang
+   qspi-gpio-clk-on qs  1 gpio-mode! qc  1 gpio-mode! 
+   qs gpio-output qc gpio-output qd0 1 gpio-mode!
+   qd1 1 gpio-mode! qd2 1 gpio-mode! qd3 1 gpio-mode! 1 qd2! 1 qd3! ;
+: q-init ( -- )                           \ initialize qspi 
+   qspi-gpio-init-sw qs> qc>
+   q4> -1 qd0! qd1! qd2! qd3! drop qc1 qs1 ;
+
 
 \ ********** flash driver ****************
 $50 constant Q_CLEAR_FLAG_REG
@@ -137,7 +161,7 @@ $02 constant Q_PAGE_PROG
    qs0 q> Q_READ_ID qc! q<
    dup 20 + swap do 0 qb8@ i c! loop qc1 qs1 ;
 : .id  ( -- )                             \ print id
-   qs0 q> Q_READ_ID qc! q<
-   20 0 do 0 qb8@ x.2 space loop qc1 qs1 cr ;
+   q> LA qs0 LA Q_READ_ID qc! q<
+   20 0 do 0 qb8@ x.2 space loop LA qc1 LA qs1 LA cr ;
 
 : test.id ( -- ) q-init .id ;
