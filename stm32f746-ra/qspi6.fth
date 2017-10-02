@@ -47,7 +47,8 @@ require gpio.fth
 : qc> qc gpio-output ;
 
 : pin! ( f pin -- )                       \ output flag to pin
-   tuck swap if bsrr-on else bsrr-off then swap gpio-bsrr ! ;
+  tuck swap if bsrr-on else bsrr-off then swap gpio-bsrr ! ;
+\   swap 0= #16 and over bsrr-on lshift swap gpio-bsrr ! ;
 : pin!<< ( n pin -- n )                   \ output bit 31 to pin and << value
    over 0< swap pin! 2* ;
 : qd0! ( n -- n ) qd0 pin!<< ;            \ set pin QD0
@@ -61,12 +62,12 @@ require gpio.fth
 : qs0  ( -- ) qs bsrr-off qs gpio-bsrr ! ; \ set qs 0
 : qs1  ( -- ) qs bsrr-on qs gpio-bsrr ! ;  \ set qs 1
 
-: pin@ ( pin -- f )                       \ get pin value
-   dup gpio-idr swap gpio-in# swap bit@ ;
+: pin@ ( pin -- b )                       \ get pin value
+   dup  gpio-idr @ swap pin# rshift 1 and  ;
 : pin@<< ( n pin -- n )                   \ shift in pin value
-   pin@ 1 and swap 2* or ; 
+   pin@ swap 2* or ; 
 
-: .pin ( pin -- ) pin@ 1 and . ;
+: .pin ( pin -- ) pin@ . ;
 
 : LA ( -- )
 \  cr qs .pin space qc .pin space
@@ -83,10 +84,10 @@ require gpio.fth
 : q4b4!  ( n -- n )                       \ dual mode shifting 4 highest bits
    LA qc0 LA qd3! qd2! qd1! qd0! LA qc1 LA ;
 : q4b8!  ( n -- n ) q4b4! q4b4! ;         \ quad mode shifting 8 highest bits
-: qd0@ ( n -- n ) qd0 pin@<< ;
-: qd1@ ( n -- n ) qd1 pin@<< ;
-: qd2@ ( n -- n ) qd2 pin@<< ;
-: qd3@ ( n -- n ) qd3 pin@<< ;
+: qd0@ ( n -- n ) qd0 gpio-idr @ qd0 pin# rshift 1 and swap 2* or ;
+: qd1@ ( n -- n ) qd1 gpio-idr @ qd1 pin# rshift 1 and swap 2* or ;
+: qd2@ ( n -- n ) qd2 gpio-idr @ qd2 pin# rshift 1 and swap 2* or ;
+: qd3@ ( n -- n ) qd3 gpio-idr @ qd3 pin# rshift 1 and swap 2* or ;
 \ input bit shifting
 : q1b1@ ( n -- n ) LA qc0 LA qc1 LA qd1@ LA ;         \ single shifting in 1 bit from spi
 : q1b2@ ( n -- n ) q1b1@ q1b1@ ;          \ single shifting in 2 bit from spi
@@ -129,11 +130,12 @@ require gpio.fth
 : qspi-gpio-init-sw ( -- )                \ qspi bitbang
    qspi-gpio-clk-on qs  1 gpio-mode! qc  1 gpio-mode! 
    qs gpio-output qc gpio-output qd0 1 gpio-mode!
-   qd1 1 gpio-mode! qd2 1 gpio-mode! qd3 1 gpio-mode! 1 qd2! 1 qd3! ;
+   qd1 1 gpio-mode! qd2 1 gpio-mode! qd3 1 gpio-mode! -1 qd2! qd3! drop ;
 : q-init ( -- )                           \ initialize qspi 
    qspi-gpio-init-sw qs> qc>
    q4> -1 qd0! qd1! qd2! qd3! drop qc1 qs1 ;
-
+: q-start ( -- ) q> qs0 ;                 \ start qspi transfer
+: q-end   ( -- ) qc1 qs1 ;                \ end qspi transfer
 
 \ ********** flash driver ****************
 $50 constant Q_CLEAR_FLAG_REG
@@ -161,7 +163,53 @@ $02 constant Q_PAGE_PROG
    qs0 q> Q_READ_ID qc! q<
    dup 20 + swap do 0 qb8@ i c! loop qc1 qs1 ;
 : .id  ( -- )                             \ print id
-   q> LA qs0 LA Q_READ_ID qc! q<
+   q> LA qs0 LA Q_READ_ID qc! q< .s
    20 0 do 0 qb8@ x.2 space loop LA qc1 LA qs1 LA cr ;
 
+: q-read ( l ad qadr -- )
+   q> qs0 Q_READ qc! 8 lshift qb8! qb8! qb8! drop q< 
+   tuck + swap do qc@ i c! loop qc1 qs1 ;
+
+: q-adr! ( n -- )                         \ write 24 bit address
+   8 lshift qb8! qb8! qb8! drop ; 
+
+: c. ( n -- )                             \ emit printable character or .
+   dup #32 > and dup 127 < and dup 0= [CHAR] . and or emit ;
+: q-dump-line ( l a -- )
+   cr x.8 space
+   dup >r 0 
+   do qc@ dup x.2 space loop r@ #16 swap - 3 * spaces
+   r@ 1- 0 swap 
+   do i pick c. -1 +loop r> 0 do drop loop ;   
+
+$80 constant Q_STAT_WRITE_DISABLE
+$40 constant Q_STAT_BLOCK_PROT_B3
+$20 constant Q_STAT_BLOCK_PROT_BOTTOM
+$10 constant Q_STAT_BLOCK_PROT_B2
+$08 constant Q_STAT_BLOCK_PROT_B1
+$04 constant Q_STAT_BLOCK_PROT_B0
+$02 constant Q_STAT_WRITE_ENABLE
+$01 constant Q_STAT_WRITE_IN_PROGRESS
+
+: q-read-stat ( -- n )
+   q-start Q_READ_STAT_REG qc! q< qc@ q-end ; 
+: q-dump ( l qadr -- )                    \ dump qspi contents
+   dup
+   q-start Q_READ qc! q-adr! q<
+   tuck + swap do #16 i q-dump-line #16 +loop  
+   q-end ;
+: q-write-ena ( -- )
+   q-start Q_WRITE_ENA qc! q-end ;
+: q-write-dis ( -- )
+   q-start Q_WRITE_DIS qc! q-end ;
+: q-write ( l a qa -- )
+   q-write-ena
+   q-start Q_PAGE_PROG qc! q-adr!
+   tuck + swap do i c@ qc! loop q-end ;
+: q-verify  ( l a qa -- err )             \ verify qspi -- count errors
+   q-start Q_READ qc! q-adr! q<
+   tuck + swap 0 -rot do qc@ i @ = negate + loop q-end ; 
+: q-erase-subsector ( qa -- )
+   q-write-ena 
+   q-start Q_ERASE_SUB_SEC qc! q-adr! q-end ;
 : test.id ( -- ) q-init .id ;
