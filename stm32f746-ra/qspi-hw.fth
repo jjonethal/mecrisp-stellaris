@@ -27,6 +27,7 @@
    qc0 qc1  qc0 qc1
    qc0 qc1  qc0 qc1
    qc0 qc1  qc0 qc1
+   qc0 qc1  
    ;
 : q-reset ( -- )
    q4-xip-term q4-reset-single
