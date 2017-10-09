@@ -73,7 +73,7 @@ PD13 constant QD3                                  \ QSPI_D3
 : QC-1  ( -- ) QC  pin-on  ! ;                     \ set CLK to 1
 : QC-0  ( -- ) QC  pin-off ! ;                     \ set CLK to 0
 
-: qd0@ ( n -- n ) 2* QD0  gpio-idr @ QD0 pin# rshift 1 and or ;
+: qd0@ ( n -- n ) 2* QD0  gpio-idr @ QD0 pin# rshift 1 and or ; \ shift current value left and or current pin
 : qd1@ ( n -- n ) 2* QD1  gpio-idr @ QD1 pin# rshift 1 and or ;
 : qd2@ ( n -- n ) 2* QD2  gpio-idr @ QD2 pin# rshift 1 and or ;
 : qd3@ ( n -- n ) 2* QD3  gpio-idr @ QD3 pin# rshift 1 and or ;
