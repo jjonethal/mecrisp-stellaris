@@ -15,7 +15,7 @@
 
 local rs232=require("luars232")
 
-port_name   = arg[1] or "COM1"
+port_name   = arg[1] or "COM4"
 local e, p  = rs232.open(port_name)
 if e ~= rs232.RS232_ERR_NOERROR then
 	-- handle error
@@ -58,11 +58,32 @@ function waitResponse(p, timeout, detectors)
   return res,det
 end
 
-
-
-for l in io.lines(arg[2]) do
-	print(l)
+function readLine(port,timeout)
+	local res=""
+	repeat 
+		local err, data_read, size = port:read(1,timeout)
+		assert(e == rs232.RS232_ERR_NOERROR)
+		-- print("data_read",data_read)
+		if data_read then
+			res = res .. data_read
+		end
+	until data_read == nil or data_read == "\n" or data_read == "\r"
+	return res
 end
 
+function sendFile(port, fileName,timeout)
+	for l in io.lines(fileName) do
+		print(l)
+		p:write(l)
+		p:write("\n")
+		local l = readLine(p, timeout)
+		print(l)
+		if not l:match("ok%.") then
+			print("error")
+			return
+		end
+	end
+end
 
-
+fileName = [[C:\Users\jeanjo\work\forth\mecrisp-stellaris\stm32f746-ra\qspi6.fth]]
+sendFile(p,fileName,1)
