@@ -19,7 +19,7 @@ port_name   = arg[1] or "COM4"
 local e, p  = rs232.open(port_name)
 if e ~= rs232.RS232_ERR_NOERROR then
 	-- handle error
-	out:write(string.format("can't open serial port '%s', error: '%s'\n",
+	io.output():write(string.format("can't open serial port '%s', error: '%s'\n",
 			port_name, rs232.error_tostring(e)))
 	return
 end
@@ -31,6 +31,8 @@ assert(p:set_parity(rs232.RS232_PARITY_NONE) == rs232.RS232_ERR_NOERROR)
 assert(p:set_stop_bits(rs232.RS232_STOP_1) == rs232.RS232_ERR_NOERROR)
 assert(p:set_flow_control(rs232.RS232_FLOW_OFF)  == rs232.RS232_ERR_NOERROR)
 
+local port=p
+local timeout=100
 
 --- wait for answer from target and checks for detection strings
 --  @param p rs232 port to get response from.
@@ -64,26 +66,69 @@ function readLine(port,timeout)
 		local err, data_read, size = port:read(1,timeout)
 		assert(e == rs232.RS232_ERR_NOERROR)
 		-- print("data_read",data_read)
-		if data_read then
+		if data_read and data_read ~= "\n" and data_read ~= "\r" then
 			res = res .. data_read
 		end
 	until data_read == nil or data_read == "\n" or data_read == "\r"
 	return res
 end
 
-function sendFile(port, fileName,timeout)
+requiredFiles={}
+
+function baseName(fname)
+	return string.match(fname,"[^\\]*$")
+end
+
+function pathName(fname)
+	print("pathName",fname, string.match(fname,"(.*\\)[^\\]*$"))
+	return string.match(fname,"(.*\\)[^\\]*$")
+end
+
+function isAbsolutePath(fname)
+	local res=string.match(fname,"^[A-Za-z]:\\") or string.match(fname,"^\\")
+	return res ~=nil and res ~= ""
+end
+
+function required(currentFileName,requiredFileName,include)
+	if not isAbsolutePath(requiredFileName) then
+		requiredFileName = pathName(currentFileName) .. requiredFileName
+	end
+	if not requiredFiles[requiredFileName] or include == true then
+		requiredFiles[requiredFileName]=true
+		sendFile(requiredFileName)
+	end
+end
+
+function preprocess(currentFileName,l)
+	local requiredFileName = string.match(l,"require%s+(%S+)")
+	if requiredFileName then
+		required(currentFileName,requiredFileName)
+		return true
+	end
+	local includeFileName = string.match(l,"include%s+(%S+)")
+	if includeFileName then
+		required(currentFileName,includeFileName,true)
+		return true
+	end
+end
+
+function sendFile(fileName)
 	for l in io.lines(fileName) do
-		print(l)
-		p:write(l)
-		p:write("\n")
-		local l = readLine(p, timeout)
-		print(l)
-		if not l:match("ok%.") then
-			print("error")
-			return
+		print("read",l)
+		l =string.gsub(l,"(\\%s+.*)","")
+		if not preprocess(fileName,l) then
+			print("send",l)
+			p:write(l)
+			p:write("\n")
+			local l = readLine(p, timeout)
+			print(l)
+			if not l:match("ok%.$") then
+				print("error")
+				return
+			end
 		end
 	end
 end
 
 fileName = [[C:\Users\jeanjo\work\forth\mecrisp-stellaris\stm32f746-ra\qspi6.fth]]
-sendFile(p,fileName,1)
+sendFile(fileName)
