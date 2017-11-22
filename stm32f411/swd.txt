@@ -2,5 +2,50 @@
 \ "C:\Users\jeanjo\Downloads\doc\cyPSoC41\CY8C41XX_CY8C42XX_Programming_Specifications_001-81799_0C.pdf"
 \
 
-: swd-write
-  \ start APnDP RnW A[2:3] Parity stop park TrN ACK[0:2] TrN wdata[0:31] parity 
+: c0 ( -- ) ;                             \ clock low
+: c1 ( -- ) ;                             \ clock high
+             
+: d> ;                                    \ data output
+: d< ;                                    \ data in
+: d0 ( -- ) ;                             \ output 0 on dataio
+: d1 ( -- ) ;                             \ output 1 on dataio
+: d? ( -- n ) ;                           \ query data
+: start c0 d1 c1 ;                        \ send start bit
+: swd-reset ( -- )                        \ perform swd reset
+   d> d1 50 0 do c0 c1
+   loop d0 3 0 do c0 c1 loop ;
+: parity3xb2 ( b2 b2 b2 -- p )            \ 2 bit parity of 3 values
+   xor xor	dup 2/ xor ;
+: parityb32 ( w -- p )
+  dup #16 rshift xor
+  dup  #8 rshift xor
+  dup  #4 rshift xor
+  dup  #2 rshift xor
+  dup  2/ xor 1 and ;
+: d! ( n -- )                             \ send lsb
+   c0 1 and if d1 else d0 then c1 ;
+: d!>> ( n -- n )                         \ shift out lsb
+	c0 dup 1 and if d1 else d0 then c1 2/ ;
+: d0! ( -- ) c0 d0 c1 ;                   \ clock out d=0
+: d1! ( -- ) c0 d1 c1 ;                   \ clock out d=1
+: APnDP ( f -- ) d! ;                     \ output APnDP selector bit
+: RnW(0) ( -- ) d0! ;                     \ write request
+: RnW(1) ( -- ) d1! ;                     \ read request
+: A[2:3] ( n -- n ) d!>> d!>> ;           \ send address bits
+: stop ( -- ) d0! ;
+: park ( -- ) d1! ;
+: TrN< ( -- ) c0 d< c1 ;                  \ switch data line to input
+: TrN> ( -- ) c0 d> c1 ;                  \ switch data line to input
+: swd-write ( wdata[0:31] A[2:3] APnDP  -- ACK[0:2] )
+  \ start APnDP RnW(0) A[2:3] Parity stop park TrN< ACK[0:2] TrN> wdata[0:31] parity 
+  \ -------------- host ---------------------- hz-- -target- hz-- ----- host -------
+  2dup 0 parity3xb2 -rot                  \ parity APnDP RnW(0) A[2:3]
+  start APnDP RnW(0) A[2:3] d! stop park
+  
+
+: swd-read ( A[2:3] APnDP  --  parity rdata[0:31]  ACK[0:2] )
+  \ start APnDP RnW(1) A[2:3] Parity stop park TrN< ACK[0:2] rdata[0:31] parity TrN>
+  \ -------------- host ---------------------- hz-- -target- ----- target ----- hz--
+
+: aquire-chip
+  x-res-0! 5 wait-us x-res-1! 1000 wait-us 100 wait-us swd-reset set-testctrl ;
