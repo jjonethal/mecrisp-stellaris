@@ -16,6 +16,7 @@
 local rs232=require("luars232")
 
 port_name   = arg[1] or "COM4"
+fileName    = arg[2]
 local e, p  = rs232.open(port_name)
 if e ~= rs232.RS232_ERR_NOERROR then
 	-- handle error
@@ -113,22 +114,26 @@ function preprocess(currentFileName,l)
 end
 
 function sendFile(fileName)
+	local i=0
 	for l in io.lines(fileName) do
-		print("read",l)
+		i=i+1
+		-- print("read",l)
 		l =string.gsub(l,"(\\%s+.*)","")
 		if not preprocess(fileName,l) then
-			print("send",l)
+			print(l)
 			p:write(l)
 			p:write("\n")
 			local l = readLine(p, timeout)
 			print(l)
-			if not l:match("ok%.$") then
-				print("error")
+			if l:match("not found%.$") then
+				print("error in file",fileName,i)
 				return
+			elseif not l:match("ok%.$") then
+				print("Note!")				
 			end
 		end
 	end
 end
 
-fileName = [[C:\Users\jeanjo\work\forth\mecrisp-stellaris\stm32f746-ra\qspi6.fth]]
+fileName = fileName or [[C:\Users\jeanjo\work\forth\mecrisp-stellaris\stm32f746-ra\qspi6.fth]]
 sendFile(fileName)
