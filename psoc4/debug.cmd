@@ -18,12 +18,16 @@ if exist %P%\%GDB% set GNU_ARM_BIN=%P%
 SET P=C:\app\gcc\4.9_2014q4\bin
 if exist %P%\%GDB% set GNU_ARM_BIN=%P%
 
-set OPEN_OCD_CMD=%OPEN_OCD_PATH%\bin-x64\%OPEN_OCD_EXE%
-
+SET P=%OPEN_OCD_PATH%\bin-x64\%OPEN_OCD_EXE%
+if exist %P% SET OPEN_OCD_CMD=%P%
+SET P=%OPEN_OCD_PATH%\bin\%OPEN_OCD_EXE%
+if exist %P% SET OPEN_OCD_CMD=%P%
 set PATH=%GNU_ARM_BIN%;%PATH%
 
+if exist %OPEN_OCD_PATH%\share\openocd\scripts set OPEN_OCD_SCRIPTS=%OPEN_OCD_PATH%\share\openocd\scripts
+if exist %OPEN_OCD_PATH%\scripts set OPEN_OCD_SCRIPTS=%OPEN_OCD_PATH%\scripts
 :: start ocd in separate window
-start /MIN %OPEN_OCD_CMD% -f %OPEN_OCD_PATH%\scripts\board\stm32f3discovery_psoc4.cfg -l debg.log -d 3
+start /MIN %OPEN_OCD_CMD% -f %OPEN_OCD_SCRIPTS%\board\stm32f3discovery_psoc4.cfg -l debg.log -d 3
 :: launch and wait for gdb complete
 arm-none-eabi-gdb %DBG_ELF% -x .gdbinit
 
