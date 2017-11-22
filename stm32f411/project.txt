@@ -2,3 +2,4 @@ eraseflash
 compiletoflash
 include ..\common\dump.txt
 include ..\common\disassembler-m3.txt
+compiletoram
