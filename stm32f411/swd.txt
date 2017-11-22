@@ -1,0 +1,6 @@
+\ psoc4 swd
+\ "C:\Users\jeanjo\Downloads\doc\cyPSoC41\CY8C41XX_CY8C42XX_Programming_Specifications_001-81799_0C.pdf"
+\
+
+: swd-write
+  \ start APnDP RnW A[2:3] Parity stop park TrN ACK[0:2] TrN wdata[0:31] parity 
