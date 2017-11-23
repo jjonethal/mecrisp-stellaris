@@ -32,8 +32,8 @@
 : RnW(0) ( -- ) d0! ;                     \ write request
 : RnW(1) ( -- ) d1! ;                     \ read request
 : A[2:3] ( n -- n ) d!>> d!>> ;           \ send address bits
-: stop ( -- ) d0! ;
-: park ( -- ) d1! ;
+: stop ( -- ) d0! ;                       \ send stop bit
+: park ( -- ) d1! ;                       \ send prtk bit
 : TrN< ( -- ) c0 d< c1 ;                  \ switch data line to input
 : TrN> ( -- ) c0 d> c1 ;                  \ switch data line to input
 : swd-write ( wdata[0:31] A[2:3] APnDP  -- ACK[0:2] )
