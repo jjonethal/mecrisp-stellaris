@@ -1,9 +1,9 @@
 #!/bin/bash
 
+gcc -o thumbulator-aducm4050        -O2 thumbulator-aducm4050.c
 gcc -o thumbulator-lm4f120-tm4c1294 -O2 thumbulator-lm4f120-tm4c1294.c
 gcc -o thumbulator-stm32f051        -O2 thumbulator-stm32f051.c
 gcc -o thumbulator-stm32f103        -O2 thumbulator-stm32f103.c
 gcc -o thumbulator-stm32f303        -O2 thumbulator-stm32f303.c
 gcc -o thumbulator-stm32l053        -O2 thumbulator-stm32l053.c
 
- 

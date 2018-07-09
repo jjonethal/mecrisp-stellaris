@@ -152,12 +152,14 @@ psp .req r7
     .equ erasedhalfword, 0
     .equ erasedword, 0
 
+    .equ writtenbyte,     0xFF
     .equ writtenhalfword, 0xFFFF
   .else
     .equ erasedbyte,     0xFF
     .equ erasedhalfword, 0xFFFF
     .equ erasedword,     0xFFFFFFFF
 
+    .equ writtenbyte,     0
     .equ writtenhalfword, 0
   .endif
 
@@ -289,9 +291,13 @@ psp .req r7
       .equ Dictionary_\@, .  @ Labels for a more readable assembler listing only
 
    .ifdef flash16bytesblockwrite
-9:      .word FlashDictionaryAnfang + 0x0C @ Insert Link with offset because of alignment issues in LPC1114FN28.
+9:      .word FlashDictionaryAnfang + 0x0C @ Insert Link with offset because of alignment issues.
    .else
+     .ifdef flash8bytesblockwrite
+9:      .word FlashDictionaryAnfang + 0x04 @ Insert Link with offset because of alignment issues.
+     .else
 9:      .word FlashDictionaryAnfang  @ Link einfügen  Insert Link
+     .endif
    .endif
         .hword \Flags     @ Flags setzen, diesmal 2 Bytes ! Wir haben Platz und Ideen :-)  Flag field, 2 bytes, space for ideas left !
 
@@ -345,13 +351,13 @@ psp .req r7
 .ifdef registerallocator
 
 .macro Dictionary_Welcome
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris RA 2.4.3 ---"
+  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris RA 2.4.4 ---"
 .endm
   
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris RA 2.4.3"
+7:      .ascii "Mecrisp-Stellaris RA 2.4.4"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
@@ -359,13 +365,13 @@ psp .req r7
 .else
 
 .macro Dictionary_Welcome
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris 2.4.3 ---"
+  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris 2.4.4 ---"
 .endm
 
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris 2.4.3"
+7:      .ascii "Mecrisp-Stellaris 2.4.4"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm

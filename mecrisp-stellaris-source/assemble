@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd aducm4050-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../aducm4050-ra
+cd ..
+
 cd atsame70-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../atsame70-ra && cp *.hex ../../atsame70-ra
 cd ..
@@ -196,6 +200,10 @@ cd stm32f401
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401
 cd ..
 
+cd stm32f401-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401-ra
+cd ..
+
 cd stm32f401cd-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
 cd ..
@@ -369,6 +377,10 @@ arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-st
 cd ..
 
 cd stm32f401
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
+cd ..
+
+cd stm32f401-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
 cd ..
 

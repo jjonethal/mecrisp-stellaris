@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd aducm4050-ra
+make clean
+cd ..
+
 cd atsame70-ra
 make clean
 cd ..
@@ -193,6 +197,10 @@ make clean
 cd ..
 
 cd stm32f401
+make clean
+cd ..
+
+cd stm32f401-ra
 make clean
 cd ..
 

@@ -574,17 +574,8 @@ quit:
 
   ldr psp, =datenstackanfang
 
-   @ Clear 16-Bit Flash write emulation value-and-location collection table
-  .ifdef emulated16bitflashwrites
-   bl sammeltabelleleeren
-  .endif
-
-  .ifdef universalflashinforth
-  bl initflash
-  .endif
-
-  .ifdef flash16bytesblockwrite
-  bl initflash
+  .ifdef initflash
+   bl initflash
   .endif
 
   @ Base und State setzen

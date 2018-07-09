@@ -581,6 +581,24 @@ dodoes:
   ldr r1, =Einsprungpunkt @ Get the address the long call has to be inserted.
   ldr r1, [r1] @ r1 enthält jetzt die Codestartadresse der aktuellen Definition.
 
+
+  .ifdef flash8bytesblockwrite
+    @ Special case which has different alignment depending if compiling into Flash (8-even) or into RAM (4-even).
+
+    ldr r0, =Backlinkgrenze
+    cmp r3, r0
+    bhs.n dodoes_ram
+
+2:    movs r0, #7
+      ands r0, r1
+      cmp r0, #4
+      beq 1f
+        adds r1, #2
+        b 2b
+
+dodoes_ram:
+  .endif
+
   .ifdef flash16bytesblockwrite
     @ Special case for STM32L476 which has different alignment depending if compiling into Flash (16-even) or into RAM (4-even).
 
@@ -626,6 +644,33 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
   push {lr}
   bl create       @ Neues Wort wird erzeugt
 
+  .ifdef flash8bytesblockwrite
+    @ It is necessary when Flash writes are aligned on 8.
+    @ So if we are compiling into Flash, we need to make sure that
+    @ the block the user might write to later is properly aligned.
+    ldr r0, =Dictionarypointer
+    ldr r1, [r0]
+
+    ldr r2, =Backlinkgrenze
+    cmp r1, r2
+    bhs.n builds_ram
+
+      @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
+      @ So we need to advance to 8n + 4 so that the opcode sequence ends on a suitable border.
+
+2:    bl here
+      movs r0, #7
+      ands tos, r0
+      cmp tos, #4
+      drop
+      beq 1f
+        pushdaconst 0x0036  @ nop = movs tos, tos
+        bl hkomma
+        b 2b
+
+builds_ram:
+  .endif
+
   .ifdef flash16bytesblockwrite
     @ It is necessary for STM32L476 that Flash writes are aligned on 16.
     @ So if we are compiling into Flash, we need to make sure that
@@ -638,7 +683,7 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
     bhs.n builds_ram
 
       @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
-      @ So we need to advance to 16n + 6 so that the opcode sequence ends on a suitable border.
+      @ So we need to advance to 16n + 4 so that the opcode sequence ends on a suitable border.
 
 2:    bl here
       movs r0, #15

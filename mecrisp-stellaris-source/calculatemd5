@@ -2,6 +2,10 @@
 
 cd ..
 
+cd aducm4050-ra
+md5sum *.bin
+cd ..
+
 cd atsame70-ra
 md5sum *.bin
 cd ..
@@ -195,6 +199,10 @@ md5sum *.bin
 cd ..
 
 cd stm32f401
+md5sum *.bin
+cd ..
+
+cd stm32f401-ra
 md5sum *.bin
 cd ..
 

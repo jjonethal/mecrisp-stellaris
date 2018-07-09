@@ -22,25 +22,26 @@ a port of Mecrisp to the ARM Cortex M architecture.
 
 It runs out of the box on:
 
-  - TI Stellaris/Tiva Launchpad  with LM4F120H5QR / TM4C123GH6PM
-  - TI Tiva Connected Launchpad  with TM4C1294NCPDT
-  - TI MSP432 Launchpad          with MSP432P401R
-  - STM L053 Discovery           with STM32L053C8T6
-  - STM Nucleo L152RE            with STM32L152RE
-  - STM Nucleo 401RE             with STM32F401RE
-  - STM Nucleo 411RE             with STM32F411RET6
-  - STM F0 Discovery             with STM32F051R8
-  - STM VL Discovery             with STM32F100RB
-  - Shenzhen LC Technology board with STM32F103C8T6
-  - STM F3 Discovery             with STM32F303VCT6
-  - STM F4 Discovery             with STM32F407VGT6
-  - STM F429 Discovery           with STM32F429ZIT6
-  - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
-  - Freescale Freedom FRDM-KL46Z with KL46Z256VLL4
-  - Freescale Freedom FRDM-K64F  with MK64FN1M0VLL12
-  - Infineon XMC2GO              with XMC1100Q024F0064
-  - EFM32 Giant Gecko            with EFM32GG990F1024
-  - EFM32 Happy Gecko            with EFM32HG322F64
+  - TI Stellaris/Tiva Launchpad    with LM4F120H5QR / TM4C123GH6PM
+  - TI Tiva Connected Launchpad    with TM4C1294NCPDT
+  - TI MSP432 Launchpad            with MSP432P401R
+  - STM L053 Discovery             with STM32L053C8T6
+  - STM Nucleo L152RE              with STM32L152RE
+  - STM Nucleo 401RE               with STM32F401RE
+  - STM Nucleo 411RE               with STM32F411RET6
+  - STM F0 Discovery               with STM32F051R8
+  - STM VL Discovery               with STM32F100RB
+  - Shenzhen LC Technology board   with STM32F103C8T6
+  - STM F3 Discovery               with STM32F303VCT6
+  - STM F4 Discovery               with STM32F407VGT6
+  - STM F429 Discovery             with STM32F429ZIT6
+  - Freescale Freedom FRDM-KL25Z   with KL25Z128VLK4
+  - Freescale Freedom FRDM-KL46Z   with KL46Z256VLL4
+  - Freescale Freedom FRDM-K64F    with MK64FN1M0VLL12
+  - Infineon XMC2GO                with XMC1100Q024F0064
+  - EFM32 Giant Gecko              with EFM32GG990F1024
+  - EFM32 Happy Gecko              with EFM32HG322F64
+  - Analog Devices EV-COG-AD4050LZ with ADuCM4050BCPZ
 
   - Breadboard friendly, DIP packaged LPC1114FN28
   -                                   LPC1114FBD48
@@ -820,7 +821,7 @@ Stack pointers:
 ;------------------------------------------------------------------------------
 
         um*             ( u1 u2 -- ud )        32*32 = 64 Multiplication
-        ud*             ( ud1 ud2 -- ud3 )     64*64 = 64 Multiplication
+        ud*             ( ud1|d1 ud2|d2 -- ud3|d3 )  64*64 = 64 Multiplication
         udm*            ( ud1 ud2 -- ud3-Low ud4-High ) 64*64=128 Multiplication
 
         um/mod          ( ud u1 -- u2 u3 )     ud / u1 = u3 remainder u2

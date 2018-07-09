@@ -20,8 +20,8 @@
 @ 16-Bit Flash writes are collected here to be written later as 16 Byte blocks
 
 @ Einfügen im Hauptteil:  
-@ .equ Sammelstellen, 16 @ 16 * (16 + 4) = 320 Bytes
-@ ramallot Sammeltabelle, Sammelstellen * 20 @ Buffer 16 blocks of 16 bytes each for ECC constrained Flash write
+@ .equ Sammelstellen, 32 @ 32 * (8 + 4) = 384 Bytes
+@ ramallot Sammeltabelle, Sammelstellen * 12 @ Buffer 32 blocks of 8 bytes each for ECC constrained Flash write
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "initflash" @ Zu Beginn und in Quit !

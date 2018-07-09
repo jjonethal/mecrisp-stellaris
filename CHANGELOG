@@ -686,3 +686,11 @@
       - Updated svd2forth-v2
   - Contribution by Andreas Wagner:
       New experimental target: CY8C5888
+
+11.06.2018, Matthias Koch, Mecrisp-Stellaris 2.4.4
+
+  - Added arcsin and arccos to cordic library
+  - Added buffer layer for flash controlers which supports 64 bit writes with ECC only
+  - New target: Analog Devices ADuCM4050
+  - RA binary for STM32F401
+  - Cornerstone for STM32F407

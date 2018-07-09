@@ -138,9 +138,14 @@ ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Län
   ramallot Sammeltabelle, Sammelstellen * 6 @ 16-Bit Flash write emulation collection buffer
 .endif
 
+.ifdef flash8bytesblockwrite
+  .equ Sammelstellen, 32 @ 32 * (8 + 4) = 384 Bytes
+  ramallot Sammeltabelle, Sammelstellen * 12 @ Buffer 32 blocks of 8 bytes each for ECC constrained Flash write
+.endif
+
 .ifdef flash16bytesblockwrite
   .equ Sammelstellen, 32 @ 32 * (16 + 4) = 640 Bytes
-  ramallot Sammeltabelle, Sammelstellen * 20 @ Buffer 16 blocks of 16 bytes each for ECC constrained Flash write
+  ramallot Sammeltabelle, Sammelstellen * 20 @ Buffer 32 blocks of 16 bytes each for ECC constrained Flash write
 
   ramallot iap_command, 5*4
   ramallot iap_reply, 4*4
@@ -183,7 +188,12 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .ltorg
 
   .ifdef emulated16bitflashwrites
-  .include "../common/hflashstoreemulation.s"
+  .include "../common/flash4bytesblockwrite.s"
+  .ltorg
+  .endif
+
+  .ifdef flash8bytesblockwrite
+  .include "../common/flash8bytesblockwrite.s"
   .ltorg
   .endif
 
@@ -233,7 +243,12 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .ltorg
 
   .ifdef emulated16bitflashwrites
-  .include "../common/hflashstoreemulation.s"
+  .include "../common/flash4bytesblockwrite.s"
+  .ltorg
+  .endif
+
+  .ifdef flash8bytesblockwrite
+  .include "../common/flash8bytesblockwrite.s"
   .ltorg
   .endif
 
