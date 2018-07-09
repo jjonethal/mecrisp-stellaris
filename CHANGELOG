@@ -654,3 +654,13 @@
   - New experimental target: cy8c4245axi (9600 baud bit-bang terminal and without flash write access for now)
   - Contribution by Andrew Palm:
       New target: STM32F030K6
+
+11.02.2018, Matthias Koch, Mecrisp-Stellaris 2.4.1
+
+  - Bugfix for <builds does> create on M3 and M4 cores with 16 bytes at once flash buffering
+  - ." c" s" are now properly flagged as compile-only
+  - Core version is now printed in words listing
+  - Contribution by Terry Porter: Fresh SVD2Forth utility
+  - Contribution by Andrew Palm:
+      - Example collection for STM32F051
+      - Trig and SQRT Forth code for s31.32 fixpoint

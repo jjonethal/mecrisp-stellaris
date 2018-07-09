@@ -160,7 +160,7 @@ holechar: @ ( -- Zeichen )
   pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate, ".\"" @ Fügt eine Meldung ein  Print a message
+  Wortbirne Flag_immediate_compileonly, ".\"" @ Fügt eine Meldung ein  Print a message
 @ -----------------------------------------------------------------------------
   ldr r0, =dotgaensefuesschen
 
@@ -203,7 +203,7 @@ dotgaensefuesschen: @ Gibt den inline folgenden String aus und überspringt ihn
   b.n type   @ Print it !
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate, "c\"" @ Fügt einen String ein  Insert a string-literal
+  Wortbirne Flag_immediate_compileonly, "c\"" @ Fügt einen String ein  Insert a string-literal
 @ -----------------------------------------------------------------------------
   ldr r0, =dotcfuesschen
   b 1b
@@ -235,7 +235,7 @@ dotcfuesschen: @ Legt den inline folgenden String auf den Stack und überspringt
   bx lr  @ Leave string address on datastack.
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate, "s\"" @ Fügt einen String ein  Insert a string-literal
+  Wortbirne Flag_immediate_compileonly, "s\"" @ Fügt einen String ein  Insert a string-literal
 @ -----------------------------------------------------------------------------
   ldr r0, =dotsfuesschen
   b 1b

@@ -1,13 +1,9 @@
 ﻿<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-<!-- Peripheral Lister by Terry Porter "terry@tjporter.com.au" -->
-<!-- <xsl:param name="parameters" select=" 'file:///parameters.txt' " /> -->
+<!-- Peripheral Word Generator by Terry Porter "terry@tjporter.com.au" -->
 
-<!-- <xsl:param name="file" select="document('referenced.xml')"/> -->
+<!-- Generate the template.xml file-->
 <xsl:variable name="fileA" select="document('template.xml')"/>
-
 <xsl:output method="text"/>
-<!-- <xsl:output method="xml" encoding="UTF-8" indent="yes"/> -->
-
 <xsl:template match="/device">
 <xsl:text>\ TEMPLATE FILE for </xsl:text>
 <xsl:value-of select="name"/>
@@ -19,11 +15,11 @@
 <xsl:text>\ sdvcutter  takes a CMSIS-SVD file plus a hand edited config.xml file as input </xsl:text>
 <xsl:text>
 </xsl:text>
-<xsl:text>\ By Terry Porter "terry@tjporter.com.au"</xsl:text>
+<xsl:text>\ By Terry Porter "terry@tjporter.com.au", released under the GPL V2</xsl:text>
 <xsl:text>
 </xsl:text>
-
 <xsl:text>
+<!-- Generate the template.xml file-->
 
 compiletoflash
 
@@ -90,61 +86,65 @@ TYPE ;
 <xsl:value-of select="baseAddress" /> constant <xsl:value-of select="$device" /> 
 <xsl:text>
 </xsl:text>
-
+<!-- Register Constants Start -->
 <xsl:for-each select="registers/register" >
 <xsl:value-of select="$device"/>
 <xsl:text> </xsl:text>
 <xsl:value-of select="addressOffset" />
-<xsl:text> </xsl:text>
-<xsl:text>+</xsl:text>
-<xsl:text> </xsl:text>
-<xsl:text>constant</xsl:text>
+<xsl:text> + </xsl:text>
+<xsl:text> constant </xsl:text>
 <xsl:text> </xsl:text>
 <xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
 <xsl:text>
 </xsl:text>
 </xsl:for-each>
-<xsl:text>: </xsl:text>
-<xsl:value-of select="$device"/><xsl:text>.</xsl:text>
-<xsl:text> cr</xsl:text>
-<xsl:text>
-</xsl:text>
+<!-- Register Constants Finish -->
+
+<!-- Register Print Words Start -->
+
+<xsl:text></xsl:text>
 <xsl:for-each select="registers/register" >
+<xsl:text>: </xsl:text>
+<xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
+<xsl:text>. </xsl:text>
 <xsl:text>." </xsl:text>
 <xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
-<xsl:text>: " </xsl:text>
+<xsl:text> (</xsl:text>
+<xsl:value-of select="access"/><xsl:text>)</xsl:text>
+<xsl:text> $" </xsl:text>
 <xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
-<!--  sub-registers selected now, still trying to derive a suitable pretty print choice system based on bitwith -->
-<xsl:text> 1b.</xsl:text>
-<!---<xsl:if test="fields/field/bitWidth   &gt 0       "   > 1b. </xsl:if>
-<xsl:if test="fields/field/bitWidth   = 5       "   > 5</xsl:if> 
-<xsl:if test="fields/field/bitWidth   = 2        "   > 2 </xsl:if>
-<xsl:if test="fields/field/bitWidth   = 4        "   > 4b. </xsl:if>
-<xsl:if test=" fields/field/bitWidth   ='1' and  fields/field/bitWidth ='2' " >1b.</xsl:if> -->
-
-<!-- <xsl:if test="fields/field/bitWidth % 2 = 1]">1b.</xsl:if> -->
-
+<xsl:text> @ hex. </xsl:text>
+<xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
+<xsl:text> </xsl:text>
+<xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
+<xsl:text> 1b. ;
+</xsl:text>
+<!-- Register Print Words Finish -->
 
 <!-- end of sub-registers register select code -->
-<xsl:text>
+
+</xsl:for-each>
+<xsl:text>: </xsl:text>
+<xsl:value-of select="$device"/><xsl:text>.
+</xsl:text>
+<xsl:for-each select="registers/register" >
+<xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
+<xsl:text>.
 </xsl:text>
 </xsl:for-each>
-<xsl:text>;</xsl:text>
-<xsl:text>
+
+
+<xsl:text>;
 
 </xsl:text>
+
 </xsl:when>
-<xsl:otherwise>
-<!-- <xsl:text>: </xsl:text>
-<xsl:value-of select="name"></xsl:value-of>
-<xsl:text> ." unused" ;</xsl:text>
-<xsl:text>
-</xsl:text>
-<xsl:text>
-</xsl:text> -->
-</xsl:otherwise>
 </xsl:choose>
 </xsl:for-each>
-<xsl:text>compiletoram</xsl:text>
+
+<xsl:text>
+compiletoram
+</xsl:text>
+
 </xsl:template>
 </xsl:stylesheet>

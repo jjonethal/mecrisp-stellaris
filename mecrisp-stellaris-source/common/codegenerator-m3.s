@@ -590,7 +590,7 @@ dodoes:
 
 2:    movs r0, #15
       ands r0, r1
-      cmp r0, #6
+      cmp r0, #4
       beq 1f
         adds r1, #2
         b 2b
@@ -637,13 +637,13 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
     cmp r1, r2
     bhs.n builds_ram
 
-      @ See where we are. The sequence written for <builds does> is 10 Bytes long on M3/M4.
+      @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
       @ So we need to advance to 16n + 6 so that the opcode sequence ends on a suitable border.
 
 2:    bl here
       movs r0, #15
       ands tos, r0
-      cmp tos, #6
+      cmp tos, #4
       drop
       beq 1f
         pushdaconst 0x0036  @ nop = movs tos, tos

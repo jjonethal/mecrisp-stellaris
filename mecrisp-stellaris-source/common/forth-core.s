@@ -161,7 +161,7 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
 .set CoreVariablenPointer, RamDictionaryEnde @ Im Flash definierte Variablen kommen ans RAM-Ende
                                              @ Variables defined in Flash are placed at the end of RAM
 
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris Core ---"
+  Dictionary_Welcome
 
 @ -----------------------------------------------------------------------------
 @ Include the complete Mecrisp-Stellaris core
