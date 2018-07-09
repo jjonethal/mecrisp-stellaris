@@ -100,6 +100,14 @@ cd stm32f030f4
 make clean
 cd ..
 
+cd stm32f030k6
+make clean
+cd ..
+
+cd stm32f030k6-ra
+make clean
+cd ..
+
 cd stm32f042f6
 make clean
 cd ..
@@ -241,6 +249,10 @@ make clean
 cd ..
 
 cd efm32hg322-ra
+make clean
+cd ..
+
+cd cy8c4245axi
 make clean
 cd ..
 

@@ -29,6 +29,7 @@ Assembler include file generator svd2gas by Terry Porter
 Port for STM32F042F6 by Ralph Sahli
 Vocabularies and classes by Manfred Mahlow
 Alternative M0 core emulator adapted from Pinkysim by Jean-Claude Wippler
+Port and examples for STM32F030K6 by Andrew Palm
 
 Hardware donations:
 
@@ -42,6 +43,7 @@ Carsten Strotmann
 Jürgen Pintaske
 Klaus Kohl-Schöpe
 Jean-Claude Wippler
+Bernd Paysan
 
 Testing and hints in alphabetical order:
 

@@ -102,6 +102,14 @@ cd stm32f030f4
 md5sum *.bin
 cd ..
 
+cd stm32f030k6
+md5sum *.bin
+cd ..
+
+cd stm32f030k6-ra
+md5sum *.bin
+cd ..
+
 cd stm32f042f6
 md5sum *.bin
 cd ..
@@ -243,6 +251,10 @@ md5sum *.bin
 cd ..
 
 cd efm32hg322-ra
+md5sum *.bin
+cd ..
+
+cd cy8c4245axi
 md5sum *.bin
 cd ..
 

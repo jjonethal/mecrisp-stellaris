@@ -21,6 +21,7 @@ This is the stable release of Mecrisp-Stellaris,
 a port of Mecrisp to the ARM Cortex M architecture.
 
 It runs out of the box on:
+
   - TI Stellaris/Tiva Launchpad  with LM4F120H5QR / TM4C123GH6PM
   - TI Tiva Connected Launchpad  with TM4C1294NCPDT
   - TI MSP432 Launchpad          with MSP432P401R
@@ -46,7 +47,12 @@ It runs out of the box on:
   -                                   LPC1115FBD48
   - Very small TSSOP20 packaged       STM32F030F4
 
+Experimental:
+
+  - Cypress CY8CKIT-049 4200     with CY8C4245AXI
+
 Contributions:
+
   - Teensy 3.1                   with MK20DX256VLH7
   - Chinese QF-LM4F232           with LM4F232H5QC
   - nRFgo Starter Kit & Microbit with nRF51822
@@ -61,6 +67,7 @@ Contributions:
   - STM F746 Discovery           with STM32F746NG
   - Atmel SAME70 X-plained       with ATSAME70Q21
   -                                   STM32F042F6
+  -                                   STM32F030K6
 
 http://mecrisp.sourceforge.net/
 
@@ -83,6 +90,7 @@ Communication is via serial 115200 baud 8N1 over
   - UART   in LPC1115FBD48 (TX on P1.7, RX on P1.6)
   - USART1 in STM32F051    (TX on PA9, RX on PA10)
   - USART1 in STM32F030F4  (TX on PA9, RX on PA10)
+  - USART1 in STM32F030K6  (TX on PA9, RX on PA10)
   - USART1 in STM32F100    (TX on PA9, RX on PA10)
   - USART1 in STM32F103    (TX on PA9, RX on PA10)
   - USART1 in STM32F303    (TX on PA9, RX on PA10)
