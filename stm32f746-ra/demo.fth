@@ -26,6 +26,10 @@
 \ USD_CMD - microSD
 \ USD_DETECT - micro sd-card
 
+\ "C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf"
+\ "C:\Users\jeanjo\Downloads\stm\DM00179227 DB2582 Discovery kit with STM32F746NG MCU.pdf"
+\ "C:\Users\jeanjo\Downloads\stm\DM00190424 UM1907 Discovery kit for STM32F7 Series with STM32F746NG MCU en.pdf"
+
 #25000000 constant HSE_CLK_HZ
 #16000000 constant HSI_CLK_HZ
 
@@ -1237,7 +1241,7 @@ blue variable font-edit-selector-frame-color
    0 grid-space        line
    grid-space negate 0 line
    0 grid-space negate line ;
-: font-edit-char-adr ( n -- a )
+: font-edit-char-adr ( n -- a )          \ convert char number to glyph address
    $7f and #3 lshift font-buffer + ;
 : font-edit-current-char-adr ( -- a )    \ return current character bitmap address
    font-edit-current-char @ font-edit-char-adr ;
