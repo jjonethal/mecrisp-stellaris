@@ -31,6 +31,10 @@ Vocabularies and classes by Manfred Mahlow
 Alternative M0 core emulator adapted from Pinkysim by Jean-Claude Wippler
 Port and examples for STM32F030K6 by Andrew Palm
 Example collection for STM32F051 by Andrew Palm
+Python tools for thumbulator by Ivan Dimitrov
+Trig and SQRT code by Andrew Palm
+Sunset and sunrise calculations by Andrew Palm
+Port for Nuvoton NUC123 by juju2013@github
 
 Hardware donations:
 

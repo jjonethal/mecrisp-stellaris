@@ -664,3 +664,14 @@
   - Contribution by Andrew Palm:
       - Example collection for STM32F051
       - Trig and SQRT Forth code for s31.32 fixpoint
+
+
+25.03.2018, Matthias Koch, Mecrisp-Stellaris 2.4.2
+
+  - Defined VALUE and TO in Forth
+  - Added brightness measurement with a LED for STM32F051
+  - Contribution by Andrew Palm:
+      - Improved trig and sqrt code
+      - Sunset and sunrise calculations
+  - Contribution by juju2013@github:
+      New target: Nuvoton NUC123

@@ -68,6 +68,7 @@ Contributions:
   - Atmel SAME70 X-plained       with ATSAME70Q21
   -                                   STM32F042F6
   -                                   STM32F030K6
+  - Nutiny-SDK-NUC123            with NUC123
 
 http://mecrisp.sourceforge.net/
 
@@ -106,6 +107,7 @@ Communication is via serial 115200 baud 8N1 over
   - UART5  in LM4F232
   - UART0  in MK20DX256 (RX1/TX1 on Teensy 3.1.  Physical pins #2/#3 (these are also Digital IO 0/1 lines)
     	      		Digital IO pins 18/19 are setup for CTS/RTS respectively
+  - UART0  in NUC123 (64pin and 48pin only)
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for LM4F120 and TM4C123:
@@ -459,6 +461,41 @@ Hardware and configuration for Microbit:
 
   Communication is done over P0.24 TX and P0.25 RX, connected
   to USB-serial-bridge on debugger section.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for Nutiny-SDK-NUC123:
+;------------------------------------------------------------------------------
+  Connect 3.3V power or USB cable.
+
+  Flashing is possible with (any clone of) st-link V2, (any clone of) black 
+  magic probe, or Nuvoton's ICP software (windows only).
+  
+  Here's how with openocd and st-link v2 on linux:
+  
+  Connect SWDIO to ICE_DAT, SWCLK to ICE_CLK, GND to VSS and 3.3V to VCC if not
+  powered by USB. Get OpenOCD installed, chdir to nuc123 folder and adjust 
+  openocd.cfg there if needed. Then launch openocd, which should say something 
+  like this:
+  
+    TargetName         Type       Endian TapName            State
+--  ------------------ ---------- ------ ------------------ ------------
+ 0* NuMicro.cpu        hla_target little NuMicro.cpu        unknown
+  
+  keep openocd running and telnet localhost 4444, then: 
+  
+  reset halt
+  flash erase_sector 0 0 135
+  flash write_image mecrisp-stellaris-nuc123.bin
+  reset run
+
+  Serial console pins are automatically configured:
+  
+  PB0(RX)/PB1(TX) for 64-pin package
+  PC4(RX)/PC5(TX) for 48-pin package
+  
+  33-pin package don't have UART0 but only UART1 and I don't have one, so
+  it will maybe run but without serial terminal.
+
 
 ;------------------------------------------------------------------------------
 

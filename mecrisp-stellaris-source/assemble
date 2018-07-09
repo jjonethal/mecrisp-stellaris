@@ -256,6 +256,14 @@ cd cy8c4245axi
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c4245axi && cp *.hex ../../cy8c4245axi
 cd ..
 
+cd nuc123
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123 && cp *.hex ../../nuc123
+cd ..
+
+cd nuc123-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123-ra && cp *.hex ../../nuc123-ra
+cd ..
+
 # Intel Hex images for STM targets:
 
 cd ..

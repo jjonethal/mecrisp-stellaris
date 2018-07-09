@@ -258,6 +258,14 @@ cd cy8c4245axi
 md5sum *.bin
 cd ..
 
+cd nuc123
+md5sum *.bin
+cd ..
+
+cd nuc123-ra
+md5sum *.bin
+cd ..
+
 cd linux
 md5sum mecrisp-stellaris-linux
 cd ..

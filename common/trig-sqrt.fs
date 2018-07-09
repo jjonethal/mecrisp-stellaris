@@ -7,14 +7,13 @@
 \
 \  All angles are in degrees.
 \ 
-\  Accuracy is good rounded to 7 significan digits or better, with some
-\  exceptions.  In particular, the asin and acos functions have reduced
-\  accuracy near the endpoints of the range of their inputs (+/-1) due
-\  to their very large slopes there.  See the tests at the end of this
-\  file.
+\  Accuracy is good rounded to 7 significan digits, with some exceptions.
+\  In particular, the asin and acos functions have reduced accuracy
+\  near the endpoints of the range of their inputs (+/-1) due to their
+\  very large slopes there.  See the tests at the end of this file.  
 \ 
-\  The trig functions are based on a Maclaurin series for sin over the
-\  first quadrant with 12 terms evaluated as a polynomial with the Horner
+\  The sin function is based on Maclaurin series for sin and cos over
+\  the interval [0, pi/4], evaluated as polynomials with the Horner
 \  method.  This is extended to all angles using (anti)symmetry.  Cos is
 \  calculated from sin with cos(x) = sin(x+90), and tan is calculated as
 \  sin/cos.   
@@ -43,7 +42,7 @@
 \
 \ -------------------------------------------------------------------------
 \  Andrew Palm
-\  2018.02.18
+\  2018.02.19
 \ =========================================================================
 
 compiletoflash
@@ -59,7 +58,22 @@ compiletoflash
 
 : tab ( -- )  9 emit ;
 
-: d>= ( d1 d2 -- flag ) 2over 2over d> dup 2rot 2rot d= or swap drop ;
+\ Convert an s31.32 angle df1 in degrees to an angle df2 in [0, 360)
+\ such that df1 = df2 + n*360 where n is an integer
+: deg0to360 ( df1 -- df2 )  360,0 d/mod 2drop 2dup d0< if 360,0 d+ then ;
+
+\ Convert an s31.32 angle df1 in degrees to an angle df2 in [-90, 90)
+\ such that df1 = df2 + n*180 where n is an integer.  (For tan only.)
+: deg-90to90 ( df1 -- df2 )  
+  180,0 d/mod 2drop 
+  2dup 90,0 d< not if
+    180,0 d- 
+  else
+    2dup -90,0 d< if
+      180,0 d+
+    then
+  then
+;
 
 \ From common directory of Mecrisp-Stellaris Forth 2.4.0
 : numbertable <builds does> swap 2 lshift + @ ;
@@ -128,17 +142,14 @@ compiletoflash
   1270363336 57 f*
 ;
 
-\ pi/2 as s31.32 number (whole part first so can retrieve with 2@)
+\ pi/2 and pi/4 as s31.32 numbers (whole part first for retrieval with 2@)
 create pi/2   1 , 2451551556 ,
+create pi/4   0 , 3373259426 ,
 
-\ s31.32 comma parts of coefficients in Horner expression of 12-term series
+\ s31.32 comma parts of coefficients in Horner expression of 7-term series
 \ expansion of sine after an x is factored out.  The whole parts are 0 and
 \ are supplied in code.
 numbertable sin-coef
-    8488078 ,   \  1/(22*23)
-   10226113 ,   \  1/(20*21)
-   12558384 ,   \  1/(18*19)
-   15790321 ,   \  1/(16*17)
    20452225 ,   \  1/(14*15)
    27531842 ,   \  1/(12*13)
    39045157 ,   \  1/(10*11)
@@ -147,25 +158,60 @@ numbertable sin-coef
   214748365 ,   \  1/(4*5)
   715827883 ,   \  1/(2*3)
 
-: q1-sin-rad  ( x -- sinx )
-  \ Sin(x) for x in first quadrant Q1 and its negative 
-  \ x is a s31.32 angle in radians between -pi/2 and pi/2, i.e., 
-  \ (-2451551556 , -1) and (2451551556 , 1)
+: half-q1-sin-rad  ( x -- sinx )
+  \ Sin(x) for x in first half of first quadrant Q1 and its negative 
+  \ x is a s31.32 angle in radians between -pi/4 and pi/4 
   2dup 2dup f*          \  x and x^2 on stack as dfs
   \ Calculate Horner terms
-  -1,0   \ Starting Horner term is -1 (in 12-term expansion)
-  11 0 do
+  -1,0   \ Starting Horner term is -1
+  7 0 do
     \ Multiply last term by x^2 and coefficient, then add +1 or -1 to get
     \ new term
-    \ 2over f* sin-coef i 2 lshift + @ 0 f* 0 1
     2over f* i sin-coef 0 f* 0 1
     i 2 mod 0= if d+ else d- then
   loop
   \ Last term is multiplied by x
   2swap 2drop f*
+;
+
+\ s31.32 comma parts of coefficients in Horner expression of 8-term series
+\ expansion of cosine.  The whole parts are 0 and are supplied in code.
+numbertable cos-coef
+   17895697 ,   \  1/(15*16)
+   23598721 ,   \  1/(13*14)
+   32537631 ,   \  1/(11*12)
+   47721859 ,   \  1/(9*10)
+   76695845 ,   \  1/(7*8)
+  143165577 ,   \  1/(5*6)
+  357913941 ,   \  1/(3*4)
+ 2147483648 ,   \  1/2
+
+: half-q1-cos-rad  ( x -- cosx )
+  \ Cos(x) for x in first half of first quadrant Q1 and its negative 
+  \ x is a s31.32 angle in radians between -pi/4 and pi/4 
+  2dup f*          \  x^2 on stack
+  \ Calculate Horner terms
+  1,0   \ Starting Horner term is 1
+  8 0 do
+    \ Multiply last term by x^2 and coefficient, then add +1 or -1 to get
+    \ new term
+    2over f* i cos-coef 0 f* 0 1
+    i 2 mod 0= if d- else d+ then
+  loop
+  2swap 2drop 
+;
+
+: q1-sin-rad ( x -- sinx )
+  \ Sin(x) for x in first quadrant Q1 and its negative 
+  \ x is a s31.32 angle in radians between -pi/2 and pi/2 
+  2dup pi/4 2@ d< if
+    half-q1-sin-rad
+  else
+    pi/2 2@ 2swap d- half-q1-cos-rad
+  then
   \ Apply max/min limits
-  2dup 1,0 d> if 2drop 1,0 exit then
-  2dup -1,0 d< if 2drop -1,0 exit then
+  \ 2dup 1,0 d> if 2drop 1,0 exit then
+  \ 2dup -1,0 d< if 2drop -1,0 exit then
 ;
 
 : q1toq4-sin ( x -- sinx )
@@ -229,7 +275,7 @@ numbertable atan-table
     \ atan(x) = atan(i/8) + atan((x - (i/8))/(1 + (x*i/8))) where
     \ the argument in the second term is in [0, 1/8].
     0 7 do
-      0 i 8,0 f/ 2over 2over d>= if
+      0 i 8,0 f/ 2over 2over d< not if
         2over 2over d-
         2-rot f* 1,0 d+
         f/ base-ivl-atan
@@ -249,9 +295,7 @@ numbertable atan-table
   \ x is any s31.32 angle in degrees
   2dup 2dup d0< if dabs then
   \ Stack is ( x |x| )
-  begin 2dup 360,0 d> while
-    360,0 d-
-  repeat
+  360,0 ud/mod 2drop
   q1toq4-sin    \ sin|x|
   \ Negate if x is negative
   2swap d0< if dnegate then
@@ -264,7 +308,15 @@ numbertable atan-table
 
 : tan ( x -- tanx )
   \ x is any s31.32 angle in degrees
-  2dup sin 2swap cos f/
+  \ Move x to equivalent value in [-90, 90)
+  deg-90to90
+  \ If |x| > 89,9 deg, use approximation sgn(x)(180/pi)/(90-|x|) 
+  2dup dabs 2dup 89,8 d> if
+    90,0 2swap d- 608135817 3 f* 180,0 2swap f/
+    2swap d0< if dnegate then
+  else 
+    2drop 2dup sin 2swap cos f/
+  then
 ;
 
 : atan ( x -- atanx )
@@ -344,27 +396,55 @@ numbertable atan-table
 
 : trig-test2
   cr cr ." x" tab tab ." atan(tan(x))"
-  -89,999999 2dup tan atan cr f.r7 tab f.r7   
-  -89,9 2dup tan atan cr f.r7 tab f.r7   
-  90 -89 do
+  cr -270,000001 2dup f.r7 tan atan tab f.r7   
+  cr -269,999999 2dup f.r7 tan atan tab f.r7   
+  cr -269,9 2dup f.r7 tan atan tab f.r7   
+  cr -180,0 2dup f.r7 tan atan tab f.r7   
+  cr -91,0 2dup f.r7 tan atan tab f.r7   
+  cr -90,1 2dup f.r7 tan atan tab f.r7   
+  cr -90,000001 2dup f.r7 tan atan tab f.r7   
+  cr -89,999999 2dup f.r7 tan atan tab f.r7   
+  cr -89,9 2dup f.r7 tan atan tab f.r7   
+  90 -88 do
     0 i tan atan
     i cr . tab tab f.r7
-  loop
-  89,9 2dup tan atan cr f.r7 tab f.r7   
-  89,999999 2dup tan atan cr f.r7 tab f.r7   
+  2 +loop
+  cr 89,9 2dup f.r7 tan atan tab f.r7   
+  cr 89,999999 2dup f.r7 tan atan tab f.r7   
+  cr 90,000001 2dup f.r7 tan atan tab f.r7   
+  cr 90,1 2dup f.r7 tan atan tab f.r7   
+  cr 91,0 2dup f.r7 tan atan tab f.r7   
+  cr 180,0 2dup f.r7 tan atan tab f.r7   
+  cr 269,9 2dup f.r7 tan atan tab f.r7   
+  cr 269,999999 2dup f.r7 tan atan tab f.r7   
+  cr 270,000001 2dup f.r7 tan atan tab f.r7   
   cr
 ;
 
 : trig-test3
-  cr cr ." x" tab ." asin(sin(x))"
-  91 -90 do
-    0 i sin asin
-    i cr . tab f.r7
-  2 +loop
+  cr cr ." x" tab tab ." tan(atan(x))"
+  51 0 do
+    cr 0 i 2dup f.r7 atan tan tab f.r7
+  loop
+  1270363336 57
+  cr 2dup f.r7 2dup atan tan tab f.r7
+  4 0 do
+    cr 10,0 f* 2dup f.r7 2dup atan tan tab f.r7
+  loop
+  2drop
   cr
 ;
 
 : trig-test4
+  cr cr ." x" tab ." asin(sin(x))"
+  91 -90 do
+    0 i sin asin
+    i cr . tab f.r7
+  loop
+  cr
+;
+
+: trig-test5
   cr cr ." x" tab tab ." sin(asin(x))"
   cr 0,0 2dup f.r7 asin sin tab f.r7
   32 1 do
@@ -374,16 +454,16 @@ numbertable atan-table
   cr
 ;
 
-: trig-test5
+: trig-test6
   cr cr ." x" tab ." acos(cos(x))"
   181 0 do
     0 i cos acos
     i cr . tab f.r7
-  2 +loop
+  loop
   cr
 ;
 
-: trig-test6
+: trig-test7
   cr cr ." x" tab tab ." cos(acos(x))"
   cr 0,0 2dup f.r7 acos cos tab f.r7
   32 1 do
