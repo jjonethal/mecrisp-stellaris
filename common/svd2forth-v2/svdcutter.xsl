@@ -35,7 +35,7 @@ compiletoflash
 : 1b. ( u -- ) cr 
 ." 3|3|2|2|2|2|2|2|2|2|2|2|1|1|1|1|1|1|1|1|1|1" cr
 ." 1|0|9|8|7|6|5|4|3|2|1|0|9|8|7|6|5|4|3|2|1|0|9|8|7|6|5|4|3|2|1|0 " cr
-@ binary b32loop. decimal cr ;
+@ binary b32loop. decimal cr  cr ;
 
 
 : b8loop. ( u -- )
@@ -50,7 +50,7 @@ TYPE ;
 
 : 4b. ( u -- ) cr \ Print 4 bit groups
 ."  07   06   05   04   03   02   01   00  " cr
-@ binary b8loop. cr ;
+@ binary b8loop. decimal  cr cr ;
 
 
 : b16loop. ( u -- ) 0
@@ -65,8 +65,7 @@ TYPE ;
 
 : 2b. ( u -- ) cr \ Print 2 bit groups
 ." 15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00 " cr
-@ binary b16loop. cr
-;
+@ binary b16loop. decimal cr cr ;
 
 
 </xsl:text>
@@ -116,7 +115,6 @@ TYPE ;
 <xsl:text> @ hex. </xsl:text>
 <xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
 <xsl:text> </xsl:text>
-<xsl:value-of select="$device"/><xsl:text>_</xsl:text><xsl:value-of select="name" />
 <xsl:text> 1b. ;
 </xsl:text>
 <!-- Register Print Words Finish -->

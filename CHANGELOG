@@ -665,7 +665,6 @@
       - Example collection for STM32F051
       - Trig and SQRT Forth code for s31.32 fixpoint
 
-
 25.03.2018, Matthias Koch, Mecrisp-Stellaris 2.4.2
 
   - Defined VALUE and TO in Forth
@@ -675,3 +674,15 @@
       - Sunset and sunrise calculations
   - Contribution by juju2013@github:
       New target: Nuvoton NUC123
+
+30.05.2018, Matthias Koch, Mecrisp-Stellaris 2.4.3
+
+  - Bugfix for thumbulator
+  - Contribution by Andrew Palm:
+      - Fixpoint math library
+      - Date & time conversion routines
+      - RTC code for STM32F051
+  - Contribution by Terry Porter:
+      - Updated svd2forth-v2
+  - Contribution by Andreas Wagner:
+      New experimental target: CY8C5888

@@ -1,0 +1,4 @@
+compiletoram
+: +led $0D $40005011 c! ; \ Turn the blue led on
+: -led $0C $40005011 c! ; \ Turn the blue led off
+

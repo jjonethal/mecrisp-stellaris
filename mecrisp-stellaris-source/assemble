@@ -256,6 +256,10 @@ cd cy8c4245axi
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c4245axi && cp *.hex ../../cy8c4245axi
 cd ..
 
+cd cy8c5888
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c5888
+cd ..
+
 cd nuc123
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123 && cp *.hex ../../nuc123
 cd ..

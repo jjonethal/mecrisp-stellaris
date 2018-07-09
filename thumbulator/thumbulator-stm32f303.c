@@ -151,7 +151,7 @@ void write32 ( unsigned int addr, unsigned int data )
   {
   
     case 0xDABBAD00: // C0DEBA5E:
-      coredump = fopen("coredump.bin", "wr");
+      coredump = fopen("coredump.bin", "w");
       rc = fwrite(rom, 1, data, coredump);
       fclose(coredump);
       exit(0);

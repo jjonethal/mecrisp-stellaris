@@ -256,6 +256,10 @@ cd cy8c4245axi
 make clean
 cd ..
 
+cd cy8c5888
+make clean
+cd ..
+
 cd nuc123
 make clean
 cd ..

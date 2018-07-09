@@ -21,7 +21,7 @@
 \  2018.02.23
 \ ------------------------------------------------------------------------- 
 \ Include trig and square root functions
-#include trig-sqrt.fs
+#include fixpt-math-lib.fs
 
 compiletoflash
 \ ------------------------------------------------------------------------- 
@@ -29,14 +29,14 @@ compiletoflash
 \ ------------------------------------------------------------------------- 
 \ Calculate the floor of the s31.32 value fd, returned as signed integer.
 \ The value mfloor(x) is the greatest integer less than or equal to x.
-: mfloor ( fd -- n )  swap drop inline ;
+: mfloor ( fd -- n )  swap drop ;
 
 \ Convert signed integer to s31.32
-: s>df ( n -- df)  0 swap inline ;
+: s>df ( n -- df)  0 swap ;
 
 \ Calculate the floor of the s31.32 value fd, returned as s31.32
 \ The value floor(x) is the greatest integer less than or equal to x. 
-: floor ( df -- df ) mfloor s>df inline ;
+: floor ( df -- df ) mfloor s>df ;
 
 : hour0to24 ( df1 -- df2 )  24,0 d/mod 2drop 2dup d0< if 24,0 d+ then ;
 
@@ -205,16 +205,16 @@ compiletoflash
   \ Input n is the local utc offset as a signed integer.
   dup dup dup
   s>df utc-rise 2@ d+ hour0to24 
-  cr ." Sunrise: " tab .hh:mm:ss
+  cr ." Sunrise: " .hh:mm:ss
   s>df utc-set 2@ d+ hour0to24 
-  cr ." Sunset: " tab .hh:mm:ss
+  cr ." Sunset: " .hh:mm:ss
   s>df 2dup utc-set 2@ d+ hour0to24 
   2swap utc-rise 2@ d+ hour0to24 d-
-  cr ." Daylight: " tab .hh:mm:ss
+  cr ." Daylight: " .hh:mm:ss
   s>df 2dup utc-set 2@ d+ hour0to24
   2swap utc-rise 2@ d+ hour0to24
   d+ 2,0 f/ 
-  cr ." Solar noon: " tab .hh:mm:ss
+  cr ." Solar noon: " .hh:mm:ss
   cr
 ;
 

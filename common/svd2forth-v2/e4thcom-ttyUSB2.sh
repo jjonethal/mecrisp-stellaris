@@ -1,2 +1,2 @@
 #!/bin/sh
-e4thcom -t mecrisp -d ttyUSB2 -b B115200	| tee e4thcom.log
+e4thcom -t mecrisp-st -d ttyUSB2 -b B115200	| tee e4thcom.log

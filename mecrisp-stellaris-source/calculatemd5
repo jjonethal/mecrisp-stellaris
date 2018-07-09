@@ -258,6 +258,10 @@ cd cy8c4245axi
 md5sum *.bin
 cd ..
 
+cd cy8c5888
+md5sum *.bin
+cd ..
+
 cd nuc123
 md5sum *.bin
 cd ..
