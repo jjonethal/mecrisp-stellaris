@@ -28,6 +28,7 @@ Port for STM32L073RZ by Werner Urech
 Assembler include file generator svd2gas by Terry Porter
 Port for STM32F042F6 by Ralph Sahli
 Vocabularies and classes by Manfred Mahlow
+Alternative M0 core emulator adapted from Pinkysim by Jean-Claude Wippler
 
 Hardware donations:
 
@@ -40,6 +41,7 @@ James Bowman
 Carsten Strotmann
 Jürgen Pintaske
 Klaus Kohl-Schöpe
+Jean-Claude Wippler
 
 Testing and hints in alphabetical order:
 
@@ -63,3 +65,5 @@ m3forth by Cliff Biffle (https://bitbucket.org/cbiffle/m3forth/src)
 Thumbulator by David Welch (https://github.com/dwelch67/thumbulator)
 Forth register definition generator by Ralf Döring (https://github.com/ralfdoering/cmsis-svd-fth)
 Logic tricks from the book Hacker's Delight (http://www.hackersdelight.org/)
+Pinkysim by Adam Green (https://github.com/adamgreen/pinkySim)
+ARMUE (https://github.com/zmj64351508/ARMUE)

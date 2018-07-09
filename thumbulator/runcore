@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Usage: runcore thumbulator mecrisp-stellaris-binary
+
+stty -icanon -echo
+"$1" "$2"
+stty sane

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Usage: buildcore thumbulator mecrisp-stellaris-binary forth-source precompiled-binary
+
+stty -icanon -echo
+
+{
+   echo -e "compiletoflash\n"
+   cat "$3"
+   echo -e "compiletoflash here hex DABBAD00 !\n"
+   # cat -
+} | "$1" "$2"
+
+stty sane
+
+echo -e ""
+
+mv coredump.bin "$4"
