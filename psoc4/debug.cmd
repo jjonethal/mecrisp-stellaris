@@ -10,6 +10,10 @@ SET P=E:\stm\openocd\openocd-0.9.0-dev-150204220259\openocd-0.9.0-dev-1502042202
 if exist %P%\nul set OPEN_OCD_PATH=%P%
 SET P=C:\app\openocd
 if exist %P%\nul set OPEN_OCD_PATH=%P%
+SET P=C:\app\OpenOCD-20170821
+if exist %P%\nul set OPEN_OCD_PATH=%P%
+
+
 
 SET P=E:\gcc\4.6_2012q4\bin
 if exist %P%\%GDB% set GNU_ARM_BIN=%P%
