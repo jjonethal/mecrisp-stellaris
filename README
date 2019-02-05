@@ -1100,6 +1100,7 @@ Deep insights:
         cell+           ( x -- x+4 ) Add size of one cell
         cells           ( n -- 4*n ) Calculate size of n cells
 
+        unused          ( -- u ) Get current amount of free memory
         allot           ( n -- ) Tries to advance Dictionary Pointer by n bytes
                                  Aborts, if not enough space available
         here            ( -- a-addr|c-addr )
@@ -2036,4 +2037,4 @@ System:
         bye             ( -- ) Leave Mecrisp-Stellaris
 
 
-Matthias Koch, Summer 2013, updated Spring 2016
+Matthias Koch, Summer 2013, updated Winter 2019

@@ -719,3 +719,9 @@
   - New target: Numworks calculator
   - Contribution by Wolfgang Strauss:
       Forth drivers for Numworks calculator
+
+29.12.2018, Matthias Koch, Mecrisp-Stellaris 2.4.8, 35C3 edition
+
+  - Added UNUSED to all cores to get current amount of free memory
+  - Added ansification.txt for adjusting Mecrisp-Stellaris as close as possible to standard Forth
+  - Adjusted baud rate in XMC1100

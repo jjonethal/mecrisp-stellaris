@@ -137,9 +137,9 @@ interpret:
 
     @ Number mochte das Token auch nicht.
 not_found_addr_r0_len_r1:
-@    pushda r0
-@    pushda r1
-    bl stype_addr_r0_len_r1
+    pushda r0
+    pushda r1
+    bl stype
     Fehler_Quit_n " not found."
 
 @ -----------------------------------------------------------------------------

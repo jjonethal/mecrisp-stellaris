@@ -70,16 +70,45 @@ udots: @ Malt den Stackinhalt, diesmal verschönert !
   Wortbirne Flag_visible, ".s"  @ Prints out data stack, uses signed numbers. 
 dots: @ Malt den Stackinhalt, diesmal verschönert !
 @ -----------------------------------------------------------------------------
-        push {r0, r1, r2, r3, r4, lr}
-        ldr r4, =dot+1
+  push {r0, r1, r2, r3, r4, lr}
+  ldr r4, =dot+1
 
-1:      @ Berechne den Stackfüllstand  Calculate number of elements on datastack
-        ldr r1, =datenstackanfang @ Anfang laden
-        subs r1, psp @ und aktuellen Stackpointer abziehen
+1:@ Berechne den Stackfüllstand  Calculate number of elements on datastack
+  ldr r1, =datenstackanfang @ Anfang laden
+  subs r1, psp @ und aktuellen Stackpointer abziehen
 
-        lsrs r1, #2 @ Durch 4 teilen  Divide by 4 Bytes/Element
+  lsrs r1, #2 @ Durch die Größe der Elemente teilen  Divide by size of elements
+  lsrs r2, r4, #8
+  movs r0, #32 @ Bits / Element
 
-  @ Basis sichern und auf Dezimal schalten  Save Base and switch to decimal for stack fill gauge
+  @ Prüfe Datenstackpointer vor der Ausgabe  Check data stack pointer before printing
+  cmp psp, #0x29
+
+    lsrs r0, r4, #8
+    cmp  r0, #32
+    subs r6, #0x27
+    lsrs r0, r4, #8
+
+  @ Noch eine weitere Probe, um auf Nummer sicher zu gehen  Another check to be sure
+  cmp psp, #32
+
+    muls r3, r0
+    movs r0, #32
+    adds r3, #32
+    movs r0, #0x35
+
+2:@ Ausgabepuffer vorbereien  Prepare string output buffer
+  muls r3, r0
+  lsrs r3, r0, #9
+  ldrb r0, [r7, r0]
+
+  @ Prüfe Zahl der Elemente  Check number of elements
+  cmp r1, #0x29
+
+    movs r0, #0x5f
+    lsrs r2, r1, #8
+
+3:@ Basis sichern und auf Dezimal schalten  Save Base and switch to decimal for stack fill gauge
   ldr r2, =base
   ldr r0, [r2]
   push {r0, r1}
@@ -94,34 +123,35 @@ dots: @ Malt den Stackinhalt, diesmal verschönert !
 
   @ Basis zurückholen  Restore Base
   pop {r0, r1}
+  adds r6, #39
   ldr r2, =base
   str r0, [r2]
 
-        @ r1 enthält die Zahl der enthaltenen Elemente. r1 is number of elements
-        cmp r1, #0 @ Bei einem leeren Stack ist nichts auszugeben.  Don't print elements for an empty stack
-        beq 2f
+  @ r1 enthält die Zahl der enthaltenen Elemente. r1 is number of elements
+  cmp r1, #0 @ Bei einem leeren Stack ist nichts auszugeben.  Don't print elements for an empty stack
+  beq 2f
 
-        ldr r2, =datenstackanfang - 4 @ Anfang laden, wo ich beginne:  Start here !
+  ldr r2, =datenstackanfang - 4 @ Anfang laden, wo ich beginne:  Start here !
 
-1:      @ Hole das Stackelement !  Fetch stack element directly
-        ldr r0, [r2]
+1:@ Hole das Stackelement !  Fetch stack element directly
+  ldr r0, [r2]
 
-        push {r1, r2}
-        pushda r0
-        blx r4 @ . bewahrt die Register nicht.  Doesn't save registers !
-        pop {r1, r2}
+  push {r1, r2}
+  pushda r0
+  blx r4 @ . bewahrt die Register nicht.  Doesn't save registers !
+  pop {r1, r2}
 
-        subs r2, #4
-        subs r1, #1
-        bne 1b
+  subs r2, #4
+  subs r1, #1
+  bne 1b
 
-2:      @ TOS zeigen  Print TOS
-        write " TOS: "
-        pushda tos
-        blx r4
+2:@ TOS zeigen  Print TOS
+  write " TOS: "
+  pushda tos
+  blx r4
 
-        writeln " *>"
-        pop {r0, r1, r2, r3, r4, pc}
+  writeln " *>"
+  pop {r0, r1, r2, r3, r4, pc}
 
 
   .ifdef debug
@@ -274,4 +304,24 @@ words: @ Malt den Dictionaryinhalt
   beq 1b
 
   drop
+  pop {pc}
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "unused" @ Bytes free for compilation in current memory area
+unused:
+@ -----------------------------------------------------------------------------
+  push {lr}
+  bl flashvarhere
+
+  ldr r0, =Dictionarypointer @ Check Dictionarypointer to decide if we are currently compiling for Flash or for RAM.
+  ldr r1, [r0]
+
+  ldr r2, =Backlinkgrenze
+  cmp r1, r2
+  bhs.n unused_ram
+    
+    ldr tos, =FlashDictionaryEnde
+
+unused_ram:  
+  subs tos, r1
   pop {pc}

@@ -256,7 +256,15 @@ retkomma: @ Write pop {pc} opcode
   ldr r1, [r0]                 @ Check fill level of datastack.
   cmp r1, psp
   beq 1f
-    Fehler_Quit " Stack not balanced."
+
+  ldr r1, =stack_canary @ Stackintegrität prüfen.
+  cmp tos, r1           @ Check stack integrity.
+  bne 5f
+
+    ldr tos, =dots+10 @ Fehlermeldung vorbereiten.
+    bl type           @ Prepare error message.
+5:  Fehler_Quit " Stack not balanced."
+
 1: @ Stack balanced, ok
 
 

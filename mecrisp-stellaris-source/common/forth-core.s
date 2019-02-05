@@ -109,6 +109,7 @@ ramallot Zahlenpuffer, Zahlenpufferlaenge+1 @ Reserviere mal großzügig 64 Byte
 .equ Maximaleeingabe,    200             @ Input buffer for an Address-Length string
 ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Länge String enthalten
 
+.equ stack_canary, 68295045
 
 .ifdef within_os
 
