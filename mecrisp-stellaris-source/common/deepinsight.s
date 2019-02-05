@@ -148,6 +148,84 @@ dump:  @ Malt den Speicherinhalt beginnend ab der angegebenen Adresse
 
   writeln ""
   pop {pc}
+  
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, ".regs" @ ( -- ) Prints register contents
+dotregs:
+@ -----------------------------------------------------------------------------  
+  push {r0, r1, r2, r3, r4, r5, r6, r7, lr}
+
+  pushdatos
+  mov tos, lr
+  write "lr: "
+  bl hexdot
+
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}  
+  
+  pushda r0
+  write "r0: "
+  bl hexdot
+  
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}
+  
+  pushda r1
+  write "r1: "
+  bl hexdot
+
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}
+  
+  pushda r2
+  write "r2: "  
+  bl hexdot
+  
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}
+
+  pushda r3
+  write "r3: "
+  bl hexdot
+
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}  
+  
+  pushda r4
+  write "r4: "  
+  bl hexdot
+  
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}  
+
+  pushda r5
+  write "r5: "
+  bl hexdot
+  
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}  
+  
+  pushda r6
+  write "r6: "  
+  bl hexdot
+  
+  pop  {r0, r1, r2, r3, r4, r5, r6, r7}
+  push {r0, r1, r2, r3, r4, r5, r6, r7}  
+  
+  pushda r7
+  write "r7: "  
+  bl hexdot
+
+
+  pushdatos
+  mov tos, sp
+  write "sp: "
+  bl hexdot  
+  
+  writeln "*>"
+  
+  pop {r0, r1, r2, r3, r4, r5, r6, r7, pc}
+  
   .endif
 
 

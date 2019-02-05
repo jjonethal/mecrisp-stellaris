@@ -33,6 +33,16 @@ cd thumbulator
 
 ./buildcore-stm ./thumbulator-stm32f303           ../stm32f303-ra/mecrisp-stellaris-stm32f303.bin       ../stm32f303-ra/usb-f3.txt        ../stm32f303-ra/precompiled/mecrisp-stellaris-stm32f303-with-usb-f3.bin
 
+# Numworks calculator firmware
+
+  cd ../numworks-ra
+  ./release
+  cd ../thumbulator
+  
+./buildcore-stm  ./thumbulator-numworks           ../numworks-ra/mecrisp-stellaris-numworks.bin      ../numworks-ra/completesources.txt   ../numworks-ra/mecrisp-stellaris-numworks-with-sources.bin
+
+# Final cleaning up
+
 ./tidyup
 cd ..
 

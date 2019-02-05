@@ -246,6 +246,10 @@ cd stm32f746-ra
 md5sum *.bin
 cd ..
 
+cd numworks-ra
+md5sum *.bin
+cd ..
+
 cd xmc1100
 md5sum *.bin
 cd ..

@@ -711,3 +711,11 @@
   - Added Lemmings animations
   - Contribution by juju2013@github:
       New target: Nordic nRF52832
+
+03.12.2018, Matthias Koch, Mecrisp-Stellaris 2.4.7
+
+  - Fixed flaw in Linux terminal that caused KEY to fail with input buffers of 256 bytes or more
+  - Split multitask.txt into multitask.txt and multitask-examples.txt
+  - New target: Numworks calculator
+  - Contribution by Wolfgang Strauss:
+      Forth drivers for Numworks calculator

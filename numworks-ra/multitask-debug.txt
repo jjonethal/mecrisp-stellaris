@@ -1,0 +1,72 @@
+
+\ --------------------------------------------------
+\  Multitasking debug tools
+\ --------------------------------------------------
+
+:  depth ( -- n ) up @ boot-task = if  depth    else up @ 4 cells stackspace    + + sp@ - 2 arshift then ;
+: rdepth ( -- n ) up @ boot-task = if rdepth 1- else up @ 4 cells stackspace 2* + + rp@ - 2 arshift then ;
+
+: .s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick .
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup . ."  *>" cr
+;
+
+: u.s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick u.
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup u. ."  *>" cr
+;
+
+: h.s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick hex.
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup hex. ."  *>" cr
+;
+
+\ --------------------------------------------------
+\  Multitasking insight
+\ --------------------------------------------------
+
+: tasks ( -- ) \ Show tasks currently in round-robin list
+  hook-pause @ singletask \ Stop multitasking as this list may be changed during printout.
+
+  \ Start with current task.
+  next-task cr
+
+  begin
+    ( Task-Address )
+    dup             ." Task Address: " hex.
+    dup           @ ." Next Task: " hex.
+    dup 1 cells + @ ." State: " hex.
+    dup 2 cells + @ ." Stack: " hex.
+    dup 3 cells + @ ." Handler: " hex.
+    cr
+
+    @ dup next-task = \ Stop when end of circular list is reached
+  until
+  drop
+
+  hook-pause ! \ Restore old state of multitasking
+;

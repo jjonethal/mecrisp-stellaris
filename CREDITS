@@ -39,6 +39,7 @@ Port for CY8C5888 by Andreas Wagner
 Date and time conversions by Andrew Palm
 ELF format self-replicator by Robert Clausecker
 Port for Nordic nRF52832 by juju2013@github
+Forth drivers for Numworks calculator by Wolfgang Strauss
 
 Hardware donations:
 

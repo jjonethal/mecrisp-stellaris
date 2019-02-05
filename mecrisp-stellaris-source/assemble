@@ -244,6 +244,10 @@ cd stm32f746-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
 cd ..
 
+cd numworks-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../numworks-ra
+cd ..
+
 cd xmc1100
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100 && cp *.hex ../../xmc1100
 cd ..

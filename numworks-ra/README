@@ -1,0 +1,25 @@
+
+-------------------------------------------------------------------------------
+
+Flashing of Mecrisp-Stellaris to the numworks calculator:
+
+dfu-util -i 0 -a 0 -s 0x08000000 -D mecrisp-stellaris-numworks-with-sources.bin
+
+No need to disassemble your calculator, terminal is on USART6: PA11 = D- = TX. PA12 = D+ = RX.
+Just cut an old USB cable and connect it to a USB-serial-brige with 115200 Baud 8N1.
+
+You need to type "eraseflash" once to clear the free dictionary space after you flash the Forth binary,
+as dfu-util leaves old contents in flash blocks which are not used.
+
+-------------------------------------------------------------------------------
+
+Do not forget to flash back to Epsilon at the end of the day or connect to a power supply,
+as the Forth binary will drain your battery as long as sleep modes are not implemented:
+
+dfu-util -i 0 -a 0 -s 0x08000000 -D epsilon.bin
+
+Epsilon 1.6.0 binary included for convenience purposes only.
+Compiled from sources found here: https://github.com/numworks/epsilon/
+Unlike Mecrisp-Stellaris, Epsilon is NOT licensed under GPL3 !
+
+-------------------------------------------------------------------------------

@@ -1,0 +1,90 @@
+
+numworks-blinky.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <Reset-0x8>:
+   0:	20000100 	andcs	r0, r0, r0, lsl #2
+   4:	00000009 	andeq	r0, r0, r9
+
+00000008 <Reset>:
+   8:	491f      	ldr	r1, [pc, #124]	; (88 <Blinky+0x66>)
+   a:	6808      	ldr	r0, [r1, #0]
+   c:	f050 00ff 	orrs.w	r0, r0, #255	; 0xff
+  10:	6008      	str	r0, [r1, #0]
+  12:	491e      	ldr	r1, [pc, #120]	; (8c <Blinky+0x6a>)
+  14:	6808      	ldr	r0, [r1, #0]
+  16:	f030 7070 	bics.w	r0, r0, #62914560	; 0x3c00000
+  1a:	f050 70a0 	orrs.w	r0, r0, #20971520	; 0x1400000
+  1e:	6008      	str	r0, [r1, #0]
+  20:	2310      	movs	r3, #16
+
+00000022 <Blinky>:
+  22:	491b      	ldr	r1, [pc, #108]	; (90 <Blinky+0x6e>)
+  24:	481b      	ldr	r0, [pc, #108]	; (94 <Blinky+0x72>)
+  26:	6008      	str	r0, [r1, #0]
+  28:	f45f 2200 	movs.w	r2, #524288	; 0x80000
+  2c:	3a01      	subs	r2, #1
+  2e:	d1fd      	bne.n	2c <Blinky+0xa>
+  30:	4917      	ldr	r1, [pc, #92]	; (90 <Blinky+0x6e>)
+  32:	4819      	ldr	r0, [pc, #100]	; (98 <Blinky+0x76>)
+  34:	6008      	str	r0, [r1, #0]
+  36:	f45f 2200 	movs.w	r2, #524288	; 0x80000
+  3a:	3a01      	subs	r2, #1
+  3c:	d1fd      	bne.n	3a <Blinky+0x18>
+  3e:	3b01      	subs	r3, #1
+  40:	d1ef      	bne.n	22 <Blinky>
+  42:	4916      	ldr	r1, [pc, #88]	; (9c <Blinky+0x7a>)
+  44:	6808      	ldr	r0, [r1, #0]
+  46:	f050 0020 	orrs.w	r0, r0, #32
+  4a:	6008      	str	r0, [r1, #0]
+  4c:	490f      	ldr	r1, [pc, #60]	; (8c <Blinky+0x6a>)
+  4e:	6808      	ldr	r0, [r1, #0]
+  50:	f030 7070 	bics.w	r0, r0, #62914560	; 0x3c00000
+  54:	f050 7020 	orrs.w	r0, r0, #41943040	; 0x2800000
+  58:	6008      	str	r0, [r1, #0]
+  5a:	4911      	ldr	r1, [pc, #68]	; (a0 <Blinky+0x7e>)
+  5c:	6808      	ldr	r0, [r1, #0]
+  5e:	f430 207f 	bics.w	r0, r0, #1044480	; 0xff000
+  62:	f450 2008 	orrs.w	r0, r0, #557056	; 0x88000
+  66:	6008      	str	r0, [r1, #0]
+  68:	490e      	ldr	r1, [pc, #56]	; (a4 <Blinky+0x82>)
+  6a:	208b      	movs	r0, #139	; 0x8b
+  6c:	6008      	str	r0, [r1, #0]
+  6e:	490e      	ldr	r1, [pc, #56]	; (a8 <Blinky+0x86>)
+  70:	f242 000c 	movw	r0, #8204	; 0x200c
+  74:	6008      	str	r0, [r1, #0]
+  76:	490d      	ldr	r1, [pc, #52]	; (ac <Blinky+0x8a>)
+  78:	2042      	movs	r0, #66	; 0x42
+  7a:	7008      	strb	r0, [r1, #0]
+  7c:	f45f 2200 	movs.w	r2, #524288	; 0x80000
+  80:	3a01      	subs	r2, #1
+  82:	d1fd      	bne.n	80 <Blinky+0x5e>
+  84:	e7f7      	b.n	76 <Blinky+0x54>
+  86:	38300000 	ldmdacc	r0!, {}	; <UNPREDICTABLE>
+  8a:	00004002 	andeq	r4, r0, r2
+  8e:	00184002 	andseq	r4, r8, r2
+  92:	10004002 	andne	r4, r0, r2
+  96:	08000800 	stmdaeq	r0, {fp}
+  9a:	38441000 	stmdacc	r4, {ip}^
+  9e:	00244002 	eoreq	r4, r4, r2
+  a2:	14084002 	strne	r4, [r8], #-2
+  a6:	140c4001 	strne	r4, [ip], #-1
+  aa:	14044001 	strne	r4, [r4], #-1
+  ae:	Address 0x000000ae is out of bounds.
+
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00002041 	andeq	r2, r0, r1, asr #32
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000016 	andeq	r0, r0, r6, lsl r0
+  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
+  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  18:	0600344d 	streq	r3, [r0], -sp, asr #8
+  1c:	094d070d 	stmdbeq	sp, {r0, r2, r3, r8, r9, sl}^
+  20:	Address 0x00000020 is out of bounds.
+

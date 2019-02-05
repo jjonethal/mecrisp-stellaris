@@ -1,0 +1,43 @@
+
+\ -----------------------------------------------------------------------------
+\   Delay with Systick-Timer
+\ -----------------------------------------------------------------------------
+
+$E000E010 constant NVIC_ST_CTRL_R
+$E000E014 constant NVIC_ST_RELOAD_R      
+$E000E018 constant NVIC_ST_CURRENT_R
+
+: init-delay ( -- )
+    \ Start free running Systick Timer without Interrupts
+  
+    \ Disable SysTick during setup
+    0 NVIC_ST_CTRL_R !
+
+    \ Maximum reload value for 24 bit timer
+    $00FFFFFF NVIC_ST_RELOAD_R !
+
+    \ Any write to current clears it
+    0 NVIC_ST_CURRENT_R !
+
+    \ Enable SysTick with core clock
+    %101 NVIC_ST_CTRL_R !
+;
+
+: delay-ticks ( ticks -- ) \  Tick = 1/4MHz = 250 ns
+  8 lshift
+  NVIC_ST_CURRENT_R @ 8 lshift
+
+  begin pause
+    2dup
+    NVIC_ST_CURRENT_R @ 8 lshift
+    -
+    u<=
+  until
+  2drop
+;
+
+\ Values for 16 MHz. Change accordingly.
+
+: us ( us -- ) 16 * delay-ticks ;
+: ms ( ms -- ) 0 ?do 16000 delay-ticks loop ;
+

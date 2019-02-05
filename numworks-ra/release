@@ -1,0 +1,3 @@
+#!/bin/bash 
+
+cat ../common/disassembler-m3.txt ../common/multitask.txt multitask-debug.txt io.txt delay.txt keyboard.txt display.txt graphics-unicode-8x16.txt editor.txt cornerstone.txt > completesources.txt
