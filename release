@@ -36,3 +36,9 @@ cd thumbulator
 ./tidyup
 cd ..
 
+
+# Linux core(s)
+
+cd linux-ra
+./buildcore-linux
+cd ..

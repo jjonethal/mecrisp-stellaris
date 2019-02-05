@@ -694,3 +694,13 @@
   - New target: Analog Devices ADuCM4050
   - RA binary for STM32F401
   - Cornerstone for STM32F407
+
+24.08.2018, Matthias Koch, Mecrisp-Stellaris 2.4.5
+
+  - Precompiled core for linux-ra
+  - Fixed flaw in delay-ticks
+  - Fixed adds/movs double disassembly flaw in disassemblers
+  - Changed terminal to pullup input on STM32F103
+  - New target: STM32L082KZ
+  - Contribution by Robert Clausecker:
+      ELF format self-replicator
