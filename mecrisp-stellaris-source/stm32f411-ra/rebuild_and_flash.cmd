@@ -12,11 +12,14 @@ SET P=C:\gccarm\4.9-2015q3\bin
 if exist %P%\nul set GNU_ARM_BIN=%P%
 SET P=C:\gccarm\6_2-2016q4-20161216-win32\bin
 if exist %P%\nul set GNU_ARM_BIN=%P%
+SET P=C:\app\gcc-arm\bin
+if exist %P%\nul set GNU_ARM_BIN=%P%
 
 
-set PATH=%GNU_ARM_BIN%;C:\MinGW\bin;C:\MinGW\msys\1.0\bin;%PATH%
+set PATH=%GNU_ARM_BIN%;C:\msys64\usr\bin;%PATH%
 
-mingw32-make.exe clean all
+make.exe clean
+make.exe all
 
 :: flashing
 if not ERRORLEVEL 1 (
