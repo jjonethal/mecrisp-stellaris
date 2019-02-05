@@ -66,6 +66,10 @@ cd nrf51822
 md5sum *.bin
 cd ..
 
+cd nrf52832
+md5sum *.bin
+cd ..
+
 cd microbit
 md5sum *.bin
 cd ..

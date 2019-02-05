@@ -704,3 +704,10 @@
   - New target: STM32L082KZ
   - Contribution by Robert Clausecker:
       ELF format self-replicator
+
+23.11.2018, Matthias Koch, Mecrisp-Stellaris 2.4.6
+
+  - Added Catch & Throw for use without multitasking
+  - Added Lemmings animations
+  - Contribution by juju2013@github:
+      New target: Nordic nRF52832

@@ -64,6 +64,10 @@ cd nrf51822
 make clean
 cd ..
 
+cd nrf52832
+make clean
+cd ..
+
 cd microbit
 make clean
 cd ..

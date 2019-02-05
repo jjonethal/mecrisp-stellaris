@@ -64,6 +64,10 @@ cd nrf51822
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
 cd ..
 
+cd nrf52832
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf52832 && cp *.hex ../../nrf52832
+cd ..
+
 cd microbit
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit && cp *.hex ../../microbit
 cd ..
