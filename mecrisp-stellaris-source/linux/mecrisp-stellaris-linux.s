@@ -18,16 +18,18 @@
 
 .syntax unified
 
+.section mecrisp, "awx" @ Everything is writeable and executable
+.align 4
+
 @ -----------------------------------------------------------------------------
 @ A Thumb mode entry sequence instead of a vector table
 @ -----------------------------------------------------------------------------
-.text
+
   .global _start
 _start:
   ldr r0, =Reset_with_arguments+1
   bx r0 @ Switch to thumb mode
 
-.data
 .thumb
 
 @ -----------------------------------------------------------------------------
@@ -37,6 +39,7 @@ _start:
 .equ charkommaavailable, 1
 .equ does_above_64kb, 1
 .equ within_os, 1
+.equ erasedflashcontainszero, 1
 
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions
@@ -55,7 +58,7 @@ Reset_with_arguments:
 @ -----------------------------------------------------------------------------
    ldr r0, =arguments  @ Save the initial stack pointer, as it contains
    str sp, [r0]        @ command line arguments. Do this only once on first entry.
-   b eraseflash        @ Fill flash memory with $FF
+   @ b eraseflash        @ Fill flash memory with $FF
 
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn

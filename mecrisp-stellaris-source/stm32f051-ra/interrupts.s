@@ -27,11 +27,29 @@
 interrupt exti0_1
 interrupt exti2_3
 interrupt exti4_15
+interrupt tsc
+interrupt dma_ch1
+interrupt dma_ch2_3
+interrupt dma_ch4_5
 interrupt adc
 interrupt tim1_up
 interrupt tim1_cc
 interrupt tim2
 interrupt tim3
+interrupt tim6_dac
+interrupt tim14
+interrupt tim15
+interrupt tim16
+interrupt tim17
+interrupt i2c1
+interrupt i2c2
+interrupt spi1
+interrupt spi2
+interrupt usart1
+interrupt usart2
+interrupt cec_can
+
+.ltorg
 
 @------------------------------------------------------------------------------
 

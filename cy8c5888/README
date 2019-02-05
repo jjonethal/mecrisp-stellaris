@@ -1,0 +1,33 @@
+
+@ -----------------------------------------------------------------------------
+@   Flashing
+@ -----------------------------------------------------------------------------
+
+The CY8CKIT-059 has an attached KitProg programmer that is supported by openocd, but a few additional patches are needed for PSoC 5LP flash support:
+
+    # include PSoC 5LP flash support http://openocd.zylin.com/#/c/3432/
+    git clone http://openocd.zylin.com/openocd
+    cd openocd
+    git fetch http://openocd.zylin.com/openocd refs/changes/32/3432/26 && git checkout FETCH_HEAD
+    ./bootstrap
+    ./configure --prefix=/usr --enable-maintainer-mode --disable-werror --enable-kitprog
+    make
+    make install
+
+Once installed, flash with:
+
+    openocd -c "interface kitprog; kitprog_init_acquire_psoc" -f target/psoc5lp.cfg -c "init; halt; psoc5lp mass_erase 0; program mecrisp-stellaris-cy8c5888.bin 0x0 verify reset exit"
+
+@ -----------------------------------------------------------------------------
+@   Terminal
+@ -----------------------------------------------------------------------------
+
+The PSoC 5LP has no hard uart. For now, the terminal is bit-banged with 57600 baud only over a separate USB <-> serial bridge.
+Compilation into flash is not implemented yet.
+
+    PC:       PSoC 5LP pins:
+    Rx <----- P12.7
+    Tx -----> P12.6
+    
+    ./terminal 0
+

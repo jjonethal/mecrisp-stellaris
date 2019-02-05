@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd aducm4050-ra
+make clean
+cd ..
+
 cd atsame70-ra
 make clean
 cd ..
@@ -60,6 +64,10 @@ cd nrf51822
 make clean
 cd ..
 
+cd nrf52832
+make clean
+cd ..
+
 cd microbit
 make clean
 cd ..
@@ -100,6 +108,14 @@ cd stm32f030f4
 make clean
 cd ..
 
+cd stm32f030k6
+make clean
+cd ..
+
+cd stm32f030k6-ra
+make clean
+cd ..
+
 cd stm32f042f6
 make clean
 cd ..
@@ -129,6 +145,10 @@ make clean
 cd ..
 
 cd stm32l073rz-ra
+make clean
+cd ..
+
+cd stm32l082kz-ra
 make clean
 cd ..
 
@@ -188,6 +208,10 @@ cd stm32f401
 make clean
 cd ..
 
+cd stm32f401-ra
+make clean
+cd ..
+
 cd stm32f401cd-ra
 make clean
 cd ..
@@ -220,6 +244,10 @@ cd stm32f746-ra
 make clean
 cd ..
 
+cd numworks-ra
+make clean
+cd ..
+
 cd xmc1100
 make clean
 cd ..
@@ -241,6 +269,22 @@ make clean
 cd ..
 
 cd efm32hg322-ra
+make clean
+cd ..
+
+cd cy8c4245axi
+make clean
+cd ..
+
+cd cy8c5888
+make clean
+cd ..
+
+cd nuc123
+make clean
+cd ..
+
+cd nuc123-ra
 make clean
 cd ..
 

@@ -5,6 +5,80 @@
 
 compiletoflash
 
+\ Slow double shifts, for M0.
+
+\ : 2lshift  ( ud u -- ud* ) 0 ?do dshl loop 3-foldable ;
+\ : 2rshift  ( ud u -- ud* ) 0 ?do dshr loop 3-foldable ;
+\ : 2arshift (  d u --  d* ) 0 ?do d2/  loop 3-foldable ;
+
+\ Fast double shifts, for M3/M4 only !
+
+: 2lshift ( ud u -- ud* )
+[
+  $CF03 h,
+  $FA11 h,
+  $F206 h,
+  $F847 h,
+  $2D04 h,
+  $FA10 h,
+  $F206 h,
+  $F1D6 h,
+  $0320 h,
+  $FA31 h,
+  $F303 h,
+  $431A h,
+  $3E20 h,
+  $FA11 h,
+  $F606 h,
+  $4316 h,
+]
+3-foldable ;
+
+: 2rshift ( ud u -- ud* )
+[
+  $CF03 h,
+  $FA11 h,
+  $F206 h,
+  $F847 h,
+  $2D04 h,
+  $FA10 h,
+  $F206 h,
+  $F1D6 h,
+  $0320 h,
+  $FA31 h,
+  $F303 h,
+  $431A h,
+  $3E20 h,
+  $FA11 h,
+  $F606 h,
+  $4316 h,
+]
+3-foldable ;
+
+: 2arshift ( d u -- d* )
+[
+  $CF03 h,
+  $2E20 h,
+  $D304 h,
+  $F1B6 h,
+  $0320 h,
+  $FA50 h,
+  $F203 h,
+  $E006 h,
+  $FA31 h,
+  $F206 h,
+  $F1D6 h,
+  $0320 h,
+  $FA10 h,
+  $F303 h,
+  $431A h,
+  $F847 h,
+  $2D04 h,
+  $FA50 h,
+  $F606 h,
+]
+3-foldable ;
+
 \ -----------------------------------------------------------------------------
 \   Constant table necessary for all CORDIC computations
 \ -----------------------------------------------------------------------------
@@ -64,24 +138,18 @@ cordic-constants constant cordic-constants \ Allow stronger optimisations for th
 0. 2variable cordic-y
 0. 2variable cordic-z
 
-0. 2variable cordic-x'
-
-: 2arshift ( d u -- d* ) 0 ?do d2/ loop 3-foldable ;
-
 : cordic-step-plus ( -- )
-    cordic-x 2@ cordic-y 2@ i 2arshift d+ cordic-x' 2!
+    cordic-x 2@ cordic-y 2@ i 2arshift d+
     cordic-y 2@ cordic-x 2@ i 2arshift d- cordic-y  2!
     cordic-z 2@             i e^ka 0   d+ cordic-z  2!
-
-    cordic-x' 2@ cordic-x 2!
+                                          cordic-x  2!
 ;
 
 : cordic-step-minus ( -- )
-    cordic-x 2@ cordic-y 2@ i 2arshift d- cordic-x' 2!
+    cordic-x 2@ cordic-y 2@ i 2arshift d-
     cordic-y 2@ cordic-x 2@ i 2arshift d+ cordic-y  2!
     cordic-z 2@             i e^ka 0   d- cordic-z  2!
-
-    cordic-x' 2@ cordic-x 2!
+                                          cordic-x  2!
 ;
 
 \ -----------------------------------------------------------------------------
@@ -151,6 +219,109 @@ pi 2,0 f/          2constant pi/2
 
 2-foldable ;
 
+\ -----------------------------------------------------------------------------
+\  Arcsin and Arccos
+\ -----------------------------------------------------------------------------
+
+create double-cordic-constants
+
+hex
+
+00000001 921FB544 swap , ,
+00000000 ED63382B swap , ,
+00000000 7D6DD7E4 swap , ,
+00000000 3FAB7535 swap , ,
+00000000 1FF55BB7 swap , ,
+00000000 0FFEAADD swap , ,
+00000000 07FFD556 swap , ,
+00000000 03FFFAAA swap , ,
+00000000 01FFFF55 swap , ,
+00000000 00FFFFEA swap , ,
+00000000 007FFFFD swap , ,
+00000000 003FFFFF swap , ,
+00000000 001FFFFF swap , ,
+00000000 000FFFFF swap , ,
+00000000 0007FFFF swap , ,
+00000000 0003FFFF swap , ,
+00000000 0001FFFF swap , ,
+00000000 0000FFFF swap , ,
+00000000 00007FFF swap , ,
+00000000 00003FFF swap , ,
+00000000 00001FFF swap , ,
+00000000 00000FFF swap , ,
+00000000 000007FF swap , ,
+00000000 000003FF swap , ,
+00000000 000001FF swap , ,
+00000000 000000FF swap , ,
+00000000 0000007F swap , ,
+00000000 0000003F swap , ,
+00000000 0000001F swap , ,
+00000000 0000000F swap , ,
+00000000 00000007 swap , ,
+00000000 00000003 swap , ,
+00000000 00000002 swap , ,
+00000000 00000001 swap , ,
+
+decimal
+
+double-cordic-constants constant double-cordic-constants \ Allow stronger optimisations for the table address
+
+: 2e^ka ( u -- x ) 3 lshift double-cordic-constants + 2@  1-foldable ;
+
+: arcsin-step-plus ( -- )
+    cordic-x 2@ cordic-y 2@ i 2arshift d+
+    cordic-y 2@ cordic-x 2@ i 2arshift d- cordic-y  2!
+                                          cordic-x  2!
+
+    cordic-x 2@ cordic-y 2@ i 2arshift d+
+    cordic-y 2@ cordic-x 2@ i 2arshift d- cordic-y  2!
+                                          cordic-x  2!
+                                          
+    cordic-z 2@             i 2e^ka    d- cordic-z  2!
+;
+
+: arcsin-step-minus ( -- )
+    cordic-x 2@ cordic-y 2@ i 2arshift d-
+    cordic-y 2@ cordic-x 2@ i 2arshift d+ cordic-y  2!
+                                          cordic-x  2!
+
+    cordic-x 2@ cordic-y 2@ i 2arshift d-
+    cordic-y 2@ cordic-x 2@ i 2arshift d+ cordic-y  2!
+                                          cordic-x  2!
+                                          
+    cordic-z 2@             i 2e^ka    d+ cordic-z  2!
+;
+
+: arcsin ( f-arg -- f-arcsin )
+  
+  \ Improve accuracy by exploiting 64 bit dynamic range during calculations
+  28 2lshift
+      
+  $10000000,0 cordic-x 2!
+          0,0 cordic-y 2!
+          0,0 cordic-z 2!
+    
+  34 0 do
+  
+    cordic-y 2@ 2over d<      
+    cordic-x @ 0< not xor
+    if            
+      arcsin-step-plus
+    else
+      arcsin-step-minus
+    then
+    
+    2dup i 2* 2arshift d+
+  loop
+  2drop
+  
+  cordic-z 2@
+
+2-foldable ;
+
+: arccos ( f-arg -- f-arccos )
+  arcsin dnegate pi/2 d+
+2-foldable ;
 
 \ -----------------------------------------------------------------------------
 \  Integer XY vector --> Polar coordinates
@@ -176,8 +347,8 @@ pi 2,0 f/          2constant pi/2
 
   \ Improve accuracy by exploiting 64 bit dynamic range during calculations
 
-  s>d 24 0 do d2* loop cordic-y 2!
-  s>d 24 0 do d2* loop cordic-x 2!
+  s>d 24 2lshift cordic-y 2!
+  s>d 24 2lshift cordic-x 2!
 
   32 0 do
 
@@ -200,95 +371,9 @@ pi 2,0 f/          2constant pi/2
 : xy>polar  ( x y -- f-angle d-magnitude ) cordic-vectoring       $0,9B74EDA8 f*  24 2arshift 2-foldable ;
 
 
-
-
 \ -----------------------------------------------------------------------------
 \   Small helpers for calculations
 \ -----------------------------------------------------------------------------
 
 : s>f ( n -- f ) 0 swap  inline 1-foldable ; \ Signed integer --> Fixpoint s31.32
 : f>s ( f -- n ) nip     inline 2-foldable ; \ Fixpoint s31.32 --> Signed integer
-
-\ -----------------------------------------------------------------------------
-\   Accuracy testing
-\   Save the output as sinetable.dat, replace all commas with dots and check with Gnuplot:
-\
-\   Results:
-\     plot "sinetable.dat" u 1:2 w l, "sinetable.dat" u 1:(sin($1)) w l
-\     plot "sinetable.dat" u 1:3 w l, "sinetable.dat" u 1:(cos($1)) w l
-\   Errors:
-\     plot "sinetable.dat" u 1:($2 - sin($1)) w l
-\     plot "sinetable.dat" u 1:($3 - cos($1)) w l
-\ -----------------------------------------------------------------------------
-
-4096 constant sinesamples
-
-: sinetable ( -- )
-
-  cr
-  sinesamples 0 do
-    i s>f pi 2,0 f* f*
-    sinesamples s>f f/
-
-    2dup f.
-
-    2dup widesine f.
-         widecosine f.
-    cr
-  loop
-  cr
-;
-
-\ -----------------------------------------------------------------------------
-\   Show a few arctangents
-\ -----------------------------------------------------------------------------
-
-  : p. xy>polar  d.  180,0 pi f/ f* f. cr ;
-\ : p. atan2 180,0 pi f/ f* f. cr ;
-\ : p. magnitude d. cr ;
-
- 10000      0 p.  ( 0 )
- 10000  10000 p.  ( 45 )
-     0  10000 p.  ( 90 )
--10000  10000 p.  ( 135 )
--10000      0 p.  ( +-180 )
--10000 -10000 p.  ( -135 )
-     0 -10000 p.  ( -90 )
- 10000 -10000 p.  ( -45 )
-
-
- 10   0 p.  ( 0 )
- 10  10 p.  ( 45 )
-  0  10 p.  ( 90 )
--10  10 p.  ( 135 )
--10   0 p.  ( +-180 )
--10 -10 p.  ( -135 )
-  0 -10 p.  ( -90 )
- 10 -10 p.  ( -45 )
-
-\ -----------------------------------------------------------------------------
-\   Accuracy testing
-\   Save the output as atan2-test.dat, replace all commas with dots and check with Gnuplot:
-\
-\   Probed values:
-\     plot "atan2-test.dat" u 1:2 w p
-\   Results:
-\     plot "atan2-test.dat" u 0:4 w l, "atan2-test.dat" u 0:(atan2($2, $1)/pi*180) w l
-\     plot "atan2-test.dat" u 0:3 w l, "atan2-test.dat" u 0:(sqrt($2*$2 + $1*$1)) w l
-\   Errors:
-\     plot "atan2-test.dat" u 0:($4 - atan2($2, $1)/pi*180) w l
-\     plot "atan2-test.dat" u 0:($3 - sqrt($2*$2 + $1*$1))  w l
-\ -----------------------------------------------------------------------------
-
-: atan2-test ( -- )
-  cr cr
-
-  100000 -100000 do  i  10000    2dup swap . .   p. 100 +loop
-  100000 -100000 do  i -10000    2dup swap . .   p. 100 +loop
-
-  100000 -100000 do     10000 i  2dup swap . .   p. 100 +loop
-  100000 -100000 do    -10000 i  2dup swap . .   p. 100 +loop
-
-  cr cr
-;
-

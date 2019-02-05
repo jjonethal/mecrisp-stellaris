@@ -33,10 +33,10 @@ parse:
 @ -----------------------------------------------------------------------------
   push {r4, lr} @ Eigentlich nur r4 nötig
   @ Parse nochmal neu überdenken:
-
-  bl source
-  popda r1  @ Length  of input buffer
-  popda r0  @ Pointer to input buffer
+     
+  ldr r0, =current_source
+  ldr r1, [r0]     @ Length  of input buffer
+  ldr r0, [r0, #4] @ Pointer to input buffer
 
   ldr r2, =Pufferstand
   ldr r2, [r2] @ Current >IN gauge

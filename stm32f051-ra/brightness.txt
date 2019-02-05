@@ -1,0 +1,78 @@
+
+\ -----------------------------------------------------------------------------
+
+\ Light intensity measurement with a LED on digital IO pins.
+
+\ Take care: Leakage currents can heavily influence the measurement.
+\ Tiny currents ! Keep tracks clean and place board on a good insulator.
+\ The LED has a junction capacitance in the 10-20 pF range, therefore, use short wires.
+
+\ You can check for leakage currents:
+\ Let this run without LED connected, it should print constant measurement of 100000 if you are not limited by leakage.
+\ The lower the value, the worse is your electrical condition.
+
+\ You can increase sensitivity by increasing the termination value in the darkness loop.
+
+\ -----------------------------------------------------------------------------
+
+$48000000 constant PORTA_Base
+$48000400 constant PORTB_Base
+$48000800 constant PORTC_Base
+$48000C00 constant PORTD_Base
+$48001400 constant PORTF_Base
+
+PORTC_BASE $00 + constant PORTC_MODER    \ Reset 0 Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+PORTC_BASE $04 + constant PORTC_OTYPER   \ Reset 0 Port Output type register - (0) Push/Pull vs. (1) Open Drain
+PORTC_BASE $08 + constant PORTC_OSPEEDR  \ Reset 0 Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+PORTC_BASE $0C + constant PORTC_PUPDR    \ Reset 0 Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+PORTC_BASE $10 + constant PORTC_IDR      \ RO      Input Data Register
+PORTC_BASE $14 + constant PORTC_ODR      \ Reset 0 Output Data Register
+PORTC_BASE $18 + constant PORTC_BSRR     \ WO      Bit set/reset register   31:16 Reset 15:0 Set
+        \ +$1C                                     ... is Lock Register, unused
+PORTC_BASE $20 + constant PORTC_AFRL     \ Reset 0 Alternate function  low register
+PORTC_BASE $24 + constant PORTC_AFRH     \ Reset 0 Alternate function high register
+PORTC_BASE $28 + constant PORTC_BRR      \ Reset 0 Bit Reset Register
+
+\ -----------------------------------------------------------------------------
+
+4 constant Anode    \ PC4
+5 constant Cathode   \ PC5
+
+: darkness ( -- u )
+
+  %01 Anode   2* lshift 
+  %01 Cathode 2* lshift or PORTC_MODER bis! \ Set anode and cathode as output
+
+  1 Anode lshift 16 lshift 1 Cathode lshift or PORTC_BSRR ! \ Anode low, cathode high
+
+  \ Wait a little bit to charge the junction capacitance to rail voltage
+  10 0 do loop
+
+  %01 Cathode 2* lshift PORTC_MODER bic! \ Set cathode as input
+
+  0
+  begin
+    1 Cathode lshift PORTC_IDR bit@  \ Is cathode discharged due to photocurrent ?
+  while
+    1+
+    \ Terminate when a maximum value is reached to gurantee end of the measurement in absolute darkness
+    dup 100000 u>= if exit then
+  repeat
+;
+
+\ -----------------------------------------------------------------------------
+
+: printdarkness ( -- ) cr
+
+  %01 Anode   2* lshift 
+  %01 Cathode 2* lshift or PORTC_MODER bis! \ Set anode and cathode as output
+
+  1 Anode lshift 1 Cathode lshift 16 lshift or PORTC_BSRR ! \ Anode high, cathode low
+
+  1000000 0 do loop \ Shiny welcome message.
+
+  begin
+    0  16 0 do darkness + loop  4 rshift  . cr  \ Average of 16 measurements to reduce noise
+  key? until
+;
+

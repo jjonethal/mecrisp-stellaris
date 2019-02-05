@@ -1,0 +1,376 @@
+
+\ -----------------------------------------------------------------------------
+\  RGB LED
+\ -----------------------------------------------------------------------------
+
+PC7 constant led-red
+PB1 constant led-green
+PB0 constant led-blue
+
+: init-led ( -- )
+  led-red ioc! led-green ioc! led-blue ioc!
+  OMODE-PP dup led-red   io-mode!
+           dup led-green io-mode!
+               led-blue  io-mode!
+;
+
+\ -----------------------------------------------------------------------------
+\  Keyboard scan
+\ -----------------------------------------------------------------------------
+
+\  The keyboard is a matrix that is laid out as follow:
+\  
+\       |  PC0 |  PC1 | PC2  | PC3  | PC4  | PC5  |
+\  -----+------+------+------+------+------+------+
+\   PE0 | K_A1 | K_A2 | K_A3 | K_A4 | K_A5 | K_A6 |
+\  -----+------+------+------+------+------+------+
+\   PE1 | K_B1 | K_B2 |   8  |   9  |  10  |  11  |
+\  -----+------+------+------+------+------+------+
+\   PE2 | K_C1 | K_C2 | K_C3 | K_C4 | K_C5 | K_C6 |
+\  -----+------+------+------+------+------+------+
+\   PE3 | K_D1 | K_D2 | K_D3 | K_D4 | K_D5 | K_D6 |
+\  -----+------+------+------+------+------+------+
+\   PE4 | K_E1 | K_E2 | K_E3 | K_E4 | K_E5 | K_E6 |
+\  -----+------+------+------+------+------+------+
+\   PE5 | K_F1 | K_F2 | K_F3 | K_F4 | K_F5 |  35  |
+\  -----+------+------+------+------+------+------+
+\   PE6 | K_G1 | K_G2 | K_G3 | K_G4 | K_G5 |  41  |
+\  -----+------+------+------+------+------+------+
+\   PE7 | K_H1 | K_H2 | K_H3 | K_H4 | K_H5 |  47  |
+\  -----+------+------+------+------+------+------+
+\   PE8 | K_I1 | K_I2 | K_I3 | K_I4 | K_I5 |  53  |
+\  -----+------+------+------+------+------+------|
+\  
+\   We decide to drive the rows (PE0-8) and read the columns (PC0-5).
+\  
+\   To avoid short-circuits, the pins E0-E8 will not be standard outputs but
+\   only open-drain. Open drain means the pin is either driven low or left
+\   floating.
+\   When a user presses multiple keys, a connection between two rows can happen.
+\   If we don't use open drain outputs, this situation could trigger a short
+\   circuit between an output driving high and another driving low.
+\  
+\   If the outputs are open-drain, this means that the input must be pulled up.
+\   So if the input reads "1", this means the key is in fact *not* pressed, and
+\   if it reads "0" it means that there's a short to an open-drain output. Which
+\   means the corresponding key is pressed.
+
+: init-keyboard ( -- )
+
+  %000000000 16 lshift %111111111 or  PE0 io-base GPIO.BSRR +  !   \ All floating
+
+  OMODE-OD   PE0 %111111111 io-modes! \ Set PE0 to PE8 as open drain outputs
+  IMODE-HIGH PC0    %111111 io-modes! \ Set PC0 to PC5 as inputs with pullups          
+
+\  OMODE-OD
+\  dup PE0 io-mode! dup PE1 io-mode! dup PE2 io-mode! dup PE3 io-mode!
+\  dup PE4 io-mode! dup PE5 io-mode! dup PE6 io-mode! dup PE7 io-mode!
+\      PE8 io-mode!
+  
+\  IMODE-HIGH
+\  dup PC0 io-mode! dup PC1 io-mode! dup PC2 io-mode! dup PC3 io-mode!
+\  dup PC4 io-mode!     PC5 io-mode!
+
+;
+
+: scan-keyboard-row ( ud -- ud* )
+  6 2lshift  swap  10 us  PC0 io-base GPIO.IDR + @ not %111111 and  or  swap
+;
+
+: scan-keyboard ( -- ud )
+
+  0.
+
+  %100000000 16 lshift %011111111 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %010000000 16 lshift %101111111 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %001000000 16 lshift %110111111 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %000100000 16 lshift %111011111 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %000010000 16 lshift %111101111 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %000001000 16 lshift %111110111 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %000000100 16 lshift %111111011 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %000000010 16 lshift %111111101 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+  %000000001 16 lshift %111111110 or  PE0 io-base GPIO.BSRR +  !  scan-keyboard-row
+
+  %000000000 16 lshift %111111111 or  PE0 io-base GPIO.BSRR +  !  \ All floating to reduce current consumption
+;
+
+: scan-keyboard-debounce ( -- ud )
+  0. 16 0 do scan-keyboard 2or loop
+;
+
+\ -----------------------------------------------------------------------------
+\  Ring buffers by Jean-Claude Wippler
+\ -----------------------------------------------------------------------------
+
+\ Ring buffers, for serial ports, etc - size must be 4..256 and power of 2
+\ TODO setup is a bit messy right now, should put buffer: word inside init
+
+\ Each ring needs 4 extra bytes for internal housekeeping:
+\   addr+0 = ring mask, i.e. N-1
+\   addr+1 = put index: 0..255 (needs to be masked before use)
+\   addr+2 = get index: 0..255 (needs to be masked before use)
+\   addr+3 = spare
+\   addr+4..addr+4+N-1 = actual ring buffer, N bytes
+\ Example:
+\   16 4 + buffer: buf  buf 16 init-ring
+
+: init-ring ( addr size -- )  \ initialise a ring buffer
+  1- swap !  \ assumes little-endian so mask ends up in ring+0
+;
+
+: c++@ ( addr -- b addr+1 ) dup c@ swap 1+ ;  \ fetch and autoinc byte ptr
+
+: ring-step ( ring 1/2 -- addr )  \ common code for saving and fetching
+  over + ( ring ring-g/p ) dup c@ >r ( ring ring-g/p R: g/p )
+  dup c@ 1+ swap c!  \ increment byte under ptr
+  dup c@ r> and swap 4 + + ;
+
+: ring# ( ring -- u )  \ return current number of bytes in the ring buffer
+\ TODO could be turned into a single @ word access and made interrupt-safe
+  c++@ c++@ c++@ drop - and ;
+: ring? ( ring -- f )  \ true if the ring can accept more data
+  dup ring# swap c@ < ;
+: >ring ( b ring -- )  \ save byte to end of ring buffer
+  1 ring-step c! ;
+: ring> ( ring -- b )  \ fetch byte from start of ring buffer
+  2 ring-step c@ ;
+
+\ -----------------------------------------------------------------------------
+\  Terminal injection
+\ -----------------------------------------------------------------------------
+
+128 4 + buffer: character-ring   \ Character buffer for "key"
+
+: inject-character ( -- )
+  character-ring ring?
+  if
+    character-ring >ring
+  else
+    drop \ Forget characters which would overflow the ring buffer.
+  then
+;
+
+: inject-string ( addr len -- )
+  0 ?do
+    dup c@ inject-character
+    1+
+  loop
+  drop
+;
+
+: ring-key? ( -- ? )
+  serial-key? if serial-key inject-character then
+  character-ring ring# 0<>
+;
+
+: ring-key ( -- c )
+  begin ring-key? until
+  character-ring ring>
+;
+
+: enable-ring ( -- )
+  character-ring 128 init-ring
+  ['] ring-key  hook-key  !
+  ['] ring-key? hook-key? !
+;
+
+: disable-ring ( -- )
+  ['] serial-key  hook-key  !
+  ['] serial-key? hook-key? !  
+;
+
+\ -----------------------------------------------------------------------------
+\  Sleep mode
+\ -----------------------------------------------------------------------------
+
+false variable just-woke-up
+
+: sleep-a-while ( -- )
+
+  \ cr ." Entering sleep mode..." cr
+
+  singletask
+  led-green ioc!
+
+  \ Insert a power down sequence here, perhaps cutting clock to peripherals
+  \ Simplest possibility: Divide clock down to a very low frequency.
+
+  \ Prepare the row which carries the power button
+  %000000010 16 lshift %111111101 or  PE0 io-base GPIO.BSRR +  !
+  10 us
+
+  \ Simulate behaviour by busy waiting for PC1 going low
+  begin PC1 io@ not until
+
+  \ Insert a power up sequence here, reenabling and initialising peripherals
+
+  true just-woke-up !  
+  led-green ios!
+  multitask
+
+  \ cr ." Welcome back !" cr cr
+;
+
+\ -----------------------------------------------------------------------------
+\  Key mapping
+\ -----------------------------------------------------------------------------
+
+0. 2variable    last-keys
+0. 2variable current-keys
+
+: key-press ( xd -- ? )
+  2dup current-keys 2@ 2and d0<>
+  -rot    last-keys 2@ 2and d0=
+  and
+;
+
+: key-release ( xd -- ? )
+  2dup current-keys 2@ 2and d0=
+  -rot    last-keys 2@ 2and d0<>
+  and
+;
+
+false variable shift-lock
+false variable alpha-lock
+
+: normal?     ( -- ? ) shift-lock @ not alpha-lock @ not and ;
+: shift?      ( -- ? ) shift-lock @     alpha-lock @ not and ;
+: alpha?      ( -- ? ) shift-lock @ not alpha-lock @     and ;
+: shiftalpha? ( -- ? ) shift-lock @     alpha-lock @     and ;
+
+: keym
+  postpone key-press
+  postpone if
+
+    postpone normal?
+    postpone if
+    postpone s"
+    postpone inject-string
+    postpone then
+
+    postpone shift?
+    postpone if
+    postpone s"
+    postpone inject-string
+    postpone then
+
+    postpone alpha?
+    postpone if
+    postpone s"
+    postpone inject-string
+    postpone then
+
+    postpone shiftalpha?
+    postpone if
+    postpone s"
+    postpone inject-string
+    postpone then
+
+  postpone then
+  immediate
+;
+
+: keymap ( -- )
+
+  \ ---------------------------------------------
+  $00000000.00000001 key-press if 27 inject-character 91 inject-character 68 inject-character then \ Cursor left
+  $00000000.00000002 key-press if 27 inject-character 91 inject-character 65 inject-character then \ Cursor up
+  $00000000.00000004 key-press if 27 inject-character 91 inject-character 66 inject-character then \ Cursor down
+  $00000000.00000008 key-press if 27 inject-character 91 inject-character 67 inject-character then \ Cursor right
+  \ ---------------------------------------------
+  $00000000.00000010 key-press if 27 inject-character 91 inject-character 72 inject-character then \ OK --> Pos1
+  $00000000.00000020 key-press if 27 inject-character 91 inject-character 70 inject-character then \ Return key --> End
+  $00000000.00000040 key-press if 4 @ execute then \ Home --> Restart Mecrisp-Stellaris
+  $00000000.00000080 key-release if just-woke-up @ if false just-woke-up ! else sleep-a-while then then \ Power button --> Sleep mode
+  \ ---------------------------------------------
+  $00000000.00001000 key-press if -1 shift-lock xor! then
+  $00000000.00002000 key-press if -1 alpha-lock xor! then
+  $00000000.00004000 keym x,n,t"cut":":"
+  $00000000.00008000 keym var"copy";";"
+  $00000000.00010000 keym Nut&Bolt"paste"'"'"
+  $00000000.00020000 key-press if 8 inject-character then \ Backspace
+  \ ---------------------------------------------  
+  $00000000.00040000 keym e^x"["a"A"
+  $00000000.00080000 keym ln"]"b"B"
+  $00000000.00100000 keym log"{"c"C"
+  $00000000.00200000 keym i"}"d"D"
+  $00000000.00400000 keym ,"_"e"E"
+  $00000000.00800000 keym x^y"sto>"f"F"
+  \ ---------------------------------------------
+  $00000000.01000000 keym sin"asin"g"G"
+  $00000000.02000000 keym cos"acos"h"H"
+  $00000000.04000000 keym tan"atan"i"I"
+  $00000000.08000000 keym Pi"="j"J"
+  $00000000.10000000 keym sqrt"<"k"K"
+  $00000000.20000000 keym ^2">"l"L"
+  \ ---------------------------------------------
+  $00000000.40000000 keym 7"7"m"M"
+  $00000000.80000000 keym 8"8"n"N"
+  $00000001.00000000 keym 9"9"o"O"
+  $00000002.00000000 keym ("("p"P"
+  $00000004.00000000 keym )")"q"Q"
+  \ ---------------------------------------------
+  $00000010.00000000 keym 4"4"r"R"
+  $00000020.00000000 keym 5"5"s"S"
+  $00000040.00000000 keym 6"6"t"T"
+  $00000080.00000000 keym *"*"u"U"
+  $00000100.00000000 keym /"/"v"V"
+  \ ---------------------------------------------
+  $00000400.00000000 keym 1"1"w"W"
+  $00000800.00000000 keym 2"2"x"X"
+  $00001000.00000000 keym 3"3"y"Y"
+  $00002000.00000000 keym +"+"z"Z"
+  $00004000.00000000 keym -"-" " "
+  \ ---------------------------------------------
+  $00010000.00000000 keym 0"0"?"?"
+  $00020000.00000000 keym ."."!"!"
+  $00040000.00000000 keym x10^x"x10^x"x10^x"x10^x"
+  $00080000.00000000 key-press if 32 inject-character then \ Space \ keym Ans"Ans"Ans"Ans"
+  $00100000.00000000 key-press if 10 inject-character then \ LF    \ keym EXE"EXE"EXE"EXE"
+  \ ---------------------------------------------
+;
+
+\ -----------------------------------------------------------------------------
+\  Keyboard handling
+\ -----------------------------------------------------------------------------
+
+: keyboard-handler ( -- )
+  scan-keyboard-debounce current-keys 2!
+
+  current-keys 2@ last-keys 2@ 2xor d0<>   \ Any changes in key state ?
+  if
+    \ ." Key change: " current-keys 2@ hex. hex. cr
+    keymap \ Insert a lot of handling here !
+  then
+
+  current-keys 2@ last-keys 2!
+;
+
+\ -----------------------------------------------------------------------------
+\  Task for handling the keyboard in background
+\ -----------------------------------------------------------------------------
+
+task: keyboard-task
+
+: keyboard& ( -- )
+  keyboard-task activate
+
+    begin
+      keyboard-handler
+      pause \ Pause is called in the delay used in scan-keyboard, therefore strictly speaking no pause is necessary here.
+    again
+;
+
+: keyboard-into-terminal ( -- )
+
+  init-led
+  init-delay
+  init-keyboard
+  enable-ring
+
+  led-green ios!
+
+  multitask
+  keyboard&
+;
+

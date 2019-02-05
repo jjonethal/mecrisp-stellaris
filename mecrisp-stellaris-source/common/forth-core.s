@@ -109,6 +109,7 @@ ramallot Zahlenpuffer, Zahlenpufferlaenge+1 @ Reserviere mal großzügig 64 Byte
 .equ Maximaleeingabe,    200             @ Input buffer for an Address-Length string
 ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Länge String enthalten
 
+.equ stack_canary, 68295045
 
 .ifdef within_os
 
@@ -138,9 +139,14 @@ ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Län
   ramallot Sammeltabelle, Sammelstellen * 6 @ 16-Bit Flash write emulation collection buffer
 .endif
 
+.ifdef flash8bytesblockwrite
+  .equ Sammelstellen, 32 @ 32 * (8 + 4) = 384 Bytes
+  ramallot Sammeltabelle, Sammelstellen * 12 @ Buffer 32 blocks of 8 bytes each for ECC constrained Flash write
+.endif
+
 .ifdef flash16bytesblockwrite
   .equ Sammelstellen, 32 @ 32 * (16 + 4) = 640 Bytes
-  ramallot Sammeltabelle, Sammelstellen * 20 @ Buffer 16 blocks of 16 bytes each for ECC constrained Flash write
+  ramallot Sammeltabelle, Sammelstellen * 20 @ Buffer 32 blocks of 16 bytes each for ECC constrained Flash write
 
   ramallot iap_command, 5*4
   ramallot iap_reply, 4*4
@@ -161,7 +167,7 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
 .set CoreVariablenPointer, RamDictionaryEnde @ Im Flash definierte Variablen kommen ans RAM-Ende
                                              @ Variables defined in Flash are placed at the end of RAM
 
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris Core ---"
+  Dictionary_Welcome
 
 @ -----------------------------------------------------------------------------
 @ Include the complete Mecrisp-Stellaris core
@@ -183,7 +189,12 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .ltorg
 
   .ifdef emulated16bitflashwrites
-  .include "../common/hflashstoreemulation.s"
+  .include "../common/flash4bytesblockwrite.s"
+  .ltorg
+  .endif
+
+  .ifdef flash8bytesblockwrite
+  .include "../common/flash8bytesblockwrite.s"
   .ltorg
   .endif
 
@@ -233,7 +244,12 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .ltorg
 
   .ifdef emulated16bitflashwrites
-  .include "../common/hflashstoreemulation.s"
+  .include "../common/flash4bytesblockwrite.s"
+  .ltorg
+  .endif
+
+  .ifdef flash8bytesblockwrite
+  .include "../common/flash8bytesblockwrite.s"
   .ltorg
   .endif
 

@@ -58,7 +58,7 @@ serial_key: @ ( -- c ) Receive one character
 @ -----------------------------------------------------------------------------
   push {lr}
   bl pause
-  pushdatos
+  pushdaconst 0
   
   push {r0, r1, r2, r3, r4, r5, r7}
  

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+stty -icanon -echo
+
+{
+   echo -e "compiletoflash\n"
+   cat ../common/fixpt-math-lib.fs
+   cat ../common/disassembler-m3.txt
+   cat save.txt
+   echo -e "save\" mecrisp-stellaris-linux-with-disassembler-and-math\n"
+   # cat -
+} | ./mecrisp-stellaris-linux
+
+stty sane
+
+echo -e ""
+

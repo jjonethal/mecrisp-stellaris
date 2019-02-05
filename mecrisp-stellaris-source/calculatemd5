@@ -2,6 +2,10 @@
 
 cd ..
 
+cd aducm4050-ra
+md5sum *.bin
+cd ..
+
 cd atsame70-ra
 md5sum *.bin
 cd ..
@@ -62,6 +66,10 @@ cd nrf51822
 md5sum *.bin
 cd ..
 
+cd nrf52832
+md5sum *.bin
+cd ..
+
 cd microbit
 md5sum *.bin
 cd ..
@@ -102,6 +110,14 @@ cd stm32f030f4
 md5sum *.bin
 cd ..
 
+cd stm32f030k6
+md5sum *.bin
+cd ..
+
+cd stm32f030k6-ra
+md5sum *.bin
+cd ..
+
 cd stm32f042f6
 md5sum *.bin
 cd ..
@@ -130,7 +146,11 @@ cd stm32l073rz
 md5sum *.bin
 cd ..
 
-cd stm32l073rz
+cd stm32l073rz-ra
+md5sum *.bin
+cd ..
+
+cd stm32l082kz-ra
 md5sum *.bin
 cd ..
 
@@ -190,6 +210,10 @@ cd stm32f401
 md5sum *.bin
 cd ..
 
+cd stm32f401-ra
+md5sum *.bin
+cd ..
+
 cd stm32f401cd-ra
 md5sum *.bin
 cd ..
@@ -222,6 +246,10 @@ cd stm32f746-ra
 md5sum *.bin
 cd ..
 
+cd numworks-ra
+md5sum *.bin
+cd ..
+
 cd xmc1100
 md5sum *.bin
 cd ..
@@ -243,6 +271,22 @@ md5sum *.bin
 cd ..
 
 cd efm32hg322-ra
+md5sum *.bin
+cd ..
+
+cd cy8c4245axi
+md5sum *.bin
+cd ..
+
+cd cy8c5888
+md5sum *.bin
+cd ..
+
+cd nuc123
+md5sum *.bin
+cd ..
+
+cd nuc123-ra
 md5sum *.bin
 cd ..
 

@@ -21,32 +21,39 @@ This is the stable release of Mecrisp-Stellaris,
 a port of Mecrisp to the ARM Cortex M architecture.
 
 It runs out of the box on:
-  - TI Stellaris/Tiva Launchpad  with LM4F120H5QR / TM4C123GH6PM
-  - TI Tiva Connected Launchpad  with TM4C1294NCPDT
-  - TI MSP432 Launchpad          with MSP432P401R
-  - STM L053 Discovery           with STM32L053C8T6
-  - STM Nucleo L152RE            with STM32L152RE
-  - STM Nucleo 401RE             with STM32F401RE
-  - STM Nucleo 411RE             with STM32F411RET6
-  - STM F0 Discovery             with STM32F051R8
-  - STM VL Discovery             with STM32F100RB
-  - Shenzhen LC Technology board with STM32F103C8T6
-  - STM F3 Discovery             with STM32F303VCT6
-  - STM F4 Discovery             with STM32F407VGT6
-  - STM F429 Discovery           with STM32F429ZIT6
-  - Freescale Freedom FRDM-KL25Z with KL25Z128VLK4
-  - Freescale Freedom FRDM-KL46Z with KL46Z256VLL4
-  - Freescale Freedom FRDM-K64F  with MK64FN1M0VLL12
-  - Infineon XMC2GO              with XMC1100Q024F0064
-  - EFM32 Giant Gecko            with EFM32GG990F1024
-  - EFM32 Happy Gecko            with EFM32HG322F64
+
+  - TI Stellaris/Tiva Launchpad    with LM4F120H5QR / TM4C123GH6PM
+  - TI Tiva Connected Launchpad    with TM4C1294NCPDT
+  - TI MSP432 Launchpad            with MSP432P401R
+  - STM L053 Discovery             with STM32L053C8T6
+  - STM Nucleo L152RE              with STM32L152RE
+  - STM Nucleo 401RE               with STM32F401RE
+  - STM Nucleo 411RE               with STM32F411RET6
+  - STM F0 Discovery               with STM32F051R8
+  - STM VL Discovery               with STM32F100RB
+  - Shenzhen LC Technology board   with STM32F103C8T6
+  - STM F3 Discovery               with STM32F303VCT6
+  - STM F4 Discovery               with STM32F407VGT6
+  - STM F429 Discovery             with STM32F429ZIT6
+  - Freescale Freedom FRDM-KL25Z   with KL25Z128VLK4
+  - Freescale Freedom FRDM-KL46Z   with KL46Z256VLL4
+  - Freescale Freedom FRDM-K64F    with MK64FN1M0VLL12
+  - Infineon XMC2GO                with XMC1100Q024F0064
+  - EFM32 Giant Gecko              with EFM32GG990F1024
+  - EFM32 Happy Gecko              with EFM32HG322F64
+  - Analog Devices EV-COG-AD4050LZ with ADuCM4050BCPZ
 
   - Breadboard friendly, DIP packaged LPC1114FN28
   -                                   LPC1114FBD48
   -                                   LPC1115FBD48
   - Very small TSSOP20 packaged       STM32F030F4
 
+Experimental:
+
+  - Cypress CY8CKIT-049 4200     with CY8C4245AXI
+
 Contributions:
+
   - Teensy 3.1                   with MK20DX256VLH7
   - Chinese QF-LM4F232           with LM4F232H5QC
   - nRFgo Starter Kit & Microbit with nRF51822
@@ -61,6 +68,10 @@ Contributions:
   - STM F746 Discovery           with STM32F746NG
   - Atmel SAME70 X-plained       with ATSAME70Q21
   -                                   STM32F042F6
+  -                                   STM32F030K6
+  - Nutiny-SDK-NUC123            with NUC123
+  - RF-BM-ND0x                   with nRF52832
+  - e73-2G4M04S                  with nRF52832
 
 http://mecrisp.sourceforge.net/
 
@@ -83,6 +94,7 @@ Communication is via serial 115200 baud 8N1 over
   - UART   in LPC1115FBD48 (TX on P1.7, RX on P1.6)
   - USART1 in STM32F051    (TX on PA9, RX on PA10)
   - USART1 in STM32F030F4  (TX on PA9, RX on PA10)
+  - USART1 in STM32F030K6  (TX on PA9, RX on PA10)
   - USART1 in STM32F100    (TX on PA9, RX on PA10)
   - USART1 in STM32F103    (TX on PA9, RX on PA10)
   - USART1 in STM32F303    (TX on PA9, RX on PA10)
@@ -98,6 +110,8 @@ Communication is via serial 115200 baud 8N1 over
   - UART5  in LM4F232
   - UART0  in MK20DX256 (RX1/TX1 on Teensy 3.1.  Physical pins #2/#3 (these are also Digital IO 0/1 lines)
     	      		Digital IO pins 18/19 are setup for CTS/RTS respectively
+  - UART0  in NUC123 (64pin and 48pin only)
+  - UARTE  in nRF52832     (TX on P02, RX on P03)
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for LM4F120 and TM4C123:
@@ -443,6 +457,27 @@ Hardware and configuration for nRF51822:
   .equ TX_PIN_NUMBER, 17
 
 ;------------------------------------------------------------------------------
+Hardware and configuration for nRF52822:
+;------------------------------------------------------------------------------
+  nRF52832 port is an updated one from nRF51's.
+  
+  One can change the UARTE pins in terminal.s, my defaults are:
+  
+  .equ RX_PIN_NUMBER          ,	3
+  .equ TX_PIN_NUMBER          ,	2
+
+  I use only SWD (st link/v2, black magic prob) to flash the firmware, just
+  connect the usual SWDIO, SWCLK and GND pins and use openocd as usual.
+  
+  How ever, on boards with protection bit set, I'm not managed to do the
+  mass_erase first. So I create another tool to do this with a blue-pill and
+  some bits of forth: https://github.com/juju2013/swd-bb
+  
+  Boards tested:
+    * e73-2G4M04S from cdebyte.net
+    * RF-BM-ND01  from szrfstar.com
+    
+;------------------------------------------------------------------------------
 Hardware and configuration for Microbit:
 ;------------------------------------------------------------------------------
 
@@ -451,6 +486,41 @@ Hardware and configuration for Microbit:
 
   Communication is done over P0.24 TX and P0.25 RX, connected
   to USB-serial-bridge on debugger section.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for Nutiny-SDK-NUC123:
+;------------------------------------------------------------------------------
+  Connect 3.3V power or USB cable.
+
+  Flashing is possible with (any clone of) st-link V2, (any clone of) black 
+  magic probe, or Nuvoton's ICP software (windows only).
+  
+  Here's how with openocd and st-link v2 on linux:
+  
+  Connect SWDIO to ICE_DAT, SWCLK to ICE_CLK, GND to VSS and 3.3V to VCC if not
+  powered by USB. Get OpenOCD installed, chdir to nuc123 folder and adjust 
+  openocd.cfg there if needed. Then launch openocd, which should say something 
+  like this:
+  
+    TargetName         Type       Endian TapName            State
+--  ------------------ ---------- ------ ------------------ ------------
+ 0* NuMicro.cpu        hla_target little NuMicro.cpu        unknown
+  
+  keep openocd running and telnet localhost 4444, then: 
+  
+  reset halt
+  flash erase_sector 0 0 135
+  flash write_image mecrisp-stellaris-nuc123.bin
+  reset run
+
+  Serial console pins are automatically configured:
+  
+  PB0(RX)/PB1(TX) for 64-pin package
+  PC4(RX)/PC5(TX) for 48-pin package
+  
+  33-pin package don't have UART0 but only UART1 and I don't have one, so
+  it will maybe run but without serial terminal.
+
 
 ;------------------------------------------------------------------------------
 
@@ -775,7 +845,7 @@ Stack pointers:
 ;------------------------------------------------------------------------------
 
         um*             ( u1 u2 -- ud )        32*32 = 64 Multiplication
-        ud*             ( ud1 ud2 -- ud3 )     64*64 = 64 Multiplication
+        ud*             ( ud1|d1 ud2|d2 -- ud3|d3 )  64*64 = 64 Multiplication
         udm*            ( ud1 ud2 -- ud3-Low ud4-High ) 64*64=128 Multiplication
 
         um/mod          ( ud u1 -- u2 u3 )     ud / u1 = u3 remainder u2
@@ -1030,6 +1100,7 @@ Deep insights:
         cell+           ( x -- x+4 ) Add size of one cell
         cells           ( n -- 4*n ) Calculate size of n cells
 
+        unused          ( -- u ) Get current amount of free memory
         allot           ( n -- ) Tries to advance Dictionary Pointer by n bytes
                                  Aborts, if not enough space available
         here            ( -- a-addr|c-addr )
@@ -1966,4 +2037,4 @@ System:
         bye             ( -- ) Leave Mecrisp-Stellaris
 
 
-Matthias Koch, Summer 2013, updated Spring 2016
+Matthias Koch, Summer 2013, updated Winter 2019

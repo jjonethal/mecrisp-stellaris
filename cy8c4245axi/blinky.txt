@@ -1,0 +1,68 @@
+ 
+\ Just to have a twinkling shine :-)
+
+\ P0.7   User Button
+\ P1.6   Blue LED
+\ P4.0   Terminal RX
+\ P4.1   Terminal TX
+
+\ P3.2   SWDIO      Keep debug lines activated !
+\ P3.3   SWDCLK
+
+
+$40040000 constant PRT0_Base
+$40040100 constant PRT1_Base
+$40040200 constant PRT2_Base
+$40040300 constant PRT3_Base
+$40040400 constant PRT4_Base
+
+
+PRT0_Base $00 +  constant PRT0_DR          \ Port Output Data Register
+PRT0_Base $04 +  constant PRT0_PS          \ Port Pin State Register - Reads the logical pin state of I/O
+PRT0_Base $08 +  constant PRT0_PC          \ Port Configuration Register - Configures the output drive mode, input threshol
+PRT0_Base $0C +  constant PRT0_INTCFG      \ Port Interrupt Configuration Register
+PRT0_Base $10 +  constant PRT0_INTSTAT     \ Port Interrupt Status Register
+PRT0_Base $18 +  constant PRT0_PC2         \ Port Secondary Configuration Register - Configures the input buffer of I/O pin
+
+PRT1_Base $00 +  constant PRT1_DR          \ Port Output Data Register
+PRT1_Base $04 +  constant PRT1_PS          \ Port Pin State Register - Reads the logical pin state of I/O
+PRT1_Base $08 +  constant PRT1_PC          \ Port Configuration Register - Configures the output drive mode, input threshold, and slew rate
+PRT1_Base $0C +  constant PRT1_INTCFG      \ Port Interrupt Configuration Register
+PRT1_Base $10 +  constant PRT1_INTSTAT     \ Port Interrupt Status Register
+PRT1_Base $18 +  constant PRT1_PC2         \ Port Secondary Configuration Register - Configures the input buffer of I/O pin
+
+
+  \ Three bits for every pin in PC register:
+
+  \ 000 0 High-Impedance Analog
+  \ 001 1 High-impedance Digital
+  \ 010 2 Resistive Pull Up
+  \ 011 3 Resistive Pull Down
+  \ 100 4 Open Drain, Drives Low
+  \ 101 5 Open Drain, Drives High
+  \ 110 6 Strong Drive
+  \ 111 7 Resistive Pull Up and Down
+
+  \ A bit set in PC2 disables the digital input channel.
+
+
+: ms ( u -- ) 0 ?do 5000 0 do loop loop ; \ Calibrated for 24 MHz.
+
+: button? ( -- ? ) PRT0_PS @ 1 7 lshift and 0= ;
+
+: blinky ( -- )
+
+  2  7 3 * lshift  PRT0_PC  !  \ Resistive Pullup for Button
+  0                PRT0_PC2 !  \ Input enabled
+  1 7 lshift       PRT0_DR  !  \ Set output high for pullup to work
+
+  6  6 3 * lshift  PRT1_PC  !  \ Strong drive, Push-Pull for LED
+  0                PRT1_PC2 !  \ Input enabled
+
+  begin
+    1 6 lshift PRT1_DR !
+    button? if 1500 ms else 200 ms then
+    0 PRT1_DR !
+    200 ms    
+  again \ key? until
+;

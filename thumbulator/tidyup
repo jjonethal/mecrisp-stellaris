@@ -1,0 +1,9 @@
+#!/bin/bash
+
+rm -f thumbulator-aducm4050
+rm -f thumbulator-lm4f120-tm4c1294
+rm -f thumbulator-stm32f051 
+rm -f thumbulator-stm32f103 
+rm -f thumbulator-stm32f303 
+rm -f thumbulator-stm32l053 
+rm -f thumbulator-numworks

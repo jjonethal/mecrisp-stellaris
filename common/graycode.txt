@@ -1,0 +1,20 @@
+
+: >gray ( u -- x ) dup 1 rshift xor ; \ For any cell size
+
+: gray> ( x -- u ) \ For 32 Bit Gray code
+ dup 16 rshift xor
+ dup  8 rshift xor
+ dup  4 rshift xor
+ dup  2 rshift xor
+ dup  1 rshift xor
+;  
+
+: g ( u -- )
+ base @ >r binary cr 
+ 0 ?do
+   i u.
+   i >gray u. 
+   i >gray gray> u. cr 
+ loop 
+ r> base !
+;

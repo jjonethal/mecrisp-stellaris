@@ -1,0 +1,55 @@
+      Basic Calibration Method for RTC Using LSE in STM32F051
+      -------------------------------------------------------
+
+  1.  Make sure that pins PA8 and PC13 are available for connections.
+  
+  2.  Load rtc-init-set.fs and rtc-calib.fs into chip.  If the RTC has not
+      already been initialized, use rtc-init-lse and then optionally
+      rtc-set-t&d to set the date and time.  Confirm clock operation using
+      rtc-hms@ a few times.  The drive level of the crystal oscillator
+      is set to medium-low in rtc-init-lse as supplied.  The default
+      level is high.  Depending on your setup, you may wish to change this
+      level.
+  
+  3.  Connect a frequency counter or a scope that can measure frequency
+      between pin PA8 and ground.  The instrument should be able to
+      measure to a resolution of 1 Hz, or even better, tenths or hundredths
+      of Hz.  Run the word rtc-lse->mco to route the clock oscillator
+      frequency to PA8.
+  
+  4.  Measure the oscillator frequency.  Enter the frequency value in Hz as
+      an s31.32 fixed point value (e.g., 32772,3) on the stack and run the
+      word rtc-cal-lse.  The hex value written to the calibration register
+      will be printed out.  Save it for future use, if needed.  If the
+      crystal frequency is too far from the desired value of 32768, the
+      calibration word will make the maximum adjustment possible.
+  
+      Note:  The next ordinary reset will remove the connection to PA8.
+
+  5.  Run the word rtc-start-clk->out to put a nominally 1 Hz square wave
+      on pin PC13.  Connect a frequency counter or scope to confirm that
+      the frequency is 1 Hz.  Due to the nature of the calibration method
+      in the RTC, it is best to measure the signal for a period of 32
+      seconds and from that determine the average frequency.
+
+  6.  When done, run rtc-stop-clk->out to remove the clock output from 
+      PC13.  Do not skip this step!  Leaving PC13 connected to the clock
+      output can affect the clock frequency, especially of a load such as
+      an LED is connected to the pin.  
+
+  7.  The calibration word in RTC_CALR can be tweeked directly using
+      the word rtc-wrt-cal.  Before doing this, consult the reference
+      manual RM0091, Section 25.4.12, "Smooth digital calibration" as 
+      there are two bit fields CALP (bit 15) and CALM (bits 8:0) involved. 
+
+  8.  The program in print-minute.fs may be used to print the time (and
+      date) at the beginning of each minute.  It uses the alarm feature of
+      the RTC.  The program uses rtc-init-set.fs and date-time.fs, so load
+      these prior to use.  The program can be started with a reset or by
+      typing init in the termial.  It can be started to check the RTC
+      calibration over a longer period, such as a day or two.
+
+---------------------------------------------------------------------------
+Andrew Palm
+2018.04.15
+
