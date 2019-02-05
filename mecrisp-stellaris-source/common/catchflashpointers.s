@@ -173,15 +173,6 @@ Sucheflashpointer_Speicherbelegung_fertig:
   ldr r1, =ZweitDictionaryPointer @ We start to compile into RAM - the pointer found goes to the second set of pointers that are swapped with compiletoflash/compiletoram.
   str r0, [r1]
 
-  .ifdef emulated16bitflashwrites
-   @ Prepare 16-Bit Flash write emulation value-and-location collection table
-   bl sammeltabelleleeren
-  .endif
-
-  .ifdef universalflashinforth
-  bl initflash
-  .endif
-
-  .ifdef flash16bytesblockwrite
-  bl initflash
+  .ifdef initflash
+   bl initflash
   .endif

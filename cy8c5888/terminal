@@ -1,0 +1,11 @@
+#!/bin/bash
+
+n=0
+
+case $1 in
+    -[1-9]*)
+	n=${1#-}
+	;;
+esac
+
+picocom -b 57600 /dev/ttyUSB$n --imap lfcrlf,crcrlf --omap delbs,crlf --emap bsdel -l --send-cmd "ascii-xfr -s -l 10 -c 1 -n"

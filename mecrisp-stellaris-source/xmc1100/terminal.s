@@ -142,7 +142,7 @@
 .equ USIC0_CH0_IN             , USIC0_CH0_BASE + 0x180
 
 @ UART baud rate constants for 115.2kbps @ MCLK=8MHz
-.equ UART_FDR_STEP, 575 @ 590 is the calculated value, but values in the range of 565 to 585 work fine with my chip.
+.equ UART_FDR_STEP, 590 @ 590 is the calculated value, but values in the range of 565 to 585 work fine with my chip.
 .equ UART_BRG_PDIV, 3
 .equ UART_BRG_DCTQ, 9
 .equ UART_BRG_PCTQ, 0

@@ -1,0 +1,54 @@
+#!/bin/bash
+
+cd mecrisp-stellaris-source
+./assemble
+./tidyup
+cd ..
+
+cd thumbulator
+./compile
+
+# Cores with disassemblers
+
+./buildcore      ./thumbulator-lm4f120-tm4c1294        ../lm4f120/mecrisp-stellaris-lm4f120.bin         ../common/disassembler-m3.txt          ../lm4f120/precompiled/mecrisp-stellaris-lm4f120-with-disassembler-m3.bin
+./buildcore      ./thumbulator-lm4f120-tm4c1294     ../lm4f120-ra/mecrisp-stellaris-lm4f120.bin         ../common/disassembler-m3.txt       ../lm4f120-ra/precompiled/mecrisp-stellaris-lm4f120-with-disassembler-m3.bin
+                                                                                                                                       
+./buildcore      ./thumbulator-lm4f120-tm4c1294       ../tm4c1294/mecrisp-stellaris-tm4c1294.bin        ../common/disassembler-m3.txt         ../tm4c1294/precompiled/mecrisp-stellaris-tm4c1294-with-disassembler-m3.bin
+./buildcore      ./thumbulator-lm4f120-tm4c1294    ../tm4c1294-ra/mecrisp-stellaris-tm4c1294.bin        ../common/disassembler-m3.txt      ../tm4c1294-ra/precompiled/mecrisp-stellaris-tm4c1294-with-disassembler-m3.bin
+                                                                                                                                       
+./buildcore-stm  ./thumbulator-stm32f051             ../stm32f051/mecrisp-stellaris-stm32f051.bin       ../common/disassembler-m0.txt        ../stm32f051/precompiled/mecrisp-stellaris-stm32f051-with-disassembler-m0.bin
+./buildcore-stm  ./thumbulator-stm32f051          ../stm32f051-ra/mecrisp-stellaris-stm32f051.bin       ../common/disassembler-m0.txt     ../stm32f051-ra/precompiled/mecrisp-stellaris-stm32f051-with-disassembler-m0.bin
+                                                                                                                                       
+./buildcore-stm  ./thumbulator-stm32l053           ../stm32l053c8/mecrisp-stellaris-stm32l053c8.bin     ../common/disassembler-m0.txt      ../stm32l053c8/precompiled/mecrisp-stellaris-stm32l053c8-with-disassembler-m0.bin
+./buildcore-stm  ./thumbulator-stm32l053        ../stm32l053c8-ra/mecrisp-stellaris-stm32l053c8.bin     ../common/disassembler-m0.txt   ../stm32l053c8-ra/precompiled/mecrisp-stellaris-stm32l053c8-with-disassembler-m0.bin
+                                                                                                                                       
+./buildcore-stm  ./thumbulator-stm32f103             ../stm32f103/mecrisp-stellaris-stm32f103.bin       ../common/disassembler-m3.txt        ../stm32f103/precompiled/mecrisp-stellaris-stm32f103-with-disassembler-m3.bin
+./buildcore-stm  ./thumbulator-stm32f103          ../stm32f103-ra/mecrisp-stellaris-stm32f103.bin       ../common/disassembler-m3.txt     ../stm32f103-ra/precompiled/mecrisp-stellaris-stm32f103-with-disassembler-m3.bin
+                                                                                                                                       
+./buildcore-stm  ./thumbulator-stm32f303             ../stm32f303/mecrisp-stellaris-stm32f303.bin       ../common/disassembler-m3.txt        ../stm32f303/precompiled/mecrisp-stellaris-stm32f303-with-disassembler-m3.bin
+./buildcore-stm  ./thumbulator-stm32f303          ../stm32f303-ra/mecrisp-stellaris-stm32f303.bin       ../common/disassembler-m3.txt     ../stm32f303-ra/precompiled/mecrisp-stellaris-stm32f303-with-disassembler-m3.bin
+
+
+# STM32F3 Discovery with USB driver
+
+./buildcore-stm ./thumbulator-stm32f303           ../stm32f303-ra/mecrisp-stellaris-stm32f303.bin       ../stm32f303-ra/usb-f3.txt        ../stm32f303-ra/precompiled/mecrisp-stellaris-stm32f303-with-usb-f3.bin
+
+# Numworks calculator firmware
+
+  cd ../numworks-ra
+  ./release
+  cd ../thumbulator
+  
+./buildcore-stm  ./thumbulator-numworks           ../numworks-ra/mecrisp-stellaris-numworks.bin      ../numworks-ra/completesources.txt   ../numworks-ra/mecrisp-stellaris-numworks-with-sources.bin
+
+# Final cleaning up
+
+./tidyup
+cd ..
+
+
+# Linux core(s)
+
+cd linux-ra
+./buildcore-linux
+cd ..

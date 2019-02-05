@@ -1,0 +1,91 @@
+
+@ -----------------------------------------------------------------------------
+@   Flashing
+@ -----------------------------------------------------------------------------
+
+ The Cypress CY8CKIT-049 4200 needs an external SWD programmer. In-target Bootloader is not supported.
+
+ My solution uses a STM32F303 or STM32F407 Discovery board, featuring a ST-Link v2:
+
+ ST-Link:              Connect to PSoC4 pin:
+
+ Pin 1 (White dot)
+ Pin 2                 SWDCLK
+ Pin 3                 GND
+ Pin 4                 SWDIO
+ Pin 5                 Reset
+ Pin 6
+
+ VDD (on double row)   VDD
+
+Flash with:
+openocd -f interface/stlink-v2.cfg -c "transport select hla_swd" -f target/psoc4.cfg -c "program mecrisp-stellaris-cy8c4245axi.hex verify reset exit"
+
+@ -----------------------------------------------------------------------------
+@   Terminal
+@ -----------------------------------------------------------------------------
+
+For now, terminal is bit-banged with 9600 baud only over the on board USB <-> serial bridge.
+Compilation into flash is not implemented yet.
+
+If you wish to help, you are highly welcome. Please contact me.
+
+@ -----------------------------------------------------------------------------
+@   Experimental - HERE BE DRAGONS - HIC SUNT DRACONES -
+@ -----------------------------------------------------------------------------
+
+First idea (which does not work) to get SCB1 on P3.0 RX und P3.1 TX up and running:
+
+reset
+
+$4001000C constant HSIOM_PORT_SEL3
+
+$4002020C constant CLK_SELECT_03
+
+$40070000 constant SCB1_CTRL             
+$40070004 constant SCB1_STATUS                
+$40070040 constant SCB1_UART_CTRL        
+$40070044 constant SCB1_UART_TX_CTRL     
+$40070048 constant SCB1_UART_RX_CTRL     
+$4007004C constant SCB1_UART_RX_STATUS   
+$40070200 constant SCB1_TX_CTRL          
+$40070204 constant SCB1_TX_FIFO_CTRL     
+$40070208 constant SCB1_TX_FIFO_STATUS   
+$40070240 constant SCB1_TX_FIFO_WR       
+$40070300 constant SCB1_RX_CTRL          
+$40070304 constant SCB1_RX_FIFO_CTRL     
+$40070308 constant SCB1_RX_FIFO_STATUS   
+$40070310 constant SCB1_RX_MATCH         
+$40070340 constant SCB1_RX_FIFO_RD       
+$40070344 constant SCB1_RX_FIFO_RD_SILENT
+      
+
+$00000099 HSIOM_PORT_SEL3 !   \ P3.0 RX and P3.1 TX controlled by SCB1
+
+
+1 4 lshift      CLK_SELECT_03 !
+
+2 24 lshift     SCB1_CTRL !   \ UART Mode
+
+0 24 lshift
+1 16 lshift  or SCB1_UART_CTRL !   \ UART standard protocol, Loopback
+
+
+1 31 lshift
+0  8 lshift  or
+7            or  dup SCB1_RX_CTRL ! SCB1_TX_CTRL !   \ Enable, LSB first, 7+1 Data Bits.
+
+0 17 lshift
+0 16 lshift  or
+0            or  dup SCB1_RX_FIFO_CTRL ! SCB1_TX_FIFO_CTRL !   \ Freeze, Clear, Level
+
+
+1 31 lshift
+2 24 lshift or  SCB1_CTRL !   \ Enable, UART Mode
+
+
+64 SCB1_TX_FIFO_WR !   \ Write character
+
+SCB1_RX_FIFO_RD @ .   \ Read FIFO for loopback character
+SCB1_RX_FIFO_RD @ .
+

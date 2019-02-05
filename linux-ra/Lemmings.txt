@@ -1,0 +1,561 @@
+
+\ ANSI Escape Codes For Colourful Emissions
+
+: u.base10 ( u -- ) base @ decimal swap 0 <# #s #> type base ! ;
+: ESC[ ( -- ) 27 emit 91 emit ;
+: at-xy ( column row -- ) 1+ swap 2* 1+ swap ESC[ u.base10 ." ;" u.base10 ." H" ;
+: page ESC[ ." 2J" 0 0 at-xy ;
+
+: putpixel ( x y -- )  at-xy ." ██" ;
+
+: hide-cursor esc[ ." ?25l" ;
+: show-cursor esc[ ." ?25h" ;
+
+
+: default  ( -- ) ESC[ ." 0m"  ;
+: bold     ( -- ) ESC[ ." 1m"  ;
+
+: black    ( -- ) ESC[ ." 30m" ;
+: red      ( -- ) ESC[ ." 31m" ;
+: green    ( -- ) ESC[ ." 32m" ;
+: yellow   ( -- ) ESC[ ." 33m" ;
+: blue     ( -- ) ESC[ ." 34m" ;
+: magenta  ( -- ) ESC[ ." 35m" ;
+: cyan     ( -- ) ESC[ ." 36m" ;
+: white    ( -- ) ESC[ ." 37m" ;
+
+: rgb      ( -- ) ESC[ ." 38;2;" rot u.base10 ." ;" swap u.base10 ." ;" u.base10 ." m" ;
+
+: colors cr red ." red " green ." green " yellow ." yellow " blue ." blue " magenta ." magenta " cyan ." cyan " white cr ;
+
+: qi ( -- )
+  begin
+    query
+    interpret
+    state @ if cyan ."  ok," else blue ."  ok." then default cr
+  again
+;
+
+' qi hook-quit ! quit
+
+colors
+
+
+: flip ( x u -- x' )
+ >r
+ r@  1 and if dup $55555555 and  1 lshift swap $AAAAAAAA and  1 rshift or then
+ r@  2 and if dup $33333333 and  2 lshift swap $CCCCCCCC and  2 rshift or then
+ r@  4 and if dup $0F0F0F0F and  4 lshift swap $F0F0F0F0 and  4 rshift or then
+ r@  8 and if dup $00FF00FF and  8 lshift swap $FF00FF00 and  8 rshift or then
+ r> 16 and if dup $0000FFFF and 16 lshift swap $FFFF0000 and 16 rshift or then
+; 
+
+\ : p 32 0 do $12345678 i flip hex. i . cr loop ; 
+
+create lemmings-bitmaps hex
+
+00000000  ,
+00AAAA00  ,
+00AAF000  ,
+000FFF00  ,
+000F9000  ,
+000F9000  ,
+000F9000  ,
+00099000  ,
+00F99000  ,
+000FF000  ,
+      
+000A0A00  ,
+00AAA000  ,
+00AAF000  ,
+000FFF00  ,
+000F9000  ,
+00F99000  ,
+00F990F0  ,
+000990F0  ,
+00990F00  ,
+00FF0000  ,
+      
+00000000  ,
+00A0A000  ,
+00AAA000  ,
+000AF000  ,
+000FFF00  ,
+00FF9000  ,
+00F99000  ,
+0FF99900  ,
+00999900  ,
+0FF00FF0  ,
+      
+00000000  ,
+000AA000  ,
+00AAFA00  ,
+00AFFF00  ,
+000F9000  ,
+000F9000  ,
+00F99000  ,
+00099000  ,
+0F999900  ,
+0F00FF00  ,
+      
+00000000  ,
+00AAAA00  ,
+00AAF000  ,
+00AFFF00  ,
+000F9000  ,
+0009F000  ,
+000F9000  ,
+00099000  ,
+00F99000  ,
+000FF000  ,
+      
+000A0A00  ,
+00AAA000  ,
+00AAF000  ,
+000FFF00  ,
+000F9000  ,
+0009F000  ,
+0009F0F0  ,
+000990F0  ,
+00990F00  ,
+00FF0000  ,
+      
+00000000  ,
+00A0A000  ,
+00AAA000  ,
+000AF000  ,
+000FFF00  ,
+0009F000  ,
+0009F000  ,
+00099F00  ,
+00999900  ,
+0FF00FF0  ,
+      
+00000000  ,
+000AA000  ,
+00AAFA00  ,
+00AFFF00  ,
+000F9000  ,
+000F9000  ,
+0009F000  ,
+00099000  ,
+0F999900  ,
+0F00FF00  ,
+
+decimal
+
+: colour>rgb ( x -- r g b )
+  dup $FF0000 and 16 rshift swap
+  dup $FF00 and 8 rshift swap
+      $FF and
+1-foldable ;
+
+create palette
+
+$000000 , \  0 0 Schwarz 
+$0000AA , \  1 1 Blau 
+$00AA00 , \  2 2 Grün 
+$00AAAA , \  3 3 Cyan 
+$AA0000 , \  4 4 Rot 
+$AA00AA , \  5 5 Magenta 
+$AA5500 , \  6 6 Braun 
+$AAAAAA , \  7 7 Helles Grau 
+$555555 , \  8 8 Grau 
+$5555FF , \  9 9 Hellblau 
+$55FF55 , \ 10 A Hellgrün 
+$55FFFF , \ 11 B Helles Cyan 
+$FF5555 , \ 12 C Hellrot 
+$FF55FF , \ 13 D Helles Magenta 
+$FFFF55 , \ 14 E Gelb 
+$FFFFFF , \ 15 F Weiß (Hohe Intensität)
+
+: palettenfarbe ( n -- )
+  cells palette + @ colour>rgb rgb 
+;
+
+0 variable font-x   0 variable font-y
+
+: lemmingzeile ( x -- )
+  8 0 do
+    dup 28 rshift palettenfarbe
+    font-x @ font-y @ putpixel
+    1 font-x +!
+    4 lshift
+  loop
+  drop -8 font-x +!
+;
+
+0 variable richtung
+
+: lemming ( x y n -- )
+
+  7 and 10 cells * lemmings-bitmaps +
+
+  10 0 do
+    dup @ richtung @ flip lemmingzeile
+    1 font-y +!
+    cell+
+  loop
+
+  drop
+  -10 font-y +!
+  9 font-x +!
+;
+
+ \ page 0 font-x ! 0 font-y ! $12345678 lemmingzeile
+
+: laufen ( -- )
+  page
+  hide-cursor
+  
+  0 richtung !
+
+  72 0 do
+    i font-x !
+    0 font-y !
+    i lemming
+    30000000 0 do loop
+  loop
+
+  28 richtung !
+
+
+  72 0 do
+    72 i - font-x !
+    0 font-y !
+    i lemming
+    30000000 0 do loop
+  loop
+
+  show-cursor
+;
+
+\ page 0 font-x ! 0 font-y ! 0 lemming 1 lemming 2 lemming 3 lemming 4 lemming 5 lemming 6 lemming 7 lemming
+
+create lemmings-fallen hex
+
+000AA000  ,
+00AAF000  ,
+00AFFF00  ,
+0F0990F0  ,
+00F99F00  ,
+00099000  ,
+00099000  ,
+0F099F00  ,
+00F900F0  ,
+00000000  ,
+
+00A0A000  ,
+00AAF000  ,
+000FFF00  ,
+00099000  ,
+0FF99FF0  ,
+00099000  ,
+00099000  ,
+00099FF0  ,
+0FF90000  ,
+00000000  ,
+
+000AA000  ,
+00AAF000  ,
+00AFFF00  ,
+00099000  ,
+00F99F00  ,
+0F0990F0  ,
+000990F0  ,
+00099F00  ,
+00F90000  ,
+0F000000  ,
+
+00A0A000  ,
+00AAF000  ,
+00AFFF00  ,
+00099000  ,
+0FF99FF0  ,
+00099000  ,
+00099000  ,
+0FF99FF0  ,
+00090000  ,
+00000000  ,
+
+decimal
+
+: lemmingfall ( x y n -- )
+
+  3 and 10 cells * lemmings-fallen +
+
+  10 0 do
+    dup @ richtung @ flip lemmingzeile
+    1 font-y +!
+    cell+
+  loop
+
+  drop  
+  -10 font-y +!
+  9 font-x +!
+;
+
+
+: fallen ( -- )
+  page
+  hide-cursor
+  
+
+
+  50 1 do
+
+    i 8 and if 28 else 0 then richtung !
+
+    0 font-x !
+    i font-y !
+
+    -1 font-y +!
+    0 lemmingzeile
+     1 font-y +!
+
+    i lemmingfall
+    30000000 0 do loop
+  loop
+
+  show-cursor
+;
+
+\ 11 font-x ! 0 font-y ! 0 lemmingfall 1 lemmingfall 2 lemmingfall 3 lemmingfall
+
+
+\ 0 Schwarz
+\ 1 Blau
+\ 2 Grün
+\ 3 Weiß
+\ 4 Gelb
+
+create lemmings-schirm 8 base !
+
+00000000  ,
+00000000  ,
+00000000  ,
+00000000  ,
+00000000  ,
+00022000  ,
+11223000  ,
+01233300  ,
+03011030  ,
+04311300  ,
+04011000  ,
+04011030  ,
+04011300  ,
+00310000  ,
+00000000  ,
+00000000  ,
+
+00000000  ,
+00000000  ,
+00000000  ,
+00000000  ,
+00000000  ,
+00022000  ,
+00223000  ,
+00233300  ,
+00014030  ,
+00044400  ,
+00041400  ,
+00044400  ,
+03044300  ,
+00310000  ,
+00000000  ,
+00000000  ,
+
+00000000  ,
+00000000  ,
+00000000  ,
+00000000  ,
+00000000  ,
+00024440  ,
+00221414  ,
+00233144  ,
+00013414  ,
+00011314  ,
+00011004  ,
+00011004  ,
+00011300  ,
+03310000  ,
+00000000  ,
+00000000  ,
+
+004414000 ,
+444444400 ,
+414444440 ,
+004141414 ,
+000010000 ,
+000030000 ,
+000320000 ,
+000333000 ,
+000110300 ,
+000113000 ,
+000110000 ,
+000110300 ,
+003113000 ,
+003100000 ,
+000000000 ,
+000000000 ,
+
+000444000 ,
+044444440 ,
+414141414 ,
+000010000 ,
+000010000 ,
+000130000 ,
+000030220 ,
+000031322 ,
+000011332 ,
+000011000 ,
+030111300 ,
+031111300 ,
+001110000 ,
+000100000 ,
+000300000 ,
+000030000 ,
+
+000444000 ,
+044444440 ,
+414141414 ,
+000010000 ,
+000010000 ,
+000132220 ,
+000032322 ,
+000032330 ,
+000011100 ,
+000011130 ,
+000011103 ,
+003111000 ,
+003111000 ,
+000011000 ,
+000003300 ,
+000000000 ,
+
+000444000 ,
+044444440 ,
+414141414 ,
+000010000 ,
+000012220 ,
+000132330 ,
+000032333 ,
+000031100 ,
+000001130 ,
+000001103 ,
+000011100 ,
+000011100 ,
+003111000 ,
+000301030 ,
+000000300 ,
+000000000 ,
+
+000444000 ,
+044444440 ,
+414141414 ,
+000010000 ,
+000012200 ,
+000132300 ,
+000032300 ,
+000031330 ,
+000011000 ,
+000011000 ,
+000011000 ,
+000011130 ,
+000011130 ,
+000330000 ,
+000000000 ,
+000000000 ,
+
+decimal
+
+create palette3bit
+
+$000000 , \  0 0 Schwarz 
+$5555FF , \  9 1 Hellblau 
+$55FF55 , \ 10 2 Hellgrün
+$FFFFFF , \ 15 3 Weiß (Hohe Intensität)
+$FFFF55 , \ 14 4 Gelb
+
+: palettenfarbe3bit ( n -- )
+  cells palette3bit + @ colour>rgb rgb 
+;
+
+: lemmingzeile3bit ( x -- )
+  5 lshift
+
+  9 0 do
+    dup 29 rshift palettenfarbe3bit
+    font-x @ font-y @ putpixel
+    1 font-x +!
+    3 lshift
+  loop
+  drop -9 font-x +!
+;
+
+: lemmingschirm ( x y n -- )
+
+  7 and 16 cells * lemmings-schirm +
+
+  16 0 do
+    dup @ ( richtung @ flip ) lemmingzeile3bit
+    1 font-y +!
+    cell+
+  loop
+  
+  drop
+  -16 font-y +!
+  10 font-x +!
+;
+
+\ page 0 font-x ! 0 font-y ! 0 lemmingschirm 1 lemmingschirm 2 lemmingschirm 3 lemmingschirm 4 lemmingschirm 5 lemmingschirm 6 lemmingschirm 7 lemmingschirm
+
+
+: segelwackeln ( u -- u* )
+  6 mod
+  case
+    0 of 0 4 + endof
+    1 of 1 4 + endof
+    2 of 2 4 + endof
+    3 of 3 4 + endof
+    4 of 2 4 + endof
+    5 of 1 4 + endof
+  endcase
+;
+
+: segeln ( -- )
+  page
+  hide-cursor
+  
+  4 0 do
+
+    0 font-x !
+    i font-y !
+
+    -1 font-y +!
+    0 lemmingzeile3bit
+     1 font-y +!
+
+    i lemmingschirm
+    
+    30000000 0 do loop
+  loop
+
+
+  46 4 do
+
+    0 font-x !
+    i font-y !
+
+    -1 font-y +!
+    0 lemmingzeile3bit
+     1 font-y +!
+    
+    i 4 - segelwackeln lemmingschirm
+
+    30000000 0 do loop
+  loop
+
+  show-cursor
+;
+

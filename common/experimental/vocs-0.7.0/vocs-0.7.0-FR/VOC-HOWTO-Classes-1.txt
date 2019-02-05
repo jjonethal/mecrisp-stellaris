@@ -1,0 +1,216 @@
+
+\ VOC-HOWTO-Classes-1.txt                                             MM-170618
+\ ------------------------------------------------------------------------------
+\              HOWTO for Mecrisp-Stellaris for VOCs Version 0.6.2
+
+\       A short demo to show how to use VOCs based CLASSes and OBJECTs.
+
+\                      Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\ Requires  Mecrisp-Stellaris 2.3.6-hook-find or 2.3.8-ra
+\           e4thcom-0.6.1 -t mecrisp-st
+\
+\ You can find a recording of this HOWTO in the file VOC-HOWTO-Classes-1.log.
+
+key drop
+
+
+
+\ The VOC-HOWTO-DataTypes.txt showed how VOCs can be used to create data types.
+\ Since version 0.6.2 VOCs also support inheritance. This opens up another
+\ dimension in using VOCs. 
+
+\ The data type approach can be generalised by extending VOCs to CLASSes. This
+\ is done in classes.txt.
+
+\ This HOWTO shows some basics of VOCs based OOP. The examples are taken from
+\ VOC-HOWTO-DataTypes.txt as far as it makes sence.
+
+
+  key drop
+
+
+\ Please remember that VOCs are immediate words representing a name space.
+\ CLASSes are simply VOCs with some additional OOP related METHODS in their
+\ name space.
+
+\ A CLASS/VOC does not compile anything. It just gives the outer interpreter
+\ of the Forth system a hint, to lookup the next word in the CLASSes/VOCs
+\ name space.
+  
+\ An instance of a class can be created as an OBJECT or as an instance variable
+\ IVAR inside an instance definition of a class.
+
+\ At run-time a class instance returns ist data address on the stack. In
+\ execute- or compile-time it additionally behaves like a CLASS, e.g. it gives
+\ the outer interpreter the hint to lookup the next word in it's class name
+\ space. This hint is not compiled.
+
+
+  key drop
+
+
+
+\ Some tools used:
+\ -----------------------------------------------------------------------------
+\
+\  ??     Displays the top wordlist of the search order. In the context Forth
+\         it ignors words that were defined before loading the VOC extension.
+\         lfa: = Address: , xt: = Code:
+\
+\  ..     Returns from a VOC context to the Forth context.
+\
+\ -----------------------------------------------------------------------------
+  key drop
+
+
+\ Loading vocs.txt and classes.txt .
+
+\ Please first read the preamble in that files.
+
+
+  key drop
+
+#require vocs.txt
+#require classes.txt
+
+  ??
+
+\ lfa: = Address: , xt: = Code:  in the original Mecrisp Listing
+\ -----------------------------------------------------------------------------
+  key drop
+
+
+
+
+\ Defining a simple CLASS for cell sized data (to show the basics).
+\ ------------------------------------------------------------------------------
+
+forth definitions
+
+class int  int definitions
+
+ __ivar
+   cell+
+ __seal
+
+  : get ( a -- n ) @ inline ;
+  : set ( n a -- ) ! inline  ;
+  : show ( a -- )  @ . ;
+
+forth definitions
+
+\ We could have used the names @ and ! for the fetch and store method but for
+\ the demo it's better to use different names.
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+
+\ Lets take a look at the new class:
+\ ------------------------------------------------------------------------------
+  int ?? ..
+
+\ The new class extends the class class-root and there is the word  U/I , that
+\ was not explicitly defined. It was defined implicitly by __seal  at the
+\ end of the instance data definition. It's a constant, the size of the data 
+\ memory that is allocated in RAM when an object of the class is created.
+
+  key drop
+
+
+\ Here the data size should be four, the size of a cell.
+
+  int u/i .
+
+  key drop
+
+
+
+
+\ To create an instance/object of a class, we can use the method OBJECT.
+\ ------------------------------------------------------------------------------
+  int object i1
+
+\ The objects data memory is allocated but not initialized. This must be done
+\ explicitly. Here we can use the method SET to do it.
+
+  12345 i1 set
+
+  i1 show
+
+  key drop
+
+
+\ Sometimes we need to know an objects data addr. It's returned by the method
+\ _ADDR_ .
+
+  i1 _addr_  dup .  @ . 
+
+  key drop
+
+
+
+\ ------------------------------------------------------------------------------
+\ Often it will be nessesary to define an init method for objects. My proposal
+\ is to use the name NEW for it. NEVER !!!!! use the name INIT because this is
+\ already used by the Mecrisp Core. The Mecrisp Core does not know anything 
+\ about WORDLISTs, VOCs and CLASSes and will misuse an INIT that is defined 
+\ in a WORDLIST, VOC or CLASS.
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+
+\ Inheritance:
+
+  key drop
+
+\ Creating a class UINT that inherits from class INT
+\ ------------------------------------------------------------------------------
+\ Only the show method is different.
+
+  forth definitions
+
+  int class uint  uint definitions
+
+  __ivar
+  __seal
+
+  : show ( a-addr -- ) __ get u. ;
+
+\ The instance data definition is inherited from class int and unchanged.
+
+\ The new method SHOW uses the GET method that was inherited from class int
+\ (it's visible in the context of the new class).
+
+\ The prefix __ is a generic class prefix. It gives access to the current class
+\ compilation context to take the next word from its search order.
+
+  key drop
+
+  __ ?? ..
+
+\ Here the search order is  UINT  INT  CLASS-ROOT  (and VOC-ROOT) 
+
+  key drop
+
+  forth definitions
+
+
+
+\ ------------------------------------------------------------------------------
+\ Inheritance is not restricted to simple classes. You can inherit from any 
+\ well defined class, may it be as simple as in this example or may it contain
+\ the code for a complex unit or a whole application.
+
+\ Inheritance is one way to reuse code when defining classes. Another one is to
+\ use instance variables defined in one class to create the instance variable
+\ of another class. 
+\ 
+\ Please see VOC-HOWTO-Classes-2.txt for some basic examples.
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-170709 preamble extended
+

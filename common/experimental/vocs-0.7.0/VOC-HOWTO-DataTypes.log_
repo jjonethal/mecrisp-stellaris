@@ -1,0 +1,317 @@
+[0;37;40m[0;37;40m[2J[0;0H[0;33;40;1me4thcom-0.6.1 : A Serial Terminal for Embedded Forth Systems[0;37;40m[0;37;40m
+Copyright (C) 2016 manfred.mahlow@forth-ev.de. This is free software under the
+conditions of the GNU General Public License with ABSOLUTELY NO WARRANTY.
+[0;33;40m* Loading Plugin for Mecrisp-Stellaris (mecrisp-st.efc)[0;37;40m[0;37;40m
+   Use the [0;37;40;1mTAB [0;37;40m[0;37;40mkey to cancel an upload process.
+[0;33;40m* Loading config file (.e4thcom-0.6.1)[0;37;40m[0;37;40m
+     editor command :  /usr/bin/pluma +
+
+SIO : /dev/ttyACM0 open  hdl=3 B115200 8N1 CLOCAL ONLCR full-duplex  
+      Type '\ [Enter]' to close the Terminal
+
+  ok.
+[s [u#[s [ur[s [u [s [uV[s [uO[s [uC[s [u-[s [uH[s [uO[s [uW[s [uT[s [uO[s [u-[s [uD[s [ua[s [ut[s [ua[s [uT[s [uy[s [up[s [ue[s [us[s [u.[s [ut[s [ux[s [ut[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  Uploading: ./mcu/VOC-HOWTO-DataTypes.txt
+[0;37;40m[0;37;40m
+[0;33;40m\ VOC-HOWTO-DataTypes.txt                                             MM-170618
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\              HOWTO for Mecrisp-Stellaris for VOC Version 0.6.2-FR
+[0;37;40m[0;37;40m
+[0;33;40m\        A short demo to show how VOCs can be used to define data types.
+[0;37;40m[0;37;40m
+[0;33;40m\      Another more comfortable way is to define data types using classes.
+[0;37;40m[0;37;40m
+[0;33;40m\                  Copyright (C) 2017 Manfred Mahlow
+[0;37;40m[0;37;40m
+[0;33;40m\        This is free software under the GNU General Public License v3.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+  compiletoram[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Loading vocs.txt    ** Please first read the preamble in that file. **
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;32;40;1m#require vocs.txt[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  ok [0;37;40m[0;37;40m
+
+
+
+
+[0;33;40m\ Some tools used:
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ??     Displays the top wordlist of the search order. In the context Forth
+[0;37;40m[0;37;40m[0;33;40m\         the core words are ignored. Use ??? to also see the core words.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\  ..     Returns from a VOC context to the Forth context.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ -----------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  ??[0;37;40;1m 
+RAM: forth
+               wtag: 00005024 lfa: 20000AE0 xt: 20000AF0 name: vocs.txt 
+               wtag: 00005024 lfa: 20000AC8 xt: 20000AD4 name: init 
+               wtag: 00005024 lfa: 20000A5C xt: 20000A6C name: voc-init 
+               wtag: 00005024 lfa: 20000A40 xt: 20000A4A name: ['] 
+               wtag: 00005024 lfa: 20000A1C xt: 20000A24 name: ' 
+               wtag: 00005024 lfa: 200009F0 xt: 20000A02 name: definitions 
+               wtag: 00005024 lfa: 200009DC xt: 200009E6 name: .. 
+               wtag: 00005024 lfa: 20000984 xt: 2000098E name: __ 
+               wtag: 00005024 lfa: 20000968 xt: 20000976 name: casted 
+               wtag: 00005024 lfa: 2000094C xt: 20000956 name: voc 
+               wtag: 00005024 lfa: 20000390 xt: 2000039C name: abort 
+
+context: forth forth 
+current: forth compiletoram
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ lfa: = Address: , xt: = Code:  in the original Mecrisp Listing
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+
+[0;33;40m\ Defining a simple data type for cell sized data (to show the basics).
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+voc int  int definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : get ( a -- n ) @ inline ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  : set ( n a -- ) ! inline  ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m  : show ( a -- )  int get . ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : variable ( "name" n -- ) ( int ) casted variable ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ We could have used the names @ and ! for the fetch and store method but for
+[0;37;40m[0;37;40m[0;33;40m\ the demo it's better to use different names.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+123 variable v1[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+246 int variable i1[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ v1 is a normal variable, i1 an instance of the int data type.
+[0;37;40m[0;37;40m
+[0;33;40m\ Both are initialized variables.
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ Both compile to the same size, i.e.:
+[0;37;40m[0;37;40m
+[0;33;40m  \ v1 @ .     \ 22 bytes
+[0;37;40m[0;37;40m
+[0;33;40m  \ i1 get .   \ 22
+[0;37;40m[0;37;40m
+[0;33;40m  \ i1 show    \ 20
+[0;37;40m[0;37;40m
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ To use data types in other data type definitions, we need the basic FORTH word
+[0;37;40m[0;37;40m[0;33;40m\ +field to define record fields:
+[0;37;40m[0;37;40m
+[0;32;40;1m#require struct.txt[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m  Uploading: ./mcu/struct.txt
+[0;37;40m[0;37;40m[0;33;40m\ struct.txt   for Mecrisp-Stellaris                                  MM-170621
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : +field ( n1 n2 "name" -- n3=n1+n2 )[0;37;40;1m  ok.
+[0;37;40m[0;37;40m[0;33;40m    \ Create a field in a structure definition with a size of n2 bytes.
+[0;37;40m[0;37;40m[0;33;40m    \ n1 = size of the structure before creating  the field
+[0;37;40m[0;37;40m[0;33;40m    \ n3 = size of the structure after creating the field
+[0;37;40m[0;37;40m[0;33;40m    \
+[0;37;40m[0;37;40m      <builds over , + does> @ + ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Last Revision: MM-170725 +field changed back to use <builds does>
+[0;37;40m[0;37;40m
+
+
+[0;33;40mClosing: ./mcu/struct.txt [0;37;40m[0;37;40m[0;33;40m ok [0;37;40m[0;37;40m
+[0;37;40;1m[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Now we can extend the int data definition for uninitialzed instance variables
+[0;37;40m[0;37;40m[0;33;40m\ and for uninitialized normal variables:
+[0;37;40m[0;37;40m
+int definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  1 cells constant size[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : var ( "name" -- ) int casted int size buffer: ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ var creates an uninitialized int variable.
+[0;37;40m[0;37;40m
+  : ivar ( "name" n1 n2 -- n3 ) int casted int size +field ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ ivar creates an uninitialized instance variable in a data structure.
+[0;37;40m[0;37;40m
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Now we create another data type based on the int data type:
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+voc point  point definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  0 int ivar x[0;37;40;1m  ok.
+[0;37;40m[0;37;40m    int ivar y  constant size[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : var ( "name" -- ) point casted point size buffer: ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : ivar ( "name" n1 n2 -- n3 ) point casted point size +field ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\  : show ( a-addr -- )
+[0;37;40m[0;37;40m[0;33;40m\    dup point x show  point y show ;
+[0;37;40m[0;37;40m
+forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+
+[0;33;40m\ Lets take a look at the new data types wordlist and the data size
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+  point ??[0;37;40;1m 
+RAM: point
+               wtag: 20000C94 lfa: 20000D24 xt: 20000D30 name: ivar 
+               wtag: 20000C94 lfa: 20000D00 xt: 20000D0A name: var 
+               wtag: 20000C94 lfa: 20000CE8 xt: 20000CF4 name: size 
+ctag: 20000B00 wtag: 20000C95 lfa: 20000CCC xt: 20000CD4 name: y 
+ctag: 20000B00 wtag: 20000C95 lfa: 20000CAC xt: 20000CB4 name: x 
+FLASH: point
+ ok.
+[0;37;40m[0;37;40m
+  size .[0;37;40;1m 8  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ and at the x parameters wordlist and data size
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  point x ??[0;37;40;1m 
+RAM: int
+               wtag: 20000B00 lfa: 20000C68 xt: 20000C74 name: ivar 
+               wtag: 20000B00 lfa: 20000C44 xt: 20000C4E name: var 
+               wtag: 20000B00 lfa: 20000C2C xt: 20000C38 name: size 
+               wtag: 20000B00 lfa: 20000B6C xt: 20000B7C name: variable 
+               wtag: 20000B00 lfa: 20000B50 xt: 20000B5C name: show 
+               wtag: 20000B00 lfa: 20000B30 xt: 20000B3A name: set 
+               wtag: 20000B00 lfa: 20000B14 xt: 20000B1E name: get 
+FLASH: int
+ ok.
+[0;37;40m[0;37;40m
+  size .[0;37;40;1m 4  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ An instance of a data type is always created with the same syntax:
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m
+[0;33;40m\ <data type> var <name>     or     <data type> ivar <name>    i.e.:
+[0;37;40m[0;37;40m
+  point var p1[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ The points memory is uninitialized, we have to initialize it explicitly:
+[0;37;40m[0;37;40m
+  1 p1 x set  2 p1 y set[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p1 x show[0;37;40;1m 1  ok.
+[0;37;40m[0;37;40m  p1 y show[0;37;40;1m 2  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ It would be fine to have methods, to access both point coordinates with a
+[0;37;40m[0;37;40m[0;33;40m\ single method. Let's define the methods here,
+[0;37;40m[0;37;40m
+  point definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : get ( a-addr x y -- ) dup point y get  swap point x get swap ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : set ( x y a-addr -- ) dup >r point y set r> point x set ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  : show ( a-addr -- ) dup point x show point y show ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  forth definitions[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Let's see the point wordlist again, with the new methods in it
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  point ?? ..[0;37;40;1m 
+RAM: point
+               wtag: 20000C94 lfa: 20000DC8 xt: 20000DD4 name: show 
+               wtag: 20000C94 lfa: 20000DA0 xt: 20000DAA name: set 
+               wtag: 20000C94 lfa: 20000D6C xt: 20000D76 name: get 
+               wtag: 20000C94 lfa: 20000D24 xt: 20000D30 name: ivar 
+               wtag: 20000C94 lfa: 20000D00 xt: 20000D0A name: var 
+               wtag: 20000C94 lfa: 20000CE8 xt: 20000CF4 name: size 
+ctag: 20000B00 wtag: 20000C95 lfa: 20000CCC xt: 20000CD4 name: y 
+ctag: 20000B00 wtag: 20000C95 lfa: 20000CAC xt: 20000CB4 name: x 
+FLASH: point
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Note: ?? stays in the point context.  .. switches back to the FORTH context.
+[0;37;40m[0;37;40m
+[0;33;40m\ Now lets try the new methods.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p1 show[0;37;40;1m 1 2  ok.
+[0;37;40m[0;37;40m
+  100 200 p1 set[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p1 show[0;37;40;1m 100 200  ok.
+[0;37;40m[0;37;40m
+  p1 get[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  .s[0;37;40;1m Stack: [2 ] 0 100  TOS: 200  *>
+ ok.
+[0;37;40m[0;37;40m
+  2drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  .s[0;37;40;1m Stack: [0 ]  TOS: 0  *>
+ ok.
+[0;37;40m[0;37;40m
+[0;33;40m\ Notice that you can use  .S  to monitor what goes on on the stack.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  p1 .s[0;37;40;1m Stack: [1 ] 0  TOS: 536874336  *>
+ ok.
+[0;37;40m[0;37;40m
+  y  .s[0;37;40;1m Stack: [1 ] 0  TOS: 536874340  *>
+ ok.
+[0;37;40m[0;37;40m
+  show  .s[0;37;40;1m 200 Stack: [0 ]  TOS: 0  *>
+ ok.
+[0;37;40m[0;37;40m
+  : test cr .s p1 .s y .s show .s ;[0;37;40;1m  ok.
+[0;37;40m[0;37;40m
+  test[0;37;40;1m 
+Stack: [0 ]  TOS: 0  *>
+Stack: [1 ] 0  TOS: 536874336  *>
+Stack: [1 ] 0  TOS: 536874340  *>
+200 Stack: [0 ]  TOS: 0  *>
+ ok.
+[0;37;40m[0;37;40m
+  key drop[0;37;40;1m  ok.
+[0;37;40m[0;37;40m[0;33;40m\ ------------------------------------------------------------------------------
+[0;37;40m[0;37;40m[0;33;40m\ Done. Please also see VOC-HOWTO-Registers.txt
+[0;37;40m[0;37;40m[0;33;40m\
+[0;37;40m[0;37;40m[0;33;40m\ Last Revision: MM-170715
+[0;37;40m[0;37;40m
+[0;33;40mClosing: ./mcu/VOC-HOWTO-DataTypes.txt [0;37;40m[0;37;40m[0;33;40m ok [0;37;40m[0;37;40m
+[0;37;40;1m[0;37;40m[0;37;40m[0;37;40;1m[0;37;40m[0;37;40m  ok.
+[s [u\
+[0;37;40m[0;37;40mSIO : /dev/ttyACM0 closed hdl=-1 
+[0;33;40mConnection closed.[0;37;40m[0;37;40m

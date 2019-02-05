@@ -148,9 +148,9 @@ interpret:
 
     @ Number mochte das Token auch nicht.
 not_found_addr_r0_len_r1:
-@    pushda r0
-@    pushda r1
-    bl stype_addr_r0_len_r1
+    pushda r0
+    pushda r1
+    bl stype
     Fehler_Quit_n " not found."
 
 @ -----------------------------------------------------------------------------
@@ -574,17 +574,8 @@ quit:
 
   ldr psp, =datenstackanfang
 
-   @ Clear 16-Bit Flash write emulation value-and-location collection table
-  .ifdef emulated16bitflashwrites
-   bl sammeltabelleleeren
-  .endif
-
-  .ifdef universalflashinforth
-  bl initflash
-  .endif
-
-  .ifdef flash16bytesblockwrite
-  bl initflash
+  .ifdef initflash
+   bl initflash
   .endif
 
   @ Base und State setzen

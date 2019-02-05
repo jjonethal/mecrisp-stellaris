@@ -58,6 +58,10 @@ smudge:
 
     bl align4komma @ Align on 4 to make sure the last opcode is actually written to Flash and to fullfill ANS requirement.
 
+    .ifdef flash8bytesblockwrite
+      bl align8komma
+    .endif
+
     .ifdef flash16bytesblockwrite
       bl align16komma
     .endif
@@ -80,15 +84,8 @@ smudge:
       bl hkomma    @ Flags einfügen              Insert Flags
       str r3, [r2] @ Dictionarypointer wieder zurücksetzen.
 
-    .ifdef emulated16bitflashwrites
-      bl sammeltabelleleerprobe @ Did all 16-Bit Flash writes found their address pair value ?
-    .endif                      @ This check is included just to be sure.
 
-    .ifdef universalflashinforth
-    bl flushflash
-    .endif
-
-    .ifdef flash16bytesblockwrite
+    .ifdef flushflash
       bl flushflash
     .endif
 
@@ -99,16 +96,8 @@ smudge:
 smudge_ram:
   bl align4komma @ Align on 4 to fullfill ANS requirement.
 
-  .ifdef erasedflashcontainszero
-    .ifdef m0core
-      pushdatos
-      ldr tos, =Flag_visible
-    .else
-      pushdaconst Flag_visible
-    .endif
-  .else
-    pushdaconst Flag_visible
-  .endif
+  pushdatos
+  ldr tos, =Flag_visible
 
   b.n setflags_intern
 
@@ -190,7 +179,7 @@ alignkomma: @ Macht den Dictionarypointer gerade
   ands r1, r0
   beq 1f
 
-  pushdaconst 0
+  pushdaconst writtenbyte
   b.n ckomma
 
 1: @ Fertig.
@@ -215,24 +204,37 @@ align4komma: @ Macht den Dictionarypointer auf 4 gerade
 
   beq 1f
 
-  .ifdef erasedflashcontainszero
     pushdatos
-    .ifdef m0core
     ldr tos, =writtenhalfword
-    .else
-    movw tos, #writtenhalfword
-    .endif
     bl hkomma
-  .else
-    pushdaconst 0
-    bl hkomma
-  .endif
 
 1: @ Fertig.
   pop {pc}
 
 
-  .ifdef flash16bytesblockwrite @ Needed for LPC1114FN28...
+  .ifdef flash8bytesblockwrite
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "align8," @ ( -- )
+align8komma: @ Macht den Dictionarypointer auf 8 gerade
+@ -----------------------------------------------------------------------------
+  push {lr}
+
+1:ldr r0, =Dictionarypointer
+  ldr r1, [r0] @ Hole den Dictionarypointer
+
+  movs r0, #7
+  ands r1, r0
+  beq 2f
+
+    pushdatos
+    ldr tos, =writtenhalfword
+    bl hkomma
+    b 1b
+
+2:pop {pc}
+  .endif
+
+  .ifdef flash16bytesblockwrite
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "align16," @ ( -- )
 align16komma: @ Macht den Dictionarypointer auf 16 gerade
@@ -246,7 +248,8 @@ align16komma: @ Macht den Dictionarypointer auf 16 gerade
   ands r1, r0
   beq 2f
 
-    pushdaconst 0
+    pushdatos
+    ldr tos, =writtenhalfword
     bl hkomma
     b 1b
 
@@ -589,18 +592,9 @@ create: @ Nimmt das nächste Token aus dem Puffer,
     bl stype @ Den neuen Tokennamen nochmal ausgeben
     write ". "
 
-2:@ ( -- )
-
-  .ifdef charkommaavailable
-  bl alignkomma @ Auf zwei gerade machen    Align, just in case. Can be removed if there is no c, available. Add a check for uneven allots instead !
-  .endif
+2:@ ( Tokenadresse Länge )
 
   bl align4komma
-  .ifndef flash16bytesblockwrite
-  bl here @ Das wird die neue Linkadresse
-  .endif
-
-  @ ( Tokenadresse Länge Neue-Linkadresse )
 
   @ Prüfe, ob der Dictionarypointer im Ram oder im Flash ist:
   ldr r0, =Dictionarypointer
@@ -612,28 +606,25 @@ create: @ Nimmt das nächste Token aus dem Puffer,
 
   @ -----------------------------------------------------------------------------
   @ Create for Flash
-  @ ( Tokenadresse Länge Neue-Linkadresse )
+  @ ( Tokenadresse Länge )
 
   ldr r0, =FlashFlags
-  .ifdef erasedflashcontainszero
-    .ifdef m0core
-      ldr r1, =Flag_visible
-    .else
-      movs r1, #Flag_visible
-    .endif
-  .else
-    movs r1, #Flag_visible
-  .endif
+  ldr r1, =Flag_visible
   str r1, [r0]  @ Flags vorbereiten  Prepare Flags for collecting
+
+  .ifdef flash8bytesblockwrite
+    bl align8komma  @ Vorrücken auf die nächste passende Schreibstelle
+    pushdaconst 4   @ Es muss ein kompletter 8-Byte-Block für das Linkfeld reserviert werden
+    bl allot        @ damit dies später noch nachträglich eingefügt werden kann.
+  .endif
 
   .ifdef flash16bytesblockwrite
     bl align16komma @ Vorrücken auf die nächste passende Schreibstelle
     pushdaconst 12  @ Es muss ein kompletter 16-Byte-Block für das Linkfeld reserviert werden
     bl allot        @ damit dies später noch nachträglich eingefügt werden kann.
-
-    bl here @ Das wird die neue Linkadresse
   .endif
 
+  bl here @ ( Tokenadresse Länge Neue-Linkadresse ) Das wird die neue Linkadresse
   pushdaconst 6 @ Lücke für die Flags und Link lassen  Leave space for Flags and Link - they are not known yet at this time.
   bl allot
 
@@ -676,11 +667,7 @@ create: @ Nimmt das nächste Token aus dem Puffer,
   @ Create for RAM
 create_ram:
 
-  .ifdef flash16bytesblockwrite
-    bl here @ Das wird die neue Linkadresse
-  .endif
-
-  @ ( Tokenadresse Länge Neue-Linkadresse )
+  bl here @ ( Tokenadresse Länge Neue-Linkadresse ) Das wird die neue Linkadresse
 
   @ Link setzen  Write Link
   ldr r0, =Fadenende

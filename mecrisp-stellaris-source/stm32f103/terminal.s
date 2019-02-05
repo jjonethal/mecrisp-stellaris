@@ -56,10 +56,16 @@ uart_init:
   str r0, [r1]
 
   @ Set PORTA pins in alternate function mode
-  @ Put PA9  (TX) to alternate function output push-pull at 50 MHz
-  @ Put PA10 (RX) to floating input
+  @ Put PA9  (TX) to alternate function output push-pull at 2 MHz
+  @ Put PA10 (RX) to pull-up input
+  ldr r1, = GPIOA_BSRR
+  ldr r0, = 0x00000400
+  str r0, [r1]
+
   ldr r1, = GPIOA_CRH
-  ldr r0, = 0x000004B0
+  ldr r0, [r1]
+  ands r0, # 0xFFFFF00F
+  orrs r0, # 0x000008A0
   str r0, [r1]
 
   Set_Terminal_USART_Baudrate

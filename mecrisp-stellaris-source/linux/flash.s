@@ -25,18 +25,9 @@
   popda r0 @ Adresse
   popda r1 @ Inhalt.
 
-  @ Prüfe Inhalt. Schreibe nur, wenn es NICHT -1 ist.
-  cmp r1, #-1
-  beq 2f
-
   @ Prüfe die Adresse: Sie muss auf 4 gerade sein:
   ands r2, r0, #3
   cmp r2, #0
-  bne 3f
-
-  @ Ist an der gewünschten Stelle -1 im Speicher ? Muss noch ersetzt werden durch eine Routine, die prüft, ob nur 1->0 Wechsel auftreten.
-  ldr r2, [r0]
-  cmp r2, #-1
   bne 3f
 
   @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
@@ -46,7 +37,7 @@
   
   str r1, [r0]
   
-2:bx lr
+  bx lr
 
 3:Fehler_Quit "Wrong address or data for writing flash !"
 
@@ -58,26 +49,15 @@ h_flashkomma:
   popda r0 @ Adresse
   popda r1 @ Inhalt.
 
-  @ Prüfe Inhalt. Schreibe nur, wenn es NICHT -1 ist.
-  ldr r3, =0xFFFF
-  ands r1, r3  @ High-Halfword der Daten wegmaskieren
-  cmp r1, r3
-  beq 2b
-
   @ Prüfe die Adresse: Sie muss auf 2 gerade sein:
   ands r2, r0, #1
   cmp r2, #0
   bne 3b
 
-  @ Ist an der gewünschten Stelle -1 im Speicher ? Muss noch ersetzt werden durch eine Routine, die prüft, ob nur 1->0 Wechsel auftreten.
-  ldrh r2, [r0]
-  cmp r2, r3
-  bne 3b
-
   @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
   ldr r3, =Kernschutzadresse
   cmp r0, r3
-  blo 3f  
+  blo 3b
   
   strh r1, [r0]
   
@@ -91,20 +71,10 @@ c_flashkomma:
   popda r0 @ Adresse
   popda r1 @ Inhalt.
 
-  @ Prüfe Inhalt. Schreibe nur, wenn es NICHT -1 ist.
-  ands r1, #0xFF @ Alles Unwichtige von den Daten wegmaskieren
-  cmp  r1, #0xFF
-  beq 2b
-
-  @ Ist an der gewünschten Stelle -1 im Speicher ? Muss noch ersetzt werden durch eine Routine, die prüft, ob nur 1->0 Wechsel auftreten.
-  ldrb r2, [r0]
-  cmp r2, #0xFF
-  bne 3b
-
   @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
   ldr r3, =Kernschutzadresse
   cmp r0, r3
-  blo 3f
+  blo 3b
   
   strb r1, [r0]  
   
@@ -117,7 +87,7 @@ eraseflash: @ Löscht den gesamten Inhalt des Flashdictionaries.
         ldr r0, =FlashDictionaryAnfang
 eraseflash_intern:
         ldr r1, =FlashDictionaryEnde
-        movw r2, #0xFFFF
+        movs r2, #0
 
 1:      strh r2, [r0]
         adds r0, #2

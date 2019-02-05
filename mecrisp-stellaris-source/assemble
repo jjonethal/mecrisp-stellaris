@@ -1,5 +1,9 @@
 #!/bin/bash
 
+cd aducm4050-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../aducm4050-ra
+cd ..
+
 cd atsame70-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../atsame70-ra && cp *.hex ../../atsame70-ra
 cd ..
@@ -60,6 +64,10 @@ cd nrf51822
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
 cd ..
 
+cd nrf52832
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf52832 && cp *.hex ../../nrf52832
+cd ..
+
 cd microbit
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit && cp *.hex ../../microbit
 cd ..
@@ -100,6 +108,14 @@ cd stm32f030f4
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030f4
 cd ..
 
+cd stm32f030k6
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030k6
+cd ..
+
+cd stm32f030k6-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030k6-ra
+cd ..
+
 cd stm32f042f6
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f042f6
 cd ..
@@ -130,6 +146,10 @@ cd ..
 
 cd stm32l073rz-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l073rz-ra
+cd ..
+
+cd stm32l082kz-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l082kz-ra
 cd ..
 
 cd stm32l152
@@ -188,6 +208,10 @@ cd stm32f401
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401
 cd ..
 
+cd stm32f401-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401-ra
+cd ..
+
 cd stm32f401cd-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
 cd ..
@@ -220,6 +244,10 @@ cd stm32f746-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
 cd ..
 
+cd numworks-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../numworks-ra
+cd ..
+
 cd xmc1100
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100 && cp *.hex ../../xmc1100
 cd ..
@@ -244,12 +272,36 @@ cd efm32hg322-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32hg322-ra
 cd ..
 
+cd cy8c4245axi
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c4245axi && cp *.hex ../../cy8c4245axi
+cd ..
+
+cd cy8c5888
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c5888
+cd ..
+
+cd nuc123
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123 && cp *.hex ../../nuc123
+cd ..
+
+cd nuc123-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123-ra && cp *.hex ../../nuc123-ra
+cd ..
+
 # Intel Hex images for STM targets:
 
 cd ..
 
 cd stm32f030f4
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f030f4.bin mecrisp-stellaris-stm32f030f4.hex
+cd ..
+
+cd stm32f030k6
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f030k6.bin mecrisp-stellaris-stm32f030k6.hex
+cd ..
+
+cd stm32f030k6-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f030k6.bin mecrisp-stellaris-stm32f030k6.hex
 cd ..
 
 cd stm32f042f6
@@ -282,6 +334,10 @@ cd ..
 
 cd stm32l073rz-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l073rz.bin mecrisp-stellaris-stm32l073rz.hex
+cd ..
+
+cd stm32l082kz-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l082kz.bin mecrisp-stellaris-stm32l082kz.hex
 cd ..
 
 cd stm32l152
@@ -337,6 +393,10 @@ arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-st
 cd ..
 
 cd stm32f401
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
+cd ..
+
+cd stm32f401-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f401.bin mecrisp-stellaris-stm32f401.hex
 cd ..
 

@@ -1,0 +1,442 @@
+\
+\    file: display.txt  (forth sourcecode)
+\ purpose: Display-driver for the NUMWORKS graphing calculator
+\
+\ created: 2018-06-30 by wost (wost@ewost.de)
+\ licence: GPL3
+\
+\ based on work by:
+\     - Matthias Koch   mecrisp.sourceforge.net
+\     - JeeLabs         jeelabs.org
+\     - NUMWORKS        numworks.com
+\
+\ needs: 
+\     - io.txt
+\     - keyboard.txt   ( us ms init-delay )
+\
+\ changelog:
+\     - 2018-06-30  Initial version
+\     - 2018-07-04  tidy up
+
+
+\ --------------------------------------------------
+\ LCD - Backlight control
+\ --------------------------------------------------
+
+\ This piece of code controls the RT9365 LED driver.
+\ This chip allows the brightness to be set to 16 different values. It starts
+\ at full brightness on power-on / after shutdown. Applying a pulse on the EN pin
+\ will select the next value in decreasing order. Once it reaches the minimal value,
+\ the next pulse will loop back to full brightness.
+
+PC6 constant BACKLIGHT-ENABLE-PIN  \               1 : backlight on
+                                   \               0 : backlight off
+      \    short negative pulse ( 0.5 - 500 us ) : decrease brightness by one level
+      \  long negative pulse or level ( > 3 ms ) : shutdown, driver eventually starts at max. brightness
+
+
+: init-backlight ( -- )  \ Sets enable-pin to push/pull and restarts the LED-Driver.
+                         \ This automatically drives the LED's at full power.
+                         \ You should then decrease the brightness to a suitable level to
+                         \ reduce power consumption and increase the lifespan of the LED's.
+  BACKLIGHT-ENABLE-PIN ioc!
+  OMODE-PP BACKLIGHT-ENABLE-PIN io-mode!
+  3500 us  \ negative level > 3000 us (3 ms) shuts down the LED-driver 
+  BACKLIGHT-ENABLE-PIN ios!
+  35 us    \ LED-Driver needs > 30 us to reach full brightness
+           \   and to be ready for next pulses
+;
+
+: shutdown-backlight ( -- )  \ Shuts down the LED-Driver.
+                             \ Call 'init-backlight' again to start over.
+  BACKLIGHT-ENABLE-PIN ioc!
+  3500 us  \ negative pulse > 3000 us (3 ms) shuts down the LED-Driver 
+;
+
+: decrease-backlight ( -- )  \ Reduces the brightness by one step (16 levels available).
+                             \ If the brightness was at the lowest level, it rolls over to max. brightness.
+  BACKLIGHT-ENABLE-PIN ioc!
+  1 us  \ negative pulse must be > 0.5 us
+  BACKLIGHT-ENABLE-PIN ios!
+  1 us  \ to ensure that time between pulses is > 0.5 us 
+;
+
+: increase-backlight ( -- )  \ Raises the brightness by one step (16 levels available)
+                             \ If the brightness was at the highest level, it is set to min. brightness.
+  15 0  \ decrease 15 times means increase by 1 (16-step roll over)
+  do
+      decrease-backlight
+  loop
+;
+
+\ --------------------------------------------------
+\ DISPLAY
+\ --------------------------------------------------
+
+\  LCD driver for ST7789V chip, connected as 16-bit parallel SRAM via FSMC.
+\  This chip keeps a whole frame in SRAM memory and feeds it to the LCD panel as
+\  needed. We use the STM32's FSMC to drive the bus between the ST7789V. Once
+\  configured, we only need to write in the address space of the MCU to actually
+\  send commands and some data to the LCD controller.
+\
+\   Pin | Role              | Mode                  | Function | Note
+\  -----+-------------------+-----------------------+----------|------
+\   PA2 | LCD D4            | Alternate Function 12 | FSMC_D4  |
+\   PA3 | LCD D5            | Alternate Function 12 | FSMC_D5  |
+\   PA4 | LCD D6            | Alternate Function 12 | FSMC_D6  |
+\       |                   |                       |          |
+\  PB12 | LCD D13           | Alternate Function 12 | FSMC_D13 |
+\       |                   |                       |          |
+\   PD0 | LCD D2            | Alternate Function 12 | FSMC_D2  |
+\   PD1 | LCD D3            | Alternate Function 12 | FSMC_D3  |
+\   PD4 | LCD read signal   | Alternate Function 12 | FSMC_NOE |
+\   PD5 | LCD write signal  | Alternate Function 12 | FSMC_NWE |
+\   PD7 | LCD chip select   | Alternate Function 12 | FSMC_NE1 | Memory bank 1
+\   PD9 | LCD D14           | Alternate Function 12 | FSMC_D14 |
+\  PD10 | LCD D15           | Alternate Function 12 | FSMC_D15 |
+\  PD11 | LCD data/command  | Alternate Function 12 | FSMC_A16 | Data/Command is address bit 16
+\  PD14 | LCD D0            | Alternate Function 12 | FSMC_D0  |
+\  PD15 | LCD D1            | Alternate Function 12 | FSMC_D1  |
+\       |                   |                       |          |
+\  PE10 | LCD D7            | Alternate Function 12 | FSMC_D7  |
+\  PE11 | LCD D8            | Alternate Function 12 | FSMC_D8  |
+\  PE12 | LCD D9            | Alternate Function 12 | FSMC_D9  |
+\  PE13 | LCD D10           | Alternate Function 12 | FSMC_D10 |
+\  PE14 | LCD D11           | Alternate Function 12 | FSMC_D11 |
+\  PE15 | LCD D12           | Alternate Function 12 | FSMC_D12 |
+\       |                   |                       |          |
+\  PB14 | LCD power         | Output                |          | LCD controller is powered directly from GPIO
+\   PE9 | LCD reset         | Output                |          |
+\  PB13 | LCD ext. command  | Output                |          | this pin is always set to high
+\       |                   |                       |          |
+\  PB10 | LCD tearing effect| Input                 |          | to eliminate screen-flicker
+\
+\
+\  The STM32 FSMC supports two kinds of memory access modes :
+\   - Base modes (1 and 2), which use the same timings for reads and writes
+\   - Extended modes (named A to D), which can be customized further.
+\   The LCD panel can be written to faster than it can be read from, therefore
+\   we want to use one of the extended modes.
+\
+\  We now need to set the actual timings. First, the FSMC and LCD specs don't
+\  use the same names. Here's the mapping:
+\  
+\  FSMC | LCD
+\  -----+-----
+\   NOE | RDX
+\   NWE | WRX
+\   NE1 | CSX
+\   A16 | D/CX
+\   Dn  | Dn
+\
+\  We need to set the values of the BTR and BWTR which gives the timings for
+\  reading and writing. Note that the STM32 datasheet doesn't take into
+\  account the time needed to actually switch from one logic state to another,
+\  whereas the ST7789V one does, so we'll add T(R) and T(F) as needed.
+\  Last but not least, timings on the STM32 have to be expressed in terms of
+\  HCLK = 1/96MHz = 10.42ns.
+\    - We'll pick Mode A which corresponds to SRAM with OE toggling
+\    - ADDSET = T(AST) + T(F) = 0ns + 15ns = 2 HCLK
+\    - ADDHLD is unused in this mode, set to 0
+\    - DATAST(read) = T(RDLFM) + T(R) = 355ns + 15ns = 36 HCLK
+\      DATAST(write) = T(WRL) + T(R) = 15ns + 15ns = 3 HCLK
+\    - BUSTURN(read) = T(RDHFM) + T(F) = 90ns + 15ns = 10 HCLK
+\      BUSTURN(write) = T(RDHFM) + T(F) = 15ns + 15ns = 3 HCLK
+
+
+$40023800 constant RCC-BASE
+
+$40023830 constant RCC-AHB1ENR   \ AHB1 peripheral clock enable register ( GPIO's, DMA1, DMA2, CRC )
+$40023834 constant RCC-AHB2ENR   \ AHB2 peripheral clock enable register ( OTGFS, RNG )
+$40023838 constant RCC-AHB3ENR   \ AHB3 peripheral clock enable register ( QSPI, FSMC )
+
+$40023840 constant RCC-APB1ENR   \ APB1 peripheral clock enable register ( TIMER, USART, SPI, I2C, CAN, etc )
+$40023844 constant RCC-APB2ENR   \ APB2 peripheral clock enable register ( TIMER, USART, ADC, SPI, etc )
+\ there is also a set of AHBx/APBx peripheral clock enable registers for low power mode
+
+$A0000000 constant FSMC-BCR1
+$A0000004 constant FSMC-BTR1
+$A0000104 constant FSMC-BWTR1
+
+
+: init-fsmc ( -- )  \ Initialize the 'Flexible static memory controller' (FSMC)
+
+  0 bit RCC-AHB3ENR bis!  \ enable FSMC clock ( Bit-0 )
+
+\  Register FSMC-BCR1
+\  10987654321098765432109876543210  \ bit-number 0-31
+\  00000000000000000011000011011011  \ Reset-values. Oddity: Bit7 is marked as reserved but set by reset
+\  ++++++++--------++++++++--------  \ grouping for better readability
+  %00000000000000000011000011010001 FSMC-BCR1 !
+\  ----------ponmmmlkjih-gf-eddccba  \  '-' means reserved
+\
+\    * value set by epsilon code
+\
+\   a:1  *MBKEN
+\   b:0  *MUXEN
+\  cc:00 *MTYP  %00=SRAM  %01=PSRAM(CRAM)  %10=FLASH  %11=reserved
+\  dd:01 *MWID  %00=8-bit  %01=16-bit  %10=reserved   %11=reserved
+\   e:1   FACCEN
+\   f:0   BURSTEN
+\   g:0   WAITPOL
+\   h:0   WAITCFG
+\   i:1  *WREN
+\   j:1   WAITEN
+\   k:1  *EXTMOD
+\   l:0   ASYNCWAIT
+\ mmm:000 CPSIZE  %000=no_burst_split (Only for Cellular RAM)
+\   n:0   CBURSTRW
+\   o:0   CCLKEN
+\   p:0   WFDIS
+
+
+\  Register FSMC-BTR1  Read timings
+\  10987654321098765432109876543210  \ bit-number 0-31
+\  00001111111111111111111111111111  \ Reset-values
+\  ++++++++--------++++++++--------  \ grouping for better readability
+  %00001111111110100010010000000010 FSMC-BTR1 !
+\  --ggffffeeeeddddccccccccbbbbaaaa  \  -:reserved
+\
+\    * value set by epsilon code  
+\
+\      aaaa:0010     *ADDSET   2
+\      bbbb:0000     *ADDHLD   0
+\  cccccccc:00100100 *DATAST  36
+\      dddd:1010     *BUSTURN 10
+\      eeee:1111      CLKDIV
+\      ffff:1111      DATLAT
+\        gg:00       *ACCMOD MODE_A  %00=A  %01=B  %10=C  %11=D
+
+
+\  Register FSMC-BWTR1  Write timings
+\  10987654321098765432109876543210  \ bit-number 0-31
+\  00001111111111111111111111111111  \ Reset-values
+\  ++++++++--------++++++++--------  \ grouping for better readability
+  %00001111111100110000001100000010 FSMC-BWTR1 !
+\  --ee--------ddddccccccccbbbbaaaa  \  -:reserved
+\
+\    * value set by epsilon code  
+\
+\      aaaa:0010     *ADDSET  2
+\      bbbb:0000     *ADDHLD  0
+\  cccccccc:00000011 *DATAST  3
+\      dddd:0011     *BUSTURN 3
+\        ee:00       *ACCMOD MODE_A  %00=A  %01=B  %10=C  %11=D
+
+;  \ init-fsmc
+
+
+PB14 constant LCD-POWER-ENABLE-PIN
+PE9  constant LCD-RESET-PIN
+PB13 constant LCD-EXTENDED-COMMAND-PIN
+PB10 constant LCD-TEARING-EFFECT-PIN
+
+: init-lcd-gpio ( -- )
+
+  \ Assign alternate function 12 ( $C ) to FSMC pins
+  PA0 io-base GPIO.AFRL +  dup @ $000CCC00 or swap !  \ PA2 PA3 PA4
+  PB0 io-base GPIO.AFRH +  dup @ $000C0000 or swap !  \ PB12
+  PD0 io-base GPIO.AFRL +  dup @ $C0CC00CC or swap !  \ PD0 PD1  PD4  PD5  PD7
+  PD0 io-base GPIO.AFRH +  dup @ $CC00CCC0 or swap !  \ PD9 PD10 PD11 PD14 PD15
+  PE0 io-base GPIO.AFRH +  dup @ $CCCCCC00 or swap !  \ PE10 PE11 PE12 PE13 PE14 PE15
+    
+  OMODE-AF-PP OMODE-FAST +  PA0 %0000000000011100 io-modes!
+  OMODE-AF-PP OMODE-FAST +  PB0 %0001000000000000 io-modes!
+  OMODE-AF-PP OMODE-FAST +  PD0 %1100111010110011 io-modes!
+  OMODE-AF-PP OMODE-FAST +  PE0 %1111110000000000 io-modes!
+                               
+           LCD-POWER-ENABLE-PIN ioc!
+  OMODE-PP LCD-POWER-ENABLE-PIN io-mode!
+           LCD-POWER-ENABLE-PIN ios!
+
+           LCD-RESET-PIN ioc!
+  OMODE-PP LCD-RESET-PIN io-mode!
+           LCD-RESET-PIN ios!
+
+           LCD-EXTENDED-COMMAND-PIN ioc!
+  OMODE-PP LCD-EXTENDED-COMMAND-PIN io-mode!
+           LCD-EXTENDED-COMMAND-PIN ios!
+
+  IMODE-FLOAT LCD-TEARING-EFFECT-PIN io-mode!
+
+  120 ms  \ LCD needs some time to get ready 
+
+;  \ init-lcd-gpio
+
+
+$60000000 constant LCD-COMMAND   \ A16 low 
+$60020000 constant LCD-DATA      \ A16 high
+
+: send-command ( command -- )  LCD-COMMAND h!  ;
+: send-data    ( data -- )     LCD-DATA h!     ;
+: receive-data ( -- data )     LCD-DATA @      ;
+
+
+: init-lcd ( -- )
+
+  init-fsmc
+  init-lcd-gpio
+
+  $01 send-command  \ Reset
+  5 ms
+  
+  $11 send-command  \ SleepOut
+  5 ms
+
+  $3A send-command  \ PixelFormatSet
+  $05 send-data
+  
+  $35 send-command  \ TearingEffectLineOn
+  $00 send-data   
+  
+  $C6 send-command  \ FrameRateControl
+  $1E send-data     \ 40 Hz frame rate
+
+  $36 send-command  \ MemoryAccessControl
+  $A0 send-data  \ Landscape
+  
+  $29 send-command  \ DisplayOn
+  
+;  \ init-lcd
+
+
+\  LCD commands
+\ --------------------------------------------------------------------------------------------------
+\  $00  Nop
+\  $01  Reset
+\  $10  SleepIn
+\  $11  SleepOut
+\  $28  DisplayOff
+\  $29  DisplayOn
+\  $2A  ColumnAddressSet     (CASET)  4 parameters-8bit:  XstartHigh, XstartLow, XendHigh, XendLow
+\  $2B  PageAddressSet       (RASET)  4 parameters-8bit:  YstartHigh, YstartLow, YendHigh, YendLow
+\  $2C  MemoryWrite          (RAMWR)  n parameters-16bit: Pixelcolor
+\  $2E  MemoryRead
+\  $35  TearingEffectLineOn  (TEON)   1 parameter:  $00: V-blanking only   $01: V-blank and H-blank
+\  $36  MemoryAccessControl  (MADCTL) 1 parameter:  $A0: Landscape   $00:Portrait
+\  $3A  PixelFormatSet       (COLMOD) 1 parameter:  $05: 16bit/pixel
+\  $C6  FrameRateControl
+
+
+: set-area ( x y width height -- )  \ Sets a window in with pixels can be drawn
+
+  rot
+  ( x width height y )
+           $2B  send-command   \ PageAddressSet
+  dup 8 rshift  send-data  \ YstartHigh
+  dup $FF and   send-data  \ YstartLow
+  ( x width height y )
+  + 1-
+  ( x width height+y-1 )
+  dup 8 rshift  send-data  \ YendHigh
+      $FF and   send-data  \ YendLow
+  
+  ( x width )
+  swap
+  ( width x )  
+           $2A  send-command   \ ColumnAddressSet
+  dup 8 rshift  send-data  \ XstartHigh
+  dup $FF and   send-data  \ XstartLow
+  ( width x )
+  + 1-
+  ( width+x-1 )
+  dup 8 rshift  send-data  \ XendHigh
+      $FF and   send-data  \ XendLow
+;
+
+
+\ ----------------------------------------------------------
+\ 'clear' and 'putpixel' are used by the graphics.txt code
+\ ----------------------------------------------------------
+
+: rgb ( r g b -- colour ) 31 255 */ >r 63 255 */ >r 31 255 */ 11 lshift r> 5 lshift or r> or 3-foldable ;
+
+$0000 variable lcd-background  \ black
+$FFFF variable lcd-foreground  \ white
+
+: clear ( -- )  \ fills complete screen with 'lcd-background' - color
+  0 0 320 240 set-area
+  $2C send-command   \ MemoryWrite
+  lcd-background @ 
+  320 240 *  0
+  do
+      dup send-data  \ write pixel 
+  loop
+  drop
+;
+
+
+: putpixel ( x y -- )  \ set a pixel in display memory
+  1 1 set-area  \ set a window 1 pixel by 1 pixel at position x/y
+  $2C send-command   \ MemoryWrite
+  lcd-foreground @  send-data  \ draw a pixel 
+;
+
+: clearpixel ( x y -- )  \ set a pixel in display memory
+  1 1 set-area  \ set a window 1 pixel by 1 pixel at position x/y
+  $2C send-command   \ MemoryWrite
+  lcd-background @  send-data  \ draw a pixel 
+;
+
+: draw-npixels ( n -- )  \ Draws n pixels in 'lcd-foreground'-color to the screen.
+                         \ Area must be set with 'set-area' beforehand.
+  $2C send-command  \ MemoryWrite
+  lcd-foreground @  \ get color
+  swap
+  ( color n ) 0
+  do
+      dup send-data  \ write pixel 
+  loop
+  drop
+;
+
+
+\ --------------------------------------------------
+\  Playground
+\ --------------------------------------------------
+
+: test-lcd ( -- )  \ some basic tests
+  
+  init-delay  \ don't forget or you'll be sorry 
+  
+  init-backlight                  \ Backlight starts at 100%
+  8 0 do decrease-backlight loop  \ reduce brightness to 50%
+  
+  init-lcd
+  
+  clear  \ paint a nice empty screen
+
+  $FFFF lcd-foreground !  \ white 
+  
+  5 10 310 20 set-area   \ Window at 5/10 with size 310 by 20
+  310 20 *  draw-npixels  \ Fill window with 'lcd-foreground' color
+  
+
+  \ draw red sawtooth
+  $F800 lcd-foreground !  \ red 
+  315 5
+  do
+      i  12 i $F and +  putpixel   
+  loop
+
+
+  \ draw colored checkerboard 
+  $FFFF lcd-foreground !  \ white 
+  20 0
+  do
+      30 0
+      do
+          i 10 * 10 +  j 10 * 40 +  7 7 set-area
+          7 7 *  draw-npixels
+      lcd-foreground @ 123 +  lcd-foreground !    
+      loop
+  loop
+
+
+  \ back to white
+  $FFFF lcd-foreground !  \ white 
+
+;  \ test-lcd
+
+\ eof
+

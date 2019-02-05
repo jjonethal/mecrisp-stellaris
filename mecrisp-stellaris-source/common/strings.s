@@ -59,18 +59,15 @@ compare:                             @ ( c-addr1 len-1 c-addr2 len-2 -- f )
   popda r1        @ Length of second string
   ldm psp!, {r0}  @ Length of first  string
   cmp r0, r1
-  beq 1f
 
-    drop
-    movs tos, #0
-    pop {r0, r1, r2, r3, pc}
-
-1: @ Lengths are equal. Compare characters.
-   ldm psp!, {r1}  @ Address of first string.
+   ldm psp!, {r1}  @ Address of first string. ldm does not change flags.
                    @ TOS contains address of second string.
 
+  bne 2f @ Exit in case of unequal lengths.
+
+   @ Lengths are equal. Compare characters.
    @ How many characters to compare left ?
-2: cmp r0, #0
+1: cmp r0, #0
    beq 3f
 
      subs r0, #1
@@ -82,9 +79,9 @@ compare:                             @ ( c-addr1 len-1 c-addr2 len-2 -- f )
      lowercase r3
 
      cmp r2, r3
-     beq 2b
+     beq 1b
 
-     @ Unequal
+2:   @ Unequal
      movs tos, #0
      pop {r0, r1, r2, r3, pc}
 
@@ -160,7 +157,7 @@ holechar: @ ( -- Zeichen )
   pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate, ".\"" @ Fügt eine Meldung ein  Print a message
+  Wortbirne Flag_immediate_compileonly, ".\"" @ Fügt eine Meldung ein  Print a message
 @ -----------------------------------------------------------------------------
   ldr r0, =dotgaensefuesschen
 
@@ -203,7 +200,7 @@ dotgaensefuesschen: @ Gibt den inline folgenden String aus und überspringt ihn
   b.n type   @ Print it !
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate, "c\"" @ Fügt einen String ein  Insert a string-literal
+  Wortbirne Flag_immediate_compileonly, "c\"" @ Fügt einen String ein  Insert a string-literal
 @ -----------------------------------------------------------------------------
   ldr r0, =dotcfuesschen
   b 1b
@@ -235,7 +232,7 @@ dotcfuesschen: @ Legt den inline folgenden String auf den Stack und überspringt
   bx lr  @ Leave string address on datastack.
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_immediate, "s\"" @ Fügt einen String ein  Insert a string-literal
+  Wortbirne Flag_immediate_compileonly, "s\"" @ Fügt einen String ein  Insert a string-literal
 @ -----------------------------------------------------------------------------
   ldr r0, =dotsfuesschen
   b 1b
@@ -269,7 +266,7 @@ dotsfuesschen: @ Legt den inline folgenden String auf den Stack und überspringt
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "count"
-count: @ ( str -- ) Gibt einen String aus  Print a counted string
+count: @ ( c-addr -- c-addr+1 len ) Fetch length of counted string
 @ -----------------------------------------------------------------------------
   @ Count soll die Adresse um eine Stelle weiterschieben und die Länge holen.
   adds tos, #1 @ Adresse + 1
@@ -282,45 +279,29 @@ count: @ ( str -- ) Gibt einen String aus  Print a counted string
   Wortbirne Flag_visible, "ctype"
 type: @ ( str -- ) Gibt einen String aus  Print a counted string
 @ -----------------------------------------------------------------------------
-   push {r0, lr}
-   ldrb r0, [tos] @ Hole die auszugebende Länge in r0  Fetch length to type
-
-   cmp r0, #0     @ Wenn nichts da ist, bin ich fertig.  Any characters left ?
-   beq 2f
-
-   @ Es ist etwas zum Tippen da !  Something available for typing !
-1: adds tos, #1    @ Adresse um eins erhöhen  Advance pointer
-   dup
-   ldrb tos, [tos] @ Zeichen holen            Put character on datastack
-   bl emit         @ Zeichen senden           Emit character     
-   subs r0, #1     @ Ein Zeichen weniger      One character less
-   bne 1b
-
-2: drop
-   pop {r0, pc}
+  push {lr}
+  bl count
+  bl stype
+  pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "type"
 stype:  @ ( addr len -- ) Gibt einen String aus  Print a string
 @ -----------------------------------------------------------------------------
-   popda r1    @ Length to type
-   popda r0    @ Address of string
+  push {r0, lr}
+  ldm psp!, {r0}  @ Adresse holen. Fetch address.
 
-stype_addr_r0_len_r1:
+  cmp tos, #0     @ Wenn nichts da ist, bin ich fertig.  Any characters left ?
+  beq 2f
 
-   push {lr}
+  @ Es ist etwas zum Tippen da !  Something available for typing !
 
-   cmp r1, #0  @ Zero characters ?
-   beq 2f
+1:pushdatos
+  ldrb tos, [r0]  @ Zeichen holen            Put character on datastack
+  bl emit         @ Zeichen senden           Emit character
+  adds r0, #1     @ Adresse um eins erhöhen  Advance pointer
+  subs tos, #1    @ Ein Zeichen weniger      One character less
+  bne 1b
 
-   movs r2, #0 @ No characters printed yet.
-
-1:   pushdatos
-     ldrb tos, [r0, r2]
-     bl emit
-
-     adds r2, #1
-     cmp r1, r2   @ Any characters left ?
-     bne 1b
-     
-2: pop {pc}
+2:drop  
+  pop {r0, pc}

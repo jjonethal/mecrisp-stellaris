@@ -1,0 +1,48 @@
+\ GPIO               Mecrisp-Stellaris Source Code Library            MM-170627
+
+\             GPIO Port Adressing for lm4f120 (i.e. Stellaris LauchPad)
+
+\ Usage:  PORTF ( -- base-addr ) DATA ( -- register-addr )
+
+
+#require vocs.txt
+
+forth definitions
+
+voc GPIO  GPIO definitions
+
+: port: ( "name" port-base-addr -- ) ( GPIO ) casted constant ;
+
+: reg: ( "name" offset -- ) <builds , does> @ or ;
+
+
+$3FC GPIO reg: DATA ( Ein- und Ausgaberegister )  
+$400 GPIO reg: DIR  ( Soll der Pin Eingang oder Ausgang sein ? )
+\ ...
+$500 GPIO reg: DR2R ( 2 mA Treiber )
+$504 GPIO reg: DR4R ( 4 mA )
+$508 GPIO reg: DR8R ( 8 mA )
+$50C GPIO reg: ODR  ( Open Drain )
+$510 GPIO reg: PUR  ( Pullup Resistor )
+$514 GPIO reg: PDR  ( Pulldown Resistor )
+$518 GPIO reg: SLR  ( Slew Rate )
+$51C GPIO reg: DEN  ( Digital Enable )
+$520 GPIO reg: LOCK ( Lock )
+$524 GPIO reg: CR   ( Commit )
+\ ...
+\ $FFC
+
+forth definitions
+
+$40004000 GPIO port: PORTA
+$40005000 GPIO port: PORTB
+$40006000 GPIO port: PORTC
+$40007000 GPIO port: PORTD
+$40024000 GPIO port: PORTE
+$40025000 GPIO port: PORTF
+
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-17715 voc.txt --> vocs.txt
+
+
+

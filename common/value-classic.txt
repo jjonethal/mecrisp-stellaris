@@ -1,0 +1,26 @@
+
+\ -----------------------------------------------------------------------------
+\   Simple implementation without optimisation support
+\ -----------------------------------------------------------------------------
+
+: value ( initialisation -- ) ( -- value )
+          s" variable (val)" evaluate
+  <builds s" (val) ," evaluate
+  does>   @ @
+;
+
+
+: to ( x -- )
+  '
+  begin dup h@ $4780 = swap 2+ swap until \ Skip "blx r0" opcode.
+  @ \ The address of the corresponding (val) variable
+
+  state @ if
+    literal,
+    postpone !
+  else
+    !
+  then
+
+immediate ;
+

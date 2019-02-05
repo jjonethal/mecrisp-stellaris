@@ -19,13 +19,13 @@
 @ Emulation for hflash!
 @ 16-Bit Flash writes are collected here to be written later as 32-Bit accesses.
 
-
 @ Einfügen im Hauptteil: ramallot Sammeltabelle, Sammelstellen * 6
 @ .equ Sammelstellen, 32 @ 32 * 6 = 192 Bytes.
+@ ramallot Sammeltabelle, Sammelstellen * 6 @ 16-Bit Flash write emulation collection buffer
 
 @ -----------------------------------------------------------------------------
-@  Wortbirne Flag_visible, "stleeren" @ Zu Beginn und in Quit !
-sammeltabelleleeren: @ ( -- ) Löscht alle Einträge in der Sammeldatei
+@  Wortbirne Flag_visible, "initflash" @ Zu Beginn und in Quit !
+initflash: @ ( -- ) Löscht alle Einträge in der Sammeldatei
                      @ Clear the table at the beginning and in quit
 @ -----------------------------------------------------------------------------
   ldr r0, =Sammeltabelle
@@ -34,27 +34,6 @@ sammeltabelleleeren: @ ( -- ) Löscht alle Einträge in der Sammeldatei
 
 1:strh r2, [r0]
   adds r0, #2
-  subs r1, #1
-  bne 1b
-
-  bx lr
-
-@ -----------------------------------------------------------------------------
-@  Wortbirne Flag_visible, "stprobe" @ Am Anfang der Definition und in Smudge.
-sammeltabelleleerprobe: @ ( -- ) Prüft, ob die Sammeltabelle abgearbeitet ist.
-                        @ Anfangs obwohl da align4, alles erledigt, Benutzer schalten nicht am Dictionarypointer herum ?
-                        @ Check if table is empty - the align4, in smudge will handle the last entry.
-                        @ This should never trigger, but just to be sure...
-@ -----------------------------------------------------------------------------
-  ldr r0, =Sammeltabelle
-  movs r1, # 3 * Sammelstellen
-
-1:ldrh r2, [r0]
-  cmp r2, #0
-  beq 2f
-    Fehler_Quit "Unpaired 16-bit Flash write."
-
-2:adds r0, #2
   subs r1, #1
   bne 1b
 
@@ -212,3 +191,29 @@ hflashstoreemulation_gefunden: @ Found !
 
   bl flashkomma
   pop {r4, r5, pc}
+
+
+@ -----------------------------------------------------------------------------
+@ Am Anfang der Definition und in Smudge.
+@ Check if table is empty - the align4, in smudge will handle the last entry.
+@ This should never trigger, but just to be sure...
+@ -----------------------------------------------------------------------------
+
+@ -----------------------------------------------------------------------------
+@  Wortbirne Flag_visible, "flushflash" @ Flushes all remaining table entries
+flushflash:
+@ -----------------------------------------------------------------------------
+
+  ldr r0, =Sammeltabelle
+  movs r1, # 3 * Sammelstellen
+
+1:ldrh r2, [r0]
+  cmp r2, #0
+  beq 2f
+    Fehler_Quit "Unpaired 16-bit Flash write."
+
+2:adds r0, #2
+  subs r1, #1
+  bne 1b
+
+  bx lr

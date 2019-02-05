@@ -1,0 +1,971 @@
+\ vocs.txt         Source Code Library for Mecrisp-Stellaris           MM-170729
+\ ------------------------------------------------------------------------------
+\ This is a concatenation of the files  wordlists.txt , search-order.txt  and
+\ vocs.txt from the vocs-0.7.0-FR folder. It's for vanilla terminals that do not
+\ support conditional file loading. If you use the e4thcom terminal then you
+\ should better directly use the files from the vocs-0.7.0-FR folder.
+
+\ ** This file must be loaded only once after a RESET (the dictionary in RAM 
+\    must be empty) and before any new defining word is added to Mecrisp-
+\    Stellaris.
+\
+\    Wordlists.txt and search-order.txt are compiled to flash.
+\
+\    Vocs.txt is compiled to ram. So it can be removed with a RESET. To compile
+\    it to flash edit line 604 of this file.
+\
+\ ------------------------------------------------------------------------------
+\ Please see the VOC-HOWTO-xyz.log files how to create and use VOCs and VOCs
+\ base CLASSes. You can display this files with cat in an ANSI terminal.
+
+\ ------------------------------------------------------------------------------
+\ wordlists.txt          Wordlists for Mecrisp-Stellaris              MM-170504
+\ ------------------------------------------------------------------------------
+\                              Version 0.7.0-FR
+
+\                      Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\ This is an implementation of a subset of words from FORTHs SEARCH and SEARCH
+\ EXT Word Set.
+
+\ ** This file must be loaded only once after a RESET (the dictionary in RAM 
+\    must be empty) and before any new defining word is added to Mecrisp-
+\    Stellaris. It's compiled to FLASH and afterwards compiletoram is executed.
+
+\ ** Requires 
+
+\    Mecrisp-Stellaris  2.3.6-hook-find  or  2.3.8-ra  or a later version with
+\    a vectored FIND.
+
+     ' hook-find drop
+
+\ ** Recommends
+
+\    Terminalprogram: e4thcom-0.6.1 -t mecrisp-st -b B115200 -t tty.... 
+
+
+\ * A search order and two wordlists/vocabularies are added:
+\
+\   FORTH-WORDLIST/FORTH  
+\   holds all earlier defined Mecrisp-Stellaris words and some wordlist- or
+\   vocabulary-related words for application programers:
+\
+\       WORDLIST        ( -- wid )
+\       FORTH-WORDLIST  ( -- wid )
+\       INSIDE-WORDLIST ( -- wid )
+\       SHOW-WORDLIST   ( wid -- )
+\       SET-CONTEXT     ( wid -- )  
+\       GET-CONTEXT     ( -- wid )
+\       SET-CURRENT     ( wid -- )
+\       GET-CURRENT     ( -- wid )
+\       WLIST           ( -- )
+\       \WLIST          ( -- ) 
+\       FORTH           ( -- )          
+\       DEFINITIONS     ( -- ) 
+\       ORDER           ( -- ) 
+\       ??              ( -- ) 
+\       ???             ( -- ) 
+\       INSIDE          ( -- )
+\       INIT            ( -- )
+\
+\   INSIDE-WORDLIST/INSIDE
+\   holds words needed for the implementation which are generally not used by
+\   application programers. 
+
+\ * The initial dictionary search order is FORTH FORTH .
+
+\ * The top of the search order can be changed with <wordlist> SET-CONTEXT or
+\   <vocabulary> .
+
+\ * Dictionary searching is done by the new word FIND-IN-DICTIONARY (defined in
+\   the INSIDE-WORDLIST). It is called via HOOK-FIND by the now vectored Mecrisp
+\   word FIND .
+
+\ * New words are added to the FORTH-WORDLIST by default. This can be changed
+\   with <wordlist> SET-CURRENT or <vocabulary> DEFINITIONS .
+
+\ * Compiling to FLASH and RAM is supported. 
+
+
+\ Some usage examples:
+
+\   WORDLIST constant <name>  creates a named wordlist, <name> returns its wid
+
+\   <wordlist> SHOW-WORDLIST  lists all words of <wordlist>
+\   <wordlist> SET-CONTEXT    overwrites the top of the search order
+\   <wordlist> SET-CURRENT    overwrites the compilation wordlist
+
+\   WLIST                     lists all words of the top of the search order
+\                             (initially this is the forth-wordlist)
+\
+\   ???                       like wlist but also shows the current search
+\                             order and the compilation context
+\
+\   \WLIST                    like wlist but lists no core words
+\
+\   ??                        like \wlist but also shows the current search
+\                             order and the compilation context
+\
+\   FORTH                     sets FORTH-WORDLIST as top of search order
+\
+\   INSIDE                    sets INSIDE-WORDLIST as top of search order
+\
+\   <vocabulary> DEFINITIONS  sets the vocabularies wordlist as new compilation
+\                             context(wordlist)
+\
+\   ORDER                     displays the current search order
+
+\   INIT                      initializes the wordlist extension (sets HOOK-FIND
+
+\   WORDS                     Mecrisp Core Word, still lists all words from the 
+\                             linked dictionary list. Only useful for debugging
+\                             now.
+\ ------------------------------------------------------------------------------
+
+\ This extension must be compiled to flash.
+  compiletoflash
+
+  hex
+
+\ Return a wordlist identifier. It's the lfa of the next created word.
+: wordlist ( -- wid )
+  align here cell+ ;
+
+\ The first two wordlists are created now:
+
+  wordlist dup ,            constant forth-wordlist
+
+  wordlist forth-wordlist , constant inside-wordlist
+
+
+\ lfa of first word in flash                                    \ MM-170709
+  dictionarystart inside-wordlist ,  constant _sof_
+
+
+\ We need two buffers for the FORTH search order:
+
+  #6 inside-wordlist , constant #vocs                           \ MM-170728
+
+\ A buffer for the search order in compiletoflash mode.
+  inside-wordlist ,
+  0 0 0 0 0 forth-wordlist dup #vocs 1+ nvariable c2f-context
+
+\ A buffer for the search order in compiletoram mode.
+  inside-wordlist ,
+  0 0 0 0 0 forth-wordlist dup #vocs 1+ nvariable c2r-context
+
+  inside-wordlist , 
+  : context ( -- a-addr )
+\ Return the addr of the actual search order depending on the compile mode.
+  compiletoram? if c2r-context else c2f-context then ;
+
+
+\ We also need two search order pointers:
+
+\ Search order pointer for the compiletoflash mode.
+ inside-wordlist , c2f-context variable _c2f-sop_
+
+\ Search order pointer for the compiletoram mode.
+ inside-wordlist , c2r-context variable _c2r-sop_
+
+  inside-wordlist ,
+  : _sop_ ( -- a-addr )
+\ Return the addr of the search oder pointer depending on the compile mode.  
+  compiletoram? if _c2r-sop_ else _c2f-sop_ then ; 
+
+
+\ Current for the compiletoflash mode.
+  inside-wordlist ,  forth-wordlist variable c2f-current
+
+\ Current for the compiletoram mode.
+  inside-wordlist ,  forth-wordlist variable c2r-current
+
+\ Current depending on the compile mode.
+  inside-wordlist ,
+: current ( -- a-addr )
+  compiletoram? if c2r-current else c2f-current then ;
+
+
+  inside-wordlist ,
+0 variable _csr_       \ buffer for a context switching request
+
+  inside-wordlist ,
+0 variable wflags      \ buffer for the flags in the wtag
+
+  inside-wordlist ,
+0 variable _nocsr_     \ A flag. FIND ignores a words ctag if this flag is
+                       \ set (no context switching).
+
+  inside-wordlist ,    \ MM-170626
+-1 variable _indic_    \ A flag, true for searching the dictionary with context
+                       \ switching support, false for searching the compilation
+                       \ context only without context switching.
+
+  inside-wordlist ,
+: wtag, ( -- )
+    current @  \ cr ."  current:" dup .
+    wflags @   \ ."  wflags:" dup .
+    or         \ ."  wtag:" dup .
+    align ,
+    0 wflags !  0 _indic_ !
+;
+
+  inside-wordlist ,
+: lfa>flags ( a-addr1 -- a-addr2 ) cell+ ;
+
+  inside-wordlist ,
+: lfa>nfa ( a-addr -- cstr-addr ) lfa>flags 2+ ;
+
+  inside-wordlist ,
+: lfa>xt ( a-addr -- xt ) lfa>nfa skipstring ;
+
+  inside-wordlist ,
+: lfa>wtag ( a-addr -- wtag ) [ 1 cells literal, ] - @ ;
+
+  inside-wordlist ,
+: lfa>ctag ( a-addr -- ctag ) [ 2 cells literal, ] - @ ;
+
+  inside-wordlist ,
+: tag>wid ( wtag -- wid ) [ 1 cells 1- not literal, ] and ;
+
+  inside-wordlist ,
+: lfa>xt,flags ( a-addr -- xt|0 flags )
+    dup if dup lfa>xt swap lfa>flags h@ else dup then ;
+
+  inside-wordlist , 
+: wid>name ( wid -- c-addr u ) 
+    dup forth-wordlist  = if drop s" forth"  exit then
+    dup inside-wordlist = if drop s" inside" exit then
+    lfa>nfa count
+;
+
+  inside-wordlist ,
+: smudged? ( lfa -- flag )
+  \ Return true if the word at lfa is smudged.
+    cell+ h@ FFFF <> ;
+
+  inside-wordlist ,
+: .header ( lfa -- )
+  \ Print some word header information.
+    \ * for debugging only
+    \  dup 
+    ." lfa: " dup hex. dup ." xt: " lfa>xt hex.    \ print lfa and xt
+    ." name: " lfa>nfa count type space            \ print name
+    \ * for debugging only
+    \  smudged? 0= if ." Not smudged." then
+;
+
+  inside-wordlist ,
+: .wtag ( wtag -- ) ." wtag: " hex. ;
+
+  inside-wordlist ,
+: .ctag ( ctag -- ) ." ctag: " hex. ;
+
+
+  inside-wordlist , 
+: show-wordlist-item ( lfa wid -- )                                    \ MM-170710
+\ Show the word at lfa if its a member of wordlist wid.
+      >r
+      dup forth-wordlist >=   \ tagged word ?
+      if ( lfa )
+        dup lfa>wtag tag>wid r@ =     \ wid(lfa) = wid
+        if ( lfa )
+          cr dup lfa>wtag dup 1 and if over lfa>ctag .ctag else #15 spaces then
+          .wtag .header    \ print wtag(lfa) and name(lfa)
+        else
+          drop
+        then
+      else ( lfa )
+       cr #30 spaces .header
+      then
+      r> drop
+;
+
+  inside-wordlist ,
+: c2r-show-wordlist ( wid lfa -- )                              \ MM-170710
+  cr ." RAM: " over wid>name type
+  drop ( wid ) >r
+  dictionarystart ( lfa )
+  begin
+    dup _sof_ <>
+  while
+\    ( dup hex. ) space dup wid>name type space
+    dup r@ show-wordlist-item
+    dictionarynext if drop _sof_ then
+  repeat
+  r> 2drop ;
+
+  inside-wordlist ,
+: c2f-show-wordlist ( wid lfa -- )                               \ MM-170710
+\ List all words of wordlist wid (defined in flash) starting with word at lfa.
+\ lfa must be in flash
+\ forth-wordlist dictionarystart c2f-... lists all forth-wordlist words
+\ forth-wordlist dup             c2f-... lists forth-wordlist words starting
+\                                        with lfa(forth-wordlist)
+\ wid dup                        c2f-... lists all words of wordlist wid
+  cr ." FLASH: " over wid>name type
+  swap >r  ( lfa ) ( R: wid )
+  begin ( lfa )
+    dup r@ show-wordlist-item
+    dictionarynext 
+  until
+  r> 2drop
+;
+
+  inside-wordlist ,                                              \ MM-170713
+: \show-wordlist ( wid -- )
+\ If wid = forth-wordlist do not list the core words.
+  compiletoram?
+  if
+    0 c2r-show-wordlist
+  else
+    forth-wordlist c2f-show-wordlist
+  then
+;
+
+  forth-wordlist ,                                                \ MM-170713
+: show-wordlist ( wid -- )
+  compiletoram?
+  if
+    dup 0 c2r-show-wordlist
+  then
+  dup forth-wordlist = if _sof_ else forth-wordlist then c2f-show-wordlist
+;
+
+  inside-wordlist ,
+: name? ( c-addr u lfa -- c-addr u lfa flag )
+  \ Return true if name of word at lfa equals c-addr,u and word is smudged.
+    >r 2dup r@ lfa>nfa count compare r> swap \ true if equal, 
+                                             \ note: compare is case insensitive
+    if  ( c-addr u lfa )  \ word found
+        dup smudged?
+        \ for debugging only:
+        \ dup 0= if ."  un-" then ." smudged "
+    else  \ word not found
+      false
+    then
+;
+
+\ MM-170709
+  inside-wordlist , 
+: search-wordlist-in-ram ( c-addr u wid -- lfa|0 )
+  \ If the word c-addr,u is a member of wordlist wid, return its address.
+  \ Otherwise return zero.
+  \ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+    >r dictionarystart 
+    begin ( c-addr u lfa )
+      dup _sof_ <> 
+    while ( c-addr u lfa )
+      dup lfa>wtag tag>wid r@ =                  \ wid(lfa) = wid
+      if
+        name?   ( c-addr u lfa flag )
+        if
+          nip nip r> drop exit
+        then
+      then
+      dictionarynext drop
+    repeat 
+    ( c-addr u lfa ) 2drop r> ( c-addr wid ) 2drop 0
+;
+
+
+  inside-wordlist , 
+: search-wordlist-in-flash ( c-addr u wid -- lfa|0 )
+  \ If the word c-addr,u is a member of wordlist wid, return its address.
+  \ Otherwise return zero.
+  \ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+    dup 0 >r >r forth-wordlist = if _sof_ else forth-wordlist @  then
+    begin
+      dup forth-wordlist >  \ tagged word ?
+      if
+        dup lfa>wtag tag>wid r@ =                  \ wid(lfa) = wid
+        if
+          name?
+          if
+            r> r> drop over >r >r         \ R: wid lfa.found
+            \ for debugginng only :
+            \ cr dup lfa>wtag .wtag dup .header  \ print wtag(lfa) and name(lfa)
+          then
+        then
+      else ( c-addr u lfa )
+        name?
+        if 
+          r> r> drop over >r >r           \ R: wid lfa.found
+          \ for debugginng only :
+          \  cr 9 spaces dup .header
+        then
+      then
+      dictionarynext
+    until
+    ( c-addr u lfa ) 2drop r> ( c-addr wid ) 2drop
+    r> ( lfa.found|0 )
+;
+
+  inside-wordlist , 
+: search-in-wordlist ( c-addr u wid -- lfa|0 )
+  \ If the word c-addr,u is a member of wordlist wid, return its address.
+  \ Otherwise return zero.
+  \ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+  >r compiletoram?
+  if
+    2dup r@ search-wordlist-in-ram ?dup if nip nip r> drop exit then
+  then
+  r> search-wordlist-in-flash
+;
+
+  inside-wordlist ,
+: search-in-order ( c-addr len a-addr -- lfa|0 )
+  \ Search in the search order at a-addr for a match with the given word name.
+  \ If found return the words lfa otherwise retun 0.
+  \ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+  dup >r ( c-addr len a-addr )  \ a-addr = top of the search order
+  begin
+    @ ( c-addr len wid|0 ) dup
+  while
+    >r 2dup r> search-in-wordlist dup
+    if nip nip r> drop exit then drop
+    r> cell+ dup >r
+  repeat
+  r> 2drop 2drop 0
+;
+
+  inside-wordlist ,
+: find-in-dictionary ( c-addr len -- xt|0 flags )
+  \ Search dictionary for a match with the given string. Return xt and flags
+  \ if found, 0 and invalid flags otherwise.
+  \ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+    _sop_ @ search-in-order ( lfa ) lfa>xt,flags
+;
+
+  forth-wordlist ,
+: set-context ( wid -- ) context ! ;
+
+  forth-wordlist ,
+: get-context ( -- wid ) context @ ;
+
+  forth-wordlist ,
+: set-current ( wid -- ) current ! ;
+
+  forth-wordlist ,
+: get-current ( -- wid ) current @ ;
+
+
+  forth-wordlist ,
+: wlist ( -- )
+\ List all words of the actual top of the forth search order.
+  _sop_ @ @ show-wordlist
+;
+
+  forth-wordlist ,
+: \wlist ( -- )
+\ List all words of the actual top of the forth search order. If it's Forth,
+\ only list the words that were created while and after loading this extensions.
+  _sop_ @ @ \show-wordlist
+;
+
+
+\ We have to redefine all defining Mecrisp words to tag created word with a wid: 
+\ ------------------------------------------------------------------------------
+  forth-wordlist set-current   \ wtag, uses current
+
+  wtag,  : : ( "name" -- ) wtag, : ;
+
+: constant wtag, constant ;
+: 2constant wtag, 2constant ;
+
+: variable wtag, variable ;
+: 2variable wtag, 2variable ;
+: nvariable wtag, nvariable ;
+
+: buffer: wtag, buffer: ;
+
+: (create) wtag, (create) ;
+: create   wtag, create ;
+: <builds  wtag, <builds ;
+
+\ ------------------------------------------------------------------------------
+
+\ We need some basic words from the SEARCH (EXT) Word Set
+
+: forth ( -- )
+    forth-wordlist set-context ;
+
+: definitions ( -- )
+    get-context set-current ;
+
+: order ( -- )
+    context
+    begin
+      dup @ dup
+    while
+      wid>name type space cell+
+    repeat
+    2drop
+;
+
+\ Display the search order and the compilation context.
+: .? ( -- ) 
+    cr ." context: " order  cr ." current: " current @ wid>name type 
+    ."  compileto" compiletoram? if ." ram" else ." flash" then
+;
+
+
+: ?? ( -- )
+  \ List all words of the top wordlist in the Forth Search Order and show the
+  \ current search order and compilation context.
+    \wlist cr .? cr
+;
+
+: ??? ( -- )
+  \ List all words of the top wordlist in the Forth Search Order and show the
+  \ current search order and compilation context. 
+    wlist cr .? cr
+;
+
+
+\ The inside-wordlist should also be available as a vocabulary
+
+: inside ( -- )
+  inside-wordlist set-context ;
+
+
+\ Do we have to redefine eraseflash to reset hook-find to core-find ? No !
+\ : eraseflash  ['] core-find hook-find ! eraseflash ;
+
+
+\ Finally we have to define INIT to set HOOK-FIND to call FIND-IN-DICTIONARY.
+: init ( -- )
+  ['] find-in-dictionary hook-find !
+\  #9 spaces ." wordlists.txt 0.7.0-FR included" cr
+\  ." Use  ??  or  ???  to display the dictionary, not  WORDS ." cr
+; 
+
+  init
+
+  : wordlists.txt ;   
+
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-170728 #vocs added, new version 0.7.0-FR
+\
+\ EOF wordlists.txt
+
+
+
+
+\ ------------------------------------------------------------------------------
+\ search-order.txt      Search Order for Mecrisp-Stellaris             MM-170504
+\ ------------------------------------------------------------------------------
+\                               Version 0.7.0
+
+\                      Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\      Adds the following words from the SEARCH and SEARCH EXT Word Sets 
+\  
+\                   ALSO  ONLY  PREVIOUS  VOCABULARY
+\ ------------------------------------------------------------------------------
+\ #require wordlists.txt
+
+  forth definitions  inside
+
+: vocabulary ( "name" -- )
+    wordlist <builds , does> @ set-context
+;
+
+
+: only ( -- )
+  context #vocs 1+ cells 0 fill forth-wordlist set-context
+;
+
+
+: also ( -- )
+  context #vocs 1- cells + @ if ." search order overflow " quit then
+  context dup cell+ #vocs 1- cells move
+;
+
+
+: previous ( -- )
+  context cell+ @ 0= if ." search order underflow " quit then
+  context cell+ context #vocs cells move
+;
+
+
+: init ( -- )
+  init ." search-order.txt 0.7.0" cr
+  ." Use  ??  or  ???  to display the dictionary, not  WORDS ." cr ;
+
+: search-order.txt ;
+
+  only forth also definitions 
+
+  compiletoram
+
+  init
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-170728 #vocs added, requires wordlists 0.7.0-FR
+
+\ EOF searc-order.txt
+
+
+
+
+\ #require abort
+\ ------------------------------------------------------------------------------
+  forth definitions
+
+: abort ( -- ) CR quit ;
+
+
+
+
+\ ------------------------------------------------------------------------------
+\ vocs.txt         Source Code Library for Mecrisp-Stellaris           MM-170628
+\ ------------------------------------------------------------------------------
+\                 Vocabulary Prefix ( VOC ) Version 0.7.0-FR
+
+\                     Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+\ Vocabulary prefixes ( VOCs ) help to structure the dictionary, make it more 
+\ readable and can reduce the code size because of shorter word names.
+\
+\ Like vocabularies VOCs are context switching words. While a vocabulary changes
+\ the search order permanently, a VOC changes it only temporarily until the next
+\ word from the input stream is interpreted. VOCs are immediate (noop) words.
+\
+\ Vocabularies and VOCs are words for explicit context switching.
+\
+\ This extension also supports implicit VOCs base context switching ( see the
+\ word CASTED ) and it also supports (single) inheritanc for VOCs.
+
+\ Implicit Context Switching:
+
+\ Implicit context switching means that a "normal" Forth word is tagged with
+\ the wordlist identfier (wid) of a VOC. When Forths outer interpreter FINDs
+\ such a word, it is executed or compiled as normal (depending on STATE) and
+\ the VOCs search order is set as the new search context. The next word from 
+\ the imput stream is then found in this context and afterwards the search
+\ context is reset to the "normal" Forth search order.
+
+\ Inheritance:
+
+\ Inheritance means that a new VOC can inherit from (can extend) an existing
+\ one. The search order of the new VOC is then the VOCs wordlist plus the 
+\ inherited VOCs search order.
+
+\ So VOCs can be used to create libraries, register identifiers, data types
+\ and to define classes for objects with early binding methods and (single)
+\ inheritance.
+
+\ Give it a try and you will find that VOCs are an easy to use and powerful
+\ tool to write well factored code and code modules.
+
+\ Glossary:
+
+\ voc ( "name" -- )  Create a vocabulary prefix that only inherits the wordlist
+\                    voc-root.
+
+\ <voc> voc ( "name" -- )  Create a vocabulary prefix that extends (inherits 
+\                          from) the given VOC.
+
+\ <voc> ?? ( -- )   Show all words of the actual VOC search order and stay in
+\                   that VOC context.
+
+\ <voc> ??? ( -- )  Same as ?? but also shows all words of voc-root.
+
+\ .. ( -- )  Switch back from the actual VOC search order to the Forth search
+\            order.
+
+\ <voc> .s ( -- )  Print the data stack and stay in the actual VOC context.
+
+\ <voc> definitions ( -- )  Make <voc> the current compilation context.
+
+\ <voc> casted ( -- )  Make the next created word a context switching one, i.e. 
+\                      #123 int casted variable int1
+
+\ __ ( -- )  Make the current VOC compilation context the actual search context.
+
+\ init ( -- )  Initialize the VOC extension.
+
+
+\ For further information please see the enclosed VOC-HOWTOs.
+
+\ This version can be compiled in RAM or FLASH.
+\ ------------------------------------------------------------------------------
+\ #require search-order.txt
+
+  inside definitions hex
+
+\ The root wordlist for voc search orders.
+  wordlist constant voc-root ( -- wid )
+
+\ VOC context pointer for the compiletoflash mode.
+  voc-root variable c2f-voc-context
+
+\ VOC context pointer for the compiletoram mode.
+  voc-root variable c2r-voc-context
+
+: voc-context ( -- a-addr )
+  compiletoram? if c2r-voc-context else c2f-voc-context then ;
+
+0 variable _vcm_        \ 1/2 in voc/class compile mode, 0 otherwise
+
+  voc-root set-current
+
+: definitions ( -- ) voc-context @ set-current 1 _vcm_ ! ;
+
+  inside definitions
+
+\ Make the next FIND ignore the tags (the context switching request) of the 
+\ word found.
+: nocsr ( -- ) -1 _nocsr_ ! ;
+
+
+\ MM-170625
+\ Save the context switching request of the word with address lfa.
+: _!csr_ ( lfa -- )
+    0 _csr_ !  _nocsr_ @ if drop 0 _nocsr_ ! exit then ( lfa ) dup
+    if ( lfa ) \ found
+      \ *** for context switching debugging only
+      \  ."  found: " dup .header 
+      ( lfa ) dup forth-wordlist >   \ tagged word ?
+      if ( lfa ) 
+        dup lfa>wtag ( lfa wtag ) 3 and ( lfa wflags ) 1 =   \ word with ctag ?
+        if dup lfa>ctag 1 or  ( csr ) _csr_ ! then ( lfa )
+      then ( lfa )
+    then ( lfa )
+    drop 
+;
+
+\ MM-170625
+\ Process the last saved context switching request. 
+: _?csr_ ( -- )
+    \ *** for context switching debugging only
+    \  cr _csr_ @ ." _csr_=" .
+    _csr_ @ dup  \ context switching requested ?
+    if ( csr )
+      -4 and ( wid ) \ of the new context
+      dup voc-root <>
+      if ( wid )
+        \ *** for context switching debugging only
+        \  dup
+        voc-context !
+        \ *** for context switching debugging only
+        \  dictionarynext ." voc:" if drop s"  ?" else lfa>nfa count then type space 
+      else ( wid )
+        drop
+      then 
+      voc-context _sop_ !  0 _csr_ !
+    else ( 0 )
+      drop context _sop_ !
+    then
+;
+
+\ Given a VOCs wid return the wid of the parent voc or zero if no voc was
+\ inherited.
+: vocnext ( wid1 -- wid2|0 )
+  [ 3 cells literal, ] - @
+;
+
+\ Search the VOCs search order (voc-context) at a-addr for a match with the
+\ string c-addr,len. If found return the address (lfa) of the dictionary entry,
+\ otherwise return 0.
+: search-in-vocs ( c-addr len a-addr -- lfa|0 )
+  @
+  begin
+  \ dup .
+   >r 2dup r@ search-in-wordlist dup if nip nip r> drop exit then drop
+   r> vocnext dup 0=
+  until
+  drop voc-root search-in-wordlist
+;
+
+\ Search the dictionary for a match with the given string. If found return the
+\ lfa of the dictionary entry, otherwise return 0.
+\ Note: Based on mecrisps case insensitive non-ANS compare  !!!!!
+: search-in-dictionary ( c-addr len -- lfa|0 )
+  _sop_ @ dup context =
+  if
+    search-in-order
+  else
+    search-in-vocs
+  then
+;
+
+\ Search the dictionary for a match with the given string. If found return the 
+\ xt and the flags of the dictionary entry, otherwise return 0 and flags.
+\ Note: Based on mecrisps case insensitive non-ANS compare.
+: vocs-find ( c-addr len -- xt|0 flags )
+  _indic_ @ 
+  if
+    _?csr_
+    \  ." voc-find "              \ *** for debugging only
+    search-in-dictionary ( lfa )
+    dup _!csr_
+    \  ."  csr=" _csr_ @ . cr     \ *** for debugging only
+  else ( lfa )
+    -1 _indic_ ! current @ search-in-wordlist
+  then
+  lfa>xt,flags
+;
+
+\ Create a VOC that extends the VOC wid (inherits from VOC wid).
+: voc-extend ( "name" wid -- )
+  \ compile the VOCs itag ( the wid of the inherited VOC )
+    align ,
+  \ compile the VOCs ctag ( the wid of the new VOC )
+    wordlist cell+ ,
+  \ set bit 0 of the wflags in the VOCs wtag (make it a context switching one)
+  1 wflags !
+  \ create the VOC as an immediate NOOP word
+\  : ( "name" -- ) 10 setflags ( postponed immediate ) postpone ;
+   : ( "name" -- ) postpone immediate postpone ;  \ MM-170725  wg RA core
+;
+
+: vocs-quit ( -- )
+  0 _csr_ !  context _sop_ !  0 _nocsr_ !
+  \ ." reset "  \ only for debugging
+  [ hook-quit @ literal, ] execute
+;
+
+
+\ Some tools needed in VOC contexts ( voc-root definitions )
+  voc-root set-current
+
+\ Switch back from a VOC search order (voc-context) to the FORTH search order.
+: .. ( -- )
+  context _sop_ ! immediate
+;
+
+\ Create a VOC that extends (inherits from) the actual VOC context.
+ : voc ( "name" -- )
+ voc-context @ voc-extend 
+;
+
+\ Show all wordlists of a the actual VOCs search order but not voc-root.
+\ Stay in that search order.
+  voc-root , 1 wflags !
+: ?? ( -- ) 
+  voc-context @ ( wid )
+  begin
+    dup show-wordlist cr
+    vocnext dup 0=
+  until
+  drop
+;
+
+\ Show all wordlists of a the actual VOCs search order incl. voc-root.
+\ Stay in that search order.
+  voc-root , 1 wflags !
+: ??? ( -- )
+  [ voc-root set-context ] ?? ..
+  [ inside ] voc-root ( voc-show-wordlist ) show-wordlist
+;
+
+\ Print the data stack. Stay in the actual VOC context.
+  voc-root , 1 wflags !
+: .s ( -- )
+  .s
+;
+
+\ Make the next created word a context switching one (assign a ctag).
+\ Usage: <voc> casted <defining word> ...   i.e.:  123 int casted variable i1
+: casted ( -- )
+  _sop_ @ voc-context <> if ." ? VOC or Class context missing" abort then  \ MM-170714
+  \ compile the actual VOCs wid as the next created words ctag
+    align voc-context @ ,
+  \ set bit 0 of the wflags in the next created words wtag
+    1 wflags !
+; 
+
+\ Return the execution token of the VOC member "name" on the stack.
+  voc-root , 1 wflags !
+: ' ( "name" -- xt )
+  nocsr '
+;
+
+\ Compile the execution token of the VOC member "name" as literal.
+  voc-root , 1 wflags !
+: ['] ( "name" -- )
+  ' literal, immediate 
+;
+
+forth definitions inside
+
+\ Create a VOC that only inherits voc-root.  
+: voc ( "name" -- )
+  0 voc-extend
+;
+
+
+\ MM-170704
+\ Make the next created word a context switching one (assign a ctag).
+\ Usage in definitions outsite a VOC context:   casted <defining word> 
+\ e.g. : port: ( "name" -- base-addr ) casted constant ;
+\        addr <voc> port: name
+: casted ( -- ) [ voc-root set-context ] casted [ inside ] ;
+
+
+\ MM-170712
+\ Make the current voc compilation context the actual search context.
+: __ ( -- )
+  _vcm_ @ 0= if  ." voc compile mode missing" abort then
+  get-current _csr_ ! immediate
+;
+
+: .. ( -- ) immediate ;
+
+: definitions ( -- )  definitions 0 _vcm_ ! ;
+
+\ Tick must inform FIND not to record a context switching request if the found
+\ word is a context switching one.
+: ' ( "name" -- xt )
+  nocsr '
+;
+
+: ['] ( "name" -- ) ' literal, immediate ;
+
+\ defered ??????
+
+
+\ Initialize Mecrisp with wordlist and voc extension.
+: voc-init ( -- )
+  init  ['] vocs-quit hook-quit !  ['] vocs-find hook-find !
+  ." vocs.txt 0.7.0-FR" cr
+;
+
+: init ( -- ) voc-init ;
+
+  init
+
+  forth definitions
+
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-170729 c2x-context changed from nvariable to variable
+
+\ EOF vocs.txt
+
+
+\ ------------------------------------------------------------------------------
+\ struct.txt   for Mecrisp-Stellaris                                  MM-170621
+\ ------------------------------------------------------------------------------
+  forth definitions
+
+  : +field ( n1 n2 "name" -- n3=n1+n2 ) \ Exec: a1 -- a2=a1+n1
+    \ Create a field in a structure definition with a size of n2 bytes.
+    \ n1 = size of the structure before creating  the field
+    \ n3 = size of the structure after creating the field
+    \
+      <builds over , + does> @ + ;
+
+\ Last Revision: MM-170725 +field changed back to use <builds does>
+
+  : struct.txt ;
+
+\ ------------------------------------------------------------------------------
+\ EOF
+

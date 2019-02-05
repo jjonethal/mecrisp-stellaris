@@ -1,0 +1,27 @@
+\ RGB-LED-lm4f120.txt                                                          MM-170715
+
+forth definitions
+
+#require GPIO.txt
+
+voc RGB-LED  RGB-LED definitions
+
+: enable ( -- )
+  \ Die RGB-LED-Anschlüsse an Port F seien digitale Pins
+    %01110 PORTF DEN !
+  \ Die RGB-LED-Anschlüsse seien Ausgänge
+    %01110 PORTF DIR !
+;
+
+: off ( -- ) %01110 PORTF DATA bic! ;
+
+: rt ( -- mask reg ) 2 PORTF DATA ;
+: bl ( -- mask reg ) 4 PORTF DATA ;
+: gn ( -- mask reg ) 8 PORTF DATA ; 
+
+forth definitions
+
+\index  RGB-LED enable  RGB-LED off  RGB-LED
+
+\ usage: RGB-LED enable  RGB-LED rt bis!  RGB-LED rt bic!  ...  RGB-LED off
+

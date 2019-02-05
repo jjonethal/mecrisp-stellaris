@@ -338,7 +338,6 @@ $4080 $FFC0 opcode? if ." lsls" 0 reg. 3 reg. then           \ LSL(2) two regist
 $0800 $F800 opcode? if ." lsrs" 0 reg. 3 reg. 6 imm5. then   \ LSR(1) two register immediate
 $40C0 $FFC0 opcode? if ." lsrs" 0 reg. 3 reg. then           \ LSR(2) two register
 $2000 $F800 opcode? if ." movs" 8 reg. 0 imm8. then          \ MOV(1) immediate
-$1C00 $FFC0 opcode? if ." movs" 0 reg. 3 reg. then           \ MOV(2) two low registers
 $4600 $FF00 opcode? if ." mov" reg16split. 3 reg16. then     \ MOV(3)
 
 $4340 $FFC0 opcode? if ." muls" 0 reg. 3 reg. then           \ MUL

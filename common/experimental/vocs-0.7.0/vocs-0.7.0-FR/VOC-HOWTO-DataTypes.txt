@@ -1,0 +1,228 @@
+
+\ VOC-HOWTO-DataTypes.txt                                             MM-170618
+\ ------------------------------------------------------------------------------
+\              HOWTO for Mecrisp-Stellaris for VOC Version 0.6.2-FR
+
+\        A short demo to show how VOCs can be used to define data types.
+
+\      Another more comfortable way is to define data types using classes.
+
+\                  Copyright (C) 2017 Manfred Mahlow
+
+\        This is free software under the GNU General Public License v3.
+\ ------------------------------------------------------------------------------
+
+  compiletoram
+
+\ Loading vocs.txt    ** Please first read the preamble in that file. **
+
+  key drop
+
+#require vocs.txt
+
+
+
+
+\ Some tools used:
+\ -----------------------------------------------------------------------------
+\
+\  ??     Displays the top wordlist of the search order. In the context Forth
+\         the core words are ignored. Use ??? to also see the core words.
+\
+\  ..     Returns from a VOC context to the Forth context.
+\
+\ -----------------------------------------------------------------------------
+  key drop
+
+  ??
+
+\ lfa: = Address: , xt: = Code:  in the original Mecrisp Listing
+
+  key drop
+
+
+
+\ Defining a simple data type for cell sized data (to show the basics).
+\ ------------------------------------------------------------------------------
+
+forth definitions
+
+voc int  int definitions
+
+  : get ( a -- n ) @ inline ;
+  : set ( n a -- ) ! inline  ;
+  : show ( a -- )  int get . ;
+
+  : variable ( "name" n -- ) ( int ) casted variable ;
+
+forth definitions
+
+\ We could have used the names @ and ! for the fetch and store method but for
+\ the demo it's better to use different names.
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+123 variable v1 
+
+246 int variable i1
+
+\ v1 is a normal variable, i1 an instance of the int data type. 
+
+\ Both are initialized variables.
+\
+\ Both compile to the same size, i.e.:
+
+  \ v1 @ .     \ 22 bytes
+
+  \ i1 get .   \ 22
+
+  \ i1 show    \ 20
+
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+\ To use data types in other data type definitions, we need the basic FORTH word
+\ +field to define record fields:
+
+#require struct.txt
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+\ Now we can extend the int data definition for uninitialzed instance variables
+\ and for uninitialized normal variables:
+
+int definitions
+
+  1 cells constant size
+
+  : var ( "name" -- ) int casted int size buffer: ;
+
+\ var creates an uninitialized int variable.
+
+  : ivar ( "name" n1 n2 -- n3 ) int casted int size +field ;
+
+\ ivar creates an uninitialized instance variable in a data structure.
+
+\ ------------------------------------------------------------------------------
+  key drop
+
+
+\ Now we create another data type based on the int data type:
+\ ------------------------------------------------------------------------------
+
+forth definitions
+
+voc point  point definitions
+
+  0 int ivar x
+    int ivar y  constant size
+
+  : var ( "name" -- ) point casted point size buffer: ;
+
+  : ivar ( "name" n1 n2 -- n3 ) point casted point size +field ;
+
+\  : show ( a-addr -- )
+\    dup point x show  point y show ;
+
+forth definitions
+
+  key drop
+
+
+\ Lets take a look at the new data types wordlist and the data size
+\ ------------------------------------------------------------------------------
+
+  point ??
+
+  size .
+
+\ and at the x parameters wordlist and data size
+\ ------------------------------------------------------------------------------
+  key drop
+
+  point x ??
+
+  size .
+
+\ ------------------------------------------------------------------------------
+  key drop 
+
+\ An instance of a data type is always created with the same syntax:
+\ ------------------------------------------------------------------------------
+
+\ <data type> var <name>     or     <data type> ivar <name>    i.e.:
+
+  point var p1
+
+\ The points memory is uninitialized, we have to initialize it explicitly:
+
+  1 p1 x set  2 p1 y set
+
+  p1 x show
+  p1 y show
+
+\ ------------------------------------------------------------------------------
+  key drop
+
+\ It would be fine to have methods, to access both point coordinates with a 
+\ single method. Let's define the methods here,
+
+  point definitions
+
+  : get ( a-addr x y -- ) dup point y get  swap point x get swap ;
+
+  : set ( x y a-addr -- ) dup >r point y set r> point x set ;
+
+  : show ( a-addr -- ) dup point x show point y show ;
+
+  forth definitions
+
+\ Let's see the point wordlist again, with the new methods in it
+
+  key drop
+
+  point ?? ..
+
+\ Note: ?? stays in the point context.  .. switches back to the FORTH context.
+
+\ Now lets try the new methods.
+\ ------------------------------------------------------------------------------
+  key drop
+
+  p1 show
+
+  100 200 p1 set
+
+  p1 show
+
+  p1 get
+
+  .s 
+
+  2drop
+
+  .s
+
+\ Notice that you can use  .S  to monitor what goes on on the stack.
+\ ------------------------------------------------------------------------------
+  key drop
+
+  p1 .s
+
+  y  .s
+
+  show  .s
+
+  : test cr .s p1 .s y .s show .s ;
+
+  test
+
+  key drop
+\ ------------------------------------------------------------------------------
+\ Done. Please also see VOC-HOWTO-Registers.txt
+\
+\ Last Revision: MM-170715
+

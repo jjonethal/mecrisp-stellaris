@@ -1,0 +1,29 @@
+
+$40020080 constant GPIO2_CFG   \ GPIO2 Port Configuration
+$40020084 constant GPIO2_OEN   \ GPIO2 Port Output Enable
+$40020088 constant GPIO2_PE    \ GPIO2 Port Output Pull-up/Pull-down Enable
+$4002008C constant GPIO2_IEN   \ GPIO2 Port Input Path Enable
+$40020090 constant GPIO2_IN    \ GPIO2 Port Registered Data Input
+$40020094 constant GPIO2_OUT   \ GPIO2 Port Data Output
+$40020098 constant GPIO2_SET   \ GPIO2 Port Data Out Set
+$4002009C constant GPIO2_CLR   \ GPIO2 Port Data Out Clear
+$400200A0 constant GPIO2_TGL   \ GPIO2 Port Pin Toggle
+$400200A4 constant GPIO2_POL   \ GPIO2 Port Interrupt Polarity
+$400200A8 constant GPIO2_IENA  \ GPIO2 Port Interrupt A Enable
+$400200AC constant GPIO2_IENB  \ GPIO2 Port Interrupt B Enable
+$400200B0 constant GPIO2_INT   \ GPIO2 Port Interrupt Status
+$400200B4 constant GPIO2_DS    \ GPIO2 Port Drive Strength Select
+
+: blinky ( -- )
+
+  1 2 lshift 1 10 lshift or GPIO2_OEN !
+
+  begin
+    1 2 lshift GPIO2_TGL !
+    2000000 0 do loop
+
+    1 2 lshift 1 10 lshift or GPIO2_TGL !
+    2000000 0 do loop
+  key? until
+;
+

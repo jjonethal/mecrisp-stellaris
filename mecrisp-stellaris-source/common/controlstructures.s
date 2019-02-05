@@ -125,6 +125,7 @@ here: @ Gibt den Dictionarypointer zurück
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "flashvar-here" @ ( -- a-addr ) Gives RAM management pointer
+flashvarhere:
 @ -----------------------------------------------------------------------------
   pushdatos
   ldr tos, =VariablenPointer

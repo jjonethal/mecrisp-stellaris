@@ -1,0 +1,193 @@
+
+\ -----------------------------------------------------------------------------
+\   Various small tools
+\ -----------------------------------------------------------------------------
+
+: 2and ( d1 d2 -- d ) ( l2 h2 l1 h1 ) rot and ( l2 l1 h ) -rot and ( h l ) swap 4-foldable ;
+: 2or  ( d1 d2 -- d ) ( l2 h2 l1 h1 ) rot or  ( l2 l1 h ) -rot or  ( h l ) swap 4-foldable ;
+: 2xor ( d1 d2 -- d ) ( l2 h2 l1 h1 ) rot xor ( l2 l1 h ) -rot xor ( h l ) swap 4-foldable ;
+
+: 2lshift  ( ud u -- ud* ) 0 ?do dshl loop 3-foldable ;
+: 2rshift  ( ud u -- ud* ) 0 ?do dshr loop 3-foldable ;
+: 2arshift (  d u --  d* ) 0 ?do d2/  loop 3-foldable ;
+
+: d0<> ( d -- ? ) d0= not 2-foldable ;
+
+: u.4 ( u -- ) 0 <# # # # # #> type ;
+: u.2 ( u -- ) 0 <# # # #> type ;
+
+: h.4 ( u -- ) base @ hex swap  u.4  base ! ;
+: h.2 ( u -- ) base @ hex swap  u.2  base ! ;
+
+\ -----------------------------------------------------------------------------
+\   I/O pin primitives
+\ -----------------------------------------------------------------------------
+
+$40020000 constant GPIO-BASE
+      $00 constant GPIO.MODER   \ Reset 0 Port Mode Register
+                                \   00=Input  01=Output  10=Alternate  11=Analog
+      $04 constant GPIO.OTYPER  \ Reset 0 Port Output type register
+                                \   (0) Push/Pull vs. (1) Open Drain
+      $08 constant GPIO.OSPEEDR \ Reset 0 Output Speed Register
+                                \   00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+      $0C constant GPIO.PUPDR   \ Reset 0 Pullup / Pulldown 
+                                \   00=none  01=Pullup  10=Pulldown
+      $10 constant GPIO.IDR     \ RO      Input Data Register
+      $14 constant GPIO.ODR     \ Reset 0 Output Data Register
+      $18 constant GPIO.BSRR    \ WO      Bit set/reset register
+      $20 constant GPIO.AFRL    \ Reset 0 Alternate function  low register
+      $24 constant GPIO.AFRH    \ Reset 0 Alternate function high register
+
+: bit ( u -- u )  \ turn a bit position into a single-bit mask
+  1 swap lshift  1-foldable ;
+: bit! ( mask addr f -- )  \ set or clear specified bit(s)
+  if bis! else bic! then ;
+
+\ -----------------------------------------------------------------------------
+
+: io ( port# pin# -- pin )  \ combine port and pin into single int
+  swap 8 lshift or  2-foldable ;
+: io# ( pin -- u )  \ convert pin to bit position
+  $1F and  1-foldable ;
+: io-mask ( pin -- u )  \ convert pin to bit mask
+  io# bit  1-foldable ;
+: io-port ( pin -- u )  \ convert pin to port number (A=0, B=1, etc)
+  8 rshift  1-foldable ;
+: io-base ( pin -- addr )  \ convert pin to GPIO base address
+  $F00 and 2 lshift GPIO-BASE +  1-foldable ;
+
+: 'f ( -- flags ) token find nip ;
+
+: (io@)  (   pin -- pin* addr )
+  dup io-mask swap io-base GPIO.IDR      +   1-foldable ;
+: (ioc!) (   pin -- pin* addr )
+  dup io-mask swap io-base GPIO.BSRR 2 + +   1-foldable ;
+: (ios!) (   pin -- pin* addr )
+  dup io-mask swap io-base GPIO.BSRR     +   1-foldable ;
+: (iox!) (   pin -- pin* addr )
+  dup io-mask swap io-base GPIO.ODR      +   1-foldable ;
+: (io!)  ( f pin -- pin* addr )
+  swap 0= $10 and + dup io-mask swap io-base GPIO.BSRR +   2-foldable ;
+
+: io@ ( pin -- f )  \ get pin value (0 or -1)
+  (io@)  bit@ exit [ $1000 setflags 2 h, ' (io@)  ,
+  'f (io@)  h, ' bit@ , 'f bit@ h, ] ;
+: ioc! ( pin -- )  \ clear pin to low
+  (ioc!)    ! exit [ $1000 setflags 2 h, ' (ioc!) ,
+  'f (ioc!) h, '   h! , 'f   h! h, ] ;
+: ios! ( pin -- )  \ set pin to high
+  (ios!)    ! exit [ $1000 setflags 2 h, ' (ios!) ,
+  'f (ios!) h, '   h! , 'f   h! h, ] ;
+: iox! ( pin -- )  \ toggle pin, not interrupt safe
+  (iox!) xor! exit [ $1000 setflags 2 h, ' (iox!) ,
+  'f (iox!) h, ' xor! , 'f xor! h, ] ;
+
+: io! ( f pin -- )  \ set pin value
+  (io!) ! exit
+  [ $1000 setflags
+    7 h,
+    ' (ios!) , 'f  (ios!) h,
+    ' rot    , 'f  rot    h,
+    ' 0=     , 'f  0=     h,
+      4      ,     $2000  h,
+    ' and    , 'f  and    h,
+    ' +      , 'f  +      h,
+    ' !      , 'f  !      h, ] ;
+
+\ -----------------------------------------------------------------------------
+
+\ b6 = type, b5-4 = pull, b3-2 = mode, b1..0 = speed
+
+%0000000 constant IMODE-FLOAT  \ input, floating
+%0010000 constant IMODE-HIGH   \ input, pull up
+%0100000 constant IMODE-LOW    \ input, pull down
+%0001100 constant IMODE-ADC    \ input, analog
+
+%0001010 constant OMODE-AF-PP  \ alternate function, push-pull
+%1001010 constant OMODE-AF-OD  \ alternate function, open drain
+%1011010 constant OMODE-AF-OD-HIGH  \ alternate function, open drain, pull up
+%0000110 constant OMODE-PP     \ output, push-pull
+%1000110 constant OMODE-OD     \ output, open drain
+%1010110 constant OMODE-OD-HIGH  \ output, open drain, pull up
+
+-2 constant OMODE-WEAK  \ add to OMODE-* for 400 KHz iso 10 MHz drive
+-1 constant OMODE-SLOW  \ add to OMODE-* for 2 MHz iso 10 MHz drive
+ 1 constant OMODE-FAST  \ add to OMODE-* for 35 MHz iso 10 MHz drive
+
+
+: io-config ( bits pin offset -- )  \ replace 2 bits in specified h/w register
+  over io-base + >r   ( bits pin R: addr )
+  io# shl             ( bits shift R: addr )
+  %11 over lshift     ( bits shift mask R: addr )
+  r@ @ swap bic       ( bits shift cleared R: addr )
+  rot %11 and         ( shift cleared value R: addr )
+  rot lshift or r> ! ;
+
+: io-mode! ( mode pin -- )  \ set the CNF and MODE bits for a pin
+  over          over GPIO.OSPEEDR io-config
+  over 2 rshift over GPIO.MODER   io-config
+  over 4 rshift over GPIO.PUPDR   io-config
+  \ open drain mode config
+  dup io-mask swap io-base GPIO.OTYPER +
+  ( mode mask addr ) rot %1000000 and bit! ;
+
+: io-modes! ( mode pin mask -- )  \ shorthand to config multiple pins of a port
+  16 0 do
+    i bit over and if
+      >r  2dup ( mode pin mode pin R: mask ) $F bic i or io-mode!  r>
+    then
+  loop 2drop drop ;
+
+: io. ( pin -- )  \ display readable GPIO registers associated with a pin
+  cr
+   ." PIN " dup io#  dup .  10 < if space then
+  ." PORT " dup io-port [char] A + emit
+  io-base
+    ."   MODER " dup @ hex. 4 +
+  ."    OTYPER " dup @ h.4  4 +
+  ."   OSPEEDR " dup @ hex. 4 +
+      ."  PUPD " dup @ hex. 4 +
+  cr 14 spaces
+       ."  IDR " dup @ h.4  4 +
+       ."  ODR " dup @ h.4  12 +
+    ."    AFRL " dup @ hex. 4 +
+       ." AFRH " dup @ hex. drop ;
+
+\ -----------------------------------------------------------------------------
+
+ 0 0  io constant PA0      1 0  io constant PB0      2 0  io constant PC0 
+ 0 1  io constant PA1      1 1  io constant PB1      2 1  io constant PC1 
+ 0 2  io constant PA2      1 2  io constant PB2      2 2  io constant PC2 
+ 0 3  io constant PA3      1 3  io constant PB3      2 3  io constant PC3 
+ 0 4  io constant PA4      1 4  io constant PB4      2 4  io constant PC4 
+ 0 5  io constant PA5      1 5  io constant PB5      2 5  io constant PC5 
+ 0 6  io constant PA6      1 6  io constant PB6      2 6  io constant PC6 
+ 0 7  io constant PA7      1 7  io constant PB7      2 7  io constant PC7 
+ 0 8  io constant PA8      1 8  io constant PB8      2 8  io constant PC8 
+ 0 9  io constant PA9      1 9  io constant PB9      2 9  io constant PC9 
+ 0 10 io constant PA10     1 10 io constant PB10     2 10 io constant PC10
+ 0 11 io constant PA11     1 11 io constant PB11     2 11 io constant PC11
+ 0 12 io constant PA12     1 12 io constant PB12     2 12 io constant PC12
+ 0 13 io constant PA13     1 13 io constant PB13     2 13 io constant PC13
+ 0 14 io constant PA14     1 14 io constant PB14     2 14 io constant PC14
+ 0 15 io constant PA15     1 15 io constant PB15     2 15 io constant PC15
+ 
+
+ 3 0  io constant PD0      4 0  io constant PE0
+ 3 1  io constant PD1      4 1  io constant PE1
+ 3 2  io constant PD2      4 2  io constant PE2
+ 3 3  io constant PD3      4 3  io constant PE3
+ 3 4  io constant PD4      4 4  io constant PE4
+ 3 5  io constant PD5      4 5  io constant PE5
+ 3 6  io constant PD6      4 6  io constant PE6
+ 3 7  io constant PD7      4 7  io constant PE7
+ 3 8  io constant PD8      4 8  io constant PE8
+ 3 9  io constant PD9      4 9  io constant PE9
+ 3 10 io constant PD10     4 10 io constant PE10
+ 3 11 io constant PD11     4 11 io constant PE11
+ 3 12 io constant PD12     4 12 io constant PE12
+ 3 13 io constant PD13     4 13 io constant PE13
+ 3 14 io constant PD14     4 14 io constant PE14
+ 3 15 io constant PD15     4 15 io constant PE15
+
+ 

@@ -1,0 +1,15 @@
+\ struct.txt   for Mecrisp-Stellaris                                  MM-170621
+
+forth definitions
+
+  : +field ( n1 n2 "name" -- n3=n1+n2 ) \ Exec: a1 -- a2=a1+n1
+    \ Create a field in a structure definition with a size of n2 bytes.
+    \ n1 = size of the structure before creating  the field
+    \ n3 = size of the structure after creating the field
+    \
+      <builds over , + does> @ + ;
+
+\ Last Revision: MM-170725 +field changed back to use <builds does>
+
+
+
