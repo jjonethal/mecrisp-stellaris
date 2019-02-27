@@ -17,6 +17,7 @@
 \ author jean jonethal
 \ qspi flash part N25Q128A13EF840E
 \ qspi flash datasheet "C:\Users\jeanjo\Downloads\stm\n25q_128mb_3v_65nm.pdf"
+\ stm32f746 reference manual C:\Users\jeanjo\Downloads\stm\en.DM00124865.pdf
 \ https://www.micron.com/~/media/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf
 \ stm32f746 user manual "C:\Users\jeanjo\Downloads\stm\DM00124865 RM0385 STM32F75xxx and STM32F74xxx advanced ARM®-based 32-bit MCUs.pdf"
 reset \ ok.
@@ -252,26 +253,43 @@ $A0001000 constant QSPI_BASE
 : qc@  ( -- c ) 0 qb8@ ;                  \ get 1 char from qspi
 
 \ ********** flash driver ****************
-$50 constant Q_CLEAR_FLAG_REG
-$70 constant Q_READ_FLAG_REG
-$03 constant Q_READ
-$0B constant Q_READ_FAST
-$9E constant Q_READ_ID
-$B5 constant Q_READ_NV_CFG_REG
-$B1 constant Q_WRITE_NV_CFG_REG
-$05 constant Q_READ_STAT_REG
-$85 constant Q_READ_VOL_CFG_REG
-$81 constant Q_WRITE_VOL_CFG_REG
-$66 constant Q_RESET_ENABLE
-$99 constant Q_RESET_MEM
-$04 constant Q_WRITE_DIS
-$06 constant Q_WRITE_ENA
-$20 constant Q_ERASE_SUB_SEC
-$D8 constant Q_ERASE_SEC
-$C7 constant Q_ERASE_BULK
-$7A constant Q_WRITE_RESUME
-$75 constant Q_WRITE_SUSPEND
+$01 constant Q_WRITE_STAT_REG
 $02 constant Q_PAGE_PROG
+$03 constant Q_READ
+$04 constant Q_WRITE_DIS
+$05 constant Q_READ_STAT_REG
+$06 constant Q_WRITE_ENA
+$0B constant Q_READ_FAST
+$12 constant Q_EXT_QUAD_IN_FAST_PROG
+$20 constant Q_ERASE_SUB_SEC
+$32 constant Q_QUAD_IN_FAST_PROG
+$3B constant Q_DUAL_OUT_FAST_READ
+$42 constant Q_PROG_OTP_ARRAY
+$4B constant Q_READ_OTP_ARRAY
+$50 constant Q_CLEAR_FLAG_REG
+$5A constant Q_READ_DISCOVERY_PAR
+$61 constant Q_WRITE_ENH_VOL_CFG_REG
+$65 constant Q_READ_ENH_VOL_CFG_REG
+$66 constant Q_RESET_ENABLE
+$6B constant Q_QUAD_OUT_FAST_READ
+$70 constant Q_READ_FLAG_REG
+$75 constant Q_WRITE_SUSPEND
+$7A constant Q_WRITE_RESUME
+$81 constant Q_WRITE_VOL_CFG_REG
+$85 constant Q_READ_VOL_CFG_REG
+$99 constant Q_RESET_MEM
+$9E constant Q_READ_ID
+$A2 constant Q_DUAL_IN_FAST_PROG
+$AF constant Q_MULTI_IO_READ
+$B1 constant Q_WRITE_NV_CFG_REG
+$B5 constant Q_READ_NV_CFG_REG
+$C7 constant Q_ERASE_BULK
+$D2 constant Q_EXT_DUAL_IN_FAST_PROG
+$D8 constant Q_ERASE_SEC
+$E5 constant Q_WRITE_LOCK_REG
+$E8 constant Q_READ_LOCK_REG
+$EB constant Q_QUAD_IO_FAST_READ
+
 
 : read-id ( a -- )                        \ read id to buffer 20 bytes
    q-start Q_READ_ID qc!
@@ -330,3 +348,4 @@ $02 constant Q_PAGE_PROG
    16 0 do drop loop cr ;
    
 \ ********** soft reset ******************
+
