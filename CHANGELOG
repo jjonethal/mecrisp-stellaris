@@ -732,3 +732,11 @@
   - Contribution by Terry Porter:
     - Added "color" assembler switch for a more beautiful prompt using ANSI escape sequences
     - Added "rtscts" and "autobaud" assembler switches to terminal code for STM32F051
+
+22.05.2019, Matthias Koch, Mecrisp-Stellaris 2.5.0
+
+  - Contribution by Rick Kimball:
+      New target: STM32F030R8
+
+  - Contribution by Jan Spakula:
+      New targets: STM32L031K6 and STM32F072RB
