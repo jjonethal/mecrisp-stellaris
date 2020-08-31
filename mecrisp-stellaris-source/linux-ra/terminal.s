@@ -137,8 +137,8 @@ cacheflush:
   dsb
   isb  
   
-  ldr r0, =FlashDictionaryAnfang  @ Start address
-  ldr r1, =RamEnde                @ End  address
+  ldr r0, =incipit                @ Start address
+  ldr r1, =explicit               @ End  address
   movs r2, #0                     @ This zero is important !s
   movs r3, #0
   movs r4, #0
@@ -170,5 +170,21 @@ bye:
   movs r7, #1  @ Syscall 1: Exit
   swi #0
    
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "incipit"
+@ -----------------------------------------------------------------------------
+
+  pushdatos
+  ldr tos, =incipit
+  bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "explicit"
+@ -----------------------------------------------------------------------------
+
+  pushdatos
+  ldr tos, =explicit
+  bx lr
+
   .ltorg @ Hier werden viele spezielle Hardwarestellenkonstanten gebraucht, schreibe sie gleich !
          @ Write the many special hardware locations now !

@@ -32,6 +32,10 @@ cd lpc1115fbd48-ra
 make clean
 cd ..
 
+cd lpc845m301
+make clean
+cd ..
+
 cd kl25z128
 make clean
 cd ..
@@ -272,6 +276,18 @@ cd stm32f746-ra
 make clean
 cd ..
 
+cd stm32g031f8-ra
+make clean
+cd ..
+
+cd stm32g031j6-ra
+make clean
+cd ..
+
+cd stm32g071rb-ra
+make clean
+cd ..
+
 cd numworks-ra
 make clean
 cd ..
@@ -324,4 +340,9 @@ cd ..
 cd linux-ra
 rm mecrisp-stellaris-linux.o
 rm mecrisp-stellaris-linux
+cd ..
+
+cd freebsd-ra
+rm mecrisp-stellaris-freebsd.o
+rm mecrisp-stellaris-freebsd
 cd ..

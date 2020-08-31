@@ -1,0 +1,21 @@
+
+
+Due to difficulties with flash write support on LPC845 there is no compiletoflash mode yet.
+
+Therefore you need to generate precomiled binaries containing your Forth program for flashing at once.
+
+To make the emulator:
+
+./compile
+
+To run the binary in emulator:
+
+./runcore ./thumbulator-lpc845m301 mecrisp-stellaris-lpc845m301.bin
+
+To greate a binary with precompiled Forth sources:
+
+./buildcore ./thumbulator-lpc845m301 mecrisp-stellaris-lpc845m301.bin disassembler-m0.txt mecrisp-stellaris-lpc845m301-with-disassembler.bin
+
+Try it:
+
+./runcore ./thumbulator-lpc845m301 mecrisp-stellaris-lpc845m301-with-disassembler.bin

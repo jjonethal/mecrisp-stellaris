@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+arm-none-eabi-as -o mecrisp-stellaris-freebsd.o mecrisp-stellaris-freebsd.s
+arm-none-eabi-ld -T mecrisp.ld -z max-page-size=4096 -o mecrisp-stellaris-freebsd.elf mecrisp-stellaris-freebsd.o
+arm-none-eabi-objcopy -O binary mecrisp-stellaris-freebsd.elf mecrisp-stellaris-freebsd
+rm -f mecrisp-stellaris-freebsd.o mecrisp-stellaris-freebsd.elf

@@ -1,0 +1,111 @@
+
+\ Save a copy of the current Forth core with all contents of the user flash
+
+\ -----------------------------------------------------------------------------
+\ Write file via syscall interface                      uh 2015-09-26
+
+\ : syscall ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 )
+
+\ int creat(const char *pathname, mode_t mode);
+8 constant #creat
+
+8 base ! 
+00444 constant S_IRUSR
+00222 constant S_IWUSR
+00111 constant S_IXUSR
+decimal
+
+: 0terminate ( addr len -- ) + 0 swap c! ;
+
+: syscall-creat ( addr len mode -- fd )
+  >r  dup >r here swap move  here r> 0terminate 
+  here r> 0 0 0 0 0 #creat syscall ;
+
+\ ssize_t write(int fd, const void *buf, size_t count);
+4 constant #write
+: syscall-write ( adr len fd -- len' )  -rot 0 0 0 0 #write syscall ; 
+
+\ int close(int fd)
+6 constant #close
+: syscall-close ( fd -- ior ) 0 0 0 0 0 0 #close syscall ;
+
+0 variable logfile
+
+: open-log ( addr len -- )  
+   S_IRUSR S_IWUSR or syscall-creat  logfile ! ;
+
+: open-log-executable ( addr len -- )  
+   S_IRUSR S_IWUSR or S_IXUSR or syscall-creat  logfile ! ;
+
+: write-log ( addr len -- )
+   logfile @ syscall-write drop ; 
+
+create newline 10 c,
+
+: writeln-log ( addr len )
+   write-log
+   newline 1 write-log ;
+
+: close-log ( -- )  logfile @ syscall-close drop ;
+
+\ -----------------------------------------------------------------------------
+
+0 variable writebuffer
+
+:  log, ( x -- ) writebuffer ! writebuffer 4 write-log ;
+: hlog, ( x -- ) writebuffer ! writebuffer 2 write-log ;
+: clog, ( x -- ) writebuffer ! writebuffer 1 write-log ;
+
+\ -----------------------------------------------------------------------------
+
+: save ( addr len -- ) \ Save a copy of the whole Forth core with flash dictionary contents
+                        \ With many thanks to Robert Clausecker
+  open-log-executable
+  compiletoram? compiletoflash
+
+    \ ELF-Header
+    \ http://www.sco.com/developers/gabi/latest/ch4.eheader.html
+
+    $7F clog, [char] E clog, [char] L clog, [char] F clog,  \ Magische Zahl
+    1 clog,                    \ ELF-Klasse: 32 Bit
+    1 clog,                    \ Byte-Reihenfolge: little endian
+    1 clog,                    \ ELF-Version: 1
+    3 clog,                    \ ABI: GNU Linux
+    0 clog,                    \ ABI-Version: 0
+    0 clog, 0 clog, 0 clog, 0 clog,
+    0 clog, 0 clog, 0 clog,    \ Padding Bytes, um auf 8-gerade zu kommen
+
+    2 hlog,                    \ ELF-Typ: ausführbare Datei
+    40 hlog,                   \ Architektur: 80386 (für ARM: 40)
+    1 log,                     \ ELF-Version: 1 (nochmal)
+    $10000 log,                \ Einsprungpunkt
+    52 log,                    \ Anfang des Programm-Headers in der Datei
+    0 log,                     \ Anfang des Section-Headers (haben wir nicht)
+    $5000200 log,                     \ Flags: 0 (keine)
+    52 hlog,                   \ Größe des ELF-Headers: 52 Bytes
+    32 hlog,                   \ Größe eines Programm-Headers: 32 Bytes
+    1  hlog,                   \ Anzahl der Programm-Header: 1
+    40 hlog,                   \ Größe eines Sektions-Headers: 40 Bytes
+    0  hlog,                   \ Anzahl der Sektions-Header: 0 (keine)
+    0  hlog,                   \ Offset der Sektions-String-Tafel (keine)
+
+    1         log,             \ Segment-Typ: LOAD
+    4096      log,             \ Anfang des Segments in der Datei
+    $10000    log,             \ Adresse, zu der der Header geladen wird
+    $10000    log,             \ physikalische Adresse (egal)
+    here $10000 -  log,        \ Länge des Segmentes in der Datei
+    $00210000 log,             \ Länge des Segmentes im Speicher
+    7         log,             \ Flags: RWX (lesen, schreiben, ausführen)
+    65536     log,             \ Ausrichtung des Segments: 4096 (eine Speicherseite)
+ 
+  4096 52 - 32 - 0 do 0 log, 4 +loop \ Align on 4096
+  $10000 here $10000 - write-log     \ Write a copy of the Forth core and the flash dictionary content
+  close-log
+
+  if compiletoram then
+;
+
+: save" ( -- ) [char] " parse save ;
+
+\ -----------------------------------------------------------------------------
+

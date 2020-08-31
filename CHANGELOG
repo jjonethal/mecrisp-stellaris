@@ -748,3 +748,15 @@
 
   - Contribution by Christian Nicolai:
       New target: STM32F103RB
+
+14.09.2019, Matthias Koch, Mecrisp-Stellaris 2.5.2
+
+  - New experimental target: LPC845M301, without compiletoflash support
+  - Added Fakoo 3x3 pixel font
+
+  - Contribution by Ralph Sahli:
+    - New targets:  STM32G031F8  STM32G031J6  STM32G071RB
+
+  - Contribution by Robert Clausecker:
+    - New target: FreeBSD
+    - Improved ELF handling

@@ -43,10 +43,13 @@ Forth drivers for Numworks calculator by Wolfgang Strauss
 Port and examples for STM32F030R8 by Rick Kimball
 Ports for STM32L031K6 and STM32F072RB by Jan Spakula
 Port for STM32F103RB by Christian Nicolai
+Ports and examples for STM32G031F8, STM32G031J6 and STM32G071RB by Ralph Sahli
+Port for FreeBSD by Robert Clausecker
 
 Hardware donations:
 
 Dirk Brühl
+Robert Clausecker
 Guy Fortabat
 Michael Kalus
 Terry Porter
@@ -61,6 +64,7 @@ Bernd Paysan
 Testing and hints in alphabetical order:
 
 John O. 'Sandy' Bumgarner
+Robert Clausecker
 Ivan Dimitrov
 Thorsten von Eicken
 Ulrich Hoffmann

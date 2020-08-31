@@ -32,6 +32,10 @@ cd lpc1115fbd48-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48-ra && cp *.hex ../../lpc1115fbd48-ra
 cd ..
 
+cd lpc845m301
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc845m301 cp *.hex ../../lpc845m301
+cd ..
+
 cd kl25z128
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128 && cp *.srec ../../kl25z128
 cd ..
@@ -272,6 +276,18 @@ cd stm32f746-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
 cd ..
 
+cd stm32g031f8-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f8-ra
+cd ..
+
+cd stm32g031j6-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031j6-ra
+cd ..
+
+cd stm32g071rb-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g071rb-ra
+cd ..
+
 cd numworks-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../numworks-ra
 cd ..
@@ -484,6 +500,18 @@ cd stm32l476-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l476.bin mecrisp-stellaris-stm32l476.hex
 cd ..
 
+cd stm32g031f8-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031f8.bin mecrisp-stellaris-stm32g031f8.hex
+cd ..
+
+cd stm32g031j6-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031j6.bin mecrisp-stellaris-stm32g031j6.hex
+cd ..
+
+cd stm32g071rb-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g071rb.bin mecrisp-stellaris-stm32g071rb.hex
+cd ..
+
 # Special target for running on ARM Linux and Android:
 
 cd mecrisp-stellaris-source
@@ -497,3 +525,9 @@ cd linux-ra
 ./assemble
 cp mecrisp-stellaris-linux ../../linux-ra
 cd ..
+
+cd freebsd-ra
+./assemble
+cp mecrisp-stellaris-freebsd ../../freebsd-ra
+cd ..
+

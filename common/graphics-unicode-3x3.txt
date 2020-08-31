@@ -1,0 +1,332 @@
+
+\ -------------------------------------------------------------
+\  Interface to real graphics hardware necessary.
+\  This is just for ASCII art in terminal !
+\ -------------------------------------------------------------
+
+  : u.base10 ( u -- ) base @ decimal swap 0 <# #s #> type base ! ;
+  : ESC[ ( -- ) 27 emit 91 emit ;
+  : at-xy ( column row -- ) 1+ swap 1+ swap ESC[ u.base10 ." ;" u.base10 ." H" ;
+  : page ESC[ ." 2J" 0 0 at-xy ;
+
+: putpixel ( x y -- )  at-xy [char] * emit ;
+
+\ -------------------------------------------------------------
+\  Bresenham line
+\ -------------------------------------------------------------
+
+0 variable line-x1   0 variable line-y1
+0 variable line-sx   0 variable line-sy
+0 variable line-dx   0 variable line-dy
+0 variable line-err
+
+: line ( x0 y0 x1 y1 -- )
+
+  line-y1 ! line-x1 !
+
+  over line-x1 @ -   dup 0< if 1 else -1 then line-sx !   abs        line-dx !
+  dup  line-y1 @ -   dup 0< if 1 else -1 then line-sy !   abs negate line-dy !
+  line-dx @ line-dy @ + line-err !
+
+  begin
+    2dup putpixel
+    2dup line-x1 @ line-y1 @ d<>
+  while
+    line-err @ 2* >r
+    r@ line-dy @ > if line-dy @ line-err +! swap line-sx @ + swap then
+    r> line-dx @ < if line-dx @ line-err +!      line-sy @ +      then
+  repeat
+  2drop
+;
+
+\ -------------------------------------------------------------
+\  Bresenham ellipse
+\ -------------------------------------------------------------
+
+0 variable ellipse-xm   0 variable ellipse-ym
+0 variable ellipse-dx   0 variable ellipse-dy
+0 variable ellipse-a    0 variable ellipse-b
+0 variable ellipse-a^2  0 variable ellipse-b^2
+0 variable ellipse-err
+
+: ellipse-putpixel ( y x -- ) ellipse-xm @ + swap ellipse-ym @ + putpixel ;
+
+: ellipse-step ( -- )
+    ellipse-dy @        ellipse-dx @        ellipse-putpixel
+    ellipse-dy @ negate ellipse-dx @        ellipse-putpixel
+    ellipse-dy @ negate ellipse-dx @ negate ellipse-putpixel
+    ellipse-dy @        ellipse-dx @ negate ellipse-putpixel
+
+    ellipse-err @ 2* >r
+    r@  ellipse-dx @ 2* 1+ ellipse-b^2 @ *        < if  1 ellipse-dx +! ellipse-dx @ 2* 1+ ellipse-b^2 @ *        ellipse-err +! then
+    r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate > if -1 ellipse-dy +! ellipse-dy @ 2* 1+ ellipse-a^2 @ * negate ellipse-err +! then
+;
+
+
+: ellipse ( xm ym a b -- )
+
+  0 ellipse-dx ! dup ellipse-dy !
+
+  dup ellipse-b ! dup * ellipse-b^2 !
+  dup ellipse-a ! dup * ellipse-a^2 !
+  ellipse-ym ! ellipse-xm !
+
+  ellipse-b^2 @ ellipse-b @ 2* 1- ellipse-a^2 @ * - ellipse-err !
+
+  begin
+    ellipse-step
+    ellipse-dy @ 0<
+  until
+
+  ellipse-dx @
+  begin
+    1+
+    dup ellipse-a @ <
+  while
+    0 over        ellipse-putpixel
+    0 over negate ellipse-putpixel
+  repeat
+  drop
+;
+
+: circle ( xm ym r -- ) dup ellipse ;
+
+\ -------------------------------------------------------------
+\  Artwork for 3x3 Bitmap font, taken from "Fakoo"
+\ -------------------------------------------------------------
+
+decimal
+create font
+
+\ Unicode point, Bitmap Data
+
+32 h,  %000.000.000 drop h,   \
+33 h,  %111.000.010 drop h,   \ !
+34 h,  %101.101.000 drop h,   \ "
+35 h,  %101.000.101 drop h,   \ #
+
+36 h,  %011.011.111 drop h,   \ $
+37 h,  %010.000.001 drop h,   \ %
+38 h,  %011.110.111 drop h,   \ &
+39 h,  %010.010.000 drop h,   \ '
+40 h,  %001.010.010 drop h,   \ (
+41 h,  %100.010.010 drop h,   \ )
+42 h,  %010.010.101 drop h,   \ *
+43 h,  %010.111.010 drop h,   \ +
+44 h,  %000.010.100 drop h,   \ ,
+45 h,  %000.111.000 drop h,   \ -
+46 h,  %000.000.010 drop h,   \ .
+47 h,  %001.010.100 drop h,   \ /
+
+48 h,  %111.101.111 drop h,   \ 0
+49 h,  %001.011.001 drop h,   \ 1
+50 h,  %110.010.101 drop h,   \ 2
+51 h,  %110.011.110 drop h,   \ 3
+52 h,  %100.111.010 drop h,   \ 4
+53 h,  %111.110.010 drop h,   \ 5
+54 h,  %100.111.111 drop h,   \ 6
+55 h,  %111.001.010 drop h,   \ 7
+56 h,  %110.111.011 drop h,   \ 8
+57 h,  %111.111.001 drop h,   \ 9
+
+58 h,  %010.000.010 drop h,   \ :
+59 h,  %010.010.100 drop h,   \ ;
+60 h,  %001.010.001 drop h,   \ <
+61 h,  %111.000.111 drop h,   \ =
+62 h,  %100.010.100 drop h,   \ >
+63 h,  %111.011.010 drop h,   \ ?
+64 h,  %110.001.101 drop h,   \ @
+
+65 h,  %010.111.101 drop h,   \ A
+66 h,  %111.011.111 drop h,   \ B
+67 h,  %011.100.011 drop h,   \ C
+68 h,  %110.101.110 drop h,   \ D
+69 h,  %111.110.111 drop h,   \ E
+70 h,  %111.110.100 drop h,   \ F
+71 h,  %011.101.011 drop h,   \ G
+72 h,  %101.111.101 drop h,   \ H
+73 h,  %010.010.111 drop h,   \ I
+74 h,  %001.001.110 drop h,   \ J
+75 h,  %101.110.101 drop h,   \ K
+76 h,  %100.100.111 drop h,   \ L
+77 h,  %111.111.101 drop h,   \ M
+78 h,  %111.101.101 drop h,   \ N
+79 h,  %010.101.010 drop h,   \ O
+80 h,  %110.111.100 drop h,   \ P
+81 h,  %010.101.011 drop h,   \ Q
+82 h,  %111.110.101 drop h,   \ R
+83 h,  %011.010.110 drop h,   \ S
+84 h,  %111.010.010 drop h,   \ T
+85 h,  %101.101.111 drop h,   \ U
+86 h,  %101.101.010 drop h,   \ V
+87 h,  %101.111.111 drop h,   \ W
+88 h,  %101.010.101 drop h,   \ X
+89 h,  %101.010.010 drop h,   \ Y
+90 h,  %111.010.111 drop h,   \ Z
+
+91 h,  %110.100.110 drop h,   \ [
+92 h,  %100.010.001 drop h,   \ \
+93 h,  %011.001.011 drop h,   \ ]
+94 h,  %010.101.000 drop h,   \ ^
+95 h,  %000.000.111 drop h,   \ _
+96 h,  %100.010.000 drop h,   \ `
+
+97 h,  %010.111.101 drop h,   \ a -> A
+98 h,  %111.011.111 drop h,   \ b -> B
+99 h,  %011.100.011 drop h,   \ c -> C
+100 h, %110.101.110 drop h,   \ d -> D
+101 h, %111.110.111 drop h,   \ e -> E
+102 h, %111.110.100 drop h,   \ f -> F
+103 h, %011.101.011 drop h,   \ g -> G
+104 h, %101.111.101 drop h,   \ h -> H
+105 h, %010.010.111 drop h,   \ i -> I
+106 h, %001.001.110 drop h,   \ j -> J
+107 h, %101.110.101 drop h,   \ k -> K
+108 h, %100.100.111 drop h,   \ l -> L
+109 h, %111.111.101 drop h,   \ m -> M
+110 h, %111.101.101 drop h,   \ n -> N
+111 h, %010.101.010 drop h,   \ o -> O
+112 h, %110.111.100 drop h,   \ p -> P
+113 h, %010.101.011 drop h,   \ q -> Q
+114 h, %111.110.101 drop h,   \ r -> R
+115 h, %011.010.110 drop h,   \ s -> S
+116 h, %111.010.010 drop h,   \ t -> T
+117 h, %101.101.111 drop h,   \ u -> U
+118 h, %101.101.010 drop h,   \ v -> V
+119 h, %101.111.111 drop h,   \ w -> W
+120 h, %101.010.101 drop h,   \ x -> X
+121 h, %101.010.010 drop h,   \ y -> Y
+122 h, %111.010.111 drop h,   \ z -> Z
+
+123 h, %011.110.100 drop h,   \ {
+124 h, %010.010.010 drop h,   \ |
+125 h, %110.011.001 drop h,   \ }
+126 h, %001.111.100 drop h,   \ ~
+
+
+196 h, %011.111.101 drop h,   \ Ä
+214 h, %011.101.010 drop h,   \ Ö
+220 h, %101.100.111 drop h,   \ Ü
+223 h, %011.011.110 drop h,   \ ß
+
+  0 h, %111.111.111 drop h,   \ End of font marker, replacement glyph.
+
+align decimal
+
+
+: unicode>bitmap ( x -- c-addr ) \ Translates Unicode character to address of 8x8 bitmap.
+
+  font ( x addr )
+  begin
+    2dup h@ = if nip 2 + exit then \ Character found, skip character number, give back bitmap data
+  dup h@ while \ As long as there are more characters left in the glyph collection...
+    4 + \ Not this one, skip it and its bitmap
+  repeat
+
+  nip 2 + \ Character not found within available collection of glyphs. Display replacement.
+
+1-foldable ;
+
+\ -------------------------------------------------------------
+\  Write an Unicode character with 4x6 bitmap font
+\ -------------------------------------------------------------
+
+0 variable font-x   0 variable font-y
+
+: drawbitpattern ( x -- )
+  3 0 do dup 0< if font-x @ font-y @ putpixel then shl 1 font-x +! loop
+  -3 font-x +!
+;
+
+: drawcharacterbitmap ( c-addr -- )
+  h@
+  23 lshift
+    3 0 do drawbitpattern 1 font-y +! loop
+  drop
+  -3 font-y +! 4 font-x +!
+;
+
+: drawunicode ( x -- ) unicode>bitmap drawcharacterbitmap ;
+
+\ -------------------------------------------------------------
+\  Unicode UTF-8 encoding decoder
+\ -------------------------------------------------------------
+
+0 variable utf8collection
+0 variable utf8continuation
+
+: utf8-character-length ( c -- c u )
+  dup %11000000 and %11000000 = if dup 24 lshift not clz else 1 then ;
+
+: drawcharacter ( c -- ) \ Handles a stream of UTF-8 bytes and translates this into Unicode letters.
+
+  utf8continuation @
+  if   \ Continue to receive an extended character into buffer
+
+    %00111111 and utf8collection @ 6 lshift or utf8collection !  \ Six more bits
+    -1 utf8continuation +!                                       \ One less continuation byte to expect
+    utf8continuation @ 0= if utf8collection @ drawunicode then   \ Draw character if complete encoding was buffered.
+
+  else \ Begin of a new character
+
+    utf8-character-length 1- ?dup
+
+    if \ Start of a new character or a sequence
+      dup utf8continuation !
+      25 + tuck lshift swap rshift \ Remove the length encoding by shifting it out of the register temporarily
+      utf8collection !
+    else \ One byte characters are classic 7 bit ASCII and can be drawn immediately
+      drawunicode
+    then
+
+  then
+;
+
+\ -------------------------------------------------------------
+\  Write a string and split into individual characters
+\ -------------------------------------------------------------
+
+: get-first-char ( addr len -- addr   len c ) over c@ ;
+: cut-first-char ( addr len -- addr+1 len-1 ) 1- swap 1+ swap ;
+
+: drawstring ( addr u x y -- )
+  font-y ! font-x !
+
+  begin
+    dup 0<>
+  while
+    get-first-char
+    drawcharacter
+    cut-first-char
+  repeat
+  2drop
+;
+
+\ -------------------------------------------------------------
+\  A small demo
+\ -------------------------------------------------------------
+
+: demo ( -- )
+  page
+
+  s" ÄÖÜß" 0 12 drawstring  40 12 at-xy ." ÄÖÜß"
+
+  128 32 do
+
+
+    i 8 mod 4 * font-x !
+
+    i 8  /  4 * font-y !
+
+    i drawcharacter
+
+    i 8 mod 40 +
+    i 8  /  4 *
+    at-xy
+    i emit
+
+  loop
+
+  cr cr cr
+;
+

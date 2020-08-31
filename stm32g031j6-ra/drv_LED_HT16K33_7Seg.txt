@@ -1,0 +1,87 @@
+\
+\ 		led driver HT16K33 for Adafruit 7-Segment
+\
+\		Ralph Sahli, 2018
+\		
+\		resources used: 
+\			- I2C  
+\
+\		REQUIRES: drv_LED_HT16K33.txt
+\
+
+
+\ Segments:
+\	  a
+\	f   b
+\	  g
+\	e   c
+\	  d
+0 bit constant S:A
+1 bit constant S:B
+2 bit constant S:C
+3 bit constant S:D
+4 bit constant S:E
+5 bit constant S:F
+6 bit constant S:G
+
+\ lookup table for hex numbers
+create 7SEG_LUT
+	$3F h, \ 0 
+	$06 h, \ 1 
+	$5B h, \ 2 
+	$4F h, \ 3 
+	$66 h, \ 4 
+	$6D h, \ 5 
+	$7D h, \ 6 
+	$07 h, \ 7 
+	$7F h, \ 8 
+	$6F h, \ 9 
+	$77 h, \ A 
+	$7C h, \ b 
+	$39 h, \ C 
+	$5E h, \ d 
+	$79 h, \ E 
+	$71 h, \ F
+
+7SEG_LUT variable currSegLUT
+		
+: segLUT@ ( n -- code )
+	2* currSegLUT @ + h@ ;
+
+: 7segColon ( f -- )
+	2 seg! ;
+
+: 7segDot ( pos -- )
+	7 and dup seg@ true 7 lshift or swap seg! ;
+
+\ remove leading 0
+: 7SremLeading0 ( -- )
+	segBuff dup h@ 0 segLUT@ = if 0 over h! else drop exit then
+	2+ dup h@ 0 segLUT@ = if 0 over h! else drop exit then
+	4 + dup h@ 0 segLUT@ = if 0 swap h! else drop then ;
+		
+: 7S.Number ( n -- )
+	10 /mod swap segLUT@ 4 seg!
+	10 /mod swap segLUT@ 3 seg!
+	10 /mod segLUT@ 0 seg! segLUT@ 1 seg!
+	7SremLeading0 >segData ;
+
+: 7S.Hex ( n -- )
+	dup $f and segLUT@ 4 seg!
+	4 rshift dup $f and segLUT@ 3 seg!
+	4 rshift dup $f and segLUT@ 1 seg!
+	4 rshift segLUT@ 0 seg! 
+	>segData ;
+	
+: digit>7seg ( addr -- n )
+	c@ digit if segLUT@ else S:G then ;
+	
+: 7S.String ( addr len -- )
+	>r
+	r@ 4 = if dup digit>7seg 0 seg! 1+ then
+	r@ 3 >= if dup digit>7seg 1 seg! 1+ then
+	r@ 2 >= if dup digit>7seg 3 seg! 1+ then
+	r> 1 >= if digit>7seg 4 seg! else drop then
+	>segData ;
+	
+

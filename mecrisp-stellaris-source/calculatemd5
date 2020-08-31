@@ -34,6 +34,10 @@ cd lpc1115fbd48-ra
 md5sum *.bin
 cd ..
 
+cd lpc845m301
+md5sum *.bin
+cd ..
+
 cd kl25z128
 md5sum *.bin
 cd ..
@@ -274,6 +278,18 @@ cd stm32f746-ra
 md5sum *.bin
 cd ..
 
+cd stm32g031f8-ra
+md5sum *.bin
+cd ..
+
+cd stm32g031j6-ra
+md5sum *.bin
+cd ..
+
+cd stm32g071rb-ra
+md5sum *.bin
+cd ..
+
 cd numworks-ra
 md5sum *.bin
 cd ..
@@ -324,4 +340,8 @@ cd ..
 
 cd linux-ra
 md5sum mecrisp-stellaris-linux
+cd ..
+
+cd freebsd-ra
+md5sum mecrisp-stellaris-freebsd
 cd ..

@@ -1,0 +1,28 @@
+ 
+\ Just to have a twinkling shine :-)
+\
+\		Ralph Sahli, 2019
+\		
+\		resources used: 
+\ 			PB0   a user LED
+\
+
+$50000400 constant GPIO.MODER
+$50000414 constant GPIO.ODR
+
+1 constant LED 	\ PB0
+
+: delay 800000 0 do i drop loop ;
+
+: blinky ( -- )
+	%11 GPIO.MODER bic!	\ PB0 ...
+	%01 GPIO.MODER bis!	\ PB0 -> output mode
+	cr ." press any key to quit"
+	begin
+		LED GPIO.ODR bis!			\ set LED
+		delay
+		LED GPIO.ODR bic!			\ clear LED
+		delay
+		key? 
+	until
+;

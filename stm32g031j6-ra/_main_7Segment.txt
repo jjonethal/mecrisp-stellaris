@@ -1,0 +1,25 @@
+
+eraseflash
+compiletoflash
+
+\ always
+include dump.txt
+\ board
+include io.txt
+include pins8.txt
+include hal.txt
+\ core
+include systick.txt
+include i2c.txt
+include drv_LED_HT16K33.txt
+include drv_LED_HT16K33_7Seg.txt
+
+: main
+	seg-init
+	0
+	begin
+		dup $FFFF and 7S.Hex
+		1+
+		100 delay-ms
+		key?
+	until drop ;

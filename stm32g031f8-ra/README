@@ -1,0 +1,28 @@
+
+STM32G031F8
+
+	- 64 KB Flash
+	- 8 KB RAM
+	- 20 pin TSSOP20 package
+	
+	
+;------------------------------------------------------------------------------
+Hardware and configuration for STM32G031F8:
+;------------------------------------------------------------------------------
+
+	Connect everything necessary to power (3.3V) up and flash the chip.
+	Use a ST-LINK (Nucleo-64 board with onboard ST-LINK) 
+	and connect it to target SWD pins (PA13=SWDIO, PA14=SWCLK, GND)
+
+	Use a ST-LINK Utility such as:
+	- STM32 CubeProgrammer
+	- Load the mecrisp-stellaris-stm32g031f8.bin
+	- Start programming
+
+	Communication is via serial 115200 baud 8N1 over
+	- USART2 in STM32G031F8    (TX on PA2, RX on PA3)
+
+	On startup, this runs with internal 16 MHz HSI clock.
+
+	Binary mecrisp-stellaris-stm32g031f8.bin can be used for the
+	new NUCLEO-G031K8 (flash-, ram-size and terminal are the same)

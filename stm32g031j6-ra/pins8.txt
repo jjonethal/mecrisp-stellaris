@@ -1,0 +1,21 @@
+\ pin definitions for chips up to 8 pins
+
+char J constant pkgCode
+
+0 0  io constant PA0      1 0  io constant PB0                         	
+0 1  io constant PA1      1 1  io constant PB1     
+0 2  io constant PA2                               5 2 io constant PF2
+      
+      
+                          1 5  io constant PB5
+                          1 6  io constant PB6
+                          1 7  io constant PB7
+0 8  io constant PA8      1 8  io constant PB8
+0 9  io constant PA9      1 9  io constant PB9
+0 10 io constant PA10    
+0 11 io constant PA11    
+0 12 io constant PA12    
+0 13 io constant PA13    	
+0 14 io constant PA14                              2 14 io constant PC14 	
+0 15 io constant PA15   	
+

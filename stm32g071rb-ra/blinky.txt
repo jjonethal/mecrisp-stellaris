@@ -1,0 +1,28 @@
+ 
+\ Just to have a twinkling shine :-)
+\
+\		Ralph Sahli, 2019
+\		
+\		resources used: 
+\ 			PA5   onboard Green user LED
+\
+
+$50000000 constant GPIOA.MODER
+$50000014 constant GPIOA.ODR
+
+1 5 lshift constant LED 	\ PA5
+
+: delay 800000 0 do i drop loop ;
+
+: blinky ( -- )
+	%11 10 lshift GPIOA.MODER bic!	\ PA5 ...
+	%01 10 lshift GPIOA.MODER bis!	\ PA5 -> output mode
+	cr ." press any key to quit"
+	begin
+		LED GPIOA.ODR bis!			\ set LED
+		delay
+		LED GPIOA.ODR bic!			\ clear LED
+		delay
+		key? 
+	until
+;

@@ -1,0 +1,62 @@
+( DUMP Library)
+here
+\ helper words -----------------------------------------------------------
+
+\ print hex value n with x bits
+: N#h. ( n bits -- )
+	begin
+		4 -
+		2dup rshift $F and .digit emit
+		dup 0=
+	until 2drop ;
+
+: 1#h. ( char -- )
+	4 N#h. ;
+
+: 2#h. ( char -- )
+	8 N#h. ;
+\ end helper words ---------------------------------------------------
+
+\ byte dump
+: bdump ( c-addr cnt -- )
+	over $F and if $10 + then 								\ One more line if not aligned on 16
+	\ print header
+	CR ." Address    "										\ . header address
+	$10 0 DO SPACE I 1#h. SPACE LOOP						\ . header byte dump
+	4 SPACES ." 0123456789ABCDEF"							\ . header ascii values
+	\ print values
+	$10 / 0 DO
+		CR DUP hex. DUP 									\ . address
+		2 SPACES $10 0 DO DUP C@ 2#h. SPACE 1+ LOOP DROP 	\ . byte values in hex
+		4 SPACES $10 0 DO 
+			DUP C@ DUP $20 < OVER $7E > OR 
+			IF DROP [char] . THEN EMIT						\ . printable ascii values
+			1+ 
+		LOOP												
+	LOOP DROP ;		
+
+\ register dump
+: rdump  ( a-addr cnt -- )
+	cr cr over hex. ." :" 
+	CR ." Offset " 
+	$20 0 DO $1F I - 0 <# # # #> TYPE SPACE LOOP 
+	4 SPACES ." value"
+	4 / 0 DO
+		CR 2 SPACES DUP $FF AND 2#h. 4 SPACES DUP			\ . offset
+		$20 0 DO 
+			1 $1F I - lshift OVER bit@
+			IF [char] 1 ELSE [char] . THEN EMIT 2 SPACES	\ . bit value
+		LOOP \ . word value in binary
+		3 SPACES @ hex. 									\ . hex value
+		4 +
+	LOOP DROP ;
+	
+\ dump
+: dump ( c-addr cnt -- )
+	over $40000000 < if					\ not registers
+		bdump
+	else								\ registers
+		rdump
+	then ;
+
+here swap - .

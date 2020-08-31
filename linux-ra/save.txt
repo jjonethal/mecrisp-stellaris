@@ -1,13 +1,13 @@
-
 \ Save a copy of the current Forth core with all contents of the user flash
 
 \ -----------------------------------------------------------------------------
-\ Write file via syscall interface                      uh 2015-09-26
+\ useful system calls
+\ -----------------------------------------------------------------------------
 
 \ : syscall ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 )
 
-\ int creat(const char *pathname, mode_t mode);
-8 constant #creat
+\ int open(const char *pathname, int flags, mode_t mode);
+5 constant #open
 
 8 base ! 
 00444 constant S_IRUSR
@@ -15,97 +15,92 @@
 00111 constant S_IXUSR
 decimal
 
+8 base !
+00000 constant O_RDONLY \ open for reading only
+00001 constant O_WRONLY \ open for writing only
+00002 constant O_RDWR   \ open for reading and writing
+02000 constant O_APPEND \ set append mode
+00100 constant O_CREAT  \ create if nonexistent
+01000 constant O_TRUNC  \ truncate to zero length
+00200 constant O_EXCL   \ error if already exists
+decimal
+
 : 0terminate ( addr len -- ) + 0 swap c! ;
 
 : syscall-creat ( addr len mode -- fd )
   >r  dup >r here swap move  here r> 0terminate 
-  here r> 0 0 0 0 0 #creat syscall ;
+  here O_WRONLY O_CREAT or O_TRUNC or r> 0 0 0 0 #open syscall ;
 
 \ ssize_t write(int fd, const void *buf, size_t count);
 4 constant #write
-: syscall-write ( adr len fd -- len' )  -rot 0 0 0 0 #write syscall ; 
+: syscall-write ( fd addr len -- len' ) 0 0 0 0 #write syscall ; 
 
 \ int close(int fd)
 6 constant #close
 : syscall-close ( fd -- ior ) 0 0 0 0 0 0 #close syscall ;
 
-0 variable logfile
-
-: open-log ( addr len -- )  
-   S_IRUSR S_IWUSR or syscall-creat  logfile ! ;
-
-: open-log-executable ( addr len -- )  
-   S_IRUSR S_IWUSR or S_IXUSR or syscall-creat  logfile ! ;
-
-: write-log ( addr len -- )
-   logfile @ syscall-write drop ; 
-
-create newline 10 c,
-
-: writeln-log ( addr len )
-   write-log
-   newline 1 write-log ;
-
-: close-log ( -- )  logfile @ syscall-close drop ;
-
+\ -----------------------------------------------------------------------------
+\ reading and writing ELF headers
 \ -----------------------------------------------------------------------------
 
-0 variable writebuffer
+\ retrieve program headers
+: elfhdr>phdrs ( elfhdr -- phdrs )
+  dup $1c + @ + ;
 
-:  log, ( x -- ) writebuffer ! writebuffer 4 write-log ;
-: hlog, ( x -- ) writebuffer ! writebuffer 2 write-log ;
-: clog, ( x -- ) writebuffer ! writebuffer 1 write-log ;
+\ update program header file size
+: p_filesz! ( phdr filesz -- )
+  swap $10 + ! ;
 
+\ retrieve section headers
+: elfhdr>shdrs ( elfhdr -- shdrs )
+  dup $20 + @ + ;
+
+\ retrieve section header size
+: elfhdr>shentsize ( elfhdr -- entsize )
+  $2e + h@ ;
+
+\ retrieve the desired section header
+: elfhdr>shdr ( elfhdr i -- shdr )
+  >r dup elfhdr>shdrs swap elfhdr>shentsize r> * + ;
+
+\ adjust section end
+: sh_end! ( shdr end -- )
+  over $0c + @ -         \ compute sh_size from sh_addr and end
+  swap $14 + ! ;         \ update sh_size
+
+\ adjust section base address in image and memory
+: sh_addr! ( shdr addr -- )
+  over $0c + @ - >r         \ compute adjustment
+  r@ over $0c + +!          \ adjust sh_addr
+  r@ over $10 + +!          \ adjust sh_offset
+  $14 + r> negate swap +! ; \ adjust sh_size
+
+\ ELF section numbers (see elfheader.s)
+2 constant #mecrisp
+3 constant #userdictionary
+
+\ adjust our own ELF header according to here
+: adjustelf ( -- )
+  incipit elfhdr>phdrs here incipit - p_filesz!
+  incipit #mecrisp elfhdr>shdr here sh_end!
+  incipit #userdictionary elfhdr>shdr here sh_addr! ;
+
+\ -----------------------------------------------------------------------------
+\ saving the program image back to disk
 \ -----------------------------------------------------------------------------
 
 : save ( addr len -- ) \ Save a copy of the whole Forth core with flash dictionary contents
-                        \ With many thanks to Robert Clausecker
-  open-log-executable
-  compiletoram? compiletoflash
 
-    \ ELF-Header
-    \ http://www.sco.com/developers/gabi/latest/ch4.eheader.html
+  compiletoram? compiletoflash >r
 
-    $7F clog, [char] E clog, [char] L clog, [char] F clog,  \ Magische Zahl
-    1 clog,                    \ ELF-Klasse: 32 Bit
-    1 clog,                    \ Byte-Reihenfolge: little endian
-    1 clog,                    \ ELF-Version: 1
-    3 clog,                    \ ABI: GNU Linux
-    0 clog,                    \ ABI-Version: 0
-    0 clog, 0 clog, 0 clog, 0 clog,
-    0 clog, 0 clog, 0 clog,    \ Padding Bytes, um auf 8-gerade zu kommen
+  adjustelf
+  S_IRUSR S_IWUSR S_IXUSR or or syscall-creat \ open new program image
+  dup incipit here incipit - syscall-write drop
+  syscall-close drop
 
-    2 hlog,                    \ ELF-Typ: ausführbare Datei
-    40 hlog,                   \ Architektur: 80386 (für ARM: 40)
-    1 log,                     \ ELF-Version: 1 (nochmal)
-    $10000 log,                \ Einsprungpunkt
-    52 log,                    \ Anfang des Programm-Headers in der Datei
-    0 log,                     \ Anfang des Section-Headers (haben wir nicht)
-    $5000200 log,                     \ Flags: 0 (keine)
-    52 hlog,                   \ Größe des ELF-Headers: 52 Bytes
-    32 hlog,                   \ Größe eines Programm-Headers: 32 Bytes
-    1  hlog,                   \ Anzahl der Programm-Header: 1
-    40 hlog,                   \ Größe eines Sektions-Headers: 40 Bytes
-    0  hlog,                   \ Anzahl der Sektions-Header: 0 (keine)
-    0  hlog,                   \ Offset der Sektions-String-Tafel (keine)
-
-    1         log,             \ Segment-Typ: LOAD
-    4096      log,             \ Anfang des Segments in der Datei
-    $10000    log,             \ Adresse, zu der der Header geladen wird
-    $10000    log,             \ physikalische Adresse (egal)
-    here $10000 -  log,        \ Länge des Segmentes in der Datei
-    $00210000 log,             \ Länge des Segmentes im Speicher
-    7         log,             \ Flags: RWX (lesen, schreiben, ausführen)
-    65536     log,             \ Ausrichtung des Segments: 4096 (eine Speicherseite)
- 
-  4096 52 - 32 - 0 do 0 log, 4 +loop \ Align on 4096
-  $10000 here $10000 - write-log     \ Write a copy of the Forth core and the flash dictionary content
-  close-log
-
-  if compiletoram then
+  r> if compiletoram then
 ;
 
 : save" ( -- ) [char] " parse save ;
 
 \ -----------------------------------------------------------------------------
-

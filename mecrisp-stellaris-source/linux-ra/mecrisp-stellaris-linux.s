@@ -18,8 +18,18 @@
 
 .syntax unified
 
+@ -----------------------------------------------------------------------------
+@ First and foremost, an ELF header
+@ -----------------------------------------------------------------------------
+
+  .include "elfheader.s"
+
+@ -----------------------------------------------------------------------------
+@  Then, Mecrisp as usual
+@ -----------------------------------------------------------------------------
+
+
 .section mecrisp, "awx" @ Everything is writeable and executable
-.align 4
 
 @ -----------------------------------------------------------------------------
 @ A Thumb mode entry sequence instead of a vector table
@@ -83,12 +93,13 @@ Reset: @ Einsprung zu Beginn
 @ Special memory map for "Flash" and RAM sections within target RAM.
 @ -----------------------------------------------------------------------------
 
+.equ Kernschutzadresse,     . @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
+
 .bss
 
-.equ Kernschutzadresse,     . @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
 .equ FlashDictionaryAnfang, . @ Ein bisschen Platz für den Kern reserviert... Some space reserved for core.
 
-  .rept 1024 * 256      @ 1024 * 256*4 = 1 MB for "Flash" dictionary
+  .rept 1024 * 256            @ 1024 * 256*4 = 1 MB for "Flash" dictionary
   .word 0x00000000
   .endr
 

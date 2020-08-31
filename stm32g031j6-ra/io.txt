@@ -1,0 +1,98 @@
+\ I/O pin primitives
+
+$50000000 constant GPIO
+\	$00 constant  .MODER   	\ Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+	$04 constant  .OTYPER  	\ Port Output type register - (0) Push/Pull vs. (1) Open Drain
+	$08 constant  .OSPEEDR 	\ Output Speed Register - 00=2 MHz  01=25 MHz  10=50 MHz  11=100 MHz
+	$0C constant  .PUPDR	\ Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+	$10 constant  .IDR		\ Input Data Register
+	$14 constant  .ODR     	\ Output Data Register
+	$18 constant  .BSRR		\ port bit set/reset register
+\	$1C constant  .LCKR		\ port configuration lock register		
+	$20 constant  .AFRL		\ Alternate function  low register
+\	$24 constant  .AFRH		\ Alternate function high register
+	$28 constant  .BRR		\ port bit reset register
+
+: bit ( u -- u )  \ turn a bit position into a single-bit mask
+  1 swap lshift  1-foldable ;
+
+: io ( port# pin# -- pin )  \ combine port and pin into single int
+  swap 8 lshift or  2-foldable ;
+: io# ( pin -- u )  \ convert pin to bit position
+  $1F and  1-foldable ;
+: io-mask ( pin -- u )  \ convert pin to bit mask
+  io# bit  1-foldable ;
+: io-port ( pin -- u )  \ convert pin to port number (A=0, B=1, etc)
+  8 rshift  1-foldable ;
+: io-base ( pin -- addr )  \ convert pin to GPIO base address
+  $F00 and 2 lshift GPIO +  1-foldable ;
+
+: 'f ( -- flags ) token find nip ;
+
+: (io@)  (   pin -- pin* addr )
+  dup io-mask swap io-base .IDR  +   1-foldable ;
+: (ioc!) (   pin -- pin* addr )
+  dup io-mask swap io-base .BRR  +   1-foldable ;
+: (ios!) (   pin -- pin* addr )
+  dup io-mask swap io-base .BSRR +   1-foldable ;
+: (iox!) (   pin -- pin* addr )
+  dup io-mask swap io-base .ODR  +   1-foldable ;
+: (io!)  ( f pin -- pin* addr )
+  swap 0= $10 and + dup io-mask swap io-base .BSRR +   2-foldable ;
+
+: io@  (   pin -- f )  (io@)  bit@ exit [ $1000 setflags 2 h, ' (io@)  ,
+  'f (io@)  h, ' bit@ , 'f bit@ h, ] ; \ get pin value (0 or -1)
+: ioc! (   pin -- )    (ioc!)    ! exit [ $1000 setflags 2 h, ' (ioc!) ,
+  'f (ioc!) h, '    ! , 'f    ! h, ] ; \ clear pin to low
+: ios! (   pin -- )    (ios!)    ! exit [ $1000 setflags 2 h, ' (ios!) ,
+  'f (ios!) h, '    ! , 'f    ! h, ] ; \ set pin to high
+: iox! (   pin -- )    (iox!) xor! exit [ $1000 setflags 2 h, ' (iox!) ,
+  'f (iox!) h, ' xor! , 'f xor! h, ] ; \ toggle pin, not interrupt safe
+: io!  ( f pin -- )    (io!)     ! exit [ $1000 setflags 2 h, ' (io!)  ,
+  'f (io!)  h, '    ! , 'f    ! h, ] ; \ set pin value
+
+  
+       \ Port Mode Register - 00=Input  01=Output  10=Alternate  11=Analog
+     \ Port Pullup / Pulldown - 00=none  01=Pullup  10=Pulldown
+ \ Port Type Push/Pull=0  Open drain=1
+      %00 constant MODE-IN		\ input, floating
+      %01 constant MODE-OU		\ output, push-pull
+      %10 constant MODE-AF  	\ alternate function, push-pull
+      %11 constant MODE-AN		\ analog input
+
+    %0100 constant PU			\ pull-up
+    %1000 constant PD			\ pull-down
+
+%01000000 constant OD  			\ open drain
+
+   \ Port Output Speed Register
+  %000000 constant LOW			
+  %010000 constant MEDIUM
+  %100000 constant HIGH
+  %110000 constant VERYHIGH
+
+: AF# ( n -- mask )
+	8 lshift 0-foldable ;
+
+: io-mode! ( mode pin -- )
+	dup io# swap io-base >r					\ mode pin-bit r:base-addr
+	\ set mode register
+	%11 over 2* lshift r@ bic! 					\ clear ..
+	over %11 and over 2* lshift r@ bis!			\ .. set
+	\ set push/pull register
+	%11 over 2* lshift .PUPDR r@ + bic!		\ clear ..
+	over 2 rshift %11 and over 2* lshift .PUPDR r@ + bis!	\ .. set
+	\ set speed register
+	%11 over 2* lshift .OSPEEDR r@ + bic!	\ clear ..
+	over 4 rshift %11 and over 2* lshift .OSPEEDR r@ + bis!	\ .. set
+	\ set type register PP / OD
+	%1 over lshift .OTYPER r@ + bic!			\ clear ..
+	over 6 rshift %1 and over lshift .OTYPER r@ + bis!	\ .. set
+	\ set af hi/low register
+	dup 8 / cells r> + .AFRL + >r 			\ calc r:AFRL/AFRH-addr
+	%1111 over 8 mod 4 * lshift r@ bic!			\ clear ..
+	swap 8 rshift $F and swap 8 mod 4 * lshift r> bis!	\ .. set
+;
+
+: io. ( pin -- )  \ display port n GPIO registers
+	io-base $2C dump ;
