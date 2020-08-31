@@ -1,0 +1,97 @@
+
+\ -------------------------------------------------------------
+\   ANSI Escape Codes For Colourful Emissions
+\ -------------------------------------------------------------
+
+: u.base10 ( u -- ) base @ decimal swap 0 <# #s #> type base ! ;
+: ESC[ ( -- ) 27 emit 91 emit ;
+: at-xy ( column row -- ) 1+ swap 2* 1+ swap ESC[ u.base10 ." ;" u.base10 ." H" ;
+: page ESC[ ." 2J" 0 0 at-xy ;
+
+: putpixel ( x y -- )  at-xy ." ██" ;
+
+: hide-cursor esc[ ." ?25l" ;
+: show-cursor esc[ ." ?25h" ;
+
+: default  ( -- ) ESC[ ." 0m"  ;
+: bold     ( -- ) ESC[ ." 1m"  ;
+
+: black    ( -- ) ESC[ ." 30m" ;
+: red      ( -- ) ESC[ ." 31m" ;
+: green    ( -- ) ESC[ ." 32m" ;
+: yellow   ( -- ) ESC[ ." 33m" ;
+: blue     ( -- ) ESC[ ." 34m" ;
+: magenta  ( -- ) ESC[ ." 35m" ;
+: cyan     ( -- ) ESC[ ." 36m" ;
+: white    ( -- ) ESC[ ." 37m" ;
+
+: rgb      ( -- ) ESC[ ." 38;2;" rot u.base10 ." ;" swap u.base10 ." ;" u.base10 ." m" ;
+
+: colors cr red ." red " green ." green " yellow ." yellow " blue ." blue " magenta ." magenta " cyan ." cyan " white cr ;
+
+\ -------------------------------------------------------------
+\   Change accept to taste
+\ -------------------------------------------------------------
+
+: delchar ( addr len -- addr len' ) \ Delete character, handle UTF-8 Unicode
+  dup if 8 emit 32 emit 8 emit then
+
+  begin
+    dup 0= if exit then
+    1- 2dup + c@
+    $C0 and $80 <>
+  until
+;
+
+: accept ( c-addr maxlength -- length )
+
+  >r 0 ( addr len R: maxlen )
+
+  begin
+    key ( c-addr len key R: maxlength )
+
+      9 over = if drop 32 then
+    127 over = if drop  8 then
+
+    dup 31 u>
+    if
+      over r@ u<
+      if
+        dup emit
+        >r 2dup + r@ swap c! 1+ r>
+      then
+    then
+
+     8 over = if >r delchar r> then
+    10 over = swap 13 = or
+  until
+
+  rdrop nip
+  space
+;
+
+\ -------------------------------------------------------------
+\   Replace user interface by hooking quit loop
+\ -------------------------------------------------------------
+
+: ui ( -- )
+  begin
+    0 >in !
+    tib dup 200 accept setsource \ 200 characters is default input buffer size in Mecrisp-Stellaris ("Maximaleeingabe" in forth-core.s)
+
+    interpret
+
+    compiletoram?
+    if
+      state @ if cyan    ."  ok," else blue ."  ok." then
+    else
+      state @ if magenta ."  ok," else red  ."  ok." then
+    then
+
+    default cr
+
+  again
+;
+
+' ui hook-quit ! quit
+

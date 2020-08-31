@@ -768,3 +768,12 @@
 
   - Contribution by Peter Schmid:
       New target: STM32WB55
+
+28.03.2020, Matthias Koch, Mecrisp-Stellaris 2.5.4
+
+  - Added RA for STM32F411
+  - Fixed eraseflash on XMC1100
+  - Fixed Bresenham ellipse graphics routine
+
+  - Contribution by Ivan Dimitrov:
+    - s31.32 Fixpoint <--> Single float conversion utilities

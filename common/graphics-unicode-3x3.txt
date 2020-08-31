@@ -59,7 +59,7 @@
 
     ellipse-err @ 2* >r
     r@  ellipse-dx @ 2* 1+ ellipse-b^2 @ *        < if  1 ellipse-dx +! ellipse-dx @ 2* 1+ ellipse-b^2 @ *        ellipse-err +! then
-    r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate > if -1 ellipse-dy +! ellipse-dy @ 2* 1+ ellipse-a^2 @ * negate ellipse-err +! then
+    r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate > if -1 ellipse-dy +! ellipse-dy @ 2* 1- ellipse-a^2 @ * negate ellipse-err +! then
 ;
 
 

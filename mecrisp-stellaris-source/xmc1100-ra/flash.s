@@ -71,7 +71,7 @@ hexflashstore: @ ( x1 x2 x3 x4 addr -- ) x1 contains LSB of those 128 bits.
   str r1, [tos, #4]
   str r2, [tos, #8]
   str r3, [tos, #12]
- 
+
   ldr r2, =NVMSTATUS  @ Wait for Flash BUSY Flag to be cleared
 1:ldr r3, [r2]
   movs r0, #1
@@ -99,21 +99,31 @@ flashpageerase:
   cmp r0, r3
   blo 2f
 
-  ldr r3, =NVMPROG
-  movs r1, #0x92 @ One shot erase
-  str r1, [r3]
+  movs r3, #0xFF @ Align address to 256 byte page boundary
+  bics r0, r3
 
-  str r0, [r0] @ Write a dummy value to the page which is to be erased
+@ Cannot trigger erase sequence when executing from flash memory.
+@ Silicon errata says that we must use the routine in ROM instead:
 
-  ldr r2, =NVMSTATUS  @ Wait for Flash BUSY Flag to be cleared
-1:ldr r3, [r2]
-  movs r0, #1
-  ands r0, r3
-  bne 1b
+  ldr r3, =0x100 @ Pointer to page erase routine in ROM
+  ldr r3, [r3]
+  blx r3
 
-  @ ldr r3, =NVMPROG
-  @ movs r1, #0x00 @ No action
-  @ str r1, [r3]
+@    ldr r3, =NVMPROG
+@    movs r1, #0x92 @ One shot erase
+@    str r1, [r3]
+@
+@    str r0, [r0] @ Write a dummy value to the page which is to be erased
+@
+@    ldr r2, =NVMSTATUS  @ Wait for Flash BUSY Flag to be cleared
+@  1:ldr r3, [r2]
+@    movs r0, #1
+@    ands r0, r3
+@    bne 1b
+@
+@    @ ldr r3, =NVMPROG
+@    @ movs r1, #0x00 @ No action
+@    @ str r1, [r3]
 
 2:pop {r0, r1, r2, r3, pc}
 

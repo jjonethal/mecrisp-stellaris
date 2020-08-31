@@ -1,0 +1,8 @@
+: flip ( x u -- x' )
+  >r
+  r@  1 and if dup $55555555 and  1 lshift swap $AAAAAAAA and  1 rshift or then
+  r@  2 and if dup $33333333 and  2 lshift swap $CCCCCCCC and  2 rshift or then
+  r@  4 and if dup $0F0F0F0F and  4 lshift swap $F0F0F0F0 and  4 rshift or then
+  r@  8 and if dup $00FF00FF and  8 lshift swap $FF00FF00 and  8 rshift or then
+  r> 16 and if dup $0000FFFF and 16 lshift swap $FFFF0000 and 16 rshift or then
+;

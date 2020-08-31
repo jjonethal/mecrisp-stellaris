@@ -262,6 +262,10 @@ cd stm32f411
 md5sum *.bin
 cd ..
 
+cd stm32f411-ra
+md5sum *.bin
+cd ..
+
 cd stm32f429
 md5sum *.bin
 cd ..

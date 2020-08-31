@@ -260,6 +260,10 @@ cd stm32f411
 make clean
 cd ..
 
+cd stm32f411-ra
+make clean
+cd ..
+
 cd stm32f429
 make clean
 cd ..
