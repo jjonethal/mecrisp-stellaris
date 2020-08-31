@@ -588,9 +588,21 @@ create: @ Nimmt das nächste Token aus dem Puffer,
   @ ( Tokenadresse Länge )
   beq 2f
     ddup
+
+  .ifdef color
+
+    write "\x1B[33m Redefine "
+    bl stype @ Den neuen Tokennamen nochmal ausgeben
+    write ".\x1B[0m "
+
+  .else
+
     write "Redefine "
     bl stype @ Den neuen Tokennamen nochmal ausgeben
     write ". "
+
+  .endif
+
 
 2:@ ( Tokenadresse Länge )
 

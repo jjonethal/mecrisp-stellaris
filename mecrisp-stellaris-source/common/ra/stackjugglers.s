@@ -275,7 +275,7 @@ minusrot_allocator:
   ldr r1, =datenstackanfang @ Anfang laden  Calculate stack fill gauge
   subs r1, psp @ und aktuellen Stackpointer abziehen
   pushdatos
-  lsrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
+  asrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
   bx lr
 
 @ -----------------------------------------------------------------------------
@@ -285,7 +285,7 @@ minusrot_allocator:
   mov tos, sp
   ldr r1, =returnstackanfang @ Anfang laden  Calculate stack fill gauge
   subs r1, tos @ und aktuellen Stackpointer abziehen
-  lsrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
+  asrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
   bx lr
 
 @ Returnstack

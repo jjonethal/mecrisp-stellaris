@@ -351,13 +351,13 @@ psp .req r7
 .ifdef registerallocator
 
 .macro Dictionary_Welcome
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris RA 2.4.8 ---"
+  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris RA 2.4.9 ---"
 .endm
-  
+
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris RA 2.4.8"
+7:      .ascii "Mecrisp-Stellaris RA 2.4.9"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
@@ -365,13 +365,13 @@ psp .req r7
 .else
 
 .macro Dictionary_Welcome
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris 2.4.8 ---"
+  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris 2.4.9 ---"
 .endm
 
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris 2.4.8"
+7:      .ascii "Mecrisp-Stellaris 2.4.9"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
@@ -381,7 +381,11 @@ psp .req r7
 .macro Fehler_Quit Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "\Meldung\n"
+.ifdef color
+7:    .ascii "\x1B[31m\Meldung\x1B[0m\n"
+.else
+7:    .ascii "\Meldung\n"
+.endif
 8:      .p2align 1
 
   .ifdef m0core
@@ -394,7 +398,11 @@ psp .req r7
 .macro Fehler_Quit_n Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "\Meldung\n"
+.ifdef color
+7:    .ascii "\x1B[31m\Meldung\x1B[0m\n"
+.else
+7:    .ascii "\Meldung\n"
+.endif
 8:      .p2align 1
 
   b.n quit
