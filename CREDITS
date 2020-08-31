@@ -42,6 +42,7 @@ Port for Nordic nRF52832 by juju2013@github
 Forth drivers for Numworks calculator by Wolfgang Strauss
 Port and examples for STM32F030R8 by Rick Kimball
 Ports for STM32L031K6 and STM32F072RB by Jan Spakula
+Port for STM32F103RB by Christian Nicolai
 
 Hardware donations:
 

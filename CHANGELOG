@@ -740,3 +740,11 @@
 
   - Contribution by Jan Spakula:
       New targets: STM32L031K6 and STM32F072RB
+
+24.06.2019, Matthias Koch, Mecrisp-Stellaris 2.5.1
+
+  - Contribution by Terry Porter:
+      svd2forth-v3 - A fresh register file generator from SVD to Forth
+
+  - Contribution by Christian Nicolai:
+      New target: STM32F103RB

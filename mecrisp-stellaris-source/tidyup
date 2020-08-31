@@ -196,6 +196,14 @@ cd stm32f103-ra
 make clean
 cd ..
 
+cd stm32f103rb
+make clean
+cd ..
+
+cd stm32f103rb-ra
+make clean
+cd ..
+
 cd stm32f207zg
 make clean
 cd ..
