@@ -60,9 +60,9 @@ uart_init:
 
   @ Turn on clock for USART2 peripheral in APB1 since that is connected to the
   @ onboard ST-LINK debugger to be exposed as virtual COM port over USB
-  ldr r1, = RCC_APB1ENR
+  @ ldr r1, = RCC_APB1ENR
   ldr r0, = USART2EN
-  str r0, [r1]
+  str r0, [r1, 4]
 
   @ Set PORTA pins in alternate function mode
   @ Put PA2  (TX) to alternate function output push-pull at 2 MHz

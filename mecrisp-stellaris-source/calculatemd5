@@ -290,6 +290,10 @@ cd stm32g071rb-ra
 md5sum *.bin
 cd ..
 
+cd stm32wb55
+md5sum *.bin
+cd ..
+
 cd numworks-ra
 md5sum *.bin
 cd ..

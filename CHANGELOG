@@ -760,3 +760,11 @@
   - Contribution by Robert Clausecker:
     - New target: FreeBSD
     - Improved ELF handling
+
+16.02.2020, Matthias Koch, Mecrisp-Stellaris 2.5.3
+
+  - Fixed serious bug in RA compiler affecting comparisons:
+      Many thanks to Ivan Dimitrov for the bug report !
+
+  - Contribution by Peter Schmid:
+      New target: STM32WB55

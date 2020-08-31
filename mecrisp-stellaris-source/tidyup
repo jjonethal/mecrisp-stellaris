@@ -288,6 +288,10 @@ cd stm32g071rb-ra
 make clean
 cd ..
 
+cd stm32wb55
+make clean
+cd ..
+
 cd numworks-ra
 make clean
 cd ..

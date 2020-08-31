@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 stty -icanon -echo
-./mecrisp-stellaris-linux
-stty sane 
+./mecrisp-stellaris-freebsd
+stty sane

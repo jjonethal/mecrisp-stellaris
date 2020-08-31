@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 stty -icanon -echo
-./mecrisp-stellaris-linux-with-disassembler-and-math
-stty sane 
+./mecrisp-stellaris-freebsd-with-disassembler-and-math
+stty sane

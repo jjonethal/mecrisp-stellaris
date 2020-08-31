@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 stty -icanon -echo
-qemu-arm-static mecrisp-stellaris-linux
-stty sane 
+qemu-arm-static mecrisp-stellaris-freebsd
+stty sane

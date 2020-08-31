@@ -33,7 +33,7 @@ make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48-ra 
 cd ..
 
 cd lpc845m301
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc845m301 cp *.hex ../../lpc845m301
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc845m301 && cp *.hex ../../lpc845m301
 cd ..
 
 cd kl25z128
@@ -286,6 +286,10 @@ cd ..
 
 cd stm32g071rb-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g071rb-ra
+cd ..
+
+cd stm32wb55
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32wb55
 cd ..
 
 cd numworks-ra
