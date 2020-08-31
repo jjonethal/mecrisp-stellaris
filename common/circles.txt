@@ -1,0 +1,71 @@
+\ -------------------------------------------------------------
+\  Bresenham circle
+\ -------------------------------------------------------------
+
+0 variable circle-xm   0 variable circle-ym
+0 variable circle-dx   0 variable circle-dy
+0 variable circle-r
+0 variable circle-err
+
+: circle-putpixel ( x y -- ) swap circle-xm @ + swap circle-ym @ + putpixel ;
+
+: circle-init ( -- )
+  0 circle-dx ! circle-r @ circle-dy !
+  2 circle-r @ 2* - circle-err !
+;
+
+: circle-step ( -- )
+  circle-err @ 2* >r
+  r@    circle-dx @ 2* 1+  < if circle-err @   circle-dx @ 1+ dup circle-dx !  2* 1+  + circle-err ! then
+  r>  1 circle-dy @ 2*  -  > if circle-err @ 1 circle-dy @ 1- dup circle-dy !  2* -   + circle-err ! then
+;
+
+: circle ( xm ym r -- ) \ Draw circle using symmetry
+  circle-r ! circle-ym ! circle-xm !
+
+  circle-init
+
+  begin
+
+    circle-dx @        circle-dy @        circle-putpixel
+    circle-dx @        circle-dy @ negate circle-putpixel
+    circle-dx @ negate circle-dy @ negate circle-putpixel
+    circle-dx @ negate circle-dy @        circle-putpixel
+
+    circle-step
+
+    circle-dy @ 0<
+  until
+;
+
+: circle-full ( xm ym r -- ) \ Draw full circle with points in order
+  circle-r ! circle-ym ! circle-xm !
+
+  circle-init
+  begin
+    circle-dx @        circle-dy @         circle-putpixel
+    circle-step
+    circle-dy @ 0=
+  until
+
+  circle-init
+  begin
+    circle-dy @        circle-dx @ negate  circle-putpixel
+    circle-step
+    circle-dy @ 0=
+  until
+
+  circle-init
+  begin
+    circle-dx @ negate circle-dy @ negate  circle-putpixel
+    circle-step
+    circle-dy @ 0=
+  until
+
+  circle-init
+  begin
+    circle-dy @ negate circle-dx @         circle-putpixel
+    circle-step
+    circle-dy @ 0=
+  until
+;

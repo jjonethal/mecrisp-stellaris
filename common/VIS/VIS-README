@@ -1,0 +1,55 @@
+#    VIS: VOCabularies (VOCs), ITEMs and STICKY Words for Mecrisp-Stellaris
+#
+#    Copyright (C) 2017-2020  Manfred Mahlow
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+VIS-README for Mecrisp-Stellaris                                      MM-200522
+
+To add the VIS-Extension with support for VOCs, ITEMs and STICK Words to
+Mecrisp-Stellaris please take the following into consideration:
+
+1. The VIS-Extension is distributed as a source code file named 
+
+   vis-x.y.z-mecrisp-stellaris.fs
+
+2. This VIS-Extension was written and tested with Mecrisp-Stellaris RA 2.5.3
+   on the TI LauchPads Stellaris, Tiva C TM4C1294, MSP432P2401R and also with
+   linux-ra.
+
+3. The VIS-Extension needs to be installed on a Mecrisp-Stellaris core without
+   any pre-installed extensions.
+
+   Reset Mecrisp-Stellaris with  ERASEFLASH  before loading the VIS-Extension.
+
+   With the e4thcom Terminal the VIS-Extension can be loaded with  #r vis
+   and the disassembler can be loaded with  #r see.
+
+4. The VIS-Extension modifies some Mecrisp-Stellaris hooks to link the wordlist
+   and context switching support into the Mecrisp-Stellaris core. This is done
+   by a word named INIT.
+
+   Mecrisp-Stellaris always executes the last defined INIT on startup or reset.
+
+   So, if you define your own INIT in your code, this INIT must execute the
+   last defined INIT to make shure, that all previously defined INITs down 
+   to the one of the VIS-Extension are executed. Otherwise the VIS-Extension
+   (and maybe other extensions) will fail.
+
+5. You can find further information and a VIS Glossary for Mecrisp-Stellaris
+   in the Forth-Magazin Vierte Dimension 1/2020.
+
+6. Feeback to the author : manfred.mahlow@forth-ev.de
+

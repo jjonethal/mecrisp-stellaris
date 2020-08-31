@@ -777,3 +777,10 @@
 
   - Contribution by Ivan Dimitrov:
     - s31.32 Fixpoint <--> Single float conversion utilities
+
+28.06.2020, Matthias Koch, Mecrisp-Stellaris 2.5.4a
+
+  - Added graphics primitives for circles in Forth
+
+  - Contribution by Manfred Mahlow:
+      VIS extension

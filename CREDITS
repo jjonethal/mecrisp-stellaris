@@ -47,6 +47,7 @@ Ports and examples for STM32G031F8, STM32G031J6 and STM32G071RB by Ralph Sahli
 Port for FreeBSD by Robert Clausecker
 Port and examples for STM32WB55 by Peter Schmid
 s31.32 Fixpoint <--> Single float conversion utilities by Ivan Dimitrov
+VIS extension (https://forth-ev.de/wiki/projects:forth-namespaces:start) by Manfred Mahlow
 
 Hardware donations:
 
