@@ -67,8 +67,9 @@ _start:
 Reset_with_arguments:
 @ -----------------------------------------------------------------------------
    ldr r0, =arguments  @ Save the initial stack pointer, as it contains
-   str sp, [r0]        @ command line arguments. Do this only once on first entry.
-   @ b eraseflash        @ Fill flash memory with $FF
+   mov r1, sp
+   str r1, [r0]        @ command line arguments. Do this only once on first entry.
+   @ b eraseflash      @ Fill flash memory with $FF
 
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn

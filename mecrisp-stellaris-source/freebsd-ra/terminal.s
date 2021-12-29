@@ -58,7 +58,9 @@ serial_qemit:  @ ( -- ? ) Ready to send a character ?
 @ -----------------------------------------------------------------------------
    push {lr}
    bl pause
-   pushdaconst -1
+   pushdatos
+   movs tos, #0
+   rsbs tos, tos, #0
    pop {pc}
    
 @ -----------------------------------------------------------------------------
@@ -67,7 +69,9 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
 @ -----------------------------------------------------------------------------
    push {lr}
    bl pause
-   pushdaconst -1
+   pushdatos
+   movs tos, #0
+   rsbs tos, tos, #0
    pop {pc}
 
 @ -----------------------------------------------------------------------------
@@ -147,9 +151,9 @@ serial_key: @ ( -- c ) Receive one character
 
  swi #0
 
- ite cs
- movcs r6, #1 @ error = 1 on failure
- movcc r6, #0 @ error = 0 on success
+
+ sbcs r6, r6 @ error = -1 on success, 0 on failure
+ adds r6, r6, #1 @ error = 0 on success, 1 on failure 
 
  pop {r4, r5, r7}
 
@@ -162,19 +166,28 @@ serial_key: @ ( -- c ) Receive one character
   Wortbirne Flag_visible, "cacheflush" @ ( -- )
 cacheflush:
 @ -----------------------------------------------------------------------------
-  push {r4, r5, r6, r7, lr}
 
+.ifdef m0core
+  @ ARMv6 hat keine Speicherbarrieren.  Das muss über einen syscall realisiert werden
+  push {r4-r7, lr}
+  movs r0, #0      @ ARM_SYNC_ICACHE
+  adr r1, 0f       @ Bereich: alles was zu Mecrisp Stellaris gehört
+  movs r7, #165    @ Syscall 165: sysarch()
+  swi #0           @ Systemaufruf: synchronisiere den icache
+  pop {r4-r7, pc}
+
+  .align
+  @ Datenstruktur arm_sync_icache_args für den sysarch-Aufruf
+0:.word incipit
+  .word totalsize
+
+.else
+  @ auf ARMv7 und später nehmen wir einfach die Barrien-Befehle
   dmb
   dsb
   isb  
-
-  ldr r0, =incipit                @ Start address
-  ldr r1, =totalsize              @ Memory length
-  movs r2, #2                     @ MS_INVALIDATE: invalidate all cached data
-  movs r7, #65                    @ syscall 65: msync
-  swi #0
-
-  pop {r4, r5, r6, r7, pc}
+  bx lr
+.endif
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_0, "arguments" @ ( -- a-addr )
@@ -187,7 +200,7 @@ cacheflush:
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "reset"
 @ -----------------------------------------------------------------------------
-  b Reset
+  bl Reset
  
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "bye"

@@ -26,8 +26,7 @@
   popda r1 @ Inhalt.
 
   @ Prüfe die Adresse: Sie muss auf 4 gerade sein:
-  ands r2, r0, #3
-  cmp r2, #0
+  lsls r2, r0, #30            @ lasse nur die letzten beiden Bits übrig
   bne 3f
 
   @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
@@ -50,8 +49,7 @@ h_flashkomma:
   popda r1 @ Inhalt.
 
   @ Prüfe die Adresse: Sie muss auf 2 gerade sein:
-  ands r2, r0, #1
-  cmp r2, #0
+  lsls r2, r0, #31            @ lasse nur das letzte Bits übrig
   bne 3b
 
   @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
@@ -93,7 +91,7 @@ eraseflash_intern:
         adds r0, #2
         cmp r0, r1
         bne 1b
-  b Reset
+  bl Reset
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "eraseflashfrom" @ ( Addr -- )
