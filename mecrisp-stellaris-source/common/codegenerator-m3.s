@@ -587,7 +587,11 @@ dodoes:
 
     ldr r0, =Backlinkgrenze
     cmp r3, r0
+.ifdef above_ram
+    blo.n dodoes_ram
+.else
     bhs.n dodoes_ram
+.endif
 
 2:    movs r0, #7
       ands r0, r1
@@ -604,7 +608,11 @@ dodoes_ram:
 
     ldr r0, =Backlinkgrenze
     cmp r3, r0
+.ifdef above_ram
+    blo.n dodoes_ram
+.else
     bhs.n dodoes_ram
+.endif
 
 2:    movs r0, #15
       ands r0, r1
@@ -653,7 +661,11 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
 
     ldr r2, =Backlinkgrenze
     cmp r1, r2
+.ifdef above_ram
+    blo.n builds_ram
+.else
     bhs.n builds_ram
+.endif
 
       @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
       @ So we need to advance to 8n + 4 so that the opcode sequence ends on a suitable border.
@@ -680,7 +692,11 @@ builds_ram:
 
     ldr r2, =Backlinkgrenze
     cmp r1, r2
+.ifdef above_ram
+    blo.n builds_ram
+.else
     bhs.n builds_ram
+.endif
 
       @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
       @ So we need to advance to 16n + 4 so that the opcode sequence ends on a suitable border.

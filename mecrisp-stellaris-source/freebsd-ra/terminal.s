@@ -163,31 +163,19 @@ serial_key: @ ( -- c ) Receive one character
  pop {pc}
      
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "cacheflush" @ ( -- )
+  Wortbirne Flag_visible, "cacheflush" @ ( addr len -- )
 cacheflush:
 @ -----------------------------------------------------------------------------
 
-.ifdef m0core
-  @ ARMv6 hat keine Speicherbarrieren.  Das muss über einen syscall realisiert werden
-  push {r4-r7, lr}
+  mov r1, r6       @ Länge des zu sichernden Bereiches
+  ldmia r7!, {r0, r6} @ zweimal poppen, addr nach r0
+  push {r0, r1, r4-r7, lr} @ arm_synch_icache_args (addr, len) auf den Stack
   movs r0, #0      @ ARM_SYNC_ICACHE
-  adr r1, 0f       @ Bereich: alles was zu Mecrisp Stellaris gehört
+  mov r1, sp       @ Die soeben auf den Stack gelegte Struktur
   movs r7, #165    @ Syscall 165: sysarch()
   swi #0           @ Systemaufruf: synchronisiere den icache
-  pop {r4-r7, pc}
-
-  .align
-  @ Datenstruktur arm_sync_icache_args für den sysarch-Aufruf
-0:.word incipit
-  .word totalsize
-
-.else
-  @ auf ARMv7 und später nehmen wir einfach die Barrien-Befehle
-  dmb
-  dsb
-  isb  
-  bx lr
-.endif
+                   @ also sysarch(ARM_SYNC_ICACHE, {addr, len})
+  pop {r0, r1, r4-r7, pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_0, "arguments" @ ( -- a-addr )

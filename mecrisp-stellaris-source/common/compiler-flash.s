@@ -31,7 +31,11 @@ smudge:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n smudge_ram
+.else
   bhs.n smudge_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ -----------------------------------------------------------------------------
   @ Smudge for Flash
@@ -114,7 +118,11 @@ setflags_intern:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n setflags_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n setflags_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ -----------------------------------------------------------------------------
   @ Setflags for Flash
@@ -268,7 +276,11 @@ ckomma:  @ Fügt 8 Bits an das Dictionary an.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n ckomma_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n ckomma_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ ckomma for Flash:
   pushda r1 @ Adresse auch auf den Stack
@@ -309,10 +321,17 @@ hkomma: @ Fügt 16 Bits an das Dictionary an.
 
   ldr r0, =Dictionarypointer @ Fetch Dictionarypointer to decide if compiling for RAM or for Flash
   ldr r1, [r0] @ Hole den Dictionarypointer
+  .ifdef within_os
+  push {r1}                  @ Remember Dictionarypointer for cacheflush
+  .endif
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n hkomma_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n hkomma_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ hkomma for Flash:
   pushda r1 @ Adresse auch auf den Stack  Put target address on datastack, too !
@@ -329,6 +348,9 @@ hkomma_fertig:
   bl allot
 
   .ifdef within_os
+  pushdatos     @ push dictionary pointer
+  pop {r6}
+  pushdaconst 2 @ push length of area to be flushed
   bl cacheflush
   .endif
 
@@ -429,7 +451,11 @@ allot:  @ Überprüft auch gleich, ob ich mich noch im Ram befinde.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n allot_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n allot_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ Allot-Flash:
   popda r2    @ Gewünschte Länge
@@ -492,9 +518,13 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
+.ifdef above_ram
+  bhs.n 1f @ Befinde mich im Flash --> False
+.else
   blo.n 1f @ Befinde mich im Flash --> False
+.endif
     mvns tos, tos @ Im Ram --> True
-  bx lr
+1:bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoram"
@@ -506,7 +536,11 @@ compiletoram:
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
+.ifdef above_ram
+  bhs.n Zweitpointertausch @ Befinde mich im Flash. Schalte um !
+.else
   blo.n Zweitpointertausch @ Befinde mich im Flash. Schalte um !
+.endif
   bx lr
 
 @ -----------------------------------------------------------------------------
@@ -519,7 +553,11 @@ compiletoflash:
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
+.ifdef above_ram
+  blo.n Zweitpointertausch @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n Zweitpointertausch @ Befinde mich im Ram. Schalte um !
+.endif
   bx lr
 
 
@@ -548,6 +586,12 @@ Zweitpointertausch:
   ldr r0, [r0]
   cmp r3, r0
   blo 1f
+.ifdef above_ram
+  @ Falls der Flash über dem RAM liegt wird immer ein DictionaryPointer über dem VariablenPointer sein.
+  @ If the flash is above the RAM one of the dictionary pointers will always be above than the VariablePointer.
+  cmp r2, r0
+  blo 1f
+.endif
    push {lr}
    writeln " Variables collide with dictionary"
    pop {pc}
@@ -614,7 +658,11 @@ create: @ Nimmt das nächste Token aus dem Puffer,
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
+.ifdef above_ram
+  blo.n create_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n create_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ -----------------------------------------------------------------------------
   @ Create for Flash
@@ -736,7 +784,11 @@ nvariable: @ Creates an initialised variable of given length.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n variable_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n variable_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ -----------------------------------------------------------------------------
   @ Variable Flash
@@ -831,7 +883,11 @@ finish_var_buf_ram: @ Finished.
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n rambuffer_ram @ Befinde mich im Ram. Schalte um !
+.else
   bhs.n rambuffer_ram @ Befinde mich im Ram. Schalte um !
+.endif
 
   @ -----------------------------------------------------------------------------
   @ Buffer Flash
@@ -923,7 +979,11 @@ dictionarystart: @ ( -- Startadresse des aktuellen Dictionaryfadens )
   ldr r1, =Backlinkgrenze
   pushdatos
   cmp r0, r1
+.ifdef above_ram
+  blo 1f
+.else
   bhs 1f
+.endif
   ldr tos, =CoreDictionaryAnfang @ Befinde mich im Flash mit Backlinks. Muss beim CoreDictionary anfangen:        In Flash: Start with core dictionary.
   bx lr
 
@@ -1109,7 +1169,11 @@ find: @ ( address length -- Code-Adresse Flags )
       @ Prüfe, ob ich mich im Flash oder im Ram befinde.  Check if in RAM or in Flash.
       ldr r0, =Backlinkgrenze
       cmp tos, r0
+.ifdef above_ram
+      blo 3f @ Im Ram beim ersten Treffer ausspringen. Search is over in RAM with first hit.
+.else
       bhs 3f @ Im Ram beim ersten Treffer ausspringen. Search is over in RAM with first hit.
+.endif
              @ Im Flash wird weitergesucht, ob es noch eine neuere Definition mit dem Namen gibt.
              @ If in Flash, whole dictionary has to be searched because of backwards link dictionary structure.
 

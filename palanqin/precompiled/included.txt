@@ -99,45 +99,45 @@ immediate 0-foldable ;
 \  File: fixpt-math-lib.fs for Mecrisp-Stellaris by Matthias Koch
 \
 \  This file contains these functions for s31.32 fixed point numbers:
-\ 
+\
 \           sqrt, sin, cos, tan, asin, acos, atan
 \           log2, log10, ln, pow2, pow10, exp
 \
 \ ------------- Comments on sqrt and trig functions -----------------------
-\ 
+\
 \  All angles are in degrees.
-\ 
-\  Accuracy is good rounded to 7 significan digits, with some exceptions.
+\
+\  Accuracy is good rounded to 7 significant digits, with some exceptions.
 \  In particular, the asin and acos functions have reduced accuracy
 \  near the endpoints of the range of their inputs (+/-1) due to their
-\  very large slopes there.  See the tests in fixpt-mat-lib-tests.fs.  
-\ 
+\  very large slopes there.  See the tests in fixpt-mat-lib-tests.fs.
+\
 \  The sin function is based on Maclaurin series for sin and cos over
 \  the interval [0, pi/4], evaluated as polynomials with the Horner
 \  method.  This is extended to all angles using (anti)symmetry.  Cos is
 \  calculated from sin with cos(x) = sin(x+90), and tan is calculated as
-\  sin/cos.   
-\ 
+\  sin/cos.
+\
 \  Atan is based on the first 7 terms of its Euler series over the
 \  interval [0, 1/8].  It is extended to [0, 1] using the identity
-\ 
+\
 \   atan(x) = atan(c) + atan((x-c)/(1+x*c)), c = 1/8, 2/8, ..., 7/8, 1.
-\ 
+\
 \  For x>1 we use atan(x) = 90 - atan(1/x).  Negative arguments are handled
 \  by antisymmetry.  Asin and acos are calculated using the formulas
-\ 
-\    asin(x) = atan(x / sqrt(1 - x^2)),  x^2 <= 1/2 
-\ 
+\
+\    asin(x) = atan(x / sqrt(1 - x^2)),  x^2 <= 1/2
+\
 \    asin(x) = 90 - atan(sqrt(1 - x^2) / x),  x^2 > 1/2
 \
-\    acos(x) = 90 - asin(x) 
+\    acos(x) = 90 - asin(x)
 \
 \  The square root is calculated bitwise with a standard algorithm over
 \  the interval [0, 1] and is extended to all positive x by division by 4
 \  until the quotient is in [0, 1].
 \
 \ ------------- Comments on the log and power functions -------------------
-\ 
+\
 \  The user can check for accuracy by running the test functions in the
 \  file fixpt-math-lib-tests.fs, or by running tests tailored to their use.
 \  Generally the functions are accurate when rounded to about 7 significant
@@ -146,7 +146,7 @@ immediate 0-foldable ;
 \  point.  In particular, this affects the values of the power and
 \  exponential functions for larger negative inputs, when the relative
 \  accuracy decreases significantly.
-\ 
+\
 \  If the argument to a log function is non-positive, the function returns
 \  "minus infinity," the largest negative s31.32 value.  This is the only
 \  signal that an invalid input has been used.  Large negative inputs
@@ -154,38 +154,38 @@ immediate 0-foldable ;
 \  inputs will return "plus infinity," the largest positive s31.32 value.
 \  The code shows the specific values used to determine "large" in each
 \  case.
-\ 
+\
 \  The algorithm for calculating the base 2 log is taken from pseudocode
 \  in the Wikipedia article "Binary logarithm" which is based on:
-\ 
+\
 \     Majithia, J. C.; Levan, D. (1973), "A note on base-2 logarithm
 \     computations", Proceedings of the IEEE, 61 (10): 1519–1520,
 \     doi:10.1109/PROC.1973.9318
-\ 
+\
 \  The log10(x) and natural logarithm ln(x) make use of the identities
-\ 
+\
 \     log10(x) = log10(2)*log2(x), ln(x) = ln(2)*log2(x)
-\ 
+\
 \  where log10(2) and ln(2) are given constants.
-\ 
+\
 \  The pow2(x) = 2^x function is calculated as 2^x = (2^z)*(2^n) where
 \  x = z + n, n is an integer with n <= x < n+1, and 0 <= z < 1.  The
 \  factor 2^z is calculated by the identity 2^z = exp(ln(2)*z) where
 \  exp(y) is calculated using its Maclaurin series.  The other factor
 \  is accounted for by shifting 2^z n times (shift left for n > 0, shift
 \  right for n < 0).
-\ 
+\
 \  The pow10(x) = 10^x function is calculated using the identity
-\ 
+\
 \               10^x = 2^(x*ln(10)/ln(2))
-\ 
+\
 \  except for positive integer values of x, where simple multiplication
 \  is used.
-\ 
-\  The exp(y) function is calculated using the series above if y is 
-\  between -0.7 and 0.7.  Otherwise it is calculated from pow2 using the
+\
+\  The exp(y) function is calculated using the series above if y is
+\  between -0.36 and +0.36.  Otherwise it is calculated from pow2 using the
 \  identity exp(y) = pow2(y/ln(2)).
-\ 
+\
 \ -------------------------------------------------------------------------
 \  Note:  Some s31.32 constant values were rounded from theoretical values
 \         and entered below as (comma-part) integers rather calculating
@@ -215,10 +215,10 @@ $0 $80000000 2constant -inf         \ 2147483648,0
 
 \ Convert an s31.32 angle df1 in degrees to an angle df2 in [-90, 90)
 \ such that df1 = df2 + n*180 where n is an integer.  (For tan only.)
-: deg-90to90 ( df1 -- df2 )  
-  180,0 d/mod 2drop 
+: deg-90to90 ( df1 -- df2 )
+  180,0 d/mod 2drop
   2dup 90,0 d< not if
-    180,0 d- 
+    180,0 d-
   else
     2dup -90,0 d< if
       180,0 d+
@@ -238,14 +238,14 @@ $0 $80000000 2constant -inf         \ 2147483648,0
   \ Special cases x = 0 and x = 1
   2dup d0= if exit then
   2dup 1,0 d= if exit then
-  
+
   swap    \ Put x in MSW of unsigned 64-bit integer u
-  
+
   \ Find square root of u as 64-bit unsigned int
   0,0 2swap 1,0 30 lshift  \ Stack: ( res  u  bit )
   \ Start value of bit is highest power of 4 <= u
   begin 2over 2over du< while dshr dshr repeat
-  
+
   \ Do while bit not zero
   begin 2dup 0,0 d<> while
     2rot 2over 2over d+ 7 pick 7 pick du> not if  \ u >= res+bit ?
@@ -274,11 +274,11 @@ $0 $80000000 2constant -inf         \ 2147483648,0
     begin 2dup 1,0 d> while
       2swap 1,0 d+ 2swap    \ Incr count
       dshr dshr             \ Divide by 4
-    repeat 
+    repeat
     0to1sqrt
     2swap nip 0 do    \ ndiv consumed
       dshl                  \ Multiply by 2 ndiv times
-    loop 
+    loop
   then
   2-foldable
 ;
@@ -315,8 +315,8 @@ numbertable sin-coef
   715827883 ,   \  1/(2*3)
 
 : half-q1-sin-rad  ( x -- sinx )
-  \ Sin(x) for x in first half of first quadrant Q1 and its negative 
-  \ x is a s31.32 angle in radians between -pi/4 and pi/4 
+  \ Sin(x) for x in first half of first quadrant Q1 and its negative
+  \ x is a s31.32 angle in radians between -pi/4 and pi/4
   2dup 2dup f*          \  x and x^2 on stack as dfs
   \ Calculate Horner terms
   -1,0   \ Starting Horner term is -1
@@ -344,8 +344,8 @@ numbertable cos-coef
  2147483648 ,   \  1/2
 
 : half-q1-cos-rad  ( x -- cosx )
-  \ Cos(x) for x in first half of first quadrant Q1 and its negative 
-  \ x is a s31.32 angle in radians between -pi/4 and pi/4 
+  \ Cos(x) for x in first half of first quadrant Q1 and its negative
+  \ x is a s31.32 angle in radians between -pi/4 and pi/4
   2dup f*          \  x^2 on stack
   \ Calculate Horner terms
   1,0   \ Starting Horner term is 1
@@ -355,13 +355,13 @@ numbertable cos-coef
     2over f* i cos-coef 0 f* 0 1
     i 2 mod 0= if d- else d+ then
   loop
-  2nip 
+  2nip
   2-foldable
 ;
 
 : q1-sin-rad ( x -- sinx )
-  \ Sin(x) for x in first quadrant Q1 and its negative 
-  \ x is a s31.32 angle in radians between -pi/2 and pi/2 
+  \ Sin(x) for x in first quadrant Q1 and its negative
+  \ x is a s31.32 angle in radians between -pi/2 and pi/2
   2dup pi/4 d< if
     half-q1-sin-rad
   else
@@ -389,7 +389,7 @@ numbertable cos-coef
 \ s31.32 comma parts of coefficients in Horner expression of 6-term Euler
 \ expansion of atan after x/(x^2+1) is factored out.  The whole parts are
 \ 0 and are supplied in code.  The series variable is y = (x^2)/(x^2+1).
-numbertable atan-coef  
+numbertable atan-coef
   3964585196 ,    \   12/13
   3904515724 ,    \   10/11
   3817748708 ,    \   8/9
@@ -414,8 +414,8 @@ numbertable atan-coef
 ;
 
 \ Table of atan(i/8), i = 0, 1, ..., 8, values in radians
-\ Only comma parts given, all whole parts are 0. 
-numbertable atan-table            
+\ Only comma parts given, all whole parts are 0.
+numbertable atan-table
            0 ,
    534100635 ,
   1052175346 ,
@@ -474,11 +474,11 @@ numbertable atan-table
   \ x is any s31.32 angle in degrees
   \ Move x to equivalent value in [-90, 90)
   deg-90to90
-  \ If |x| > 89,9 deg, use approximation sgn(x)(180/pi)/(90-|x|) 
+  \ If |x| > 89,9 deg, use approximation sgn(x)(180/pi)/(90-|x|)
   2dup dabs 2dup 89,8 d> if
     90,0 2swap d- 608135817 3 f* 180,0 2swap f/
     2swap d0< if dnegate then
-  else 
+  else
     2drop 2dup sin 2swap cos f/
   then
   2-foldable
@@ -486,11 +486,11 @@ numbertable atan-table
 
 : atan ( x -- atanx )
   \ Calc atan for s31.32 x, return result in degrees
-  2dup 2dup d0< if dabs then   \ Stack: ( x |x| ) 
+  2dup 2dup d0< if dabs then   \ Stack: ( x |x| )
   \ Find atan(|x|)
   2dup 1,0 d> if
     \ |x| > 1, use atan(|x|) = (pi/2) - atan(1/|x|) with 1/|x| in [0, 1]
-    1,0 2swap f/ 0to1-atan pi/2 2swap d- 
+    1,0 2swap f/ 0to1-atan pi/2 2swap d-
   else
     \ |x| <= 1
     0to1-atan
@@ -531,7 +531,7 @@ numbertable atan-table
   0 0 2swap 0
   ( retval y cum_m )
   \ while((cum_m < 33) && (y > 1))
-  begin dup 2over 
+  begin dup 2over
     ( retval y cum_m cum_m y )
     1,0 d> swap 33 < and while
     ( retval y cum_m )
@@ -555,7 +555,7 @@ numbertable atan-table
     ( retval cum_m 2^-cum_m )
     rot >r d+
     ( retval ) ( R: y cum_m )
-    r> 2r> rot 
+    r> 2r> rot
     ( retval y cum_m )
   repeat
   drop 2drop
@@ -567,13 +567,13 @@ numbertable atan-table
 \ -------------------------------------------------------------------------
 : log2 ( x -- log2x )
   \ Calculates base 2 logarithm of positive s31.32 value x
-  
+
   \ Treat error and special cases
   \ Check that x > 0.  If not, return "minus infinity"
   2dup 0,0 d> not if 2drop -inf exit then
   \ If x = 1, return 0
   2dup 1,0 d= if 2drop 0,0 exit then
-  
+
   \ Find the n such that 1 <= (2^(-n))*x < 2
   \ This n is the integer part (characteristic) of log2(x)
   0 -rot
@@ -603,13 +603,13 @@ numbertable atan-table
 
 : log10 ( x -- log10x )
   \ Calculates base 10 logarithm of positive s31.32 value x
-  
+
   \ Treat error and special cases
   \ Check that x > 0.  If not, return "minus infinity"
   2dup 0,0 d> not if 2drop -inf exit then
   \ If x = 1, return 0
   2dup 1,0 d= if 2drop 0,0 exit then
-  
+
   \ Find the n such that 1 <= (10^(-n))*x < 10
   \ This n is the integer part (characteristic) of log2(x)
   0 -rot
@@ -625,13 +625,13 @@ numbertable atan-table
     begin 2dup 1,0 d<  while
       ( n y )
       10,0 f* rot 1 - -rot
-    repeat  
+    repeat
   then
-  
+
   \ Now y = (10^(-n))*x so log10(x) = n + log10(y) and we use the
   \ identity log10(y) = log10(2)*log2(y)
   log2 log10of2 f* rot 0 swap d+
-  ( log10x )  
+  ( log10x )
   2-foldable
 ;
 
@@ -639,7 +639,7 @@ numbertable atan-table
 
 : ln ( x -- lnx )
   \ Return the natural logarithm of a postive s31.32 value x
-  
+
   \ Treat error and special cases
   \ Check that x > 0.  If not, return "minus infinity"
   2dup 0,0 d> not if 2drop -inf exit then
@@ -754,20 +754,22 @@ numbertable exp-coef
 
 \ -------------------------------------------------------------------------
 
+: s>f ( n -- f ) 0 swap  1-foldable ; \ Signed integer --> Fixpoint s31.32
+: f>s ( f -- n ) nip     2-foldable ; \ Fixpoint s31.32 --> Signed integer
 
 \ ARM Cortex M0 Disassembler, Copyright (C) 2013  Matthias Koch
 \ This is free software under GNU General Public License v3.
-\ Knows M0 machine instructions, resolves call entry points, 
+\ Knows M0 machine instructions, resolves call entry points,
 \ literal pools and handles inline strings.
 \ Usage: Specify your target address in disasm-$ and give disasm-step some calls.
 
 \ ------------------------
-\  A quick list of words 
+\  A quick list of words
 \ ------------------------
 
 : list ( -- )
   cr
-  dictionarystart 
+  dictionarystart
   begin
     dup 6 + ctype space
     dictionarynext
@@ -786,7 +788,7 @@ numbertable exp-coef
   2 disasm-$ +!   ;
 
 \ --------------------------------------------------
-\  Try to find address as code start in Dictionary 
+\  Try to find address as code start in Dictionary
 \ --------------------------------------------------
 
 : disasm-string ( -- ) \ Takes care of an inline string
@@ -803,7 +805,7 @@ numbertable exp-coef
     dictionarynext
   until
   drop
-  r> 
+  r>
 
   case \ Check for inline strings ! They are introduced by calls to ." or s" internals.
     ['] ." $1E + of ."   -->  .' " disasm-string ." '" endof \ It is ." runtime ?
@@ -823,11 +825,11 @@ numbertable exp-coef
 : addr. u.8 ;
 
 : register. ( u -- )
-  case 
+  case
     13 of ."  sp" endof
     14 of ."  lr" endof
     15 of ."  pc" endof
-    dup ."  r" decimal u.ns hex 
+    dup ."  r" decimal u.ns hex
   endcase ;
 
 \ ----------------------------------------
@@ -892,31 +894,32 @@ $D000 $F000 opcode? not if else dup $0F00 and 8 rshift       \ B(1) conditional 
                          $01 of ." bne" endof  \ Z clear
                          $02 of ." bcs" endof  \ C set
                          $03 of ." bcc" endof  \ C clear
-                       
+
                          $04 of ." bmi" endof  \ N set
                          $05 of ." bpl" endof  \ N clear
                          $06 of ." bvs" endof  \ V set
                          $07 of ." bvc" endof  \ V clear
-                       
+
                          $08 of ." bhi" endof  \ C set Z clear
                          $09 of ." bls" endof  \ C clear or Z set
                          $0A of ." bge" endof  \ N == V
                          $0B of ." blt" endof  \ N != V
-                       
+
                          $0C of ." bgt" endof  \ Z==0 and N == V
                          $0D of ." ble" endof  \ Z==1 or N != V
+
                          \ $0E: Undefined Instruction
-                         \ $0F: SWI                       
+                         $0F of ." swi"  0 imm8.   drop exit endof
                        endcase
                        space
                        dup $FF and dup $80 and if $FFFFFF00 or then
-                       shl disasm-$ @ 1 bic + 2 + addr. 
+                       shl disasm-$ @ 1 bic + 2 + addr.
                     then
 
 $E000 $F800 opcode? if ." b"                                 \ B(2) unconditional branch
                       dup $7FF and shl
                       dup $800 and if $FFFFF000 or then
-                      disasm-$ @ + 2+                     
+                      disasm-$ @ + 2+
                       space addr.
                     then
 
@@ -924,9 +927,9 @@ $4380 $FFC0 opcode? if ." bics" 0 reg. 3 reg. then           \ BIC
 $BE00 $FF00 opcode? if ." bkpt" 0 imm8. then                 \ BKPT
 
 $F000 $F800 opcode? if disasm-fetch ( Opcode1 Opcode2 )      \ BL/BLX(1)
-                     \  dup $1000 and 
+                     \  dup $1000 and
                      \  if ." bl  "
-                     \  else ." blx not available in M0" 
+                     \  else ." blx not available in M0"
                      \  then
 
                       ." bl  " ( Opcode1 Opcode2 )
@@ -935,7 +938,7 @@ $F000 $F800 opcode? if disasm-fetch ( Opcode1 Opcode2 )      \ BL/BLX(1)
                       $7FF and ( Opcode1 DestinationL DestinationH )
                       dup $400 and if $FFFFF800 or then ( Opcode DestinationL DestinationHsigned )
                       11 lshift or ( Opcode1 Destination )
-                      shl 
+                      shl
                       disasm-$ @ +
                       dup addr. name. \ Try to resolve destination
                     then
@@ -1008,7 +1011,6 @@ $3800 $F800 opcode? if ." subs" 8 reg. 0 imm8. then          \ SUB(2)
 $1A00 $FE00 opcode? if ." subs" 0 reg. 3 reg. 6 reg. then    \ SUB(3)
 $B080 $FF80 opcode? if ." sub sp" 0 imm7<<2. then            \ SUB(4)
 
-$DF00 $FF00 opcode? if ." swi"  0 imm8. then                 \ SWI
 $B240 $FFC0 opcode? if ." sxtb" 0 reg. 3 reg. then           \ SXTB
 $B200 $FFC0 opcode? if ." sxth" 0 reg. 3 reg. then           \ SXTH
 $4200 $FFC0 opcode? if ." tst"  0 reg. 3 reg. then           \ TST

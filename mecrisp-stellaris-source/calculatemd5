@@ -90,6 +90,10 @@ cd msp432p401r-ra
 md5sum *.bin
 cd ..
 
+cd lm3s811-ra
+md5sum *.bin
+cd ..
+
 cd lm4f120
 md5sum *.bin
 cd ..

@@ -88,6 +88,10 @@ cd msp432p401r-ra
 make clean
 cd ..
 
+cd lm3s811-ra
+make clean
+cd ..
+
 cd lm4f120
 make clean
 cd ..

@@ -57,6 +57,7 @@ Ports for STM32F767 and STM32H743 by Wim Verheyen
 Port for DIYMORE board by Christoph Kukulies (kuku@physik.rwth-aachen.de)
 Register definitions for RP2040 by Terry Porter
 FreeBSD ARMv6 support by Robert Clausecker
+Port for LM3S811 by Ivan Dimitrov
 
 Hardware donations:
 

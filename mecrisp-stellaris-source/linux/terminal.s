@@ -128,26 +128,21 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
  pop {pc}
      
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "cacheflush" @ ( -- )
+  Wortbirne Flag_visible, "cacheflush" @ ( addr len -- )
 cacheflush:
 @ -----------------------------------------------------------------------------
+  mov r1, r6                      @ data length
+  ldmia r7!, {r0, r6}             @ r0 = start address, pop twice
+
   push {r4, r5, r6, r7, lr}
 
-  dmb
-  dsb
-  isb  
-  
-  ldr r0, =FlashDictionaryAnfang  @ Start address
-  ldr r1, =RamEnde                @ End  address
-  movs r2, #0                     @ This zero is important !s
-  movs r3, #0
-  movs r4, #0
-  movs r5, #0
-  movs r6, #0
-  ldr r7, =0x000f0002  @ Syscall __ARM_NR_cacheflush
+  adds r1, r1, r0                 @ end address
+  movs r2, #0                     @ flags (none)
+  ldr r7, =0x000f0002             @ syscall cacheflush(addr, addr+len, 0)
   swi #0
 
   pop {r4, r5, r6, r7, pc}
+
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_0, "arguments" @ ( -- a-addr )

@@ -88,6 +88,10 @@ cd msp432p401r-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r-ra
 cd ..
 
+cd lm3s811-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm3s811-ra
+cd ..
+
 cd lm4f120
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
 cd ..

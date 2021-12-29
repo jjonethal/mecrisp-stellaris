@@ -830,3 +830,17 @@
 21.03.2021, Robert Clausecker, Mecrisp-Stellaris 2.5.8
 
   - Prepared FreeBSD target for release in FreeBSD ports collection, adding ARMv6 support
+
+01.04.2021, Matthias Koch, Mecrisp-Stellaris 2.5.9
+
+  - Fixed SWI in disassemblers
+  - Added s>f and f>s to fixpt-math-lib.fs
+
+  - Contribution by Jan Bramkamp:
+      Support for memory maps with Flash above RAM
+
+  - Contribution by Robert Clausecker:
+      Improved cache flush barrier syscall in Linux and FreeBSD
+
+  - Contribution by Ivan Dimitrov
+      New target: LM3S811
