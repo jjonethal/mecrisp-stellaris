@@ -1,0 +1,158 @@
+
+mandelboot.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+20041f00 <Reset>:
+20041f00:	a035      	add	r0, pc, #212	; (adr r0, 20041fd8 <literal_pool>)
+20041f02:	c83e      	ldmia	r0!, {r1, r2, r3, r4, r5}
+20041f04:	2000      	movs	r0, #0
+20041f06:	6008      	str	r0, [r1, #0]
+20041f08:	2102      	movs	r1, #2
+20041f0a:	03cf      	lsls	r7, r1, #15
+20041f0c:	1bd6      	subs	r6, r2, r7
+20041f0e:	1bf7      	subs	r7, r6, r7
+20041f10:	60f5      	str	r5, [r6, #12]
+20041f12:	6033      	str	r3, [r6, #0]
+20041f14:	6870      	ldr	r0, [r6, #4]
+20041f16:	17c0      	asrs	r0, r0, #31
+20041f18:	d5fc      	bpl.n	20041f14 <Reset+0x14>
+20041f1a:	6321      	str	r1, [r4, #48]	; 0x30
+20041f1c:	028b      	lsls	r3, r1, #10
+20041f1e:	64a3      	str	r3, [r4, #72]	; 0x48
+20041f20:	2306      	movs	r3, #6
+20041f22:	6253      	str	r3, [r2, #36]	; 0x24
+20041f24:	2321      	movs	r3, #33	; 0x21
+20041f26:	6293      	str	r3, [r2, #40]	; 0x28
+20041f28:	2370      	movs	r3, #112	; 0x70
+20041f2a:	62d3      	str	r3, [r2, #44]	; 0x2c
+20041f2c:	6315      	str	r5, [r2, #48]	; 0x30
+20041f2e:	6079      	str	r1, [r7, #4]
+20041f30:	60f9      	str	r1, [r7, #12]
+20041f32:	2105      	movs	r1, #5
+20041f34:	37cc      	adds	r7, #204	; 0xcc
+20041f36:	6039      	str	r1, [r7, #0]
+
+20041f38 <mandelbrot>:
+20041f38:	7813      	ldrb	r3, [r2, #0]
+20041f3a:	0397      	lsls	r7, r2, #14
+20041f3c:	2501      	movs	r5, #1
+20041f3e:	0669      	lsls	r1, r5, #25
+20041f40:	6239      	str	r1, [r7, #32]
+20041f42:	6139      	str	r1, [r7, #16]
+20041f44:	4240      	negs	r0, r0
+20041f46:	43ef      	mvns	r7, r5
+20041f48:	033f      	lsls	r7, r7, #12
+
+20041f4a <y_loop>:
+20041f4a:	2603      	movs	r6, #3
+20041f4c:	4276      	negs	r6, r6
+20041f4e:	0336      	lsls	r6, r6, #12
+
+20041f50 <x_loop>:
+20041f50:	0031      	movs	r1, r6
+20041f52:	003a      	movs	r2, r7
+20041f54:	2440      	movs	r4, #64	; 0x40
+
+20041f56 <iteration_loop>:
+20041f56:	0013      	movs	r3, r2
+20041f58:	4353      	muls	r3, r2
+20041f5a:	434a      	muls	r2, r1
+20041f5c:	4349      	muls	r1, r1
+20041f5e:	1ac9      	subs	r1, r1, r3
+20041f60:	18db      	adds	r3, r3, r3
+20041f62:	185b      	adds	r3, r3, r1
+20041f64:	0e9b      	lsrs	r3, r3, #26
+20041f66:	d106      	bne.n	20041f76 <iteration_finished>
+20041f68:	1309      	asrs	r1, r1, #12
+20041f6a:	12d2      	asrs	r2, r2, #11
+20041f6c:	4342      	muls	r2, r0
+20041f6e:	1989      	adds	r1, r1, r6
+20041f70:	19d2      	adds	r2, r2, r7
+20041f72:	3c01      	subs	r4, #1
+20041f74:	d1ef      	bne.n	20041f56 <iteration_loop>
+
+20041f76 <iteration_finished>:
+20041f76:	210f      	movs	r1, #15
+20041f78:	400c      	ands	r4, r1
+20041f7a:	a31c      	add	r3, pc, #112	; (adr r3, 20041fec <colormap>)
+20041f7c:	5d1c      	ldrb	r4, [r3, r4]
+20041f7e:	f000 f825 	bl	20041fcc <emit>
+20041f82:	3680      	adds	r6, #128	; 0x80
+20041f84:	2103      	movs	r1, #3
+20041f86:	0309      	lsls	r1, r1, #12
+20041f88:	428e      	cmp	r6, r1
+20041f8a:	dde1      	ble.n	20041f50 <x_loop>
+20041f8c:	240a      	movs	r4, #10
+20041f8e:	f000 f81d 	bl	20041fcc <emit>
+20041f92:	0229      	lsls	r1, r5, #8
+20041f94:	187f      	adds	r7, r7, r1
+20041f96:	0369      	lsls	r1, r5, #13
+20041f98:	428f      	cmp	r7, r1
+20041f9a:	ddd6      	ble.n	20041f4a <y_loop>
+
+20041f9c <breathe_initialisation>:
+20041f9c:	04ee      	lsls	r6, r5, #19
+
+20041f9e <breathe_led>:
+20041f9e:	4044      	eors	r4, r0
+20041fa0:	d403      	bmi.n	20041faa <breathe_led+0xc>
+20041fa2:	1469      	asrs	r1, r5, #17
+20041fa4:	1a76      	subs	r6, r6, r1
+20041fa6:	1471      	asrs	r1, r6, #17
+20041fa8:	186d      	adds	r5, r5, r1
+20041faa:	1371      	asrs	r1, r6, #13
+20041fac:	31b7      	adds	r1, #183	; 0xb7
+20041fae:	2307      	movs	r3, #7
+20041fb0:	400b      	ands	r3, r1
+20041fb2:	3308      	adds	r3, #8
+20041fb4:	08c9      	lsrs	r1, r1, #3
+20041fb6:	3902      	subs	r1, #2
+20041fb8:	408b      	lsls	r3, r1
+20041fba:	d502      	bpl.n	20041fc2 <breathe_led+0x24>
+20041fbc:	6991      	ldr	r1, [r2, #24]
+20041fbe:	06c9      	lsls	r1, r1, #27
+20041fc0:	d5ba      	bpl.n	20041f38 <mandelbrot>
+20041fc2:	1aff      	subs	r7, r7, r3
+20041fc4:	419b      	sbcs	r3, r3
+20041fc6:	0391      	lsls	r1, r2, #14
+20041fc8:	610b      	str	r3, [r1, #16]
+20041fca:	e7e8      	b.n	20041f9e <breathe_led>
+
+20041fcc <emit>:
+20041fcc:	4a03      	ldr	r2, [pc, #12]	; (20041fdc <uart0_base>)
+20041fce:	6993      	ldr	r3, [r2, #24]
+20041fd0:	069b      	lsls	r3, r3, #26
+20041fd2:	d4fc      	bmi.n	20041fce <emit+0x2>
+20041fd4:	7014      	strb	r4, [r2, #0]
+20041fd6:	4770      	bx	lr
+
+20041fd8 <literal_pool>:
+20041fd8:	4000c000 	andmi	ip, r0, r0
+
+20041fdc <uart0_base>:
+20041fdc:	40034000 	andmi	r4, r3, r0
+20041fe0:	00fabaa0 	rscseq	fp, sl, r0, lsr #21
+20041fe4:	40008000 	andmi	r8, r0, r0
+20041fe8:	00000301 	andeq	r0, r0, r1, lsl #6
+
+20041fec <colormap>:
+20041fec:	30402b20 	subcc	r2, r0, r0, lsr #22
+20041ff0:	6d25384f 	stcvs	8, cr3, [r5, #-316]!	; 0xfffffec4
+20041ff4:	3b2a766e 	blcc	20adf9b4 <colormap+0xa9d9c8>
+20041ff8:	202e2c3a 	eorcs	r2, lr, sl, lsr ip
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00002041 	andeq	r2, r0, r1, asr #32
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000016 	andeq	r0, r0, r6, lsl r0
+  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
+  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  18:	0600304d 	streq	r3, [r0], -sp, asr #32
+  1c:	094d070c 	stmdbeq	sp, {r2, r3, r8, r9, sl}^
+  20:	Address 0x0000000000000020 is out of bounds.
+

@@ -1,0 +1,26 @@
+
+STM32G031J6
+
+	- 32 KB Flash
+	- 8 KB RAM
+	- 8 pin SO8N package
+	
+	
+;------------------------------------------------------------------------------
+Hardware and configuration for STM32G031J6:
+;------------------------------------------------------------------------------
+
+	Connect everything necessary to power (3.3V) up and flash the chip.
+	Use a ST-LINK (Nucleo-64 board with onboard ST-LINK) 
+	and connect it to target SWD pins (PA13=SWDIO, PA14=SWCLK, GND)
+
+	Use a ST-LINK Utility such as:
+	- STM32 CubeProgrammer
+	- Load the mecrisp-stellaris-stm32g031j6.bin
+	- Start programming
+	- Configure Option Byte so, that internal reset is used (PF2-NRST is free for PA2)
+
+	Communication is via serial 115200 baud 8N1 over
+	- USART2 in STM32G031J6    (TX on PA2, RX on PA15)
+
+	On startup, this runs with internal 16 MHz HSI clock.

@@ -74,8 +74,7 @@ of_opcodiereinsprung:
 
   pushdaconst 9 @ Strukturerkennung bereitlegen  Structure pattern
 
-  pushdaconstw 0xcf40 @ Opcode for ldmia r7!, {r6}
-  bl hkomma
+  bl drop_hkomma
 
   pop {pc}
 
@@ -111,7 +110,7 @@ of_opcodiereinsprung:
     bl hkomma
     b.n of_opcodiereinsprung
 
-2:  
+2:
 
     .ifndef m0core
       @ M3/M4 cores offer additional opcodes with 12-bit encoded constants.
@@ -126,13 +125,13 @@ of_opcodiereinsprung:
         bl reversekomma
         b.n of_opcodiereinsprung
 3:
-    .endif  
+    .endif
 
   @ Generate constant for comparision
   pushdaconst 0
   bl registerliteralkomma
 
-  pushdaconstw 0x42B0 @ cmp r0, tos  
+  pushdaconstw 0x42B0 @ cmp r0, tos
   bl hkomma
   b.n of_opcodiereinsprung
 
@@ -188,8 +187,7 @@ strukturendcase:
 1:drop
 
   push {lr}
-  pushdaconstw 0xcf40 @ Opcode for ldmia r7!, {r6}
-  bl hkomma
+  bl drop_hkomma
 
   bl spruenge_einpflegen
   pop {pc}
@@ -205,9 +203,9 @@ spruenge_einpflegen: @ Internal use only.
 
 1:cmp r0, #0 @ Sind noch Sprünge zu bearbeiten ? Any jumps left ?
   beq 2f
-  
+
   push {r0, r1}
-  movs r1, #1          @ Check if this shall be a conditional jump instead. Needed for ?do which reuses this code. 
+  movs r1, #1          @ Check if this shall be a conditional jump instead. Needed for ?do which reuses this code.
   ands r1, tos         @ Prüfe, ob es ein bedingter Sprung werden soll - ?do benötigt solche.
 
   cmp r1, #0
@@ -215,7 +213,7 @@ spruenge_einpflegen: @ Internal use only.
     subs tos, #1 @ Markierung für den bedingten Sprung entfernen  Remove temporary bit for this beeing a conditional jump
     bl v_nullbranch  @ Insert conditional jump
     b 4f
-  
+
 3:bl v_branch @ Unbedingten Sprung einpflegen  Insert unconditional jump
 
 4:pop {r0, r1}

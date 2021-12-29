@@ -1,0 +1,190 @@
+
+\ -----------------------------------------------------------------------------
+\ Tetrahendron, 12 LEDs, charliplexed.
+\ https://hackaday.io/project/7960-led-polyhedron
+\ Four connections, called A, B, C, D.
+\ -----------------------------------------------------------------------------
+
+$40040000 constant P0OUT
+$40040004 constant P0OMR
+$40040010 constant P0IOCR0
+$40040014 constant P0IOCR4
+$40040018 constant P0IOCR8
+$4004001c constant P0IOCR12
+$40040024 constant P0IN
+$40040040 constant P0PHCR0
+$40040044 constant P0PHCR1
+$40040060 constant P0PDISC
+$40040070 constant P0PPS
+$40040074 constant P0HWSEL
+
+$40040100 constant P1OUT
+$40040104 constant P1OMR
+$40040110 constant P1IOCR0
+$40040114 constant P1IOCR4
+$40040118 constant P1IOCR8
+$4004011c constant P1IOCR12
+$40040124 constant P1IN
+$40040140 constant P1PHCR0
+$40040144 constant P1PHCR1
+$40040160 constant P1PDISC
+$40040170 constant P1PPS
+$40040174 constant P1HWSEL
+
+$40040200 constant P2OUT
+$40040204 constant P2OMR
+$40040210 constant P2IOCR0
+$40040214 constant P2IOCR4
+$40040218 constant P2IOCR8
+$4004021c constant P2IOCR12
+$40040224 constant P2IN
+$40040240 constant P2PHCR0
+$40040244 constant P2PHCR1
+$40040260 constant P2PDISC
+$40040270 constant P2PPS
+$40040274 constant P2HWSEL
+
+\ -----------------------------------------------------------------------------
+
+: hi-z   ( -- ) 0 P0IOCR4 ! 0 P0IOCR8 ! 0 P0OUT ! inline ; \ Set P0.7, P0.7, P0.8 and P0.9 as inputs, low.
+
+: a>b ( -- ) hi-z  $00000000 P0IOCR8 !  $80800000 P0IOCR4 !  %0001  6 lshift P0OUT ! ;
+: a>c ( -- ) hi-z  $00000080 P0IOCR8 !  $00800000 P0IOCR4 !  %0001  6 lshift P0OUT ! ;
+: a>d ( -- ) hi-z  $00008000 P0IOCR8 !  $00800000 P0IOCR4 !  %0001  6 lshift P0OUT ! ;
+: b>c ( -- ) hi-z  $00000080 P0IOCR8 !  $80000000 P0IOCR4 !  %0010  6 lshift P0OUT ! ;
+: b>d ( -- ) hi-z  $00008000 P0IOCR8 !  $80000000 P0IOCR4 !  %0010  6 lshift P0OUT ! ;
+: c>d ( -- ) hi-z  $00008080 P0IOCR8 !  $00000000 P0IOCR4 !  %0100  6 lshift P0OUT ! ;
+
+: b>a ( -- ) hi-z  $00000000 P0IOCR8 !  $80800000 P0IOCR4 !  %0010  6 lshift P0OUT ! ;
+: c>a ( -- ) hi-z  $00000080 P0IOCR8 !  $00800000 P0IOCR4 !  %0100  6 lshift P0OUT ! ;
+: d>a ( -- ) hi-z  $00008000 P0IOCR8 !  $00800000 P0IOCR4 !  %1000  6 lshift P0OUT ! ;
+: c>b ( -- ) hi-z  $00000080 P0IOCR8 !  $80000000 P0IOCR4 !  %0100  6 lshift P0OUT ! ;
+: d>b ( -- ) hi-z  $00008000 P0IOCR8 !  $80000000 P0IOCR4 !  %1000  6 lshift P0OUT ! ;
+: d>c ( -- ) hi-z  $00008080 P0IOCR8 !  $00000000 P0IOCR4 !  %1000  6 lshift P0OUT ! ;
+
+\ -----------------------------------------------------------------------------
+\
+\ For testing of all LEDs
+\
+\ : delay 1000000 0 do loop ;
+\
+\ : charly ( -- )
+\
+\   hi-z
+\
+\   begin
+\     a>b  delay      b>a  delay
+\     a>c  delay      c>a  delay
+\     a>d  delay      d>a  delay
+\     b>c  delay      c>b  delay
+\     b>d  delay      d>b  delay
+\     c>d  delay      d>c  delay
+\   key? until
+\ ;
+\
+\ -----------------------------------------------------------------------------
+\
+\ Grayscale... Not very beautiful.
+\
+\ : delay-pixel 100 0 do loop ;
+\
+\ 12 cells buffer: framebuffer
+\
+\ 8 constant maximumbrightness
+\
+\
+\ : display-frame ( -- )
+\
+\   framebuffer  0 cells + @  dup  0 ?do a>b delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  1 cells + @  dup  0 ?do a>c delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  2 cells + @  dup  0 ?do a>d delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  3 cells + @  dup  0 ?do b>c delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  4 cells + @  dup  0 ?do b>d delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  5 cells + @  dup  0 ?do c>d delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\
+\   framebuffer  6 cells + @  dup  0 ?do b>a delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  7 cells + @  dup  0 ?do c>a delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  8 cells + @  dup  0 ?do d>a delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer  9 cells + @  dup  0 ?do c>b delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer 10 cells + @  dup  0 ?do d>b delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\   framebuffer 11 cells + @  dup  0 ?do d>c delay-pixel loop   maximumbrightness swap - 0 ?do hi-z hi-z delay-pixel loop
+\
+\ ;
+\
+\ : graphics ( -- )
+\
+\   framebuffer 12 cells 0 fill
+\
+\   maximumbrightness 0 do i 1 + framebuffer i cells + ! loop
+\
+\   begin
+\     display-frame
+\   key? until
+\
+\ ;
+\
+\ -----------------------------------------------------------------------------
+
+\ Black and white. Nice !
+
+: delay-pixel 100 0 do loop ;
+
+: display-bw ( x -- )
+
+  dup  0 rshift 1 and if a>b else hi-z then delay-pixel
+  dup  1 rshift 1 and if a>c else hi-z then delay-pixel
+  dup  2 rshift 1 and if a>d else hi-z then delay-pixel
+  dup  3 rshift 1 and if b>c else hi-z then delay-pixel
+  dup  4 rshift 1 and if b>d else hi-z then delay-pixel
+  dup  5 rshift 1 and if c>d else hi-z then delay-pixel
+
+  dup  6 rshift 1 and if b>a else hi-z then delay-pixel
+  dup  7 rshift 1 and if c>a else hi-z then delay-pixel
+  dup  8 rshift 1 and if d>a else hi-z then delay-pixel
+  dup  9 rshift 1 and if c>b else hi-z then delay-pixel
+  dup 10 rshift 1 and if d>b else hi-z then delay-pixel
+  dup 11 rshift 1 and if d>c else hi-z then delay-pixel
+
+  hi-z drop
+;
+
+\ : d ( x -- ) begin dup display-bw key? until drop ;
+
+\ -----------------------------------------------------------------------------
+
+\ #######   RANDOM   ##########################################
+
+\ setseed   sets the random number seed
+\ random    returns a random 32-bit number
+\
+\ based on "Xorshift RNGs" by George Marsaglia
+\ http://www.jstatsoft.org/v08/i14/paper
+
+$7a92764b variable seed
+
+: setseed   ( u -- )
+    dup 0= or       \ map 0 to -1
+    seed !
+;
+
+: random    ( -- u )
+    seed @
+    dup 13 lshift xor
+    dup 17 rshift xor
+    dup 5  lshift xor
+    dup seed !
+    57947 *
+;
+
+: randrange  ( u0 -- u1 ) \ u1 is a random number less than u0
+    random um* nip
+;
+
+\ -----------------------------------------------------------------------------
+
+: esc? ( -- ? ) key? if key 27 = else false then ;
+: anim ( -- ) begin random 150 0 do dup display-bw loop drop esc? until ;
+
+\ -----------------------------------------------------------------------------
+
+: init ( -- ) anim ;

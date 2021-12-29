@@ -1,0 +1,95 @@
+Currently implemented instructions:
+
+    ADCS  Rd, Rm
+    ADD   Rd, SP, #imm8
+    ADD   Rd, PC, #imm8
+    ADD   SP, SP, #imm7
+    ADD   Rd, Rm
+    ADDS  Rd, Rn, #imm3
+    ADDS  Rd, #imm8
+    ADDS  Rd, Rn, Rm
+    ANDS  Rd, Rm
+    ASRS  Rd, Rm, #imm5
+    ASRS  Rd, Rm
+    B     label
+    B<c>  label
+    BICS  Rd, Rm
+    BKPT  #imm8
+    BL    label
+    BLX   Rm
+    BX    Rm
+    CMN   Rn, Rm
+    CMP   Rn, #imm8
+    CMP   Rn, Rm
+    DMB   #option
+    DSB   #option
+    EORS  Rn, Rm
+    ISB   #option
+    LDMIA Rn!, {...}
+    LDR   Rt, [PC, #imm8]
+    LDR   Rt, [SP, #imm8]
+    LDR   Rt, [Rn, #imm5]
+    LDR   Rt, [Rn, Rm]
+    LDRB  Rt, [Rn, #imm5]
+    LDRB  Rt, [Rn, Rm]
+    LDRH  Rt, [Rn, #imm5]
+    LDRH  Rt, [Rn, Rm]
+    LDRSB Rt, [Rn, Rm]
+    LDRSH Rt, [Rn, Rm]
+    LSLS  Rd, Rm, #imm5
+    LSLS  Rd, Rm
+    LSRS  Rd, Rm, #imm5
+    LSRS  Rd, Rm
+    MOV   Rd, Rm
+    MOVS  Rd, #imm8
+    MOVS  Rd, Rm
+    MRS   Rd, spec_reg
+    MULS  Rd, Rm
+    MVNS  Rd, Rm
+    NOP
+    ORRS  Rd, Rm
+    POP   {...}
+    PUSH  {...}
+    REV   Rd, Rm
+    REV16 Rd, Rm
+    REVSH Rd, Rm
+    RORS  Rd, Rm
+    RSBS  Rd, Rm, #0
+    SEV
+    SBCS  Rd, Rm
+    STMIA Rn!, {...}
+    STR   Rt, [SP, #imm8]
+    STR   Rt, [Rn, #imm5]
+    STR   Rt, [Rn, Rm]
+    STRB  Rt, [Rn, #imm5]
+    STRB  Rt, [Rn, Rm]
+    STRH  Rt, [Rn, #imm5]
+    STRH  Rt, [Rn, Rm]
+    SUB   SP, SP, #imm7
+    SUBS  Rd, Rn, #imm3
+    SUBS  Rd, #imm8
+    SUBS  Rd, Rn, Rm
+    SXTB  Rd, Rm
+    SXTH  Rd, Rm
+    TST   Rn, Rm
+    UDF   #imm8
+    UXTB  Rd, Rm
+    UXTH  Rd, Rm
+    WFE
+    WFI
+    YIELD
+
+Currently implemented escape hatches:
+
+    0xb700 terminate emulation
+    0xb701 dump registers
+    0xb702 console output
+    0xb703 console input
+    0xb704 check input status
+
+Other items to be done:
+
+ - check if there is sufficient memory before loading the image.
+ - provide more escape hatches and functionality to interact with the host
+ - implement interrupt handlinig
+ - implement basic ARM peripherals

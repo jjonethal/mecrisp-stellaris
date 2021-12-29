@@ -25,9 +25,9 @@
   line-y1 ! line-x1 !
 
   over line-x1 @ -   dup 0< if 1 else -1 then line-sx !   abs        line-dx !
-  dup  line-y1 @ -   dup 0< if 1 else -1 then line-sy !   abs negate line-dy !  
+  dup  line-y1 @ -   dup 0< if 1 else -1 then line-sy !   abs negate line-dy !
   line-dx @ line-dy @ + line-err !
-  
+
   begin
     2dup putpixel
     2dup line-x1 @ line-y1 @ d<>
@@ -56,10 +56,10 @@
     ellipse-dy @ negate ellipse-dx @        ellipse-putpixel
     ellipse-dy @ negate ellipse-dx @ negate ellipse-putpixel
     ellipse-dy @        ellipse-dx @ negate ellipse-putpixel
-  
+
     ellipse-err @ 2* >r
     r@  ellipse-dx @ 2* 1+ ellipse-b^2 @ *        < if  1 ellipse-dx +! ellipse-dx @ 2* 1+ ellipse-b^2 @ *        ellipse-err +! then
-    r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate > if -1 ellipse-dy +! ellipse-dy @ 2* 1+ ellipse-a^2 @ * negate ellipse-err +! then
+    r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate > if -1 ellipse-dy +! ellipse-dy @ 2* 1- ellipse-a^2 @ * negate ellipse-err +! then
 ;
 
 
@@ -70,14 +70,14 @@
   dup ellipse-b ! dup * ellipse-b^2 !
   dup ellipse-a ! dup * ellipse-a^2 !
   ellipse-ym ! ellipse-xm !
-  
+
   ellipse-b^2 @ ellipse-b @ 2* 1- ellipse-a^2 @ * - ellipse-err !
-  
+
   begin
-    ellipse-step       
+    ellipse-step
     ellipse-dy @ 0<
   until
-  
+
   ellipse-dx @
   begin
     1+
@@ -101,7 +101,7 @@ create font
 
 \ Unicode point, Bitmap Data
 
-32 h,  $00000000 ,   \  
+32 h,  $00000000 ,   \
 33 h,  $44404000 ,   \ !
 34 h,  $AA000000 ,   \ "
 35 h,  $AEAEA000 ,   \ #
@@ -291,20 +291,20 @@ create font
 253 h,  $24A62400 ,   \ ý
 254 h,  $08CAC800 ,   \ þ
 255 h,  $A0A62400 ,   \ ÿ
-285 h,  $00000000 , 
-338 h,  $6CEC6000 , 
-339 h,  $06ECE000 , 
-352 h,  $A6C6C000 , 
-353 h,  $A6C6C000 , 
-376 h,  $A0A44000 , 
-381 h,  $AE6CE000 , 
-382 h,  $AE6CE000 , 
-3748 h,  $00000000 , 
-5024 h,  $00000000 , 
-8226 h,  $00400000 , 
-8230 h,  $0000A000 , 
-8364 h,  $6EEC6000 , 
-65533 h,  $EAAAE000 , 
+285 h,  $00000000 ,
+338 h,  $6CEC6000 ,
+339 h,  $06ECE000 ,
+352 h,  $A6C6C000 ,
+353 h,  $A6C6C000 ,
+376 h,  $A0A44000 ,
+381 h,  $AE6CE000 ,
+382 h,  $AE6CE000 ,
+3748 h,  $00000000 ,
+5024 h,  $00000000 ,
+8226 h,  $00400000 ,
+8230 h,  $0000A000 ,
+8364 h,  $6EEC6000 ,
+65533 h,  $EAAAE000 ,
 
 0000 h,  $EAAAE000 ,  \ End of font marker, replacement glyph.
 
@@ -361,7 +361,7 @@ align decimal
 
     %00111111 and utf8collection @ 6 lshift or utf8collection !  \ Six more bits
     -1 utf8continuation +!                                       \ One less continuation byte to expect
-    utf8continuation @ 0= if utf8collection @ drawunicode then   \ Draw character if complete encoding was buffered.    
+    utf8continuation @ 0= if utf8collection @ drawunicode then   \ Draw character if complete encoding was buffered.
 
   else \ Begin of a new character
 

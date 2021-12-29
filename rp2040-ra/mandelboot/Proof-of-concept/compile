@@ -1,0 +1,7 @@
+#!/bin/sh
+
+fpc -XX asciimandel.pas && ./asciimandel > asciimandel.txt
+fpc -XX mandelint.pas   && ./mandelint   > mandelint.txt
+fpc -XX tricornint.pas  && ./tricornint  > tricornint.txt
+
+rm -f *.o

@@ -1,0 +1,10 @@
+
+Robert Clausecker wrote an ARM Cortex M0 emulator written in 8088 assembler !
+
+Try:
+
+dosbox -c "keyb gr" -c "mount c ." -c "c:" -c "PALANQIN\PALANQIN.COM PRECOM~1\STELAQIN.BIN"
+
+This actually runs on vintage hardware:
+
+https://www.youtube.com/watch?v=mFWXZAtCla8

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Precompiled contents:
+
+cat ../common/fixpt-math-lib.fs ../common/disassembler-m0.txt ../common/assembler-m0.txt ../common/multitask.txt cycles.txt ../common/dump.txt > included.txt
+
+./buildcore-pico ../thumbulator/thumbulator-rp2040 mecrisp-stellaris-pico-core.bin included.txt mecrisp-stellaris-pico-core-with-tools.bin
+
+# Generate files for flash programming
+
+dd if=/dev/zero bs=1 count=3840 of=padding.bin # Pad stage loader block to the next 4 kb border
+
+cat tools/launchpad_boot_crc.bin padding.bin mecrisp-stellaris-pico-core.bin > mecrisp-stellaris-pico.bin
+tools/uf2conv.py --family 0xE48BFF56 --base 0x10000000 mecrisp-stellaris-pico.bin -o mecrisp-stellaris-pico.uf2
+
+cat tools/launchpad_boot_crc.bin padding.bin mecrisp-stellaris-pico-core-with-tools.bin > mecrisp-stellaris-pico-with-tools.bin
+tools/uf2conv.py --family 0xE48BFF56 --base 0x10000000 mecrisp-stellaris-pico-with-tools.bin -o mecrisp-stellaris-pico-with-tools.uf2

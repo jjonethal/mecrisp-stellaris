@@ -1,0 +1,24 @@
+#!/bin/sh
+
+cat ../common/longcomment.txt \
+    ../common/conditional.txt \
+    ../common/dump.txt \
+    ../common/fixpt-math-lib.fs \
+    ../common/disassembler-m3.txt \
+    ../common/dictionary-tools.txt \
+    ../common/forget.txt \
+    ../common/multitask.txt \
+    ../common/multitask-debug.txt \
+    ../common/cycles.txt \
+    cornerstone.txt \
+    gpio.fs \
+    pll.fs \
+    usb-f4.fs \
+    initialisation.fs \
+    > included.fs
+
+cd ../thumbulator
+
+./buildcore-stm ./thumbulator-stm32f407 ../stm32f407-ra/mecrisp-stellaris-stm32f407.bin ../stm32f407-ra/included.fs ../stm32f407-ra/precompiled/mecrisp-stellaris-stm32f407-with-usb.bin
+
+cd ../stm32f407-ra

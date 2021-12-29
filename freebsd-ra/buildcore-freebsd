@@ -1,0 +1,18 @@
+#!/bin/sh
+
+stty -icanon -echo
+
+{
+   echo -e "compiletoflash\n"
+   cat ../common/conditional.txt
+   cat ../common/fixpt-math-lib.fs
+   cat ../common/disassembler-m3.txt
+   cat extras.txt
+   cat save.txt
+   echo 'save" mecrisp-stellaris-freebsd-with-disassembler-and-math'
+   # cat -
+} | ./mecrisp-stellaris-freebsd
+
+stty sane
+
+echo

@@ -89,7 +89,7 @@
   Wortbirne Flag_foldable_2|Flag_inline, "over" @ ( x y -- x y x )
 @ -----------------------------------------------------------------------------
   pushdatos
-  ldr tos, [psp, #4] 
+  ldr tos, [psp, #4]
   bx lr
 
 @ -----------------------------------------------------------------------------
@@ -125,7 +125,7 @@ minusrot:
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_inline, "pick" @ ( xu .. x1 x0 u -- xu ... x1 x0 xu ) 
+  Wortbirne Flag_visible|Flag_inline, "pick" @ ( xu .. x1 x0 u -- xu ... x1 x0 xu )
 @ -----------------------------------------------------------------------------
   .ifdef m0core
   lsls r0, tos, #2
@@ -144,7 +144,7 @@ minusrot:
   ldr r1, =datenstackanfang @ Anfang laden  Calculate stack fill gauge
   subs r1, psp @ und aktuellen Stackpointer abziehen
   pushdatos
-  lsrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
+  asrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
   bx lr
 
 @ -----------------------------------------------------------------------------
@@ -154,8 +154,8 @@ minusrot:
   mov tos, sp
   ldr r1, =returnstackanfang @ Anfang laden  Calculate stack fill gauge
   subs r1, tos @ und aktuellen Stackpointer abziehen
-  lsrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
-  bx lr  
+  asrs tos, r1, #2 @ Durch 4 teilen  Divide through 4 Bytes/element.
+  bx lr
 
 @ Returnstack
 
@@ -187,7 +187,7 @@ minusrot:
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_inline, "rpick" @ ( u -- xu R: xu .. x1 x0 -- xu ... x1 x0 ) 
+  Wortbirne Flag_visible|Flag_inline, "rpick" @ ( u -- xu R: xu .. x1 x0 -- xu ... x1 x0 )
 @ -----------------------------------------------------------------------------
   lsls tos, #2
   add tos, sp

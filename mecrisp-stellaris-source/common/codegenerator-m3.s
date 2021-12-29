@@ -26,7 +26,7 @@
   @                 00XY 00XY is encoded as | 0001 | XY |
   @                 XY00 XY00 is encoded as | 0010 | XY |
   @                 XYXY XYXY is encoded as | 0011 | XY |
-  
+
 
 @ The assembler encodes the constant in an instruction into imm12, as described below. imm12 is mapped
 @ into the instruction encoding in hw1[10] and hw2[14:12,7:0], in the same order.
@@ -67,12 +67,12 @@ twelvebitencoding:
     movs tos, #-1
     pop {r0, r1, r2, r3, pc}
 
-1:@ This is not a lowest-8-bits-only constant. 
+1:@ This is not a lowest-8-bits-only constant.
   @ Check for other possibilities:
 
   @ 0x00XY00XY
 
-  ands r0, tos, #0x00FF00FF 
+  ands r0, tos, #0x00FF00FF
   cmp r0, tos
   bne 2f
 
@@ -88,7 +88,7 @@ twelvebitencoding:
       movs tos, #-1
       pop {r0, r1, r2, r3, pc}
 
-2: 
+2:
 
   @ 0xXY00XY00
 
@@ -105,11 +105,11 @@ twelvebitencoding:
       lsrs tos, #8
       ands tos, #0xFF
       orrs tos, #0x00002000
-      pushdatos       @ True-Flag  
+      pushdatos       @ True-Flag
       movs tos, #-1
       pop {r0, r1, r2, r3, pc}
 
-3: 
+3:
 
   @ 0xXYXYXYXY
 
@@ -134,11 +134,11 @@ twelvebitencoding:
     @ writeln "12bitencoding: 0xXYXYXYXY"
     ands tos, #0xFF
     orrs tos, #0x00003000
-    pushdatos       @ True-Flag   
+    pushdatos       @ True-Flag
     movs tos, #-1
     pop {r0, r1, r2, r3, pc}
 
-4: 
+4:
     @ 0 of $FF and                                  const. endof \ Plain 8 Bit Constant
     @ 1 of $FF and                 dup 16 lshift or const. endof \ 0x00XY00XY
     @ 2 of $FF and        8 lshift dup 16 lshift or const. endof \ 0xXY00XY00
@@ -214,7 +214,7 @@ twelvebitencoding:
   ands r0, r1, #0x10
   lsls r0, #22
   orrs tos, r0
-   
+
   pushdatos       @ True-Flag
   movs tos, #-1
   pop {r0, r1, r2, r3, pc}
@@ -223,7 +223,7 @@ twelvebitencoding:
 movwkomma: @ Register r0: Konstante                                    Constant
            @ Register r3: Zielregister, fertig geschoben zum Verodern  Destination register, readily shifted to be ORed with opcode.
 @ -----------------------------------------------------------------------------
-  pushdatos    @ Platz auf dem Datenstack schaffen 
+  pushdatos    @ Platz auf dem Datenstack schaffen
   ldr tos, =0xf2400000 @ Opcode movw r0, #0
 
   movs r1, #0x0000F000  @ Bit 16 - 13
@@ -248,7 +248,7 @@ movwkomma: @ Register r0: Konstante                                    Constant
 
   @ Füge den gewünschten Register hinzu:  OR desired target register.
   orrs tos, r3
-  
+
   b.n reversekomma @ Insert finished movw Opcode into Dictionary
 
 @ -----------------------------------------------------------------------------
@@ -297,7 +297,7 @@ registerliteralkomma: @ Compile code to put a literal constant into a register.
   @ Generate short movs Opcode for small constants within 0 and 255
 
   cmp tos, #0xFF @ Does literal fit in 8 bits ?
-  bhi 1f         @ Gewünschte Konstante passt in 8 Bits. 
+  bhi 1f         @ Gewünschte Konstante passt in 8 Bits.
     @ Generate opcode for movs target, #...
     orrs tos, #0x2000 @ MOVS-Opcode
     orrs tos, r3      @ OR with register
@@ -340,7 +340,7 @@ registerliteralkomma: @ Compile code to put a literal constant into a register.
   @ Compile code to put a literal constant into any register.
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, lr}
-  
+
   popda r3    @ Hole die Registermaske               Fetch register to generate constant for
   lsls r3, #8 @ Den Register um 8 Stellen schieben   Shift register accordingly for opcode generation
 
@@ -352,8 +352,8 @@ movwmovt_register_r3:
   bl movwkomma
 
   @ ldr r1, =0xffff0000 @ High-Teil
-  @ ands r0, r1 
-  @ cmp r0, #0 
+  @ ands r0, r1
+  @ cmp r0, #0
 
   movw r1, #0xFFFF          @ Wenn der High-Teil Null ist, brauche ich keinen movt-Opcode mehr zu generieren.
   ands r0, r0, r1, lsl #16  @ If High-Part is zero there is no need to generate a movt opcode.
@@ -367,8 +367,8 @@ movwmovt_register_r3:
 @ -----------------------------------------------------------------------------
 callkommalang: @ ( Zieladresse -- ) Schreibt einen LANGEN Call-Befehl für does>
                @ Es ist wichtig, dass er immer die gleiche Länge hat.
-               @ Writes a long call instruction with known fixed length. 
-               @ This is needed for does> as you cannot predict the call target address and 
+               @ Writes a long call instruction with known fixed length.
+               @ This is needed for does> as you cannot predict the call target address and
                @ the shortest instruction length possible needed for it.
 @ -----------------------------------------------------------------------------
   @ Dies ist ein bisschen schwierig und muss nochmal gründlich optimiert werden.
@@ -403,12 +403,12 @@ callkommakurz: @ ( Zieladresse -- )
 callkommakurz_intern:
   pushdaconstw 0x4780 @ blx r0
   bl hkomma
-  pop {r0, r1, r2, r3, pc}  
+  pop {r0, r1, r2, r3, pc}
 
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "call," @ ( Zieladresse -- )
-callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren. 
+callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
             @ Write a call to destination with the shortest possible opcodes.
             @ Je nachdem: bl ...                            (4 Bytes)
             @             movw r0, ...              blx r0  (6 Bytes)
@@ -421,12 +421,12 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
 
   bl here
   popda r0 @ Adresse-der-Opcodelücke  Where the opcodes shall be inserted...
-  
+
   subs r3, r0     @ Differenz aus Lücken-Adresse und Sprungziel bilden   Calculate relative jump offset
   subs r3, #4     @ Da der aktuelle Befehl noch läuft und es komischerweise andere Offsets beim ARM gibt.  Current instruction still running...
 
-  @ 22 Bits für die Sprungweite mit Vorzeichen - 
-  @ also habe ich 21 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen. 
+  @ 22 Bits für die Sprungweite mit Vorzeichen -
+  @ also habe ich 21 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen.
 
   @ BL opcodes support 22 Bits jump range - one of that for sign.
   @ Check if BL range is enough to reach target:
@@ -467,7 +467,7 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
     lsls r1, #16
     orrs r0, r1
 
-  lsrs r3, #10         
+  lsrs r3, #10
 
     ands r1, r3, #1      @ Next bit, treated as sign, shifted into bit 26.
     lsls r1, #26
@@ -553,7 +553,7 @@ dodoes:
 
   @ The call to dodoes never returns.
   @ Instead, it compiles a call to the part after its invocation into the dictionary
-  @ and exits through two call layers.  
+  @ and exits through two call layers.
 
   @ Momentaner Zustand von Stacks und LR:  Current stack:
   @    ( -- )
@@ -570,7 +570,7 @@ dodoes:
   subs tos, lr, #1
                @ Brauche den Link danach nicht mehr, weil ich über die in dem Wort das does> enthält gesicherte Adresse rückspringe
                @ We don't need this Link later because we return with the address saved by the definition that contains does>.
-               @ Einen abziehen. Diese Adresse ist schon ungerade für Thumb-2, aber callkomma fügt nochmal eine 1 dazu. 
+               @ Einen abziehen. Diese Adresse ist schon ungerade für Thumb-2, aber callkomma fügt nochmal eine 1 dazu.
                @ Subtract one. Adress is already uneven for Thumb-instructionset, but callkomma will add one anyway.
 
     @ Dictionary-Pointer verbiegen:
@@ -587,7 +587,11 @@ dodoes:
 
     ldr r0, =Backlinkgrenze
     cmp r3, r0
+.ifdef above_ram
+    blo.n dodoes_ram
+.else
     bhs.n dodoes_ram
+.endif
 
 2:    movs r0, #7
       ands r0, r1
@@ -604,7 +608,11 @@ dodoes_ram:
 
     ldr r0, =Backlinkgrenze
     cmp r3, r0
+.ifdef above_ram
+    blo.n dodoes_ram
+.else
     bhs.n dodoes_ram
+.endif
 
 2:    movs r0, #15
       ands r0, r1
@@ -622,7 +630,7 @@ dodoes_ram:
   beq 1f
     adds r1, #2
 1:
-  
+
   adds r1, #2  @ Am Anfang sollte das neudefinierte Wort ein push {lr} enthalten, richtig ?
                @ Skip the push {lr} opcode in that definition.
 
@@ -653,7 +661,11 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
 
     ldr r2, =Backlinkgrenze
     cmp r1, r2
+.ifdef above_ram
+    blo.n builds_ram
+.else
     bhs.n builds_ram
+.endif
 
       @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
       @ So we need to advance to 8n + 4 so that the opcode sequence ends on a suitable border.
@@ -664,8 +676,7 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
       cmp tos, #4
       drop
       beq 1f
-        pushdaconst 0x0036  @ nop = movs tos, tos
-        bl hkomma
+        bl nop_hkomma
         b 2b
 
 builds_ram:
@@ -680,7 +691,11 @@ builds_ram:
 
     ldr r2, =Backlinkgrenze
     cmp r1, r2
+.ifdef above_ram
+    blo.n builds_ram
+.else
     bhs.n builds_ram
+.endif
 
       @ See where we are. The sequence written for <builds does> is 12 Bytes long on M3/M4.
       @ So we need to advance to 16n + 4 so that the opcode sequence ends on a suitable border.
@@ -691,8 +706,7 @@ builds_ram:
       cmp tos, #4
       drop
       beq 1f
-        pushdaconst 0x0036  @ nop = movs tos, tos
-        bl hkomma
+        bl nop_hkomma
         b 2b
 
 builds_ram:
@@ -704,8 +718,7 @@ builds_ram:
     ands tos, r0
     drop
     beq 1f
-      pushdaconst 0x0036  @ nop = movs tos, tos
-      bl hkomma
+      bl nop_hkomma
 1:
 
   pushdaconstw 0xb500 @ Opcode für push {lr} schreiben  Write opcode for push {lr}

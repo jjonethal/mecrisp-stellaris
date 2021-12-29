@@ -318,7 +318,11 @@ unused:
 
   ldr r2, =Backlinkgrenze
   cmp r1, r2
+.ifdef above_ram
+  blo.n unused_ram
+.else
   bhs.n unused_ram
+.endif
     
     ldr tos, =FlashDictionaryEnde
 

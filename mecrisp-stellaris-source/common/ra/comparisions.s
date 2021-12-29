@@ -270,6 +270,7 @@ prepare_compare:
     bne 1f
       bl swap_allocator @ Wenn NOS eine Konstante gewesen ist, war TOS es nicht (Vorherige Faltung !) und ich kann einfach umtauschen.
       swap @ Vertausche in diesem Fall auch die Sprungopcodes
+      ldr r2, [r0, #offset_state_nos] @ r2 nach dem Vertauschen neu laden
 1:  @ Fertig: Wenn eine Konstante da ist, ist sie jetzt in TOS.
 
     drop @ Vergiss den oberen Sprungopcode
@@ -442,7 +443,7 @@ eliminiere_tos_wenn_bmi: @ Dies wird vor dem Einpflegen der Sprünge in eine Kon
   bgt 1f
   movs tos, r0
 1:bx lr
-    
+
     pushdaconstw 0xDB00 @ blt signed less
     b.n alloc_minmax
 
@@ -489,11 +490,11 @@ alloc_minmax:
     ldr r1, [r0, #offset_state_tos]
     ldr r2, [r0, #offset_state_nos]
     cmp r1, r2
-    bne 1f      
+    bne 1f
       drop @ Sollten es aus irgendwelchen Gründen identische Register sein - nichts generieren.
       bl eliminiere_nos
       pop {pc} @ Der Fall zweier Konstanten wird vorher weggefaltet.
-1:  
+1:
 
 
     cmp r2, #reg6 @ Ist NOS gerade in r6 ? Wenn ja, dann wechseln ! Weniger hin- und her am Ende.

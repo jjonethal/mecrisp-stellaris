@@ -76,8 +76,7 @@ of_opcodiereinsprung:
 
   pushdaconst 9 @ Strukturerkennung bereitlegen  Structure pattern
 
-  pushdaconstw 0xcf40 @ Opcode for ldmia r7!, {r6}
-  bl hkomma
+  bl drop_hkomma
 
   pop {pc}
 
@@ -90,17 +89,17 @@ of_opcodiereinsprung:
 
   push {lr}
 
-  @ Mich interessieren nur die beiden obersten Elemente, die verglichen werden sollen.  
+  @ Mich interessieren nur die beiden obersten Elemente, die verglichen werden sollen.
   bl expect_two_elements @ Mindestens 2 Elemente
 
   bl tidyup_register_allocator_5os
   bl tidyup_register_allocator_4os
   bl tidyup_register_allocator_3os @ Maximal 2 Elemente, das dritte gleich in den Stack schieben.
-  
+
   @ Jetzt habe ich genau zwei Elemente im Allokator.
   @ NOS bleibt im Falle von CASE eigentlich die ganze Zeit gleich - erwarte NOS also in jedem Fall in einem Register.
 
-  pushdaconstw 0x4280 @ cmp r0, r0    
+  pushdaconstw 0x4280 @ cmp r0, r0
   bl expect_nos_in_register @ Dieser Register ist anschließend in r1.
   orrs tos, r1
 
@@ -119,9 +118,9 @@ of_opcodiereinsprung:
       orrs tos, r2
       lsls r1, #8
       orrs tos, r1
-      b.n 4f 
-    
-3:  
+      b.n 4f
+
+3:
 
 .ifndef m0core
   @ TOS ist eine Konstante, aber zu groß für Imm8.
@@ -153,18 +152,18 @@ of_opcodiereinsprung:
 
     bl expect_tos_in_register
     movs r2, r1
-  
+
 2:@ TOS ist auch ein Register.
   lsls r2, #3
   orrs tos, r2
-    
+
 4:bl hkomma
-  
+
 5:bl eliminiere_tos
   bl tidyup_register_allocator_tos @ Falls TOS <> r6 an diesem Moment... Falls es eine Konstante gewesen ist, wurde sie eben gerade schon generiert.
-  
-  b.n of_opcodiereinsprung @ Der klassische Abschluss  
-  
+
+  b.n of_opcodiereinsprung @ Der klassische Abschluss
+
 
 struktur_of:
   popda r0
@@ -217,8 +216,7 @@ strukturendcase:
 1:drop
 
   push {lr}
-  pushdaconstw 0xcf40 @ Opcode for ldmia r7!, {r6}
-  bl hkomma
+  bl drop_hkomma
 
   bl spruenge_einpflegen
   pop {pc}
@@ -234,9 +232,9 @@ spruenge_einpflegen: @ Internal use only.
 
 1:cmp r0, #0 @ Sind noch Sprünge zu bearbeiten ? Any jumps left ?
   beq 2f
-  
+
   push {r0, r1}
-  movs r1, #1          @ Check if this shall be a conditional jump instead. Needed for ?do which reuses this code. 
+  movs r1, #1          @ Check if this shall be a conditional jump instead. Needed for ?do which reuses this code.
   ands r1, tos         @ Prüfe, ob es ein bedingter Sprung werden soll - ?do benötigt solche.
 
   cmp r1, #0
@@ -244,7 +242,7 @@ spruenge_einpflegen: @ Internal use only.
     subs tos, #1 @ Markierung für den bedingten Sprung entfernen  Remove temporary bit for this beeing a conditional jump
     bl v_nullbranch  @ Insert conditional jump
     b 4f
-  
+
 3:bl v_branch @ Unbedingten Sprung einpflegen  Insert unconditional jump
 
 4:pop {r0, r1}

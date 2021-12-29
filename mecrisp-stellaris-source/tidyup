@@ -32,6 +32,10 @@ cd lpc1115fbd48-ra
 make clean
 cd ..
 
+cd lpc845m301
+make clean
+cd ..
+
 cd kl25z128
 make clean
 cd ..
@@ -84,6 +88,10 @@ cd msp432p401r-ra
 make clean
 cd ..
 
+cd lm3s811-ra
+make clean
+cd ..
+
 cd lm4f120
 make clean
 cd ..
@@ -93,6 +101,14 @@ make clean
 cd ..
 
 cd lm4f232
+make clean
+cd ..
+
+cd palanqin
+make clean
+cd ..
+
+cd palanqin-ra
 make clean
 cd ..
 
@@ -116,6 +132,14 @@ cd stm32f030k6-ra
 make clean
 cd ..
 
+cd stm32f030r8
+make clean
+cd ..
+
+cd stm32f030r8-ra
+make clean
+cd ..
+
 cd stm32f042f6
 make clean
 cd ..
@@ -129,6 +153,18 @@ make clean
 cd ..
 
 cd stm32f051-ra
+make clean
+cd ..
+
+cd stm32f072rb
+make clean
+cd ..
+
+cd stm32f072rb-ra
+make clean
+cd ..
+
+cd stm32l031k6
 make clean
 cd ..
 
@@ -173,6 +209,14 @@ make clean
 cd ..
 
 cd stm32f103-ra
+make clean
+cd ..
+
+cd stm32f103rb
+make clean
+cd ..
+
+cd stm32f103rb-ra
 make clean
 cd ..
 
@@ -224,7 +268,19 @@ cd stm32f407-ra
 make clean
 cd ..
 
+cd stm32f407diymore
+make clean
+cd ..
+
+cd stm32f407diymore-ra
+make clean
+cd ..
+
 cd stm32f411
+make clean
+cd ..
+
+cd stm32f411-ra
 make clean
 cd ..
 
@@ -241,6 +297,34 @@ make clean
 cd ..
 
 cd stm32f746-ra
+make clean
+cd ..
+
+cd stm32f767-ra
+make clean
+cd ..
+
+cd stm32h743-ra
+make clean
+cd ..
+
+cd stm32g031f4
+make clean
+cd ..
+
+cd stm32g031f8-ra
+make clean
+cd ..
+
+cd stm32g031j6-ra
+make clean
+cd ..
+
+cd stm32g071rb-ra
+make clean
+cd ..
+
+cd stm32wb55
 make clean
 cd ..
 
@@ -288,12 +372,20 @@ cd nuc123-ra
 make clean
 cd ..
 
+cd rp2040-ra
+./tidyup
+cd ..
+
 cd linux
-rm mecrisp-stellaris-linux.o
-rm mecrisp-stellaris-linux
+rm -f mecrisp-stellaris-linux.o
+rm -f mecrisp-stellaris-linux
 cd ..
 
 cd linux-ra
-rm mecrisp-stellaris-linux.o
-rm mecrisp-stellaris-linux
+rm -f mecrisp-stellaris-linux.o
+rm -f mecrisp-stellaris-linux
+cd ..
+
+cd freebsd-ra
+rm -f *.o *.elf mecrisp-stellaris-freebsd mecrisp-stellaris-freebsd-armv6
 cd ..

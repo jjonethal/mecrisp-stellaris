@@ -1,0 +1,15 @@
+#!/bin/bash
+
+{
+   cat ../common/conditional.txt
+   cat ../common/longcomment.txt
+   cat ../common/dump.txt
+   cat ../common/fixpt-math-lib.fs
+   cat ../common/disassembler-m0.txt
+   cat ../common/assembler-m0.txt
+   cat basisdefinitions.txt
+
+} > precompiled/included.txt
+
+../thumbulator/buildcore ../thumbulator/thumbulator-palanqin mecrisp-stellaris-palanqin.bin precompiled/included.txt precompiled/stelaqin.bin
+

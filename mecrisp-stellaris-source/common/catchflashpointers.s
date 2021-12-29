@@ -18,7 +18,7 @@
 
 @ Initialisiert die Pointer und Flash-Variablen nach dem Neustart.
 @ Wird direkt eingefügt und nur einmal beim Start benutzt,
-@ deshalb werden Register hier nicht gesichert. 
+@ deshalb werden Register hier nicht gesichert.
 
 @ Initialises pointers and variables for flash dictionary after Reset.
 @ This runs one time after Reset, no registers are saved here.
@@ -40,20 +40,8 @@
   @ Suche nun im Flash nach Anfang und Ende.
   @ Short: Search for begin and end in Flash.
 
-   @ Dictionarypointer ins RAM setzen
-   @ Set dictionary pointer into RAM first
-   ldr r0, =Dictionarypointer
-   ldr r1, =RamDictionaryAnfang
-   str r1, [r0]
-
-   @ Fadenende fürs RAM vorbereiten
-   @ Set latest for RAM
-   ldr r0, =Fadenende
-   ldr r1, =CoreDictionaryAnfang
-   str r1, [r0]
-  
   @ Registerbelegung:  Register allocation here:
-  
+
   @  r0 Für dies und das    Temporary this and that
   @  r1 Aktuelle Flags      Current Flags
   @  r3 Für dies und das    Temporary this and that
@@ -90,14 +78,14 @@ SucheFlashPointer_Hangelschleife:
       ldrh r0, [r0, #2]
       lsls r0, #16
       orrs r3, r0
-      
+
       @ Ramvariablenpointer wandern lassen  Subtract from the pointer that points to the next free location
-      subs r5, r3  
+      subs r5, r3
       b.n Sucheflashpointer_Speicherbelegung_fertig @ Finished
 
 1:  movs r3, #Flag_ramallot & ~Flag_visible
     ands r3, r1
-    
+
     beq.n Sucheflashpointer_Speicherbelegung_fertig @ Benötigt doch kein RAM.
       @ writeln "Speicher gewünscht !"
       @ Die Flags werden später nicht mehr gebraucht.
@@ -140,7 +128,7 @@ Sucheflashpointer_Speicherbelegung_fertig:
   popda r0
   beq.n SucheFlashPointer_Hangelschleife
 
- 
+
   ldr r0, =ZweitFadenende
   str tos, [r0] @ Das Fadenende für den Flash setzen.  Set pointer to latest definition.
   drop

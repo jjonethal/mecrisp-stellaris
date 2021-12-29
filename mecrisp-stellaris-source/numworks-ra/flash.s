@@ -268,5 +268,4 @@ eraseflash:
 
   pop {lr}
 
-  cpsie i
   b Restart

@@ -77,25 +77,58 @@ uart_init:
   ldr r0, = BIT14 @ USART1EN
   str r0, [r1]
 
+  .ifdef rtscts
+  @ Set PORTA pin modes:  PA9 (TX-OUTPUT)-SF, PA10 (RX-INPUT)-SF, PA11 (CTS-INPUT)-SF, PA12 (RTS-OUTPUT)-SF, PA13 (SWDIO)-AF, PA14 (SWCLK)-AF
+  @ gpioa_moder. GPIOA_MODER (read-write) $2AA80000
+  @ 15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00
+  @ 00 10 10 10 10 10 10 00 00 00 00 00 00 00 00 00
+  ldr r1, = GPIOA_MODER
+  ldr r0, = 0x2AA80000 
+  str r0, [r1]
+  .else
   @ Set PORTA pins 9 and 10 in alternate function mode
   ldr r1, = GPIOA_MODER
   ldr r0, = 0x28280000 @ 2800 0000 is Reset value for Port A, and switch PA9 and PA10 to alternate function
   str r0, [r1]
+  .endif
 
+  .ifdef rtscts
+  @ set PORTA Alternate Functions: PA9 (TX), PA10 (RX), PA11 (CTS), PA12 (RTS) all to AF1
+  ldr r1, = GPIOA_AFRH
+  ldr r0, = 0x011110      @ Alternate function 1 for TX, RX, CTS and RTS pins of USART1 on PORTA  (tp)
+  str r0, [r1]
+  .else
   @ Set alternate function 1 to enable USART1 pins on Port A
   ldr r1, = GPIOA_AFRH
   ldr r0, = 0x110      @ Alternate function 1 for TX and RX pins of USART1 on PORTA 
   str r0, [r1]
+  .endif    
 
   @ Configure BRR by deviding the bus clock with the baud rate
   ldr r1, = USART1_BRR
   movs r0, #0x46  @ 115200 bps, ein ganz kleines bisschen langsamer...
   str r0, [r1]
 
+  .ifdef rtscts
+  @ Enable RTS/CTS flow control (tp)
+  ldr r1, = USART1_CR3
+  ldr r0, = 0x300      @  Enable RTS flow control, RTSE (bit 8) = 1, and CTSE (bit 9) = 1  
+  str r0, [r1]
+  .endif
+  
   @ Enable the USART, TX, and RX circuit
   ldr r1, =USART1_CR1
   ldr r0, =BIT3+BIT2+BIT0 @ USART_CR1_UE | USART_CR1_TE | USART_CR1_RE
   str r0, [r1]
+
+  @ After mcu reset, hit enter key to sync
+  .ifdef autobaud
+  .equ USART1_ABREN_Shift, 20   @ bitWidth 1
+  ldr r1, = USART1_CR2
+  movs r2, 0b01
+  lsls r2, USART1_ABREN_Shift
+  str r2, [r1]
+  .endif
 
   bx lr
 

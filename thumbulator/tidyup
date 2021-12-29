@@ -2,8 +2,13 @@
 
 rm -f thumbulator-aducm4050
 rm -f thumbulator-lm4f120-tm4c1294
-rm -f thumbulator-stm32f051 
-rm -f thumbulator-stm32f103 
-rm -f thumbulator-stm32f303 
-rm -f thumbulator-stm32l053 
+rm -f thumbulator-stm32f051
+rm -f thumbulator-stm32f103
+rm -f thumbulator-stm32f303
+rm -f thumbulator-stm32f407
+rm -f thumbulator-stm32l053
+rm -f thumbulator-stm32g031
 rm -f thumbulator-numworks
+rm -f thumbulator-palanqin
+rm -f thumbulator-lpc845m301
+rm -f thumbulator-rp2040

@@ -187,3 +187,23 @@ E000EF44 constant MVFR1
 
 decimal
 
+\ -----------------------------------------------------------------------------
+\   s31.32 <-> Float conversions by Ivan Dimitrov
+\ -----------------------------------------------------------------------------
+
+: f>v ( df -- v )
+    dup 1 31 lshift and -rot ( S L H )
+    dabs u>v  swap u>v       ( S vh vl )
+    $2f800000 vmul vadd      ( S v )
+    or                       \ apply the sign
+; 2-foldable
+
+: v>f ( v -- df )
+    dup 1 31 lshift and 0<> swap ( nf v )
+    vabs
+    dup v>n                      ( nf v h )
+    swap over n>v                ( nf h vh )
+    vsub $4f800000 vmul \ low part times 2^32
+    v>u swap rot                 ( l h s )
+    if dnegate then
+; 1-foldable

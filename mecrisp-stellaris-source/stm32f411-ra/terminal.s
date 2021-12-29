@@ -55,6 +55,12 @@ uart_init: @ ( -- )
         orrs r0, #0xA0
         str r0, [r1]
 
+        @ Activate the internal PULL-UP in PORTA pin 3 (RxD)
+        ldr r1, = GPIOA_PUPDR
+        ldr r0, [r1]
+        orrs r0, #0x40 @ PUPDR3[1:0] = 01b
+        str r0, [r1] 
+
         @ Set alternate function 7 to enable USART2 pins on Port A
         ldr  r1, = GPIOA_AFRL
         and  r0, 0xFFFF00FF      @ Zero the bits 8-15

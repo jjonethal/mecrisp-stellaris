@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm -f *.elf
+rm -f *.o
+rm -f *.list

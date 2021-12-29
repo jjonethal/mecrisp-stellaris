@@ -250,5 +250,41 @@ quit_intern:
 quit_innenschleife:  @ Main loop of Forth system.
   bl query
   bl interpret
-  writeln " ok."
-  b.n quit_innenschleife
+
+  .ifdef color
+
+  @ Check state
+  ldr r0, =state
+  ldr r0, [r0]
+  cmp r0, #0
+  beq 1f
+    write " \x1B[34m"
+    b 2f
+1:  write " \x1B[36m"
+2:
+
+  @ Check memory target
+  ldr r0, =Dictionarypointer
+  ldr r0, [r0]
+
+  ldr r1, =Backlinkgrenze
+  cmp r0, r1
+.ifdef above_ram
+  blo.n 1f
+.else
+  bhs.n 1f
+.endif
+
+    writeln "ok'\x1B[0m"
+    b.n quit_innenschleife
+1:  writeln "ok.\x1B[0m"
+    b.n quit_innenschleife
+
+  .else
+
+    writeln " ok."
+    b.n quit_innenschleife
+
+  .endif
+
+

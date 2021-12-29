@@ -1,0 +1,231 @@
+Note: these are meant to be hand picked as needed, not uploaded to the MCU or the memory will soon be filled!
+ Replace 'bis!' (set bit) with 'bic!' to CLEAR bit, 'bit@' to test bit etc.
+
+\ RCC-CR ()
+: RCC-CR_PLLRDY   %1 25 lshift RCC-CR bis! ;  \ RCC-CR_PLLRDY    PLL clock ready flag
+: RCC-CR_PLLON   %1 24 lshift RCC-CR bis! ;  \ RCC-CR_PLLON    PLL enable bit
+: RCC-CR_RTCPRE   ( %XX -- ) 20 lshift RCC-CR bis! ;  \ RCC-CR_RTCPRE    TC/LCD prescaler
+: RCC-CR_CSSLSEON   %1 19 lshift RCC-CR bis! ;  \ RCC-CR_CSSLSEON    Clock security system on HSE enable  bit
+: RCC-CR_HSEBYP   %1 18 lshift RCC-CR bis! ;  \ RCC-CR_HSEBYP    HSE clock bypass bit
+: RCC-CR_HSERDY   %1 17 lshift RCC-CR bis! ;  \ RCC-CR_HSERDY    HSE clock ready flag
+: RCC-CR_HSEON   %1 16 lshift RCC-CR bis! ;  \ RCC-CR_HSEON    HSE clock enable bit
+: RCC-CR_MSIRDY   %1 9 lshift RCC-CR bis! ;  \ RCC-CR_MSIRDY    MSI clock ready flag
+: RCC-CR_MSION   %1 8 lshift RCC-CR bis! ;  \ RCC-CR_MSION    MSI clock enable bit
+: RCC-CR_HSI16DIVF   %1 4 lshift RCC-CR bis! ;  \ RCC-CR_HSI16DIVF    HSI16DIVF
+: RCC-CR_HSI16DIVEN   %1 3 lshift RCC-CR bis! ;  \ RCC-CR_HSI16DIVEN    HSI16DIVEN
+: RCC-CR_HSI16RDYF   %1 2 lshift RCC-CR bis! ;  \ RCC-CR_HSI16RDYF    Internal high-speed clock ready  flag
+: RCC-CR_HSI16KERON   %1 1 lshift RCC-CR bis! ;  \ RCC-CR_HSI16KERON    High-speed internal clock enable bit for  some IP kernels
+: RCC-CR_HSI16ON   %1 0 lshift RCC-CR bis! ;  \ RCC-CR_HSI16ON    16 MHz high-speed internal clock  enable
+
+\ RCC-ICSCR ()
+: RCC-ICSCR_MSITRIM   ( %XXXXXXXX -- ) 24 lshift RCC-ICSCR bis! ;  \ RCC-ICSCR_MSITRIM    MSI clock trimming
+: RCC-ICSCR_MSICAL   ( %XXXXXXXX -- ) 16 lshift RCC-ICSCR bis! ;  \ RCC-ICSCR_MSICAL    MSI clock calibration
+: RCC-ICSCR_MSIRANGE   ( %XXX -- ) 13 lshift RCC-ICSCR bis! ;  \ RCC-ICSCR_MSIRANGE    MSI clock ranges
+: RCC-ICSCR_HSI16TRIM   ( %XXXXX -- ) 8 lshift RCC-ICSCR bis! ;  \ RCC-ICSCR_HSI16TRIM    High speed internal clock  trimming
+: RCC-ICSCR_HSI16CAL   ( %XXXXXXXX -- ) 0 lshift RCC-ICSCR bis! ;  \ RCC-ICSCR_HSI16CAL    nternal high speed clock  calibration
+
+\ RCC-CRRCR ()
+: RCC-CRRCR_HSI48CAL   ( %XXXXXXXX -- ) 8 lshift RCC-CRRCR bis! ;  \ RCC-CRRCR_HSI48CAL    48 MHz HSI clock  calibration
+: RCC-CRRCR_HSI48RDY   %1 1 lshift RCC-CRRCR bis! ;  \ RCC-CRRCR_HSI48RDY    48MHz HSI clock ready flag
+: RCC-CRRCR_HSI48ON   %1 0 lshift RCC-CRRCR bis! ;  \ RCC-CRRCR_HSI48ON    48MHz HSI clock enable bit
+
+\ RCC-CFGR ()
+: RCC-CFGR_MCOPRE   ( %XXX -- ) 28 lshift RCC-CFGR bis! ;  \ RCC-CFGR_MCOPRE    Microcontroller clock output  prescaler
+: RCC-CFGR_MCOSEL   ( %XXX -- ) 24 lshift RCC-CFGR bis! ;  \ RCC-CFGR_MCOSEL    Microcontroller clock output  selection
+: RCC-CFGR_PLLDIV   ( %XX -- ) 22 lshift RCC-CFGR bis! ;  \ RCC-CFGR_PLLDIV    PLL output division
+: RCC-CFGR_PLLMUL   ( %XXXX -- ) 18 lshift RCC-CFGR bis! ;  \ RCC-CFGR_PLLMUL    PLL multiplication factor
+: RCC-CFGR_PLLSRC   %1 16 lshift RCC-CFGR bis! ;  \ RCC-CFGR_PLLSRC    PLL entry clock source
+: RCC-CFGR_STOPWUCK   %1 15 lshift RCC-CFGR bis! ;  \ RCC-CFGR_STOPWUCK    Wake-up from stop clock  selection
+: RCC-CFGR_PPRE2   ( %XXX -- ) 11 lshift RCC-CFGR bis! ;  \ RCC-CFGR_PPRE2    APB high-speed prescaler  APB2
+: RCC-CFGR_PPRE1   ( %XXX -- ) 8 lshift RCC-CFGR bis! ;  \ RCC-CFGR_PPRE1    APB low-speed prescaler  APB1
+: RCC-CFGR_HPRE   ( %XXXX -- ) 4 lshift RCC-CFGR bis! ;  \ RCC-CFGR_HPRE    AHB prescaler
+: RCC-CFGR_SWS   ( %XX -- ) 2 lshift RCC-CFGR bis! ;  \ RCC-CFGR_SWS    System clock switch status
+: RCC-CFGR_SW   ( %XX -- ) 0 lshift RCC-CFGR bis! ;  \ RCC-CFGR_SW    System clock switch
+
+\ RCC-CIER (read-only)
+: RCC-CIER_CSSLSE   %1 7 lshift RCC-CIER bis! ;  \ RCC-CIER_CSSLSE    LSE CSS interrupt flag
+: RCC-CIER_HSI48RDYIE   %1 6 lshift RCC-CIER bis! ;  \ RCC-CIER_HSI48RDYIE    HSI48 ready interrupt flag
+: RCC-CIER_MSIRDYIE   %1 5 lshift RCC-CIER bis! ;  \ RCC-CIER_MSIRDYIE    MSI ready interrupt flag
+: RCC-CIER_PLLRDYIE   %1 4 lshift RCC-CIER bis! ;  \ RCC-CIER_PLLRDYIE    PLL ready interrupt flag
+: RCC-CIER_HSERDYIE   %1 3 lshift RCC-CIER bis! ;  \ RCC-CIER_HSERDYIE    HSE ready interrupt flag
+: RCC-CIER_HSI16RDYIE   %1 2 lshift RCC-CIER bis! ;  \ RCC-CIER_HSI16RDYIE    HSI16 ready interrupt flag
+: RCC-CIER_LSERDYIE   %1 1 lshift RCC-CIER bis! ;  \ RCC-CIER_LSERDYIE    LSE ready interrupt flag
+: RCC-CIER_LSIRDYIE   %1 0 lshift RCC-CIER bis! ;  \ RCC-CIER_LSIRDYIE    LSI ready interrupt flag
+
+\ RCC-CIFR (read-only)
+: RCC-CIFR_CSSHSEF   %1 8 lshift RCC-CIFR bis! ;  \ RCC-CIFR_CSSHSEF    Clock Security System Interrupt  flag
+: RCC-CIFR_CSSLSEF   %1 7 lshift RCC-CIFR bis! ;  \ RCC-CIFR_CSSLSEF    LSE Clock Security System Interrupt  flag
+: RCC-CIFR_HSI48RDYF   %1 6 lshift RCC-CIFR bis! ;  \ RCC-CIFR_HSI48RDYF    HSI48 ready interrupt flag
+: RCC-CIFR_MSIRDYF   %1 5 lshift RCC-CIFR bis! ;  \ RCC-CIFR_MSIRDYF    MSI ready interrupt flag
+: RCC-CIFR_PLLRDYF   %1 4 lshift RCC-CIFR bis! ;  \ RCC-CIFR_PLLRDYF    PLL ready interrupt flag
+: RCC-CIFR_HSERDYF   %1 3 lshift RCC-CIFR bis! ;  \ RCC-CIFR_HSERDYF    HSE ready interrupt flag
+: RCC-CIFR_HSI16RDYF   %1 2 lshift RCC-CIFR bis! ;  \ RCC-CIFR_HSI16RDYF    HSI16 ready interrupt flag
+: RCC-CIFR_LSERDYF   %1 1 lshift RCC-CIFR bis! ;  \ RCC-CIFR_LSERDYF    LSE ready interrupt flag
+: RCC-CIFR_LSIRDYF   %1 0 lshift RCC-CIFR bis! ;  \ RCC-CIFR_LSIRDYF    LSI ready interrupt flag
+
+\ RCC-CICR (read-only)
+: RCC-CICR_CSSHSEC   %1 8 lshift RCC-CICR bis! ;  \ RCC-CICR_CSSHSEC    Clock Security System Interrupt  clear
+: RCC-CICR_CSSLSEC   %1 7 lshift RCC-CICR bis! ;  \ RCC-CICR_CSSLSEC    LSE Clock Security System Interrupt  clear
+: RCC-CICR_HSI48RDYC   %1 6 lshift RCC-CICR bis! ;  \ RCC-CICR_HSI48RDYC    HSI48 ready Interrupt  clear
+: RCC-CICR_MSIRDYC   %1 5 lshift RCC-CICR bis! ;  \ RCC-CICR_MSIRDYC    MSI ready Interrupt clear
+: RCC-CICR_PLLRDYC   %1 4 lshift RCC-CICR bis! ;  \ RCC-CICR_PLLRDYC    PLL ready Interrupt clear
+: RCC-CICR_HSERDYC   %1 3 lshift RCC-CICR bis! ;  \ RCC-CICR_HSERDYC    HSE ready Interrupt clear
+: RCC-CICR_HSI16RDYC   %1 2 lshift RCC-CICR bis! ;  \ RCC-CICR_HSI16RDYC    HSI16 ready Interrupt  clear
+: RCC-CICR_LSERDYC   %1 1 lshift RCC-CICR bis! ;  \ RCC-CICR_LSERDYC    LSE ready Interrupt clear
+: RCC-CICR_LSIRDYC   %1 0 lshift RCC-CICR bis! ;  \ RCC-CICR_LSIRDYC    LSI ready Interrupt clear
+
+\ RCC-IOPRSTR (read-write)
+: RCC-IOPRSTR_IOPHRST   %1 7 lshift RCC-IOPRSTR bis! ;  \ RCC-IOPRSTR_IOPHRST    I/O port H reset
+: RCC-IOPRSTR_IOPDRST   %1 3 lshift RCC-IOPRSTR bis! ;  \ RCC-IOPRSTR_IOPDRST    I/O port D reset
+: RCC-IOPRSTR_IOPCRST   %1 2 lshift RCC-IOPRSTR bis! ;  \ RCC-IOPRSTR_IOPCRST    I/O port A reset
+: RCC-IOPRSTR_IOPBRST   %1 1 lshift RCC-IOPRSTR bis! ;  \ RCC-IOPRSTR_IOPBRST    I/O port B reset
+: RCC-IOPRSTR_IOPARST   %1 0 lshift RCC-IOPRSTR bis! ;  \ RCC-IOPRSTR_IOPARST    I/O port A reset
+
+\ RCC-AHBRSTR (read-write)
+: RCC-AHBRSTR_CRYPRST   %1 24 lshift RCC-AHBRSTR bis! ;  \ RCC-AHBRSTR_CRYPRST    Crypto module reset
+: RCC-AHBRSTR_RNGRST   %1 20 lshift RCC-AHBRSTR bis! ;  \ RCC-AHBRSTR_RNGRST    Random Number Generator module  reset
+: RCC-AHBRSTR_TOUCHRST   %1 16 lshift RCC-AHBRSTR bis! ;  \ RCC-AHBRSTR_TOUCHRST    Touch Sensing reset
+: RCC-AHBRSTR_CRCRST   %1 12 lshift RCC-AHBRSTR bis! ;  \ RCC-AHBRSTR_CRCRST    Test integration module  reset
+: RCC-AHBRSTR_MIFRST   %1 8 lshift RCC-AHBRSTR bis! ;  \ RCC-AHBRSTR_MIFRST    Memory interface reset
+: RCC-AHBRSTR_DMARST   %1 0 lshift RCC-AHBRSTR bis! ;  \ RCC-AHBRSTR_DMARST    DMA reset
+
+\ RCC-APB2RSTR (read-write)
+: RCC-APB2RSTR_DBGRST   %1 22 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_DBGRST    DBG reset
+: RCC-APB2RSTR_USART1RST   %1 14 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_USART1RST    USART1 reset
+: RCC-APB2RSTR_SPI1RST   %1 12 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_SPI1RST    SPI 1 reset
+: RCC-APB2RSTR_ADCRST   %1 9 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_ADCRST    ADC interface reset
+: RCC-APB2RSTR_TM12RST   %1 5 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_TM12RST    TIM22 timer reset
+: RCC-APB2RSTR_TIM21RST   %1 2 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_TIM21RST    TIM21 timer reset
+: RCC-APB2RSTR_SYSCFGRST   %1 0 lshift RCC-APB2RSTR bis! ;  \ RCC-APB2RSTR_SYSCFGRST    System configuration controller  reset
+
+\ RCC-APB1RSTR (read-write)
+: RCC-APB1RSTR_LPTIM1RST   %1 31 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_LPTIM1RST    Low power timer reset
+: RCC-APB1RSTR_DACRST   %1 29 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_DACRST    DAC interface reset
+: RCC-APB1RSTR_PWRRST   %1 28 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_PWRRST    Power interface reset
+: RCC-APB1RSTR_CRSRST   %1 27 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_CRSRST    Clock recovery system  reset
+: RCC-APB1RSTR_USBRST   %1 23 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_USBRST    USB reset
+: RCC-APB1RSTR_I2C2RST   %1 22 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_I2C2RST    I2C2 reset
+: RCC-APB1RSTR_I2C1RST   %1 21 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_I2C1RST    I2C1 reset
+: RCC-APB1RSTR_LPUART1RST   %1 18 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_LPUART1RST    LPUART1 reset
+: RCC-APB1RSTR_LPUART12RST   %1 17 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_LPUART12RST    UART2 reset
+: RCC-APB1RSTR_SPI2RST   %1 14 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_SPI2RST    SPI2 reset
+: RCC-APB1RSTR_WWDRST   %1 11 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_WWDRST    Window watchdog reset
+: RCC-APB1RSTR_LCDRST   %1 9 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_LCDRST    LCD reset
+: RCC-APB1RSTR_TIM6RST   %1 4 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_TIM6RST    Timer 6 reset
+: RCC-APB1RSTR_TIM2RST   %1 0 lshift RCC-APB1RSTR bis! ;  \ RCC-APB1RSTR_TIM2RST    Timer2 reset
+
+\ RCC-IOPENR (read-write)
+: RCC-IOPENR_IOPHEN   %1 7 lshift RCC-IOPENR bis! ;  \ RCC-IOPENR_IOPHEN    I/O port H clock enable  bit
+: RCC-IOPENR_IOPDEN   %1 3 lshift RCC-IOPENR bis! ;  \ RCC-IOPENR_IOPDEN    I/O port D clock enable  bit
+: RCC-IOPENR_IOPCEN   %1 2 lshift RCC-IOPENR bis! ;  \ RCC-IOPENR_IOPCEN    IO port A clock enable bit
+: RCC-IOPENR_IOPBEN   %1 1 lshift RCC-IOPENR bis! ;  \ RCC-IOPENR_IOPBEN    IO port B clock enable bit
+: RCC-IOPENR_IOPAEN   %1 0 lshift RCC-IOPENR bis! ;  \ RCC-IOPENR_IOPAEN    IO port A clock enable bit
+
+\ RCC-AHBENR (read-write)
+: RCC-AHBENR_CRYPEN   %1 24 lshift RCC-AHBENR bis! ;  \ RCC-AHBENR_CRYPEN    Crypto clock enable bit
+: RCC-AHBENR_RNGEN   %1 20 lshift RCC-AHBENR bis! ;  \ RCC-AHBENR_RNGEN    Random Number Generator clock enable  bit
+: RCC-AHBENR_TOUCHEN   %1 16 lshift RCC-AHBENR bis! ;  \ RCC-AHBENR_TOUCHEN    Touch Sensing clock enable  bit
+: RCC-AHBENR_CRCEN   %1 12 lshift RCC-AHBENR bis! ;  \ RCC-AHBENR_CRCEN    CRC clock enable bit
+: RCC-AHBENR_MIFEN   %1 8 lshift RCC-AHBENR bis! ;  \ RCC-AHBENR_MIFEN    NVM interface clock enable  bit
+: RCC-AHBENR_DMAEN   %1 0 lshift RCC-AHBENR bis! ;  \ RCC-AHBENR_DMAEN    DMA clock enable bit
+
+\ RCC-APB2ENR (read-write)
+: RCC-APB2ENR_DBGEN   %1 22 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_DBGEN    DBG clock enable bit
+: RCC-APB2ENR_USART1EN   %1 14 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_USART1EN    USART1 clock enable bit
+: RCC-APB2ENR_SPI1EN   %1 12 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_SPI1EN    SPI1 clock enable bit
+: RCC-APB2ENR_ADCEN   %1 9 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_ADCEN    ADC clock enable bit
+: RCC-APB2ENR_MIFIEN   %1 7 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_MIFIEN    MiFaRe Firewall clock enable  bit
+: RCC-APB2ENR_TIM22EN   %1 5 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_TIM22EN    TIM22 timer clock enable  bit
+: RCC-APB2ENR_TIM21EN   %1 2 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_TIM21EN    TIM21 timer clock enable  bit
+: RCC-APB2ENR_SYSCFGEN   %1 0 lshift RCC-APB2ENR bis! ;  \ RCC-APB2ENR_SYSCFGEN    System configuration controller clock  enable bit
+
+\ RCC-APB1ENR (read-write)
+: RCC-APB1ENR_LPTIM1EN   %1 31 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_LPTIM1EN    Low power timer clock enable  bit
+: RCC-APB1ENR_DACEN   %1 29 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_DACEN    DAC interface clock enable  bit
+: RCC-APB1ENR_PWREN   %1 28 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_PWREN    Power interface clock enable  bit
+: RCC-APB1ENR_CRSEN   %1 27 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_CRSEN    Clock recovery system clock enable  bit
+: RCC-APB1ENR_USBEN   %1 23 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_USBEN    USB clock enable bit
+: RCC-APB1ENR_I2C2EN   %1 22 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_I2C2EN    I2C2 clock enable bit
+: RCC-APB1ENR_I2C1EN   %1 21 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_I2C1EN    I2C1 clock enable bit
+: RCC-APB1ENR_LPUART1EN   %1 18 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_LPUART1EN    LPUART1 clock enable bit
+: RCC-APB1ENR_USART2EN   %1 17 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_USART2EN    UART2 clock enable bit
+: RCC-APB1ENR_SPI2EN   %1 14 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_SPI2EN    SPI2 clock enable bit
+: RCC-APB1ENR_WWDGEN   %1 11 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_WWDGEN    Window watchdog clock enable  bit
+: RCC-APB1ENR_LCDEN   %1 9 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_LCDEN    LCD clock enable bit
+: RCC-APB1ENR_TIM6EN   %1 4 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_TIM6EN    Timer 6 clock enable bit
+: RCC-APB1ENR_TIM2EN   %1 0 lshift RCC-APB1ENR bis! ;  \ RCC-APB1ENR_TIM2EN    Timer2 clock enable bit
+
+\ RCC-IOPSMEN (read-write)
+: RCC-IOPSMEN_IOPHSMEN   %1 7 lshift RCC-IOPSMEN bis! ;  \ RCC-IOPSMEN_IOPHSMEN    IOPHSMEN
+: RCC-IOPSMEN_IOPDSMEN   %1 3 lshift RCC-IOPSMEN bis! ;  \ RCC-IOPSMEN_IOPDSMEN    IOPDSMEN
+: RCC-IOPSMEN_IOPCSMEN   %1 2 lshift RCC-IOPSMEN bis! ;  \ RCC-IOPSMEN_IOPCSMEN    IOPCSMEN
+: RCC-IOPSMEN_IOPBSMEN   %1 1 lshift RCC-IOPSMEN bis! ;  \ RCC-IOPSMEN_IOPBSMEN    IOPBSMEN
+: RCC-IOPSMEN_IOPASMEN   %1 0 lshift RCC-IOPSMEN bis! ;  \ RCC-IOPSMEN_IOPASMEN    IOPASMEN
+
+\ RCC-AHBSMENR (read-write)
+: RCC-AHBSMENR_CRYPSMEN   %1 24 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_CRYPSMEN    Crypto clock enable during sleep mode  bit
+: RCC-AHBSMENR_RNGSMEN   %1 20 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_RNGSMEN    Random Number Generator clock enable  during sleep mode bit
+: RCC-AHBSMENR_TOUCHSMEN   %1 16 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_TOUCHSMEN    Touch Sensing clock enable during sleep  mode bit
+: RCC-AHBSMENR_CRCSMEN   %1 12 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_CRCSMEN    CRC clock enable during sleep mode  bit
+: RCC-AHBSMENR_SRAMSMEN   %1 9 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_SRAMSMEN    SRAM interface clock enable during sleep  mode bit
+: RCC-AHBSMENR_MIFSMEN   %1 8 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_MIFSMEN    NVM interface clock enable during sleep  mode bit
+: RCC-AHBSMENR_DMASMEN   %1 0 lshift RCC-AHBSMENR bis! ;  \ RCC-AHBSMENR_DMASMEN    DMA clock enable during sleep mode  bit
+
+\ RCC-APB2SMENR (read-write)
+: RCC-APB2SMENR_DBGSMEN   %1 22 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_DBGSMEN    DBG clock enable during sleep mode  bit
+: RCC-APB2SMENR_USART1SMEN   %1 14 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_USART1SMEN    USART1 clock enable during sleep mode  bit
+: RCC-APB2SMENR_SPI1SMEN   %1 12 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_SPI1SMEN    SPI1 clock enable during sleep mode  bit
+: RCC-APB2SMENR_ADCSMEN   %1 9 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_ADCSMEN    ADC clock enable during sleep mode  bit
+: RCC-APB2SMENR_TIM22SMEN   %1 5 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_TIM22SMEN    TIM22 timer clock enable during sleep  mode bit
+: RCC-APB2SMENR_TIM21SMEN   %1 2 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_TIM21SMEN    TIM21 timer clock enable during sleep  mode bit
+: RCC-APB2SMENR_SYSCFGSMEN   %1 0 lshift RCC-APB2SMENR bis! ;  \ RCC-APB2SMENR_SYSCFGSMEN    System configuration controller clock  enable during sleep mode bit
+
+\ RCC-APB1SMENR (read-write)
+: RCC-APB1SMENR_LPTIM1SMEN   %1 31 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_LPTIM1SMEN    Low power timer clock enable during  sleep mode bit
+: RCC-APB1SMENR_DACSMEN   %1 29 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_DACSMEN    DAC interface clock enable during sleep  mode bit
+: RCC-APB1SMENR_PWRSMEN   %1 28 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_PWRSMEN    Power interface clock enable during  sleep mode bit
+: RCC-APB1SMENR_CRSSMEN   %1 27 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_CRSSMEN    Clock recovery system clock enable  during sleep mode bit
+: RCC-APB1SMENR_USBSMEN   %1 23 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_USBSMEN    USB clock enable during sleep mode  bit
+: RCC-APB1SMENR_I2C2SMEN   %1 22 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_I2C2SMEN    I2C2 clock enable during sleep mode  bit
+: RCC-APB1SMENR_I2C1SMEN   %1 21 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_I2C1SMEN    I2C1 clock enable during sleep mode  bit
+: RCC-APB1SMENR_LPUART1SMEN   %1 18 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_LPUART1SMEN    LPUART1 clock enable during sleep mode  bit
+: RCC-APB1SMENR_USART2SMEN   %1 17 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_USART2SMEN    UART2 clock enable during sleep mode  bit
+: RCC-APB1SMENR_SPI2SMEN   %1 14 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_SPI2SMEN    SPI2 clock enable during sleep mode  bit
+: RCC-APB1SMENR_WWDGSMEN   %1 11 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_WWDGSMEN    Window watchdog clock enable during  sleep mode bit
+: RCC-APB1SMENR_LCDSMEN   %1 9 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_LCDSMEN    LCD clock enable during sleep mode  bit
+: RCC-APB1SMENR_TIM6SMEN   %1 4 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_TIM6SMEN    Timer 6 clock enable during sleep mode  bit
+: RCC-APB1SMENR_TIM2SMEN   %1 0 lshift RCC-APB1SMENR bis! ;  \ RCC-APB1SMENR_TIM2SMEN    Timer2 clock enable during sleep mode  bit
+
+\ RCC-CCIPR (read-write)
+: RCC-CCIPR_HSI48MSEL   %1 26 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_HSI48MSEL    48 MHz HSI48 clock source selection  bit
+: RCC-CCIPR_LPTIM1SEL1   %1 19 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_LPTIM1SEL1    Low Power Timer clock source selection  bits
+: RCC-CCIPR_LPTIM1SEL0   %1 18 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_LPTIM1SEL0    LPTIM1SEL0
+: RCC-CCIPR_I2C1SEL1   %1 13 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_I2C1SEL1    I2C1 clock source selection  bits
+: RCC-CCIPR_I2C1SEL0   %1 12 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_I2C1SEL0    I2C1SEL0
+: RCC-CCIPR_LPUART1SEL1   %1 11 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_LPUART1SEL1    LPUART1 clock source selection  bits
+: RCC-CCIPR_LPUART1SEL0   %1 10 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_LPUART1SEL0    LPUART1SEL0
+: RCC-CCIPR_USART2SEL1   %1 3 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_USART2SEL1    USART2 clock source selection  bits
+: RCC-CCIPR_USART2SEL0   %1 2 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_USART2SEL0    USART2SEL0
+: RCC-CCIPR_USART1SEL1   %1 1 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_USART1SEL1    USART1 clock source selection  bits
+: RCC-CCIPR_USART1SEL0   %1 0 lshift RCC-CCIPR bis! ;  \ RCC-CCIPR_USART1SEL0    USART1SEL0
+
+\ RCC-CSR ()
+: RCC-CSR_LPWRSTF   %1 31 lshift RCC-CSR bis! ;  \ RCC-CSR_LPWRSTF    Low-power reset flag
+: RCC-CSR_WWDGRSTF   %1 30 lshift RCC-CSR bis! ;  \ RCC-CSR_WWDGRSTF    Window watchdog reset flag
+: RCC-CSR_IWDGRSTF   %1 29 lshift RCC-CSR bis! ;  \ RCC-CSR_IWDGRSTF    Independent watchdog reset  flag
+: RCC-CSR_SFTRSTF   %1 28 lshift RCC-CSR bis! ;  \ RCC-CSR_SFTRSTF    Software reset flag
+: RCC-CSR_PORRSTF   %1 27 lshift RCC-CSR bis! ;  \ RCC-CSR_PORRSTF    POR/PDR reset flag
+: RCC-CSR_PINRSTF   %1 26 lshift RCC-CSR bis! ;  \ RCC-CSR_PINRSTF    PIN reset flag
+: RCC-CSR_OBLRSTF   %1 25 lshift RCC-CSR bis! ;  \ RCC-CSR_OBLRSTF    OBLRSTF
+: RCC-CSR_RMVF   %1 24 lshift RCC-CSR bis! ;  \ RCC-CSR_RMVF    Remove reset flag
+: RCC-CSR_RTCRST   %1 19 lshift RCC-CSR bis! ;  \ RCC-CSR_RTCRST    RTC software reset bit
+: RCC-CSR_RTCEN   %1 18 lshift RCC-CSR bis! ;  \ RCC-CSR_RTCEN    RTC clock enable bit
+: RCC-CSR_RTCSEL   ( %XX -- ) 16 lshift RCC-CSR bis! ;  \ RCC-CSR_RTCSEL    RTC and LCD clock source selection  bits
+: RCC-CSR_CSSLSED   %1 14 lshift RCC-CSR bis! ;  \ RCC-CSR_CSSLSED    CSS on LSE failure detection  flag
+: RCC-CSR_CSSLSEON   %1 13 lshift RCC-CSR bis! ;  \ RCC-CSR_CSSLSEON    CSSLSEON
+: RCC-CSR_LSEDRV   ( %XX -- ) 11 lshift RCC-CSR bis! ;  \ RCC-CSR_LSEDRV    LSEDRV
+: RCC-CSR_LSEBYP   %1 10 lshift RCC-CSR bis! ;  \ RCC-CSR_LSEBYP    External low-speed oscillator bypass  bit
+: RCC-CSR_LSERDY   %1 9 lshift RCC-CSR bis! ;  \ RCC-CSR_LSERDY    External low-speed oscillator ready  bit
+: RCC-CSR_LSEON   %1 8 lshift RCC-CSR bis! ;  \ RCC-CSR_LSEON    External low-speed oscillator enable  bit
+: RCC-CSR_LSIRDY   %1 1 lshift RCC-CSR bis! ;  \ RCC-CSR_LSIRDY    Internal low-speed oscillator ready  bit
+: RCC-CSR_LSION   %1 0 lshift RCC-CSR bis! ;  \ RCC-CSR_LSION    Internal low-speed oscillator  enable

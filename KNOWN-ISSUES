@@ -3,6 +3,14 @@
 \  Known issues
 \ -----------------------------------------------------------------------------
 
+*********************************************************
+*  Barriers in all microcontroller targets with caches:
+*********************************************************
+
+Unlike in the operating system targets, no cache synchronisation is used in the microcontroller ports.
+Usually, caches are small on these chips and a lot of instructions are executed before a new
+definition is run, but you may run into trouble when compiling code while doing large DMA transfers.
+
 *********************************
 *  LDMIA + Interrupts in M3/M4:
 *********************************

@@ -16,7 +16,7 @@
 @    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @
 
-@ Common startup code for all implementations 
+@ Common startup code for all implementations
 
    @ Einige der Kernvariablen müssen hier unbedingt frisch gesetzt werden, damit quit nicht nach dem Init-Einsprung nochmal tätig werden muss.
 
@@ -32,7 +32,7 @@
    @ Search for current init definition in dictionary:
    pushdatos
    ldr tos, =init_name
-   pushdaconst 4 
+   pushdaconst 4
    bl find
    drop @ Flags brauche ich nicht No need for flags
    cmp tos, #0

@@ -24,6 +24,9 @@
 @ All interrupt handlers work the same way and are generated with a macro:
 @------------------------------------------------------------------------------
 
+interrupt svcall
+interrupt pendsv
+
 interrupt exti0
 interrupt exti1
 interrupt exti2

@@ -41,7 +41,7 @@ registerliteralkomma:  @ Compile code to put a literal constant into a register.
     push {tos} @ Save desired register
 
     bl registerliteralkomma_intern
-    
+
     pushdaconstw 0x43C0 @ Opcode: mvns r0, r0
     pop {r0}
     orrs tos, r0
@@ -68,7 +68,7 @@ registerliteralkomma_intern:
 
   popda r5 @ Hole die Registermaske  Fetch register mask
 
-  @ Generate opcode for lsls target, target, #... 
+  @ Generate opcode for lsls target, target, #...
   movs r1, r5
   lsls r1, #3
   orrs r1, r5
@@ -77,12 +77,12 @@ registerliteralkomma_intern:
   lsls r5, #8 @ Den Register um 8 Stellen schieben
   ldr r0, =0x2000 @ MOVS-Opcode für gewünschten Register
   orrs r5, r0
-  
+
   movs r3, #0xFF  @ Maske für die Bits, die in die Opcodes kommen
 
   @ How far has constant to be shifted right so that it fits in the 8 lowest bits ?
   movs r2, #0  @ Restschub anfangs auf Null
-1:movs r0, tos @ lsrs r0, tos, r2  
+1:movs r0, tos @ lsrs r0, tos, r2
   lsrs r0, r2  @ Konstante schieben
   bics r0, r3  @ Maske anwenden
   beq 2f       @ Oberer Teil leer ?
@@ -118,11 +118,11 @@ registerliteralkomma_intern:
   @ This is done in steps as more Bits are added "on the fly".
 4:subs r0, r2, r4 @ Restschub - aktueller Schub muss in LSLS opcodiert werden.
   @ lsls-Opcode generieren, Schub in r0
-  pushda r1 
+  pushda r1
   lsls r0, #6
   orrs tos, r0
   bl hkomma
-  
+
   movs r2, r4
   b 2b
 
@@ -130,7 +130,7 @@ registerliteralkomma_intern:
 5:cmp r2, #0
   beq 6f
     @ lsls-Opcode generieren, Schub in r2
-    pushda r1 
+    pushda r1
     lsls r2, #6
     orrs tos, r2
     bl hkomma
@@ -146,7 +146,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
   push {r0, r1, r2, r3, r4, lr}
 
   @ r0: Konstante       Constant
-  @ r1: Zielregister    Target register 
+  @ r1: Zielregister    Target register
   @ r2: Helferlein      Temporary
   @ r3: Helferlein      Temporary
   @ r4: lsls Opcode
@@ -185,7 +185,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
   lsrs r2, r0, #24 @ 76
   movs r3, #0xFF
   ands r2, r3
-  
+
   ldr r3, =0x2000  @ MOVS-Opcode
   orrs r3, r1      @ Target register
   orrs r3, r2
@@ -196,12 +196,12 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
   @ -----------------------------------
   pushda r4 @ lsls target, target, #8
   bl hkomma
-  
+
   @ -----------------------------------
   lsrs r2, r0, #16 @ 54
   movs r3, #0xFF
   ands r2, r3
-  
+
   ldr r3, =0x3000  @ ADDS-Opcode
   orrs r3, r1      @ Target register
   orrs r3, r2
@@ -217,7 +217,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
   lsrs r2, r0, #8 @ 32
   movs r3, #0xFF
   ands r2, r3
-  
+
   ldr r3, =0x3000  @ ADDS-Opcode
   orrs r3, r1      @ Target register
   orrs r3, r2
@@ -232,9 +232,9 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
   @ -----------------------------------
   @ lsrs r2, r0, #0  @ 10
   movs r2, r0
-  movs r3, #0xFF   
+  movs r3, #0xFF
   ands r2, r3
-  
+
   ldr r3, =0x3000  @ ADDS-Opcode
   orrs r3, r1      @ Target register
   orrs r3, r2
@@ -260,7 +260,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "call," @ ( Zieladresse -- )
-callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren. 
+callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
             @ Write a call to destination with the shortest possible opcodes.
             @ Je nachdem: bl ...                            (4 Bytes)
             @             movw r0, ...              blx r0  (6 Bytes)
@@ -273,12 +273,12 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
 
   bl here
   popda r0 @ Adresse-der-Opcodelücke  Where the opcodes shall be inserted...
-  
+
   subs r3, r0     @ Differenz aus Lücken-Adresse und Sprungziel bilden   Calculate relative jump offset
   subs r3, #4     @ Da der aktuelle Befehl noch läuft und es komischerweise andere Offsets beim ARM gibt.  Current instruction still running...
 
-  @ 22 Bits für die Sprungweite mit Vorzeichen - 
-  @ also habe ich 21 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen. 
+  @ 22 Bits für die Sprungweite mit Vorzeichen -
+  @ also habe ich 21 freie Bits, das oberste muss mit dem restlichen Vorzeichen übereinstimmen.
 
   @ BL opcodes support 22 Bits jump range - one of that for sign.
   @ Check if BL range is enough to reach target:
@@ -326,7 +326,7 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
     lsls r1, #16
     orrs r0, r1
 
-  lsrs r3, #10         
+  lsrs r3, #10
 
     @ands r1, r3, #1      @ Next bit, treated as sign, shifted into bit 26.
     movs r1, #1
@@ -361,17 +361,6 @@ literalkomma: @ Save r1, r2 and r3 !
   pop {pc}
 
 
-.ifdef m0core_start_offset
-  .equ dodoesaddr, (dodoes - addresszero) + m0core_start_offset @ To circumvent address relocation issues
-.else
-  .equ dodoesaddr, dodoes - addresszero @ To circumvent address relocation issues
-.endif
-
-.equ dodoes_byte1, ((dodoesaddr + 1)>>24) & 255
-.equ dodoes_byte2, ((dodoesaddr + 1)>>16) & 255
-.equ dodoes_byte3, ((dodoesaddr + 1)>> 8) & 255
-.equ dodoes_byte4,  (dodoesaddr + 1)      & 255
-
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "create" @ ANS-Create with default action.
 @ -----------------------------------------------------------------------------
@@ -381,17 +370,17 @@ literalkomma: @ Save r1, r2 and r3 !
   @ Copy of the inline-code of does>
 
   .ifdef does_above_64kb
-    movs r0, #dodoes_byte1
+    movs r0, #:upper8_15:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte2
+    adds r0, #:upper0_7:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte3
+    adds r0, #:lower8_15:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte4
+    adds r0, #:lower0_7:#dodoes+1
   .else @ High word not needed as dodoes in core is in the lowest 64 kb.
-    movs r0, #dodoes_byte3
+    movs r0, #:lower8_15:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte4
+    adds r0, #:lower0_7:#dodoes+1
   .endif
 
   blx r0 @ Den Aufruf mit absoluter Adresse einkompilieren. Perform this call with absolute addressing.
@@ -402,7 +391,7 @@ literalkomma: @ Save r1, r2 and r3 !
   pushdatos
   mov tos, lr
   subs tos, #1 @ Denn es ist normalerweise eine ungerade Adresse wegen des Thumb-Befehlssatzes.  Align address. It is uneven because of Thumb-instructionset bit set.
-  
+
   pop {pc}
 
 @------------------------------------------------------------------------------
@@ -417,21 +406,21 @@ does: @ Gives freshly defined word a special action.
   @ Universeller Sprung zu dodoes:  Universal jump to dodoes. There has already been a push {lr} before in the definition that calls does>.
   @ Davor ist in dem Wort, wo does> eingefügt wird schon ein push {lr} gewesen.
   @ movw r0, #:lower16:dodoes+1
-  @  movt r0, #:upper16:dodoes+1   
+  @  movt r0, #:upper16:dodoes+1
   @ blx r0 @ Den Aufruf mit absoluter Adresse einkompilieren. Perform this call with absolute addressing.
 
   .ifdef does_above_64kb
-    movs r0, #dodoes_byte1
+    movs r0, #:upper8_15:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte2
+    adds r0, #:upper0_7:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte3
+    adds r0, #:lower8_15:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte4
+    adds r0, #:lower0_7:#dodoes+1
   .else @ High word not needed as dodoes in core is in the lowest 64 kb.
-    movs r0, #dodoes_byte3
+    movs r0, #:lower8_15:#dodoes+1
     lsls r0, #8
-    adds r0, #dodoes_byte4
+    adds r0, #:lower0_7:#dodoes+1
   .endif
 
   blx r0 @ Den Aufruf mit absoluter Adresse einkompilieren. Perform this call with absolute addressing.
@@ -453,7 +442,7 @@ dodoes:
 
   @ The call to dodoes never returns.
   @ Instead, it compiles a call to the part after its invocation into the dictionary
-  @ and exits through two call layers.  
+  @ and exits through two call layers.
 
   @ Momentaner Zustand von Stacks und LR:  Current stack:
   @    ( -- )
@@ -468,7 +457,7 @@ dodoes:
 
   pushdatos    @ Brauche den Link danach nicht mehr, weil ich über die in dem Wort das does> enthält gesicherte Adresse rückspringe
   mov tos, lr  @ We don't need this Link later because we return with the address saved by the definition that contains does>.
-  subs tos, #1 @ Einen abziehen. Diese Adresse ist schon ungerade für Thumb-2, aber callkomma fügt nochmal eine 1 dazu. 
+  subs tos, #1 @ Einen abziehen. Diese Adresse ist schon ungerade für Thumb-2, aber callkomma fügt nochmal eine 1 dazu.
                @ Subtract one. Adress is already uneven for Thumb-instructionset, but callkomma will add one anyway.
 
     @ Dictionary-Pointer verbiegen:
@@ -484,7 +473,11 @@ dodoes:
 
     ldr r0, =Backlinkgrenze
     cmp r3, r0
+.ifdef above_ram
+    blo.n dodoes_ram
+.else
     bhs.n dodoes_ram
+.endif
 
 2:    movs r0, #7
       ands r0, r1
@@ -501,7 +494,11 @@ dodoes_ram:
 
     ldr r0, =Backlinkgrenze
     cmp r3, r0
+.ifdef above_ram
+    blo.n dodoes_ram
+.else
     bhs.n dodoes_ram
+.endif
 
 2:    movs r0, #15
       ands r0, r1
@@ -519,7 +516,7 @@ dodoes_ram:
   bne 1f
     adds r1, #2
 1:
-  
+
   adds r1, #2  @ Am Anfang sollte das neudefinierte Wort ein push {lr} enthalten, richtig ?
                @ Skip the push {lr} opcode in that definition.
 
@@ -556,7 +553,11 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
 
     ldr r2, =Backlinkgrenze
     cmp r1, r2
+.ifdef above_ram
+    blo.n builds_ram
+.else
     bhs.n builds_ram
+.endif
 
       @ See where we are. The sequence written for <builds does> is 18 Bytes long on M0.
       @ So we need to advance to 8n + 6 so that the opcode sequence ends on a suitable border.
@@ -567,8 +568,7 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
       cmp tos, #6
       drop
       beq 1f
-        pushdaconst 0x0036  @ nop = movs tos, tos
-        bl hkomma
+        bl nop_hkomma
         b 2b
 
 builds_ram:
@@ -583,7 +583,11 @@ builds_ram:
 
     ldr r2, =Backlinkgrenze
     cmp r1, r2
+.ifdef above_ram
+    blo.n builds_ram
+.else
     bhs.n builds_ram
+.endif
 
       @ See where we are. The sequence written for <builds does> is 18 Bytes long on M0.
       @ So we need to advance to 16n + 14 so that the opcode sequence ends on a suitable border.
@@ -594,8 +598,7 @@ builds_ram:
       cmp tos, #14
       drop
       beq 1f
-        pushdaconst 0x0036  @ nop = movs tos, tos
-        bl hkomma
+        bl nop_hkomma
         b 2b
 
 builds_ram:
@@ -607,8 +610,7 @@ builds_ram:
     ands tos, r0
     drop
     bne 1f
-      pushdaconst 0x0036  @ nop = movs tos, tos
-      bl hkomma
+      bl nop_hkomma
 1:
 
   pushdaconstw 0xb500 @ Opcode für push {lr} schreiben  Write opcode for push {lr}

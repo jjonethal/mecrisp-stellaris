@@ -69,7 +69,7 @@ h_flashkomma:
   cmp r2, r3
   bne 3f
 
-  @ Okay, alle Proben bestanden. 
+  @ Okay, alle Proben bestanden.
 
   @ Im STM32F4 ist der Flash-Speicher gespiegelt, die wirkliche Adresse liegt weiter hinten !
   adds r0, #0x08000000
@@ -137,7 +137,7 @@ c_flashkomma:
   cmp r2, #0xFF
   bne 3b
 
-  @ Okay, alle Proben bestanden. 
+  @ Okay, alle Proben bestanden.
 
   @ Im STM32F4 ist der Flash-Speicher gespiegelt, die wirkliche Adresse liegt weiter hinten !
   adds r0, #0x08000000
@@ -179,7 +179,7 @@ eraseflashsector:  @ Löscht einen Flash-Sektor
 @ -----------------------------------------------------------------------------
   push {lr}
 
-  cmp tos, #1   @ Nicht den Kern in Sektor 0 löschen
+  cmp tos, #2   @ Nicht den Kern in den Sektoren 0 und 1 löschen
   blo 2f
   cmp tos, #8   @ Es gibt nur 8 Sektoren
   bhs 2f
@@ -245,7 +245,6 @@ eraseflashsector:  @ Löscht einen Flash-Sektor
 
 @ -----------------------------------------------------------------------------
 @ 16 kb sectors
-@  loeschpruefung  0x08004000  0x08007FFF  1
   loeschpruefung  0x08008000  0x0800BFFF  2
   loeschpruefung  0x0800C000  0x0800FFFF  3
 

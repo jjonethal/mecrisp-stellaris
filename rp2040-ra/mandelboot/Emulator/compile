@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gcc -o thumbulator-rp2040-bootblock -O2 thumbulator-rp2040-bootblock.c

@@ -34,6 +34,10 @@ cd lpc1115fbd48-ra
 md5sum *.bin
 cd ..
 
+cd lpc845m301
+md5sum *.bin
+cd ..
+
 cd kl25z128
 md5sum *.bin
 cd ..
@@ -86,6 +90,10 @@ cd msp432p401r-ra
 md5sum *.bin
 cd ..
 
+cd lm3s811-ra
+md5sum *.bin
+cd ..
+
 cd lm4f120
 md5sum *.bin
 cd ..
@@ -95,6 +103,14 @@ md5sum *.bin
 cd ..
 
 cd lm4f232
+md5sum *.bin
+cd ..
+
+cd palanqin
+md5sum *.bin
+cd ..
+
+cd palanqin-ra
 md5sum *.bin
 cd ..
 
@@ -118,6 +134,14 @@ cd stm32f030k6-ra
 md5sum *.bin
 cd ..
 
+cd stm32f030r8
+md5sum *.bin
+cd ..
+
+cd stm32f030r8-ra
+md5sum *.bin
+cd ..
+
 cd stm32f042f6
 md5sum *.bin
 cd ..
@@ -131,6 +155,18 @@ md5sum *.bin
 cd ..
 
 cd stm32f051-ra
+md5sum *.bin
+cd ..
+
+cd stm32f072rb
+md5sum *.bin
+cd ..
+
+cd stm32f072rb-ra
+md5sum *.bin
+cd ..
+
+cd stm32l031k6
 md5sum *.bin
 cd ..
 
@@ -175,6 +211,14 @@ md5sum *.bin
 cd ..
 
 cd stm32f103-ra
+md5sum *.bin
+cd ..
+
+cd stm32f103rb
+md5sum *.bin
+cd ..
+
+cd stm32f103rb-ra
 md5sum *.bin
 cd ..
 
@@ -226,7 +270,19 @@ cd stm32f407-ra
 md5sum *.bin
 cd ..
 
+cd stm32f407diymore
+md5sum *.bin
+cd ..
+
+cd stm32f407diymore-ra
+md5sum *.bin
+cd ..
+
 cd stm32f411
+md5sum *.bin
+cd ..
+
+cd stm32f411-ra
 md5sum *.bin
 cd ..
 
@@ -243,6 +299,34 @@ md5sum *.bin
 cd ..
 
 cd stm32f746-ra
+md5sum *.bin
+cd ..
+
+cd stm32f767-ra
+md5sum *.bin
+cd ..
+
+cd stm32h743-ra
+md5sum *.bin
+cd ..
+
+cd stm32g031f4
+md5sum *.bin
+cd ..
+
+cd stm32g031f8-ra
+md5sum *.bin
+cd ..
+
+cd stm32g031j6-ra
+md5sum *.bin
+cd ..
+
+cd stm32g071rb-ra
+md5sum *.bin
+cd ..
+
+cd stm32wb55
 md5sum *.bin
 cd ..
 
@@ -290,10 +374,18 @@ cd nuc123-ra
 md5sum *.bin
 cd ..
 
+cd rp2040-ra
+md5sum *.bin
+cd ..
+
 cd linux
 md5sum mecrisp-stellaris-linux
 cd ..
 
 cd linux-ra
 md5sum mecrisp-stellaris-linux
+cd ..
+
+cd freebsd-ra
+md5sum mecrisp-stellaris-freebsd
 cd ..

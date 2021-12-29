@@ -24,7 +24,7 @@
 @ -----------------------------------------------------------------------------
   push {lr}
   bl source             @ Save current source
-  
+
   @ 2>r
   ldm psp!, {r0}
   push {r0}
@@ -186,7 +186,7 @@ not_found_addr_r0_len_r1:
     bl 1b @ Interpretschleife fortsetzen.  Finished.
 
   @ Registerkarte:
-  @  r0: Stringadresse des Tokens, wird ab hier nicht mehr benötigt.  
+  @  r0: Stringadresse des Tokens, wird ab hier nicht mehr benötigt.
   @      Wird danach für die Zahl der benötigten Konstanten für die Faltung genutzt.
   @      From now on, this is number of constants that would be needed for folding this definition
   @  r1: Flags
@@ -217,7 +217,7 @@ not_found_addr_r0_len_r1:
 
     @ Prüfe die Faltbarkeit des aktuellen Tokens:
     @ Check for foldability.
-    
+
     movs r0, #Flag_foldable & ~Flag_visible
     ands r0, r1 @ Flagfeld auf Faltbarkeit hin prüfen
     beq.n .konstantenschleife
@@ -229,7 +229,7 @@ not_found_addr_r0_len_r1:
       cmp r3, #0 @ And at least one constant is available for folding.
       beq.n .interpret_genugkonstanten
         b.n .interpret_opcodierbar
-      
+
 .interpret_genugkonstanten: @ Not opcodable. Maybe foldable.
       @ Prüfe, ob genug Konstanten da sind:
       @ How many constants are necessary to fold this word ?
@@ -240,7 +240,7 @@ not_found_addr_r0_len_r1:
       blo.n .konstantenschleife
 
 .interpret_faltoptimierung:
-        @ Do folding by running the definition. 
+        @ Do folding by running the definition.
         @ Note that Constant-Folding-Pointer is already set to keep track of results calculated.
         pushda r2 @ Einsprungadresse bereitlegen  Code entry point
         bl execute @ Durch Ausführung falten      Fold by executing
@@ -266,7 +266,7 @@ not_found_addr_r0_len_r1:
 6:movs r2, #Flag_inline & ~Flag_visible
   ands r2, r1
   beq.n 7f
-  
+
   bl inlinekomma @ Direkt einfügen.        Inline the code
   b.n 1b @ Zurück in die Interpret-Schleife  Finished.
 
@@ -281,7 +281,7 @@ not_found_addr_r0_len_r1:
   @ Entry-Point of Definition in r2
   @ Number of folding constants available in r3, at least one
 
-  @ Decide on the different cases. As I don't return, I can change Flag register freely.  
+  @ Decide on the different cases. As I don't return, I can change Flag register freely.
   movs r0, #7 @ Mask for opcoding cases
   ands r1, r0
 
@@ -311,8 +311,8 @@ not_found_addr_r0_len_r1:
       orrs tos, r0 @ Put constant into Opcode
       bl hkomma
       b.n 1b @ Finished.
-      
-2:  
+
+2:
 
     .ifndef m0core
       @ M3/M4 cores offer additional opcodes with 12-bit encoded constants.
@@ -358,7 +358,7 @@ not_found_addr_r0_len_r1:
   cmp r1, #3
   bne.n .interpret_opcodierbar_schieben
     @------------------------------------------------------------------------------
-    @ Equal and Unequal. 
+    @ Equal and Unequal.
 
     cmp r3, #1
     bne.n .interpret_faltoptimierung @ Opcode only with exactly one constant. Do folding with two constants or more in this case !
@@ -379,8 +379,8 @@ not_found_addr_r0_len_r1:
       pushda r2
       bl inlinekomma
       b.n 1b @ Finished.
- 
-2:  
+
+2:
 
     .ifndef m0core
       @ M3/M4 cores offer additional opcodes with 12-bit encoded constants.
@@ -395,7 +395,7 @@ not_found_addr_r0_len_r1:
         bl reversekomma
         b.n 4b
 3:
-    .endif    
+    .endif
 
     @ Larger constant. Put it in register first.
     pushdaconst 0
@@ -456,8 +456,7 @@ not_found_addr_r0_len_r1:
     bl inlinekomma
 
     @ Compile Drop-Opcode
-    pushdaconstw 0xcf40 @ Opcode for ldmia r7!, {r6}
-    bl hkomma
+    bl drop_hkomma
     b.n 1b @ Finished.
 
 2:  @ Two or more constants.
@@ -509,7 +508,7 @@ not_found_addr_r0_len_r1:
 
   adds r0, #1 @ One more for Thumb
   blx r0
-  b.n 1b @ Finished.  
+  b.n 1b @ Finished.
 
 
 @ -----------------------------------------------------------------------------
@@ -527,17 +526,17 @@ konstantenschreiben: @ Special internal entry point with register dependencies.
     .ifdef m0core
     pushdatos
     lsls tos, r3, #2
-    ldr tos, [psp, tos]    
+    ldr tos, [psp, tos]
     .else
     pushda r3
     ldr tos, [psp, tos, lsl #2] @ pick
     .endif
 
     bl literalkomma
-   
+
     cmp r3, #0
     bne.n .konstanteninnenschleife
-   
+
     @ Die geschriebenen Konstanten herunterwerfen.
     @ Drop constants written.
     subs r5, #4  @ TOS wurde beim drauflegen der Konstanten gesichert.
@@ -552,7 +551,7 @@ konstantenschreiben: @ Special internal entry point with register dependencies.
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_variable, "hook-quit" @ ( -- addr )
   CoreVariable hook_quit
-@------------------------------------------------------------------------------  
+@------------------------------------------------------------------------------
   pushdatos
   ldr tos, =hook_quit
   bx lr
@@ -596,7 +595,7 @@ quit:
   @ movs r1, #0  @ Set >IN to 0
   str r1, [r0]
 
-  ldr r0, =current_source 
+  ldr r0, =current_source
   @ movs r1, #0  @ Empty TIB is source
   str r1, [r0]
   ldr r1, =Eingabepuffer
@@ -610,5 +609,39 @@ quit_intern:
 quit_innenschleife:  @ Main loop of Forth system.
   bl query
   bl interpret
-  writeln " ok."
-  b.n quit_innenschleife
+
+  .ifdef color
+
+  @ Check state
+  ldr r0, =state
+  ldr r0, [r0]
+  cmp r0, #0
+  beq 1f
+    write " \x1B[34m"
+    b 2f
+1:  write " \x1B[36m"
+2:
+
+  @ Check memory target
+  ldr r0, =Dictionarypointer
+  ldr r0, [r0]
+
+  ldr r1, =Backlinkgrenze
+  cmp r0, r1
+.ifdef above_ram
+  blo.n 1f
+.else
+  bhs.n 1f
+.endif
+
+    writeln "ok'\x1B[0m"
+    b.n quit_innenschleife
+1:  writeln "ok.\x1B[0m"
+    b.n quit_innenschleife
+
+  .else
+
+    writeln " ok."
+    b.n quit_innenschleife
+
+  .endif

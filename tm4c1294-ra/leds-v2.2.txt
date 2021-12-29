@@ -1,0 +1,675 @@
+
+
+compiletoflash
+
+
+\ Clock setup for 25 MHz crystal and 120 MHz PLL
+
+\ -----------------------------------
+\ System Control registers (SYSCTL)
+\ -----------------------------------
+
+$400FE000 constant Sysctl-Base
+
+Sysctl-Base $050 + constant RIS
+Sysctl-Base $0B0 + constant RSCLKCFG
+Sysctl-Base $0C0 + constant MEMTIM0
+Sysctl-Base $07C + constant MOSCCTL
+
+Sysctl-Base $138 + constant ALTCLKCFG
+
+Sysctl-Base $160 + constant PLLFREQ0
+Sysctl-Base $164 + constant PLLFREQ1
+Sysctl-Base $168 + constant PLLSTAT
+
+$400FDFC8 constant flashconf
+
+\ Page 604:
+\ If the prefetch buffers are enabled and application code branches to a location other than
+\ flash memory, the prefetch tags need to be cleared upon returning to flash code execution.
+\ Prefetch tags can be cleared by setting the CLRTV bit in the FLASHCONF register.
+
+\ Geht das auch mit eingeschaltetem Prefetch-Puffer und ohne jedesmal CLRTV ?
+\ Es scheint zumindest so, muss aber noch gründlich getestet werden.
+
+\ ---------------------------------------------------
+\ Choose the external 25 MHz crystal as system clock
+\ ---------------------------------------------------
+
+: 25MHz ( -- )
+
+\  1 16 lshift                \ Force Prefetch buffers off (FPFOFF)
+\  1 20 lshift or flashconf ! \ CLRTV Clear valid tags
+
+  0 RSCLKCFG ! \ Oscsrc = PIOSC, PLL off, just in case this is called a second time.
+
+  $10 ( OSCRNG ) MOSCCTL ! \ High range for MOSC crystal > 10 MHz.
+  begin $00000100 ( MOSCPUPRIS ) RIS bit@ until  \ Wait for crystal to be running stable
+
+   2 22 lshift     \ EEPROM clock high time
+   1 16 lshift or  \ EEPROM 5 waitstates
+   2  6 lshift or  \  Flash clock high time
+   1  0 lshift or  \  Flash 5 waitstates
+     $00100010 or  \ Two bits that must be one ?!
+   MEMTIM0 !
+
+  $80300000 RSCLKCFG ! \ MEMTIMU, undivided MOSC as oscillator source
+;
+
+\ ------------------------------------------------------------
+ \ Fire up PLL for 120 MHz core frequency with 25 MHz crystal
+\ ------------------------------------------------------------
+
+: 120MHz ( -- )
+
+\  1 16 lshift                \ Force Prefetch buffers off (FPFOFF)
+\  1 20 lshift or flashconf ! \ CLRTV Clear valid tags
+
+  \ 1. Once POR has completed, the PIOSC is acting as the system clock.
+
+  0 RSCLKCFG ! \ Oscsrc = PIOSC, PLL off, just in case this is called a second time.
+
+  \ 2. Power up the MOSC by clearing the NOXTAL bit in the MOSCCTL register.
+  \ 3. If single-ended MOSC mode is required, the MOSC is ready to use. If crystal mode is required,
+  \    clear the PWRDN bit and wait for the MOSCPUPRIS bit to be set in the Raw Interrupt Status
+  \    (RIS), indicating MOSC crystal mode is ready.
+
+  $10 ( OSCRNG ) MOSCCTL ! \ High range for MOSC crystal > 10 MHz.
+  begin $00000100 ( MOSCPUPRIS ) RIS bit@ until  \ Wait for crystal to be running stable
+
+  \ 4. Set the OSCSRC field to 0x3 in the RSCLKCFG register at offset 0x0B0.
+
+  $03300000 RSCLKCFG ! \ MOSC as oscillator source, MOSC as input for PLL
+
+  \ 5. If the application also requires the MOSC to be the deep-sleep clock source, then program the
+  \    DSOSCSRC field in the DSCLKCFG register to 0x3.
+
+  \ 6. Write the PLLFREQ0 and PLLFREQ1 registers with the values of Q, N, MINT, and MFRAC to
+  \    the configure the desired VCO frequency setting.
+
+      \ fvco    = fcrystal * (mint + mfrac / 1024) / (q+1)(n+1)
+      \ 480 MHz = 25 Mhz   * (  96 +     0 / 1024) / (0+1)(4+1)
+
+  1 23 lshift 96 or PLLFREQ0 !  \ PLLPWR enabled, Mint = 96
+  4 PLLFREQ1 !                   \ N = (4+1), Q = (0+1)
+
+  \ 7. Write the MEMTIM0 register to correspond to the new system clock setting.
+
+   6 22 lshift     \ EEPROM clock high time
+   5 16 lshift or  \ EEPROM 5 waitstates
+   6  6 lshift or  \  Flash clock high time
+   5  0 lshift or  \  Flash 5 waitstates
+     $00100010 or  \ Two bits that must be one ?!
+   MEMTIM0 !
+
+  \ 8. Wait for the PLLSTAT register to indicate the PLL has reached lock at the new operating point
+  \    (or that a timeout period has passed and lock has failed, in which case an error condition exists
+  \    and this sequence is abandoned and error processing is initiated).
+
+  begin 1 PLLSTAT bit@ until
+
+  \ 9. Write the RSCLKCFG register's PSYSDIV value, set the USEPLL bit to enabled, and MEMTIMU bit.
+
+  \ fsyclk = fVCO / (PSYSDIV + 1) With PLL on 480 MHz, this gives 120 MHz.
+
+  $D3300000 \ MEMTIMU USEPLL NEWFREQ, MOSC as oscillator source, MOSC as input for PLL
+  3      or  \  PLL/4 --> 120MHz
+  RSCLKCFG !
+
+\  1 16 lshift                \ Force Prefetch buffers off (FPFOFF)
+\  1 20 lshift or flashconf ! \ CLRTV Clear valid tags
+;
+
+
+\ -----------------------------------------------------------------------------
+\ Ganz viele bunte Leuchtdioden, um eine Idee für
+\   einen spektralen Sensor auszuprobieren.
+\ -----------------------------------------------------------------------------
+
+$E0001000 constant DWT_CONTROL
+$E0001004 constant DWT_CYCCNT
+$E0001FB0 constant DWT_LAR
+$E000EDFC constant SCB_DEMCR
+
+: init-cycles ( -- )
+
+  $C5ACCE55 DWT_LAR !     \ Unlock
+  $01000000 SCB_DEMCR !   \ Enable Data Watchpoint and Trace (DWT) module
+          0 DWT_CYCCNT !  \ Reset the counter
+          1 DWT_CONTROL ! \ Enable the counter
+
+;
+
+: cycles ( -- u ) DWT_CYCCNT @ inline ;
+
+: delay-cycles ( ticks -- )
+  cycles ( ticks start )
+  begin
+    pause
+    2dup ( ticks start ticks start )
+    cycles ( ticks start ticks start current )
+    swap - ( ticks start ticks elapsed )
+    u<=
+  until
+  2drop
+;
+
+: us ( us -- ) 120 * delay-cycles ;
+: ms ( ms -- ) 0 ?do 120000 delay-cycles loop ;
+
+\ -----------------------------------------------------------------------------
+
+0 variable timestamp
+
+: cycles-now ( -- ) cycles timestamp ! ;
+
+: cycles-until ( ticks -- )
+  timestamp @ ( ticks start )
+  begin
+    pause
+    2dup ( ticks start ticks start )
+    cycles ( ticks start ticks start current )
+    swap - ( ticks start ticks elapsed )
+    u<=
+  until
+  + timestamp !
+;
+
+\ -----------------------------------------------------------------------------
+
+$40058000 constant PORTA
+$40059000 constant PORTB
+$4005A000 constant PORTC
+$4005B000 constant PORTD
+$4005C000 constant PORTE
+$4005D000 constant PORTF
+$4005E000 constant PORTG
+$4005F000 constant PORTH
+$40060000 constant PORTJ
+$40061000 constant PORTK
+$40062000 constant PORTL
+$40063000 constant PORTM
+$40064000 constant PORTN
+$40065000 constant PORTP
+$40066000 constant PORTQ
+
+$3FC constant IO_DATA ( IO Data Register, all bits selected )
+$400 constant IO_DIR  ( Pin Direction )
+$500 constant IO_DR2R ( 2 mA drive current )
+$504 constant IO_DR4R ( 4 mA )
+$508 constant IO_DR8R ( 8 mA )
+$53C constant IO_DR12R ( 12 mA )
+$50C constant IO_ODR  ( Open Drain )
+$510 constant IO_PUR  ( Pullup Resistor )
+$514 constant IO_PDR  ( Pulldown Resistor )
+$518 constant IO_SLR  ( Slew Rate )
+$51C constant IO_DEN  ( Digital Enable )
+
+\ -----------------------------------------------------------------------------
+
+: pin>mask+port ( pin -- mask port )
+  dup $FFF and 1 swap lshift
+  swap $FFF bic
+1-foldable ;
+
+\ -----------------------------------------------------------------------------
+
+30 constant Anzahl-der-LEDs
+
+create LEDs
+
+\ Anode      Kathode
+
+porta 3 or   porta 2 or   , ,  \  0    IR    SFH 4346            950 nm   -   1.6  1.9  V   ?                   20°                Osram OS     SFH 4346             Tinted
+porth 0 or   portb 5 or   , ,  \  1    IR    SFH 4356P           860 nm   -   1.7  2.0  V   ?                   20°                Osram OS     SFH 4356P            Tinted
+porta 4 or   porta 5 or   , ,  \  2    rot   RND 135-00006       700 nm  1.8   -   2.6  V   GaP                 40°      10 mcd    RND          RND 135-00006        Tinted
+porth 1 or   porth 2 or   , ,  \  3    rot   LED 3-3500 RT       660 nm   -   1.85 2.5  V   GaAlAs              50°    2300 mcd    Kingbright   L-934SRC-J4
+porte 0 or   porte 1 or   , ,  \  4    rot   LED 3-4500 RT       660 nm   -   2.1  2.5  V   AlGaInP             34°    4500 mcd    Kingbright   L-7104SRC-J4
+porth 3 or   portc 7 or   , ,  \  5    rot   EVL 264-7SDRC       650 nm  1.7  2.0  2.4  V   AlGaInP             40°     100 mcd    Everlight    264-7SDRC/S530-A3
+porte 2 or   porte 3 or   , ,  \  6    rot   KBT L-7104SURC      640 nm   -   1.9  2.5  V   AlGaInP on GaAs     34°    2500 mcd    Kingbright   L-7104SURC-E
+portc 6 or   portc 5 or   , ,  \  7    rot   KBT L-7104SEC-H     635 nm   -   2.2  2.8  V   AlGaInP             34°    1000 mcd    Kingbright   KBT L-7104SEC-H
+porte 4 or   porte 5 or   , ,  \  8    rot   VIS TLHR 4900       635 nm   -   2.0  3.0  V   GaAsP on GaP        16°      13 mcd    Vishay       TLHR 4900
+portc 4 or   porta 6 or   , ,  \  9    rot   SLK 3MM RT          627 nm   -   2.0  2.5  V   GaAsP on GaP        50°      60 mcd    Kingbright   L-934EC
+portk 0 or   portk 1 or   , ,  \ 10  (grün)  WUE 151034GS0300    525 nm   -   3.2  3.8  V   InGaN               30°   10000 mcd    Würth        151034GS03000
+porta 7 or   portg 1 or   , ,  \ 11  orange  LED 3-7800 OR       611 nm   -   2.2  2.8  V   AlGaInP             34°    7800 mcd    Kingbright   L-7104SEC-J4
+portk 2 or   portk 3 or   , ,  \ 12  orange  LED 3-3000L ONG     605 nm  1.6  2.0  2.4  V   ?                   20°    3000 mcd    Lucky Light  LL-304UAC2E-4AC
+portg 0 or   portm 3 or   , ,  \ 13   gelb   LED 3-2800 GE       590 nm   -   2.0  2.5  V   AlGaInP             34°    2800 mcd    Kingbright   L-7104SYC-J3
+
+portd 5 or   portd 4 or   , ,  \ 14   gelb   NTE NTE30032        592 nm   -   2.0  2.4  V   AlGalnP on GaAs     10°    2500 mcd    NTE          NTE30032
+portm 1 or   portm 0 or   , ,  \ 15   gelb   LED 3-1300 GE       595 nm   -   2.0  2.4  V   AlGaInP             50°    1300 mcd    Kingbright   L-934SYC
+portd 7 or   portd 6 or   , ,  \ 16    ?     VIS TLHY 4205       585 nm   -   2.4  3.0  V   GaAsP on GaP        22°      20 mcd    Vishay       TLHY 4205            Tinted   Leuchtet nicht, misst aber
+portl 0 or   portl 1 or   , ,  \ 17 gelbgrün KBT L-7104MGC       574 nm   -   2.1  2.5  V   AlGaInP             34°     700 mcd    Kingbright   L-7104MGC
+portd 3 or   portd 1 or   , ,  \ 18 gelbgrün KBT L-7104GC        565 nm   -   2.2  2.5  V   GaP                 34°      60 mcd    Kingbright   L-7104GC
+portl 2 or   portl 3 or   , ,  \ 19   grün   LED 3-14000 GN      520 nm   -   3.2  4.0  V   InGaN               34°   14000 mcd    Kingbright   L-7104ZGC-G
+portd 0 or   portd 2 or   , ,  \ 20  (rot)   WUE 151034RS0300    628 nm   -   2.0  2.6  V   AlGalnP             30°    2600 mcd    Würth        151034RS03000
+portq 0 or   portq 1 or   , ,  \ 21   grün   EVL 204-10 UBGC     502 nm   -   3.5  4.3  V   InGaN on SiC        20°      50 mcd    Everlight    204-10 UBGC/S400-A6
+portp 0 or   portp 1 or   , ,  \ 22  türkis  RND 135-00151       500 nm  2.6  3.2  3.6  V   ?                   30°    8500 mcd    RND          RND 135-00151
+portq 2 or   portq 3 or   , ,  \ 23   blau   LED 3-3700 BL       465 nm   -   3.3  4.0  V   InGaN               20°    3700 mcd    Kingbright   L-7104VBC-D
+
+portk 7 or   portk 6 or   , ,  \ 24    IR    BPW 34                                         Si                  65°                Vishay       BPW34                PD 600-1050 Peak 900 nm
+
+portl 4 or   portb 2 or   , ,  \ 25   blau   LED 3-2000 BL       465 nm  2.9  3.3  3.6  V   InGaN               30°    2000 mcd    ?            L-314BC-A3
+portf 1 or   portf 2 or   , ,  \ 26   blau   LED 3-3000 BL       458 nm   -   3.2  3.7  V   InGaN               20°    3000 mcd    Kingbright   L-7104QBC-G
+portb 3 or   portp 2 or   , ,  \ 27 bläulich EVL 1254UBC         428 nm  3.0  3.8  4.5  V   GaN on SiC          40°     400 mcd    Everlight    1254UBC
+portp 3 or   portk 5 or   , ,  \ 28    UV    LED LL 3-120 VI     400 nm  2.8  3.2  3.8  V   InGaN               20°     120 mcd    LuckyLight   LL-304UVC4B-Q5D
+
+portn 4 or   portn 5 or   , ,  \ 29   grün   KBT L-7113ZGC       515 nm   -   3.3  4.1  V   InGaN on Sapphire   20°   14000 mcd    Kingbright   L-7113ZGC            5 mm
+
+\ portn 2 or   portn 3 or   ,  , \ 30 Neon-Glimmlampe -- Im Moment nicht angeschlossen.
+
+\ -----------------------------------------------------------------------------
+
+: an ( anode kathode -- )
+
+  \ Digital enable
+  over pin>mask+port IO_DEN + bis!
+   dup pin>mask+port IO_DEN + bis!
+
+  \ Set pins as outputs
+  over pin>mask+port IO_DIR + bis!
+   dup pin>mask+port IO_DIR + bis!
+
+  \ Anode high, Kathode low
+  over pin>mask+port IO_DATA + bis!
+   dup pin>mask+port IO_DATA + bic!
+
+  2drop
+;
+
+: laden ( anode kathode -- )
+
+  \ Digital enable
+  over pin>mask+port IO_DEN + bis!
+   dup pin>mask+port IO_DEN + bis!
+
+  \ Set pins as outputs
+  over pin>mask+port IO_DIR + bis!
+   dup pin>mask+port IO_DIR + bis!
+
+  \ Anode low, Kathode high
+  over pin>mask+port IO_DATA + bic!
+   dup pin>mask+port IO_DATA + bis!
+
+  2drop
+;
+
+: entladen ( anode kathode -- )
+   dup pin>mask+port IO_DIR + bic!
+  2drop
+;
+
+: einlesen ( anode kathode -- )
+  nip pin>mask+port IO_DATA + bit@
+;
+
+: aus ( anode kathode -- )
+
+  \ Set pins back to inputs
+  over pin>mask+port IO_DIR + bic!
+   dup pin>mask+port IO_DIR + bic!
+  2drop
+;
+
+: einmalblinken ( led -- )
+
+ dup 8 * leds + 2@ an  200 ms
+     8 * leds + 2@ aus 200 ms
+
+;
+
+29 constant Messtakt-LED
+13 constant Bestätigungs-LED
+22 constant Fertig-LED
+
+: allean ( -- )
+  Anzahl-der-LEDs 0 do
+    i 8 * leds + 2@ an
+  loop
+;
+
+: alleaus ( -- )
+  Anzahl-der-LEDs 0 do
+    i 8 * leds + 2@ aus
+  loop
+;
+
+Anzahl-der-LEDs cells buffer: dunkelheiten
+
+: dunkelnullung ( -- ) dunkelheiten Anzahl-der-LEDs cells 0 fill ;
+
+$64000 variable maximum \ Dies muss unter 14 Sekunden bleiben.
+
+: gleichzeitig ( -- )
+
+  Anzahl-der-LEDs 0 do
+    i 8 * leds + 2@ laden
+  loop
+
+  Anzahl-der-LEDs 0 do
+    i 8 * leds + 2@ entladen
+  loop
+
+  maximum @ 0 do
+    Anzahl-der-LEDs 0 do
+      i 8 * leds + 2@ einlesen 1 and   i cells dunkelheiten + +!
+    loop
+  loop
+
+  Anzahl-der-LEDs 0 do
+    i 8 * leds + 2@ aus
+  loop
+;
+
+
+Anzahl-der-LEDs cells buffer: einzelheiten
+
+: einzelnullung ( -- ) einzelheiten Anzahl-der-LEDs cells 0 fill ;
+
+16382 variable maximum-einzeln \ Mit 4 Mittelungen möchte ich auf 2^16 kommen und noch ein winziges bisschen Abstand nach oben haben - also 2^14 - 2
+    0 variable einzel-zähler
+
+: einzelnschnell ( -- ) \ Für eine viel höhere Zeitauflösung nacheinander. Dauert natürlich länger, alle zu messen...
+
+  Anzahl-der-LEDs 0 do
+    i 8 * leds + 2@
+
+    maximum-einzeln @ einzel-zähler !
+
+    2dup laden 100 us
+
+      \ Vorbereiten der inneren Schleife für hohe Geschwindigkeit, mache es jetzt, gönne der LED Ladezeit.
+      ( Anode Kathode )
+      dup pin>mask+port IO_DATA +
+      ( Anode Kathode Bitmaske Addresse )
+
+    2over entladen
+
+    maximum-einzeln @ 0 do
+      2dup @ and 0= if i einzel-zähler ! leave then
+    loop
+
+    2drop aus
+
+    einzel-zähler @ i cells einzelheiten + +!
+
+  loop
+;
+
+: dunkelausgabe ( -- )
+  Anzahl-der-LEDs 0 do i cells dunkelheiten + @ hex. loop cr
+;
+
+: einzelausgabe ( -- )
+  Anzahl-der-LEDs 0 do i cells einzelheiten + @ hex. loop cr
+;
+
+: sammelei ( -- )
+  cr
+  begin
+    dunkelnullung gleichzeitig dunkelausgabe
+  key? until
+;
+
+\ -----------------------------------------------------------------------------
+\   Logging
+\ -----------------------------------------------------------------------------
+
+: 16bit, ( x -- ) dup     c,  8 rshift c, ; \ Unaligned 16 bit dictionary write
+: 24bit, ( x -- ) dup 16bit, 16 rshift c, ; \ Unaligned 24 bit dictionary write
+
+: 16bit@ ( addr -- x ) dup     c@ swap 1+ c@  8 lshift or ; \ Unaligned 16 bit read
+: 24bit@ ( addr -- x ) dup 16bit@ swap 2+ c@ 16 lshift or ; \ Unaligned 24 bit read
+
+: 16bit@+ ( addr -- addr+2 x ) dup 2 + swap 16bit@ ; \ Unaligned 16 bit read with increment
+: 24bit@+ ( addr -- addr+3 x ) dup 3 + swap 24bit@ ; \ Unaligned 24 bit read with increment
+
+
+: messpunkt ( -- )
+
+  einzelnullung
+
+  einzelnschnell
+  einzelnschnell
+  einzelnschnell
+  einzelnschnell
+
+  1 120000000 * cycles-until  \ 1 Sekunde für die Einzelmessungen
+
+  dunkelnullung
+
+  gleichzeitig  14 120000000 * cycles-until \ 4 mal 14 Sekunden für die große Messung
+  gleichzeitig  14 120000000 * cycles-until
+  gleichzeitig  14 120000000 * cycles-until
+  gleichzeitig  14 120000000 * cycles-until
+;
+
+2 variable ui-zustand \ LEDs 0 und 1 sind Infrarot, deshalb bei 2 beginnen.
+
+: aufnahme ( -- )
+
+  s" compiletoflash create Messung" evaluate
+
+  cycles-now
+  begin
+
+    messpunkt
+
+    Messtakt-LED einmalblinken \ Ein kurzer Bestätigungsblitz
+
+    Anzahl-der-LEDs 0 do
+
+      i cells einzelheiten + @
+
+      dup maximum-einzeln @ ( mittelungen @ ) 4 * =
+      if
+        drop
+        i cells dunkelheiten + @ $800000 or 24bit,
+      else
+        i cells dunkelheiten + @            24bit,
+        16bit,
+      then
+
+    loop
+
+    3 120000000 * cycles-until \ 3 Sekunden zum Speichern der Werte und für einen Bestätigungsblitz (400 ms)
+
+    unused Anzahl-der-LEDs 5 * u<= \ Maximal 5 Bytes pro Leuchtdiode für jeden Messpunkt. Nicht genug Platz ? Ende !
+  until
+
+  Fertig-LED ui-zustand ! \ Zeige das Ende der Aufnahme gut sichtbar an.
+;
+
+\ -----------------------------------------------------------------------------
+\   Calibration
+\ -----------------------------------------------------------------------------
+
+: s>f ( n -- f ) 0 swap 1-foldable ;
+
+: schleifenzyklen ( -- )
+
+  maximum @ >r
+
+  3000 maximum ! dunkelnullung cycles gleichzeitig cycles swap -
+  3512 maximum ! dunkelnullung cycles gleichzeitig cycles swap -
+  swap - s>f 512,0 f/ 3 f.n
+
+  r> maximum !
+
+  maximum-einzeln @ >r
+
+    10 maximum-einzeln ! einzelnullung cycles einzelnschnell cycles swap -
+   522 maximum-einzeln ! einzelnullung cycles einzelnschnell cycles swap -
+  swap - s>f 512,0 f/ anzahl-der-leds s>f f/ 3 f.n
+
+  r> maximum-einzeln !
+;
+
+: gesamtdauer ( -- )
+  dunkelnullung cycles gleichzeitig   cycles swap - u.
+  einzelnullung cycles einzelnschnell cycles swap - u.
+;
+
+: gesamtsekunden ( -- )
+  dunkelnullung cycles gleichzeitig   cycles swap - dup u. 0 120000000 um/mod . .
+  einzelnullung cycles einzelnschnell cycles swap - dup u. 0 120000000 um/mod . .
+;
+
+\ -----------------------------------------------------------------------------
+\   Print log
+\ -----------------------------------------------------------------------------
+
+
+: d.r  ( d n -- )
+    >r
+    dup >r dabs <# #s r> sign #>
+    r> over - spaces type
+;
+
+: .r  ( n1 n2 -- )
+    >r s>d r> d.r
+;
+
+: u.r  ( u n -- )
+    0 swap d.r
+;
+
+: ende? ( addr -- ? )
+  compiletoram? >r compiletoflash
+    here u>=
+  r> if compiletoram then
+;
+
+: datenlesen ( addr -- )
+  decimal
+  cr cr
+
+  ." # "
+  Anzahl-der-LEDs .
+  ( mittelungen @ ) 4 .
+  maximum @ .
+  maximum-einzeln @ .
+  schleifenzyklen
+  cr cr
+
+  begin
+    dup ende? not
+  while
+
+    Anzahl-der-LEDs 0 do
+      24bit@+
+
+      dup $800000 and swap
+      $7FFFFF and 12 u.r
+      if maximum-einzeln @ ( mittelungen @ ) 4 * else 16bit@+ then
+      7 u.r
+    loop
+
+    cr
+  repeat
+
+  drop
+
+  cr cr
+;
+
+: letztemessunglesen ( -- )
+  s" Messung" evaluate datenlesen
+;
+
+
+\ -----------------------------------------------------------------------------
+\   User Interface
+\ -----------------------------------------------------------------------------
+
+: Flamingo cr
+."      _" cr
+."     ^-)" cr
+."      (.._          .._" cr
+."       \`\\        (\`\\        (" cr
+."        |>         ) |>        |)" cr
+." ______/|________ (7 |` ______\|/_______a:f" cr
+;
+
+\ Hardware definitions for Tiva Connected Launchpad
+
+1 1 lshift  constant tiva-led-1 \ On Port N Bit 1
+1 0 lshift  constant tiva-led-2 \ On Port N Bit 0
+1 4 lshift  constant tiva-led-3 \ On Port F Bit 4
+1 0 lshift  constant tiva-led-4 \ On Port F Bit 0
+
+1 0 lshift  constant switch-1 \ On Port J Bit 0
+1 1 lshift  constant switch-2 \ On Port J Bit 1
+
+: switch1? ( -- ? ) switch-1 portj io_data + bit@ not ;
+: switch2? ( -- ? ) switch-2 portj io_data + bit@ not ;
+
+: ui-input ( -- x )
+  begin switch1? switch2? or until
+  20 ms
+
+  0
+  begin
+    switch1? 1 and or
+    switch2? 2 and or
+  switch1? switch2? or not until
+;
+
+: action ( u -- )
+
+  Bestätigungs-LED einmalblinken
+
+  case
+    3 of letztemessunglesen endof
+    4 of 3 0 do Bestätigungs-LED einmalblinken loop aufnahme endof
+   28 of s" Rewind" evaluate endof
+  endcase
+;
+
+Anzahl-der-LEDs 1- constant maxui
+
+: ui ( -- )
+
+  120MHz
+  init-cycles
+
+  \ Set wires for LEDs
+  tiva-led-1 tiva-led-2 or portn io_den + !  \ LED 1&2 connections as digital lines
+  tiva-led-1 tiva-led-2 or portn io_dir + !  \ LED 1&2 connections should be outputs
+  tiva-led-3 tiva-led-4 or portf io_den + !  \ LED 3&4 connections as digital lines
+  tiva-led-3 tiva-led-4 or portf io_dir + !  \ LED 3&4 connections should be outputs
+
+  \ Set wires for switches
+  switch-1 switch-2 or portj io_den + ! \ Switch connections as digital lines, inputs
+  switch-1 switch-2 or portj io_pur + ! \ Activate pullup resistors for switches
+
+  cr
+  Flamingo
+  cr
+
+  ." Have a nice day !" cr
+
+  \ Main loop.
+  begin
+    alleaus
+    ui-zustand @ 8 * leds + 2@ an
+
+    ui-input
+    case
+      1 of ui-zustand @ dup maxui = if drop     0 else 1+ then ui-zustand ! endof
+      2 of ui-zustand @ dup     0 = if drop maxui else 1- then ui-zustand ! endof
+      3 of ui-zustand @ dup 2 > if action else drop alleaus exit then endof \ Schlussaktion
+    endcase
+  again
+;
+
+: init ( -- ) ui ;
+
+create Messung
+
+: cornerstone ( Name ) ( -- )
+  <builds begin here $3FFF and while 0 h, repeat
+  does>   begin dup  $3FFF and while 2+   repeat
+          eraseflashfrom
+;
+
+cornerstone Rewind

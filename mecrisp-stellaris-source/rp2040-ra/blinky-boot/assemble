@@ -1,0 +1,8 @@
+#!/bin/sh
+
+arm-none-eabi-as blinky_boot.s -o blinky_boot.o
+arm-none-eabi-ld -o blinky_boot.elf -T blinky_boot.ld blinky_boot.o
+arm-none-eabi-objdump -D blinky_boot.elf > blinky_boot.list
+arm-none-eabi-objcopy blinky_boot.elf blinky_boot.bin -O binary
+
+./pad_checksum_binary -p256 -s-1 blinky_boot.bin blinky_boot_crc.bin

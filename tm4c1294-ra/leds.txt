@@ -1,0 +1,786 @@
+
+
+compiletoflash
+
+
+\ Clock setup for 25 MHz crystal and 120 MHz PLL
+
+\ -----------------------------------
+\ System Control registers (SYSCTL)
+\ -----------------------------------
+
+$400FE000 constant Sysctl-Base
+
+Sysctl-Base $050 + constant RIS
+Sysctl-Base $0B0 + constant RSCLKCFG
+Sysctl-Base $0C0 + constant MEMTIM0
+Sysctl-Base $07C + constant MOSCCTL
+
+Sysctl-Base $138 + constant ALTCLKCFG
+
+Sysctl-Base $160 + constant PLLFREQ0
+Sysctl-Base $164 + constant PLLFREQ1
+Sysctl-Base $168 + constant PLLSTAT
+
+$400FDFC8 constant flashconf
+
+\ Page 604:
+\ If the prefetch buffers are enabled and application code branches to a location other than
+\ flash memory, the prefetch tags need to be cleared upon returning to flash code execution.
+\ Prefetch tags can be cleared by setting the CLRTV bit in the FLASHCONF register.
+
+\ Geht das auch mit eingeschaltetem Prefetch-Puffer und ohne jedesmal CLRTV ?
+\ Es scheint zumindest so, muss aber noch gründlich getestet werden.
+
+\ ---------------------------------------------------
+\ Choose the external 25 MHz crystal as system clock
+\ ---------------------------------------------------
+
+: 25MHz ( -- )
+
+\  1 16 lshift                \ Force Prefetch buffers off (FPFOFF)
+\  1 20 lshift or flashconf ! \ CLRTV Clear valid tags
+
+  0 RSCLKCFG ! \ Oscsrc = PIOSC, PLL off, just in case this is called a second time.
+
+  $10 ( OSCRNG ) MOSCCTL ! \ High range for MOSC crystal > 10 MHz.
+  begin $00000100 ( MOSCPUPRIS ) RIS bit@ until  \ Wait for crystal to be running stable
+
+   2 22 lshift     \ EEPROM clock high time
+   1 16 lshift or  \ EEPROM 5 waitstates
+   2  6 lshift or  \  Flash clock high time
+   1  0 lshift or  \  Flash 5 waitstates
+     $00100010 or  \ Two bits that must be one ?!
+   MEMTIM0 !
+
+  $80300000 RSCLKCFG ! \ MEMTIMU, undivided MOSC as oscillator source
+;
+
+\ ------------------------------------------------------------
+ \ Fire up PLL for 120 MHz core frequency with 25 MHz crystal
+\ ------------------------------------------------------------
+
+: 120MHz ( -- )
+
+\  1 16 lshift                \ Force Prefetch buffers off (FPFOFF)
+\  1 20 lshift or flashconf ! \ CLRTV Clear valid tags
+
+  \ 1. Once POR has completed, the PIOSC is acting as the system clock.
+
+  0 RSCLKCFG ! \ Oscsrc = PIOSC, PLL off, just in case this is called a second time.
+
+  \ 2. Power up the MOSC by clearing the NOXTAL bit in the MOSCCTL register.
+  \ 3. If single-ended MOSC mode is required, the MOSC is ready to use. If crystal mode is required,
+  \    clear the PWRDN bit and wait for the MOSCPUPRIS bit to be set in the Raw Interrupt Status
+  \    (RIS), indicating MOSC crystal mode is ready.
+
+  $10 ( OSCRNG ) MOSCCTL ! \ High range for MOSC crystal > 10 MHz.
+  begin $00000100 ( MOSCPUPRIS ) RIS bit@ until  \ Wait for crystal to be running stable
+
+  \ 4. Set the OSCSRC field to 0x3 in the RSCLKCFG register at offset 0x0B0.
+
+  $03300000 RSCLKCFG ! \ MOSC as oscillator source, MOSC as input for PLL
+
+  \ 5. If the application also requires the MOSC to be the deep-sleep clock source, then program the
+  \    DSOSCSRC field in the DSCLKCFG register to 0x3.
+
+  \ 6. Write the PLLFREQ0 and PLLFREQ1 registers with the values of Q, N, MINT, and MFRAC to
+  \    the configure the desired VCO frequency setting.
+
+      \ fvco    = fcrystal * (mint + mfrac / 1024) / (q+1)(n+1)
+      \ 480 MHz = 25 Mhz   * (  96 +     0 / 1024) / (0+1)(4+1)
+
+  1 23 lshift 96 or PLLFREQ0 !  \ PLLPWR enabled, Mint = 96
+  4 PLLFREQ1 !                   \ N = (4+1), Q = (0+1)
+
+  \ 7. Write the MEMTIM0 register to correspond to the new system clock setting.
+
+   6 22 lshift     \ EEPROM clock high time
+   5 16 lshift or  \ EEPROM 5 waitstates
+   6  6 lshift or  \  Flash clock high time
+   5  0 lshift or  \  Flash 5 waitstates
+     $00100010 or  \ Two bits that must be one ?!
+   MEMTIM0 !
+
+  \ 8. Wait for the PLLSTAT register to indicate the PLL has reached lock at the new operating point
+  \    (or that a timeout period has passed and lock has failed, in which case an error condition exists
+  \    and this sequence is abandoned and error processing is initiated).
+
+  begin 1 PLLSTAT bit@ until
+
+  \ 9. Write the RSCLKCFG register's PSYSDIV value, set the USEPLL bit to enabled, and MEMTIMU bit.
+
+  \ fsyclk = fVCO / (PSYSDIV + 1) With PLL on 480 MHz, this gives 120 MHz.
+
+  $D3300000 \ MEMTIMU USEPLL NEWFREQ, MOSC as oscillator source, MOSC as input for PLL
+  3      or  \  PLL/4 --> 120MHz
+  RSCLKCFG !
+
+\  1 16 lshift                \ Force Prefetch buffers off (FPFOFF)
+\  1 20 lshift or flashconf ! \ CLRTV Clear valid tags
+;
+
+
+\ -----------------------------------------------------------------------------
+\ Ganz viele bunte Leuchtdioden, um eine Idee für
+\   einen spektralen Sensor auszuprobieren.
+\ -----------------------------------------------------------------------------
+
+\ Delay with Systick-Timer
+
+$E000E010 constant NVIC_ST_CTRL_R
+$E000E014 constant NVIC_ST_RELOAD_R
+$E000E018 constant NVIC_ST_CURRENT_R
+
+: init-delay ( -- )
+    \ Start free running Systick Timer without Interrupts
+
+    \ Disable SysTick during setup
+    0 NVIC_ST_CTRL_R !
+
+    \ Maximum reload value for 24 bit timer
+    $00FFFFFF NVIC_ST_RELOAD_R !
+
+    \ Any write to current clears it
+    0 NVIC_ST_CURRENT_R !
+
+    \ Enable SysTick with core clock
+    %101 NVIC_ST_CTRL_R !
+;
+
+: delay-ticks ( ticks -- ) \  Tick = 1/120MHz
+  8 lshift
+  NVIC_ST_CURRENT_R @ 8 lshift
+
+  begin pause
+    2dup
+    NVIC_ST_CURRENT_R @ 8 lshift
+    -
+    u<=
+  until
+  2drop
+;
+
+: us ( us -- ) 120 * delay-ticks ;
+: ms ( ms -- ) 0 ?do 120000 delay-ticks loop ;
+
+\ -----------------------------------------------
+\ Real Time Clock with on-board 32768 Hz crystal
+\ -----------------------------------------------
+
+$400FC000 constant HIBRTCC    \ Hibernation RTC Counter
+$400FC004 constant HIBRTCM0   \ Hibernation RTC Match 0
+$400FC00C constant HIBRTCLD   \ Hibernation RTC Load
+$400FC010 constant HIBCTL     \ Hibernation Control
+$400FC014 constant HIBIM      \ Hibernation Interrupt Mask
+$400FC018 constant HIBRIS     \ Hibernation Raw Interrupt Status
+$400FC01C constant HIBMIS     \ Hibernation Masked Interrupt Status
+$400FC020 constant HIBIC      \ Hibernation Interrupt Clear
+$400FC024 constant HIBRTCT    \ Hibernation RTC Trim
+$400FC028 constant HIBRTCSS   \ Hibernation RTC Sub Seconds
+
+: RTC-Wait ( -- ) begin $80000000 HIBCTL bit@ until ;
+
+: RTC-Init ( Seconds -- )
+    $10 HIBIM ! \ Enable WC interrupt
+    $40 HIBCTL ! \ Enable oscillator input
+    begin $10 HIBMIS bit@ until \ Wait for the WC interrupt to trigger - clock is stable afterwards
+    $10 HIBIC !    \ Clear WC interrupt
+    0 HIBIM !       \ Disable WC interrupt
+
+    RTC-Wait
+    $41 HIBCTL ! \ Enable real time clock
+;
+
+: setseconds ( seconds -- ) RTC-Wait HIBRTCLD ! RTC-Wait ;
+: seconds    ( -- seconds ) HIBRTCC @ inline ;
+
+\ -----------------------------------------------------------------------------
+
+$40058000 constant PORTA
+$40059000 constant PORTB
+$4005A000 constant PORTC
+$4005B000 constant PORTD
+$4005C000 constant PORTE
+$4005D000 constant PORTF
+$4005E000 constant PORTG
+$4005F000 constant PORTH
+$40060000 constant PORTJ
+$40061000 constant PORTK
+$40062000 constant PORTL
+$40063000 constant PORTM
+$40064000 constant PORTN
+$40065000 constant PORTP
+$40066000 constant PORTQ
+
+$3FC constant IO_DATA ( IO Data Register, all bits selected )
+$400 constant IO_DIR  ( Pin Direction )
+$500 constant IO_DR2R ( 2 mA drive current )
+$504 constant IO_DR4R ( 4 mA )
+$508 constant IO_DR8R ( 8 mA )
+$53C constant IO_DR12R ( 12 mA )
+$50C constant IO_ODR  ( Open Drain )
+$510 constant IO_PUR  ( Pullup Resistor )
+$514 constant IO_PDR  ( Pulldown Resistor )
+$518 constant IO_SLR  ( Slew Rate )
+$51C constant IO_DEN  ( Digital Enable )
+
+\ -----------------------------------------------------------------------------
+
+\ Anode      Kathode
+
+portb 5 or   porta 3 or   2constant led01
+porte 0 or   porth 2 or   2constant led02
+porte 3 or   portc 6 or   2constant led03
+portk 0 or   porta 6 or   2constant led04
+portk 3 or   portg 0 or   2constant led05
+portd 5 or   portm 2 or   2constant led06
+portd 6 or   portl 0 or   2constant led07
+portd 0 or   portl 3 or   2constant led08
+portp 1 or   portq 2 or   2constant led09
+portk 7 or   portk 6 or   2constant led10
+portl 4 or   portb 2 or   2constant led11
+portf 1 or   portf 2 or   2constant led12
+portb 3 or   portp 2 or   2constant led13
+portp 3 or   portk 5 or   2constant led14
+portp 4 or   portp 5 or   2constant led15
+portn 4 or   portn 5 or   2constant led16
+portm 7 or   portm 6 or   2constant led17
+portn 2 or   portn 3 or   2constant led18
+
+: pin>mask+port ( pin -- mask port )
+  dup $FFF and 1 swap lshift
+  swap $FFF bic
+1-foldable ;
+
+\ -----------------------------------------------------------------------------
+
+: einmalblinken ( anode kathode -- anode kathode )
+
+  \ Digital enable
+  over pin>mask+port IO_DEN + bis!
+   dup pin>mask+port IO_DEN + bis!
+
+  \ Set pins as outputs
+  over pin>mask+port IO_DIR + bis!
+   dup pin>mask+port IO_DIR + bis!
+
+  \ Anode high, Kathode low
+  over pin>mask+port IO_DATA + bis!
+   dup pin>mask+port IO_DATA + bic!
+
+  200 ms
+
+  \ Anode low, Kathode high
+  over pin>mask+port IO_DATA + bic!
+   dup pin>mask+port IO_DATA + bis!
+
+  200 ms
+
+  \ Set pins back to inputs
+  over pin>mask+port IO_DIR + bic!
+   dup pin>mask+port IO_DIR + bic!
+
+;
+
+: blink ( anode kathode )
+  init-delay
+
+  begin
+    einmalblinken
+  key? until
+
+  2drop
+;
+
+: alleeinmal ( -- )
+  init-delay
+
+    led01 einmalblinken 2drop
+    led02 einmalblinken 2drop
+    led03 einmalblinken 2drop
+    led04 einmalblinken 2drop
+    led05 einmalblinken 2drop
+    led06 einmalblinken 2drop
+    led07 einmalblinken 2drop
+    led08 einmalblinken 2drop
+    led09 einmalblinken 2drop
+    led10 einmalblinken 2drop
+    led11 einmalblinken 2drop
+    led12 einmalblinken 2drop
+    led13 einmalblinken 2drop
+    led14 einmalblinken 2drop
+    led15 einmalblinken 2drop
+    led16 einmalblinken 2drop
+    led17 einmalblinken 2drop
+    led18 einmalblinken 2drop
+;
+
+\ -----------------------------------------------------------------------------
+
+\ Helligkeitsmessung mit einer LED.
+
+: messung ( anode kathode -- u )
+  init-delay
+
+  \ Digital enable
+  over pin>mask+port IO_DEN + bis!
+   dup pin>mask+port IO_DEN + bis!
+
+  \ Set pins as outputs
+  over pin>mask+port IO_DIR + bis!
+   dup pin>mask+port IO_DIR + bis!
+
+  \ Anode low, Kathode high
+  over pin>mask+port IO_DATA + bic!
+   dup pin>mask+port IO_DATA + bis!
+
+  100 us \ Einen kleinen Moment warten, damit die Sperrschichtkapazität auf jeden Fall geladen ist
+
+  \ Anode low, Kathode Eingang
+   dup pin>mask+port IO_DIR + bic!
+
+  \ Auf die Entladung der Kathode warten
+
+  0
+  begin
+    over pin>mask+port IO_DATA + bit@
+  while
+    1+
+  repeat
+  >r
+
+  \ Set pins back to inputs
+  over pin>mask+port IO_DIR + bic!
+   dup pin>mask+port IO_DIR + bic!
+
+  2drop
+
+  r>
+;
+
+\ -----------------------------------------------------------------------------
+
+: dunkel ( anode kathode -- )
+  2>r
+
+  begin
+    2r@ messung u. cr
+  key? until
+
+  2rdrop
+;
+
+\ -----------------------------------------------------------------------------
+
+: allesamt ( -- )
+  led01 messung hex.
+  led02 messung hex.
+  led03 messung hex.
+  led04 messung hex.
+  led05 messung hex.
+  led06 messung hex.
+  led07 messung hex.
+  led08 messung hex.
+  led09 messung hex.
+  led10 messung hex.
+  led11 messung hex.
+  led12 messung hex.
+  led13 messung hex.
+  led14 messung hex.
+  led15 messung hex.
+  led16 messung hex.
+  led17 messung hex.
+  led18 messung hex.
+;
+
+: alle ( -- )
+  begin
+    allesamt cr
+  key? until
+;
+
+\ -----------------------------------------------------------------------------
+
+\ Nun versuchen, alle gleichzeitig auszulesen.
+
+
+\ Anode      Kathode
+
+create LEDs
+
+portb 5 or   porta 3 or   , ,
+porte 0 or   porth 2 or   , ,
+porte 3 or   portc 6 or   , ,
+portk 0 or   porta 6 or   , ,
+portk 3 or   portg 0 or   , ,
+portd 5 or   portm 2 or   , ,
+portd 6 or   portl 0 or   , ,
+portd 0 or   portl 3 or   , ,
+portp 1 or   portq 2 or   , ,
+portk 7 or   portk 6 or   , ,
+portl 4 or   portb 2 or   , ,
+portf 1 or   portf 2 or   , ,
+portb 3 or   portp 2 or   , ,
+portp 3 or   portk 5 or   , ,
+portp 4 or   portp 5 or   , ,
+portn 4 or   portn 5 or   , ,
+portm 7 or   portm 6 or   , ,
+portn 2 or   portn 3 or   , ,
+
+
+: an ( anode kathode -- )
+
+  \ Digital enable
+  over pin>mask+port IO_DEN + bis!
+   dup pin>mask+port IO_DEN + bis!
+
+  \ Set pins as outputs
+  over pin>mask+port IO_DIR + bis!
+   dup pin>mask+port IO_DIR + bis!
+
+  \ Anode high, Kathode low
+  over pin>mask+port IO_DATA + bis!
+   dup pin>mask+port IO_DATA + bic!
+
+  2drop
+;
+
+: laden ( anode kathode -- )
+
+  \ Digital enable
+  over pin>mask+port IO_DEN + bis!
+   dup pin>mask+port IO_DEN + bis!
+
+  \ Set pins as outputs
+  over pin>mask+port IO_DIR + bis!
+   dup pin>mask+port IO_DIR + bis!
+
+  \ Anode low, Kathode high
+  over pin>mask+port IO_DATA + bic!
+   dup pin>mask+port IO_DATA + bis!
+
+  2drop
+;
+
+: entladen ( anode kathode -- )
+   dup pin>mask+port IO_DIR + bic!
+  2drop
+;
+
+: einlesen ( anode kathode -- )
+  nip pin>mask+port IO_DATA + bit@
+;
+
+: aus ( anode kathode -- )
+
+  \ Set pins back to inputs
+  over pin>mask+port IO_DIR + bic!
+   dup pin>mask+port IO_DIR + bic!
+  2drop
+;
+
+: allean ( -- )
+  18 0 do
+    i 8 * leds + 2@ an
+  loop
+;
+
+: alleaus ( -- )
+  18 0 do
+    i 8 * leds + 2@ aus
+  loop
+;
+
+18 cells buffer: dunkelheiten
+
+: dunkelnullung ( -- ) dunkelheiten 18 cells 0 fill ;
+
+$90000 variable maximum \ Ergibt etwa 54 s Messdauer bei vier Mittelungen.
+
+: gleichzeitig ( -- )
+
+  18 0 do
+    i 8 * leds + 2@ laden
+  loop
+
+  18 0 do
+    i 8 * leds + 2@ entladen
+  loop
+
+  maximum @ 0 do
+    18 0 do
+      i 8 * leds + 2@ einlesen 1 and   i cells dunkelheiten + +!
+    loop
+  loop
+
+  18 0 do
+    i 8 * leds + 2@ aus
+  loop
+;
+
+
+18 cells buffer: einzelheiten
+
+: einzelnullung ( -- ) einzelheiten 18 cells 0 fill ;
+
+16382 variable maximum-einzeln \ Mit 4 Mittelungen möchte ich auf 2^16 kommen und noch ein winziges bisschen Abstand nach oben haben - also 2^14 - 2
+    0 variable einzel-zähler
+
+: einzelnschnell ( -- ) \ Für eine viel höhere Zeitauflösung nacheinander. Dauert natürlich länger, alle zu messen...
+
+  18 0 do
+    i 8 * leds + 2@
+
+    maximum-einzeln @ einzel-zähler !
+
+    2dup laden 100 us
+
+      \ Vorbereiten der inneren Schleife für hohe Geschwindigkeit, mache es jetzt, gönne der LED Ladezeit.
+      ( Anode Kathode )
+      dup pin>mask+port IO_DATA +
+      ( Anode Kathode Bitmaske Addresse )
+
+    2over entladen
+
+    maximum-einzeln @ 0 do
+      2dup @ and 0= if i einzel-zähler ! leave then
+    loop
+
+    2drop aus
+
+    einzel-zähler @ i cells einzelheiten + +!
+
+  loop
+;
+
+: dunkelausgabe ( -- )
+  18 0 do i cells dunkelheiten + @ hex. loop cr
+;
+
+: einzelausgabe ( -- )
+  18 0 do i cells einzelheiten + @ hex. loop cr
+;
+
+: sammelei ( -- )
+  cr
+  begin
+    dunkelnullung gleichzeitig dunkelausgabe
+  key? until
+;
+
+
+\ For Timing measurements:
+
+\ : ps ( -- ) dunkelnullung 0 NVIC_ST_CURRENT_R ! einzelnschnell NVIC_ST_CURRENT_R @ 8 lshift negate 8 rshift u. dunkelausgabe ;
+\ : qs ( -- ) dunkelnullung 0 NVIC_ST_CURRENT_R ! gleichzeitig   NVIC_ST_CURRENT_R @ 8 lshift negate 8 rshift u. dunkelausgabe ;
+
+\ Short serial measurement 14 cycles/tick, long measurement with all leds at the same time 2697 cycles/tick.
+
+\ -----------------------------------------------------------------------------
+\   Logging
+\ -----------------------------------------------------------------------------
+
+ 4 variable mittelungen
+60 variable interval
+
+: messpunkt ( -- )
+
+  einzelnullung
+  mittelungen @ 0 do einzelnschnell loop
+
+  dunkelnullung
+  mittelungen @ 0 do  gleichzeitig loop
+
+  led16 einmalblinken 2drop  \ Ein kurzer Bestätigungsblitz
+;
+
+: aufnahme ( -- )
+
+  s" compiletoflash create Messung" evaluate
+
+  0 setseconds
+  0
+  begin
+    messpunkt
+    18 0 do i cells dunkelheiten + @  , loop
+    18 0 do i cells einzelheiten + @ h, loop
+
+    interval @ +
+    begin seconds over u>= until
+  again
+;
+
+
+: 5stick ( -- )  0 setseconds   0 begin 5 + begin seconds over u>= until led18 einmalblinken 2drop again ;
+
+\ -----------------------------------------------------------------------------
+\   Print log
+\ -----------------------------------------------------------------------------
+
+
+: d.r  ( d n -- )
+    >r
+    dup >r dabs <# #s r> sign #>
+    r> over - spaces type
+;
+
+: .r  ( n1 n2 -- )
+    >r s>d r> d.r
+;
+
+: u.r  ( u n -- )
+    0 swap d.r
+;
+
+: ende? ( addr -- ? ) \ 18+9 cells of -1 from here ?
+  -1 swap
+  dup 27 cells + swap do i @ and 4 +loop
+  -1 =
+;
+
+: datenlesen ( addr -- )
+  decimal
+  cr cr
+
+  begin
+    dup ende? not
+  while
+
+    18 0 do
+      dup @ 12 u.r
+      cell+
+    loop
+
+    18 0 do
+      dup h@ 7 u.r
+      2 +
+    loop
+
+    cr
+  repeat
+
+  drop
+
+  cr cr
+;
+
+: letztemessunglesen ( -- )
+  s" Messung" evaluate datenlesen
+;
+
+create Messung
+
+ 1 ,  2 ,  3 ,  4 ,  5 ,  6 ,  7 ,  8 ,  9 ,
+10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 ,
+
+ 1 h,  2 h,  3 h,  4 h,  5 h,  6 h,  7 h,  8 h,  9 h,
+10 h, 11 h, 12 h, 13 h, 14 h, 15 h, 16 h, 17 h, 18 h,
+
+
+-1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 ,
+-1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 , -1 ,
+
+-1 h, -1 h, -1 h, -1 h, -1 h, -1 h, -1 h, -1 h, -1 h,
+-1 h, -1 h, -1 h, -1 h, -1 h, -1 h, -1 h, -1 h, -1 h,
+
+
+\ -----------------------------------------------------------------------------
+\   User Interface
+\ -----------------------------------------------------------------------------
+
+: Flamingo cr
+."      _" cr
+."     ^-)" cr
+."      (.._          .._" cr
+."       \`\\        (\`\\        (" cr
+."        |>         ) |>        |)" cr
+." ______/|________ (7 |` ______\|/_______a:f" cr
+;
+
+\ Hardware definitions for Tiva Connected Launchpad
+
+1 1 lshift  constant tiva-led-1 \ On Port N Bit 1
+1 0 lshift  constant tiva-led-2 \ On Port N Bit 0
+1 4 lshift  constant tiva-led-3 \ On Port F Bit 4
+1 0 lshift  constant tiva-led-4 \ On Port F Bit 0
+
+1 0 lshift  constant switch-1 \ On Port J Bit 0
+1 1 lshift  constant switch-2 \ On Port J Bit 1
+
+: switch1? ( -- ? ) switch-1 portj io_data + bit@ not ;
+: switch2? ( -- ? ) switch-2 portj io_data + bit@ not ;
+
+
+: ui-input ( -- x )
+  begin switch1? switch2? or until
+  20 ms
+
+  0
+  begin
+    switch1? 1 and or
+    switch2? 2 and or
+  switch1? switch2? or not until
+;
+
+0 variable ui-zustand
+
+
+: action ( u -- )
+
+  led18 einmalblinken 2drop
+
+  case
+    2 of letztemessunglesen endof
+    3 of led04 einmalblinken einmalblinken einmalblinken 2drop aufnahme endof
+    5 of s" Rewind" evaluate endof
+  endcase
+;
+
+17 constant maxui
+
+: ui ( -- )
+
+  120MHz
+  rtc-init
+  init-delay
+
+  \ Set wires for LEDs
+  tiva-led-1 tiva-led-2 or portn io_den + !  \ LED 1&2 connections as digital lines
+  tiva-led-1 tiva-led-2 or portn io_dir + !  \ LED 1&2 connections should be outputs
+  tiva-led-3 tiva-led-4 or portf io_den + !  \ LED 3&4 connections as digital lines
+  tiva-led-3 tiva-led-4 or portf io_dir + !  \ LED 3&4 connections should be outputs
+
+  \ Set wires for switches
+  switch-1 switch-2 or portj io_den + ! \ Switch connections as digital lines, inputs
+  switch-1 switch-2 or portj io_pur + ! \ Activate pullup resistors for switches
+
+  cr
+  Flamingo
+  cr
+
+  ." Have a nice day !" cr
+
+  \ Main loop.
+  begin
+    alleaus
+    ui-zustand @ 8 * leds + 2@ an
+
+    ui-input
+    case
+      1 of ui-zustand @ dup maxui = if drop     0 else 1+ then ui-zustand ! endof
+      2 of ui-zustand @ dup     0 = if drop maxui else 1- then ui-zustand ! endof
+      3 of ui-zustand @ ?dup if action else alleaus exit then endof \ Schluss bei Null.
+    endcase
+  again
+;
+
+: init ( -- ) ui ;
+
+: cornerstone ( Name ) ( -- )
+  <builds begin here $3FFF and while 0 h, repeat
+  does>   begin dup  $3FFF and while 2+   repeat
+          eraseflashfrom
+;
+
+cornerstone Rewind

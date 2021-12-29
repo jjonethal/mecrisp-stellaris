@@ -1,0 +1,156 @@
+\
+\   I2C driver for stm32g0 series
+\
+\       Ralph Sahli, 2019
+\       
+\       resources used: 
+\           - I2C1      
+\           - PA9  or PB6 -> SCL    
+\           - PA10 or PB7 -> SDA
+\           or
+\           - I2C2      
+\           - PA11 or PB10 -> SCL   
+\           - PA12 or PB11 ->SDA
+
+\ can be changed at run time, must be called before i2c-init
+PA11 variable SCL
+PA12 variable SDA
+
+\$40005400 constant I2C          \ I2C1
+$40005800 constant I2C         \ I2C2
+    I2C $00 + constant I2C.CR1      \ control register 1
+    I2C $04 + constant I2C.CR2      \ control register 2
+    I2C $10 + constant I2C.TIMINGR  \ Timing register
+    I2C $18 + constant I2C.ISR      \ Interrupt and status register
+    I2C $1C + constant I2C.ICR      \ Interrupt clear register
+    I2C $24 + constant I2C.RXDR     \ Receive data register
+    I2C $28 + constant I2C.TXDR     \ Transmit data register
+
+: .i2cTimingErr ( -- )
+    cr ." timing not supported for " mHZ@ . ." MHz" quit ;
+
+: i2c?Length ( Len:Addr -- Len:Addr)
+    dup 16 rshift 255 > if
+        cr ." length > 255 not supported" quit
+    then ;
+
+\ timing: SM ( standard mode ) 100 KHz -> get value from tool
+: i2c-SM ( -- )
+    mHZ@ case
+        16 of $00503D5A endof
+        64 of $60302730 endof
+        .i2cTimingErr
+    endcase
+    I2C.TIMINGR ! ;
+
+\ timing: FM ( fast mode ) 400 KHz -> get value from tool
+: i2c-FM ( -- )
+    mHZ@ case
+        16 of $00300619 endof
+        64 of $00C0216C endof
+        .i2cTimingErr
+    endcase
+    I2C.TIMINGR ! ;
+    
+: i2c-init ( -- )  \ initialise I2C hardware, We need to connect external pullup R to SCL and SDA
+    MODE-AF OD + PU + 6 AF# + SCL @ io-mode!    \ Alternate function mode: AF6
+    MODE-AF OD + PU + 6 AF# + SDA @ io-mode!    \ Alternate function mode: AF6
+    SCL @ PA9 = if                              \ remap IO
+        0 bit RCC.APB2ENR bis!                  \ enable SYSCFG clock
+        3 bit 4 bit + SYSCFG bis!               \ remap PA11 + PA12
+    then
+    I2C $40005400 = if 21 else 22 then          \ enable I2C1 or I2C2 
+    bit RCC.APB1ENR bis!                        \ set I2CEN
+    0 bit I2C.CR1 bic!                          \ PE, disable device
+    i2c-SM ;                                    \ standard mode
+
+: i2c-Start  ( -- f )
+    0 bit I2C.CR1 bis!              \ I2C enable
+    13 bit I2C.CR2 bis!             \ set START bit  
+    begin 
+        pause 
+        13 bit I2C.CR2 bit@ not     \ start bit cleared ?
+        4 bit I2C.ISR bit@ or       \ or NACK ?
+    until 
+    4 bit I2C.ISR bit@              \ flag -> NACK 
+    4 bit I2C.ICR bis!  ;           \ clear NACK 
+
+: i2c-Stop  ( -- )
+    begin
+        pause 
+        6 bit I2C.ISR bit@          \ tranfer complete ?
+    until
+    14 bit I2C.CR2 bis!             \ set STOP bit 
+    begin 
+        pause 
+        5 bit I2C.ISR bit@          \ STOP bit?
+    until 
+    5 bit I2C.ICR bis!              \ clear STOP 
+    0 bit I2C.CR1 bic! ;            \ I2C disable
+
+\ start and send device-address for read
+: i2c-rx ( addr -- f )
+    i2c?Length
+    I2C.CR2 !                       \ length + address
+    10 bit I2C.CR2 bis!             \ Master requests a read transfer
+    i2c-Start ;
+
+\ start and send device-address for write
+: i2c-tx ( addr -- f )
+    i2c?Length
+    I2C.CR2 !                       \ length + address
+    i2c-Start ;
+
+\ read 1 byte
+: i2c@ ( -- c )
+    begin 
+        pause 
+        2 bit I2C.ISR bit@      \ wait for RxNE
+    until                                       
+    I2C.RXDR @ ;
+
+\ write 1 byte
+: i2c! ( c -- )
+    begin
+        pause 
+        1 bit I2C.ISR bit@      \ wait for Txe
+    until
+    I2C.TXDR ! ;
+
+\ write 1 byte and stop
+: >i2cData ( c -- )
+    i2c! 
+    i2c-Stop ;
+
+\ write n bytes from cAddr and stop
+: >>i2cData ( cAddr n -- )
+    0 do
+        dup c@ i2c! 1+          \ send n bytes from addr        
+    loop drop
+    i2c-Stop ;
+    
+\ read 1 byte and stop
+: i2cData> ( -- c )
+    i2c@ i2c-Stop ;
+
+\ read n bytes to cAddr and stop
+: i2cData>> ( cAddr n -- )
+    0 do
+        i2c@ over c! 1+
+    loop drop
+    i2c-Stop ;
+
+\ scan and report all I2C devices on the bus
+: i2cScan. ( -- ) 
+    i2c-init
+    128 0 do
+        cr i 2#h. ." :"
+        16 0 do  space
+          i j + 2* dup i2c-tx if drop ." --" else i2c-Stop 2#h. then
+          2 delay-ms
+        loop
+    16 +loop ;
+
+: i2c. ( -- )
+    I2C $30 dump ;
+

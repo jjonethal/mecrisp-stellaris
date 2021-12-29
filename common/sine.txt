@@ -46,7 +46,7 @@ C90FDAA2 ,
 
 decimal
 
-: 2rshift 0 ?do d2/ loop ;
+: 2arshift 0 ?do d2/ loop ;
 
 : cordic ( f-angle -- f-error f-sine f-cosine )
          ( Angle between -Pi/2 and +Pi/2 ! )
@@ -55,13 +55,13 @@ decimal
     2rot dup 0<
     if
       i e^ka 0 d+ 2rot 2rot
-            2over i 2rshift 2rot 2rot
-      2swap 2over i 2rshift
+            2over i 2arshift 2rot 2rot
+      2swap 2over i 2arshift
       d- 2rot 2rot d+
     else
       i e^ka 0 d- 2rot 2rot
-            2over i 2rshift 2rot 2rot
-      2swap 2over i 2rshift
+            2over i 2arshift 2rot 2rot
+      2swap 2over i 2arshift
       d+ 2rot 2rot 2swap d-
     then
   loop

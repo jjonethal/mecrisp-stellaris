@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# With disassembler and math
+
 stty -icanon -echo
 
 {
@@ -15,3 +17,21 @@ stty sane
 
 echo -e ""
 
+# With VIS
+
+stty -icanon -echo
+
+{
+   echo -e "compiletoflash\n"
+   cat ../common/VIS/vis-0.8.4-mecrisp-stellaris.fs
+   echo -e "compiletoflash\n"
+   cat ../common/VIS/vis-0.8.4-disassembler-m3.fs
+   echo -e "compiletoram\n"
+   cat save.txt
+   echo -e "save\" mecrisp-stellaris-linux-vis\n"
+   # cat -
+} | qemu-arm-static mecrisp-stellaris-linux
+
+stty sane
+
+echo -e ""

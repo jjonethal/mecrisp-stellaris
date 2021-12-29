@@ -1,0 +1,54 @@
+
+blinky_boot.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+20041f00 <Reset>:
+20041f00:	490a      	ldr	r1, [pc, #40]	; (20041f2c <Blinky+0xa>)
+20041f02:	480b      	ldr	r0, [pc, #44]	; (20041f30 <Blinky+0xe>)
+20041f04:	6008      	str	r0, [r1, #0]
+20041f06:	490b      	ldr	r1, [pc, #44]	; (20041f34 <Blinky+0x12>)
+20041f08:	480b      	ldr	r0, [pc, #44]	; (20041f38 <Blinky+0x16>)
+20041f0a:	6008      	str	r0, [r1, #0]
+20041f0c:	490b      	ldr	r1, [pc, #44]	; (20041f3c <Blinky+0x1a>)
+20041f0e:	688a      	ldr	r2, [r1, #8]
+20041f10:	43d2      	mvns	r2, r2
+20041f12:	4002      	ands	r2, r0
+20041f14:	d1fb      	bne.n	20041f0e <Reset+0xe>
+20041f16:	490a      	ldr	r1, [pc, #40]	; (20041f40 <Blinky+0x1e>)
+20041f18:	2005      	movs	r0, #5
+20041f1a:	6008      	str	r0, [r1, #0]
+20041f1c:	4909      	ldr	r1, [pc, #36]	; (20041f44 <Blinky+0x22>)
+20041f1e:	480a      	ldr	r0, [pc, #40]	; (20041f48 <Blinky+0x26>)
+20041f20:	6248      	str	r0, [r1, #36]	; 0x24
+
+20041f22 <Blinky>:
+20041f22:	4a0a      	ldr	r2, [pc, #40]	; (20041f4c <Blinky+0x2a>)
+20041f24:	3a01      	subs	r2, #1
+20041f26:	d1fd      	bne.n	20041f24 <Blinky+0x2>
+20041f28:	61c8      	str	r0, [r1, #28]
+20041f2a:	e7fa      	b.n	20041f22 <Blinky>
+20041f2c:	4000e000 	andmi	lr, r0, r0
+20041f30:	01ffcdbf 	ldrheq	ip, [pc, #223]	; 20042017 <Blinky+0xf5>
+20041f34:	4000f000 	andmi	pc, r0, r0
+20041f38:	003c7ffe 	ldrshteq	r7, [ip], -lr
+20041f3c:	4000c000 	andmi	ip, r0, r0
+20041f40:	400140cc 	andmi	r4, r1, ip, asr #1
+20041f44:	d0000000 	andle	r0, r0, r0
+20041f48:	02000000 	andeq	r0, r0, #0
+20041f4c:	000f4240 	andeq	r4, pc, r0, asr #4
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00002041 	andeq	r2, r0, r1, asr #32
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000016 	andeq	r0, r0, r6, lsl r0
+  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
+  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  18:	0600304d 	streq	r3, [r0], -sp, asr #32
+  1c:	094d070c 	stmdbeq	sp, {r2, r3, r8, r9, sl}^
+  20:	Address 0x0000000000000020 is out of bounds.
+

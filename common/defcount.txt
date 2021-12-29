@@ -1,0 +1,11 @@
+
+: defcount ( -- u )
+  0
+  dictionarystart
+  begin
+    swap 1+ swap
+    dictionarynext
+  until
+  drop
+;
+

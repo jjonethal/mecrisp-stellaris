@@ -24,8 +24,8 @@
 @ Swiches for capabilities of this chip
 @ -----------------------------------------------------------------------------
 
-.equ registerallocator, 1
 .equ charkommaavailable, 1
+.equ registerallocator, 1
 
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions

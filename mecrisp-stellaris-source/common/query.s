@@ -58,7 +58,7 @@ accept: @ Nimmt einen String entgegen und legt ihn in einen Puffer.
 
         cmp     r0, #32           @ ASCII 0-31 sind Steuerzeichen, 32 ist Space. Die Steuerzeichen müssten einzeln behandelt werden.
         bhs     2f                @ Space wird hier einfach so mit aufgenommen.
-        
+
         @ Steuerzeichen bearbeiten.
         @ Handle control characters below ascii 32 = space here.
         cmp     r0, #9            @ TAB ?
@@ -79,14 +79,15 @@ accept: @ Nimmt einen String entgegen und legt ihn in einen Puffer.
           .byte 3, 8, 32, 8  @ Cursor einen Schritt zurück. Mit Leerzeichen überschreiben. Nochmal zurück.
                              @ Step back cursor, overwrite with space, step back cursor again.
 
-/*
+  .ifdef withoutunicode
   @ Ohne Unicode: Simply decrement count if one-byte-per-character is used.
         @ Tatsächlich ein Zeichen löschen. Noch ohne Unicode-Unterstützung.
         subs r2, #1                @ Ein Zeichen weniger im Puffer
-*/
+        b 1b
+  .else
 
   @ Mit Unicode:
-  
+
       @ Unicode-Zeichen sind so aufgebaut:
       @ 11xx xxxx,  10xx xxxx,  10xx xxxx......
       @ Wenn das letzte Zeichen also vorne ein 10 hat,
@@ -125,10 +126,10 @@ accept: @ Nimmt einen String entgegen und legt ihn in einen Puffer.
       ands r3, r0
       beq 4b @ Wenn nein, lösche ein weiteres Zeichen. No ? Delete one more byte.
       b 1b   @ Wenn ja, fertig. Dann habe ich soeben das erste Byte eines Unicode-Zeichens entfernt.  Yes ? Finished deleting.
-
+  .endif
 
 5:      @ Replace TAB with space:
-        movs r0, #32       
+        movs r0, #32
 
 2:      @ Normale Zeichen annehmen
         @ Add a character to buffer if there is space left and echo it back.
@@ -166,7 +167,7 @@ tib:
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_2variable, "current-source" @ ( -- addr )
   DoubleCoreVariable current_source
-@------------------------------------------------------------------------------  
+@------------------------------------------------------------------------------
   pushdatos
   ldr tos, =current_source
   bx lr
@@ -213,5 +214,5 @@ query: @ ( -- ) Nimmt einen String in den Eingabepuffer auf
   pushdaconst Maximaleeingabe
   bl accept
   bl setsource
-  
+
   pop {r0, r1, r2, r3, pc}

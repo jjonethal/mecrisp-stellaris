@@ -1,0 +1,65 @@
+
+launchpad_boot.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+20041f00 <rom_code-0x36>:
+20041f00:	4b11      	ldr	r3, [pc, #68]	; (20041f48 <rom_code+0x12>)
+20041f02:	469d      	mov	sp, r3
+20041f04:	4e11      	ldr	r6, [pc, #68]	; (20041f4c <rom_code+0x16>)
+20041f06:	f000 f816 	bl	20041f36 <rom_code>
+20041f0a:	47b0      	blx	r6
+20041f0c:	4e10      	ldr	r6, [pc, #64]	; (20041f50 <rom_code+0x1a>)
+20041f0e:	f000 f812 	bl	20041f36 <rom_code>
+20041f12:	47b0      	blx	r6
+20041f14:	4e0f      	ldr	r6, [pc, #60]	; (20041f54 <rom_code+0x1e>)
+20041f16:	f000 f80e 	bl	20041f36 <rom_code>
+20041f1a:	47b0      	blx	r6
+20041f1c:	480e      	ldr	r0, [pc, #56]	; (20041f58 <rom_code+0x22>)
+20041f1e:	490f      	ldr	r1, [pc, #60]	; (20041f5c <rom_code+0x26>)
+20041f20:	4a0f      	ldr	r2, [pc, #60]	; (20041f60 <rom_code+0x2a>)
+20041f22:	3a04      	subs	r2, #4
+20041f24:	5883      	ldr	r3, [r0, r2]
+20041f26:	508b      	str	r3, [r1, r2]
+20041f28:	d1fb      	bne.n	20041f22 <load_to+0x41f22>
+20041f2a:	4b0e      	ldr	r3, [pc, #56]	; (20041f64 <rom_code+0x2e>)
+20041f2c:	6019      	str	r1, [r3, #0]
+20041f2e:	6803      	ldr	r3, [r0, #0]
+20041f30:	469d      	mov	sp, r3
+20041f32:	6843      	ldr	r3, [r0, #4]
+20041f34:	4718      	bx	r3
+
+20041f36 <rom_code>:
+20041f36:	b500      	push	{lr}
+20041f38:	2200      	movs	r2, #0
+20041f3a:	8a90      	ldrh	r0, [r2, #20]
+20041f3c:	0031      	movs	r1, r6
+20041f3e:	8b12      	ldrh	r2, [r2, #24]
+20041f40:	4790      	blx	r2
+20041f42:	0006      	movs	r6, r0
+20041f44:	bd00      	pop	{pc}
+20041f46:	20000000 	andcs	r0, r0, r0
+20041f4a:	46492004 	strbmi	r2, [r9], -r4
+20041f4e:	43460000 	movtmi	r0, #24576	; 0x6000
+20041f52:	58430000 	stmdapl	r3, {}^	; <UNPREDICTABLE>
+20041f56:	10000000 	andne	r0, r0, r0
+20041f5a:	00001000 	andeq	r1, r0, r0
+20041f5e:	00002000 	andeq	r2, r0, r0
+20041f62:	ed080002 	stc	0, cr0, [r8, #-8]
+20041f66:	Address 0x0000000020041f66 is out of bounds.
+
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00002041 	andeq	r2, r0, r1, asr #32
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000016 	andeq	r0, r0, r6, lsl r0
+  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
+  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  18:	0600304d 	streq	r3, [r0], -sp, asr #32
+  1c:	094d070c 	stmdbeq	sp, {r2, r3, r8, r9, sl}^
+  20:	Address 0x0000000000000020 is out of bounds.
+

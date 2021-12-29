@@ -86,7 +86,7 @@ PF_Base $18 +  constant  PF_DOUTTGL      \ W1  Port Data Out Toggle Register
   loop
   drop
   0 >lcd \ Finished
-  lcd-deselect  
+  lcd-deselect
 ;
 
 : init-lcd ( -- )
@@ -109,9 +109,9 @@ PF_Base $18 +  constant  PF_DOUTTGL      \ W1  Port Data Out Toggle Register
 
   lcd-clear
 
-  \ Frame frequency needs to be between 1 and 60 Hz.    
+  \ Frame frequency needs to be between 1 and 60 Hz.
   ['] lcd-togglecom irq-systick !
-  
+
   1400000 $E000E014 ! \ How many ticks between interrupts ? 10 Hz with 14 MHz clock.
         7 $E000E010 ! \ Enable the systick interrupt.
 
@@ -148,7 +148,7 @@ resolution 8 /  resolution * buffer: image
 : crosshair ( -- )
   init-lcd
   clrscr
-  
+
   resolution 0 do \ Draw a border
                2  i              setpixel
   resolution 3 -  i              setpixel
@@ -179,9 +179,9 @@ resolution 8 /  resolution * buffer: image
   line-y1 ! line-x1 !
 
   over line-x1 @ -   dup 0< if 1 else -1 then line-sx !   abs        line-dx !
-  dup  line-y1 @ -   dup 0< if 1 else -1 then line-sy !   abs negate line-dy !  
+  dup  line-y1 @ -   dup 0< if 1 else -1 then line-sy !   abs negate line-dy !
   line-dx @ line-dy @ + line-err !
-  
+
   begin
     2dup setpixel
     2dup line-x1 @ line-y1 @ d<>
@@ -210,12 +210,12 @@ resolution 8 /  resolution * buffer: image
     ellipse-dy @ negate ellipse-dx @        ellipse-setpixel
     ellipse-dy @ negate ellipse-dx @ negate ellipse-setpixel
     ellipse-dy @        ellipse-dx @ negate ellipse-setpixel
-  
+
     ellipse-err @ 2* >r
-    r@  ellipse-dx @ 2* 1+ ellipse-b^2 @ *        < 
+    r@  ellipse-dx @ 2* 1+ ellipse-b^2 @ *        <
       if  1 ellipse-dx +! ellipse-dx @ 2* 1+ ellipse-b^2 @ *        ellipse-err +! then
     r>  ellipse-dy @ 2* 1- ellipse-a^2 @ * negate >
-      if -1 ellipse-dy +! ellipse-dy @ 2* 1+ ellipse-a^2 @ * negate ellipse-err +! then
+      if -1 ellipse-dy +! ellipse-dy @ 2* 1- ellipse-a^2 @ * negate ellipse-err +! then
 ;
 
 
@@ -226,14 +226,14 @@ resolution 8 /  resolution * buffer: image
   dup ellipse-b ! dup * ellipse-b^2 !
   dup ellipse-a ! dup * ellipse-a^2 !
   ellipse-ym ! ellipse-xm !
-  
+
   ellipse-b^2 @ ellipse-b @ 2* 1- ellipse-a^2 @ * - ellipse-err !
-  
+
   begin
-    ellipse-step       
+    ellipse-step
     ellipse-dy @ 0<
   until
-  
+
   ellipse-dx @
   begin
     1+
@@ -320,7 +320,7 @@ create font
 0C3C h, 0C0C h, 0C0C h, 003C h,  \ 93 ]
 1C08 h, 0063 h, 0000 h, 0000 h,  \ 94 ^  (*)
 0000 h, 0000 h, 0000 h, 00FF h,  \ 95 _
- 
+
 1818 h, 000C h, 0000 h, 0000 h,  \ 96  ` (*)
 0000 h, 063C h, 663E h, 003E h,  \ 97  a
 6000 h, 7C60 h, 6666 h, 007C h,  \ 98  b
@@ -372,7 +372,7 @@ decimal
   drop -8 font-x +!
 ;
 
-: drawcharacterbitmap ( c-addr -- )  
+: drawcharacterbitmap ( c-addr -- )
   8 0 do dup c@ drawbytepattern 1 font-y +! 1+ loop
   drop -8 font-y +! 8 font-x +!
 ;
@@ -382,13 +382,13 @@ decimal
 
 : drawstring ( addr u x y -- )
   font-y ! font-x !
-  
+
   begin
     dup 0<>
   while \ Adjust the following code to add your own unicode characters.
     get-first-char ascii>bitpattern drawcharacterbitmap cut-first-char
   repeat
-  2drop  
+  2drop
 ;
 
 \ -------------------------------------------------------------

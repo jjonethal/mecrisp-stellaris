@@ -1,0 +1,391 @@
+[ifndef] 12bitencoding
+1 constant m0core \ assembling for ARMv6-M
+[else]
+0 constant m0core \ assembling for ARMv7-M
+[then]
+
+\ ------------------------------------------------------------------------------
+\ supplemental logic
+\ ------------------------------------------------------------------------------
+
+m0core [if]
+
+\ Slow double shifts, for M0.
+
+: 2lshift  ( ud u -- ud* ) 0 ?do dshl loop 3-foldable ;
+: 2rshift  ( ud u -- ud* ) 0 ?do dshr loop 3-foldable ;
+: 2arshift (  d u --  d* ) 0 ?do d2/  loop 3-foldable ;
+
+[else]
+
+\ Fast double shifts, for M3/M4 only !
+
+: 2lshift ( ud u -- ud* )
+[
+  $CF03 h,  \ ldm r7!, {r0, r1}
+  $FA11 h,  \ lsls r2, r1, r6
+  $F206 h,  \
+  $F847 h,  \ str r2, [r7, #-4]!
+  $2D04 h,  \
+  $FA10 h,  \ lsls r2, r0, r6
+  $F206 h,  \
+  $F1D6 h,  \ rsbs r3, r6, #32
+  $0320 h,  \
+  $FA31 h,  \ lsrs r3, r1, r3
+  $F303 h,  \
+  $431A h,  \ orrs r2, r3
+  $3E20 h,  \ subs r6, #32
+  $FA11 h,  \ lsls r6, r1, r6
+  $F606 h,  \
+  $4316 h,  \ orrs r6, r2
+]
+3-foldable ;
+
+: 2rshift ( ud u -- ud* )
+[
+  $CF03 h,  \ ldm r7!, {r0, r1}
+  $FA31 h,  \ lsrs r2, r1, r6
+  $F206 h,  \
+  $F1D6 h,  \ rsbs r3, r6, #32
+  $0320 h,  \
+  $FA10 h,  \ lsls r3, r0, r3
+  $F303 h,  \
+  $431A h,  \ orrs r2, r3
+  $F1B6 h,  \ subs r3, r6, #32
+  $0320 h,  \
+  $FA30 h,  \ lsrs r3, r0, r3
+  $F303 h,  \
+  $431A h,  \ orrs r2, r3
+  $F847 h,  \ str r2, [r7, #-4]!
+  $2D04 h,  \
+  $FA30 h,  \ lsrs r6, r0, r6
+  $F606 h,  \
+]
+3-foldable ;
+
+: 2arshift ( d u -- d* )
+[
+  $CF03 h,  \    ldm r7!, {r0, r1}
+  $2E20 h,  \    cmp r6, #32
+  $D304 h,  \    blo 1f
+  $F1B6 h,  \    subs r3, r6, #32
+  $0320 h,  \
+  $FA50 h,  \    asrs r2, r0, r3
+  $F203 h,  \
+  $E006 h,  \    b 2f
+  $FA31 h,  \ 1: lsrs r2, r1, r6
+  $F206 h,  \
+  $F1D6 h,  \    rsbs r3, r6, #32
+  $0320 h,  \
+  $FA10 h,  \    lsls r3, r0, r3
+  $F303 h,  \
+  $431A h,  \    orrs r2, r3
+  $F847 h,  \ 2: str r2, [r7, #-4]!
+  $2D04 h,  \
+  $FA50 h,  \    asrs r6, r0, r6
+  $F606 h,  \
+]
+3-foldable ;
+
+[then]
+
+: 2and ( d1 d2 -- d ) rot and -rot and swap 4-foldable ;
+: 2or  ( d1 d2 -- d ) rot or  -rot or  swap 4-foldable ;
+: 2xor ( d1 d2 -- d ) rot xor -rot xor swap 4-foldable ;
+: 2not ( d -- d) not swap not swap ;
+
+\ ------------------------------------------------------------------------------
+\ system call wrappers
+\ ------------------------------------------------------------------------------
+
+: syscall0? dsyscall0? nip ; ( no -- val ok )
+: syscall1? dsyscall1? nip ; ( arg1 no -- val ok )
+: syscall2? dsyscall2? nip ; ( arg2 arg1 no -- val ok )
+: syscall3? dsyscall3? nip ; ( arg3 arg2 arg1 no -- val ok )
+: syscall4? dsyscall4? nip ; ( arg4 arg3 arg2 arg1 no -- val ok )
+
+: syscall0 dsyscall0? 2drop ; ( no -- val )
+: syscall1 dsyscall1? 2drop ; ( arg1 no -- val )
+: syscall2 dsyscall2? 2drop ; ( arg2 arg1 no -- val )
+: syscall3 dsyscall3? 2drop ; ( arg3 arg2 arg1 no -- val )
+: syscall4 dsyscall4? 2drop ; ( arg4 arg3 arg2 arg1 no -- val )
+
+\ -----------------------------------------------------------------------------
+\ error handling
+\ -----------------------------------------------------------------------------
+
+\ auxillary words to build the error string table
+\ compiletoram
+
+\ compile a counted string without runtime code
+: c," [char] " parse string, immediate ;
+
+\ given an array of counted strings and an array length,
+\ append an array of pointers to these strings to the dictionary.
+: fill-strtab ( addr u -- )
+  0 do dup , count + dup 1 and + loop drop ;
+
+\ compiletoflash
+
+98 constant sys_nerr
+
+\ an array of counted strings
+create sys_errstrings
+  (  0 ) c," Success"
+  (  1 ) c," Operation not permitted"
+  (  2 ) c," No such file or directory"
+  (  3 ) c," No such process"
+  (  4 ) c," Interrupted system call"
+  (  5 ) c," Input/output error"
+  (  6 ) c," Device not configured"
+  (  7 ) c," Argument list too long"
+  (  8 ) c," Exec format error"
+  (  9 ) c," Bad file descriptor"
+  ( 10 ) c," No child processes"
+  ( 11 ) c," Resource deadlock avoided"
+  ( 12 ) c," Cannot allocate memory"
+  ( 13 ) c," Permission denied"
+  ( 14 ) c," Bad address"
+  ( 15 ) c," Block device required"
+  ( 16 ) c," Device busy"
+  ( 17 ) c," File exists"
+  ( 18 ) c," Cross-device link"
+  ( 19 ) c," Operation not supported by device"
+  ( 20 ) c," Not a directory"
+  ( 21 ) c," Is a directory"
+  ( 22 ) c," Invalid argument"
+  ( 23 ) c," Too many open files in system"
+  ( 24 ) c," Too many open files"
+  ( 25 ) c," Inappropriate ioctl for device"
+  ( 26 ) c," Text file busy"
+  ( 27 ) c," File too large"
+  ( 28 ) c," No space left on device"
+  ( 29 ) c," Illegal seek"
+  ( 30 ) c," Read-only file system"
+  ( 31 ) c," Too many links"
+  ( 32 ) c," Broken pipe"
+  ( 33 ) c," Numerical argument out of domain"
+  ( 34 ) c," Result too large"
+  ( 35 ) c," Resource temporarily unavailable"
+  ( 36 ) c," Operation now in progress"
+  ( 37 ) c," Operation already in progress"
+  ( 38 ) c," Socket operation on non-socket"
+  ( 39 ) c," Destination address required"
+  ( 40 ) c," Message too long"
+  ( 41 ) c," Protocol wrong type for socket"
+  ( 42 ) c," Protocol not available"
+  ( 43 ) c," Protocol not supported"
+  ( 44 ) c," Socket type not supported"
+  ( 45 ) c," Operation not supported"
+  ( 46 ) c," Protocol family not supported"
+  ( 47 ) c," Address family not supported by protocol family"
+  ( 48 ) c," Address already in use"
+  ( 49 ) c," Can't assign requested address"
+  ( 50 ) c," Network is down"
+  ( 51 ) c," Network is unreachable"
+  ( 52 ) c," Network dropped connection on reset"
+  ( 53 ) c," Software caused connection abort"
+  ( 54 ) c," Connection reset by peer"
+  ( 55 ) c," No buffer space available"
+  ( 56 ) c," Socket is already connected"
+  ( 57 ) c," Socket is not connected"
+  ( 58 ) c," Can't send after socket shutdown"
+  ( 59 ) c," Too many references: can't splice"
+  ( 60 ) c," Operation timed out"
+  ( 61 ) c," Connection refused"
+  ( 62 ) c," Too many levels of symbolic links"
+  ( 63 ) c," File name too long"
+  ( 64 ) c," Host is down"
+  ( 65 ) c," No route to host"
+  ( 66 ) c," Directory not empty"
+  ( 67 ) c," Too many processes"
+  ( 68 ) c," Too many users"
+  ( 69 ) c," Disc quota exceeded"
+  ( 70 ) c," Stale NFS file handle"
+  ( 71 ) c," Too many levels of remote in path"
+  ( 72 ) c," RPC struct is bad"
+  ( 73 ) c," RPC version wrong"
+  ( 74 ) c," RPC prog. not avail"
+  ( 75 ) c," Program version wrong"
+  ( 76 ) c," Bad procedure for program"
+  ( 77 ) c," No locks available"
+  ( 78 ) c," Function not implemented"
+  ( 79 ) c," Inappropriate file type or format"
+  ( 80 ) c," Authentication error"
+  ( 81 ) c," Need authenticator"
+  ( 82 ) c," Identifier removed"
+  ( 83 ) c," No message of desired type"
+  ( 84 ) c," Value too large to be stored in data type"
+  ( 85 ) c," Operation canceled"
+  ( 86 ) c," Illegal byte sequence"
+  ( 87 ) c," Attribute not found"
+  ( 88 ) c," Programming error"
+  ( 89 ) c," Bad message"
+  ( 90 ) c," Multihop attempted"
+  ( 91 ) c," Link has been severed"
+  ( 92 ) c," Protocol error"
+  ( 93 ) c," Capabilities insufficient"
+  ( 94 ) c," Not permitted in capability mode"
+  ( 95 ) c," State not recoverable"
+  ( 96 ) c," Previous owner died"
+  ( 97 ) c," Integrity check failed"
+
+\ an array of pointers to these counted strings
+create sys_errlist
+  sys_errstrings sys_nerr fill-strtab
+
+\ print a string describing err
+: error. ( err -- )
+  dup sys_nerr u< if
+    cells sys_errlist + @ ctype
+    else
+    ." Unknown error " u.
+    then
+;
+
+\ print an error message of the form msg: error CR
+: perror ( err addr len -- ) type ." : " error. CR ;
+: perror" ( err -- ) postpone s" ['] perror call, immediate compileonly ;
+
+\ -----------------------------------------------------------------------------
+\ file I/O
+\ -----------------------------------------------------------------------------
+
+: 0terminate ( addr len -- ) + 0 swap c! ;
+: >cstring ( addr len -- cstring )
+  tuck here swap move
+  here tuck swap 0terminate
+;
+
+$0000 constant O_RDONLY \ open for reading only
+$0001 constant O_WRONLY \ open for writing only
+$0002 constant O_RDWR   \ open for reading and writing
+$0008 constant O_APPEND \ set append mode
+$0200 constant O_CREAT  \ create if nonexistent
+$0400 constant O_TRUNC  \ truncate to zero length
+$0800 constant O_EXCL   \ error if already exists
+
+: sys-read  3 syscall3? ; ( fd addr len -- len' ok )
+: sys-write 4 syscall3? ; ( fd addr len -- len' ok )
+: sys-open 2swap >cstring -rot 5 syscall3? ; ( addr len flags mode -- fd ok )
+: sys-close 6 syscall1 ; ( fd -- )
+
+: sys-creat ( addr len mode -- fd ok )
+  O_WRONLY O_CREAT or O_TRUNC or swap sys-open ;
+
+\ -----------------------------------------------------------------------------
+\ signal handling
+\ -----------------------------------------------------------------------------
+
+0 constant SIG_DFL
+1 constant SIG_IGN
+
+\ signal numbers, see signal(2)
+ 1 constant SIGHUP
+ 2 constant SIGINT
+ 3 constant SIGQUIT
+ 4 constant SIGILL
+ 5 constant SIGTRAP
+ 6 constant SIGABRT
+ 7 constant SIGEMT
+ 8 constant SIGFPE
+ 9 constant SIGKILL
+10 constant SIGBUS
+11 constant SIGSEGV
+12 constant SIGSYS
+13 constant SIGPIPE
+14 constant SIGALRM
+15 constant SIGTERM
+16 constant SIGURG
+17 constant SIGSTOP
+18 constant SIGTSTP
+19 constant SIGCONT
+20 constant SIGCHLD
+21 constant SIGTTIN
+22 constant SIGTTOU
+23 constant SIGIO
+24 constant SIGXCPU
+25 constant SIGXFSZ
+26 constant SIGVTALRM
+27 constant SIGPROF
+28 constant SIGWINCH
+29 constant SIGINFO
+30 constant SIGUSR1
+31 constant SIGUSR2
+32 constant SIGTHR
+33 constant SIGLIBRT
+
+\ delivering signals
+: sys-getpid  ( -- pid ) 20 syscall0 ;
+: sys-getppid ( -- pid ) 39 syscall0 ;
+: sys-kill ( pid signo -- error ) 37 syscall2 ;
+: sys-raise ( signo -- error ) sys-getpid swap sys-kill ;
+
+\ Signal mask operations.  Each signal mask is a double number.
+\ To make things easier, we only consider 64 signals instead of
+\ the 128 FreeBSD supports.
+0. 2constant sigemptyset
+-1 -1 2constant sigfullset
+
+: sigandset 2and 4-foldable ;
+: sigorset 2or 4-foldable ;
+: sigisemptyset d0= 2-foldable ;
+: sigsingleset ( signo -- sigset ) 1- 1. rot 2lshift 1-foldable ;
+: sigaddset ( sigset signo -- sigset ) sigsingleset sigorset 3-foldable ;
+: sigdelset ( sigset signo -- sigset ) sigsingleset 2not sigandset 3-foldable ;
+: sigismember ( sigset signo -- flag ) sigsingleset sigandset sigisemptyset not 3-foldable ;
+
+0 0 2variable winsize ( -- x y ) 
+
+: tcgetwinsize ( -- x y )
+  0 0 sp@ 0 $40087468 rot 54 syscall3 drop nip
+  dup 16 rshift swap $ffff and ;
+
+' nop variable sigwinch-hook
+
+: sigwinch-handler ( -- ) tcgetwinsize winsize 2! sigwinch-hook @ execute ;
+
+\ set up a handler for SIGWINCH to set winsize to the current window size.
+: winsize-autoupdate ( -- ) SIGWINCH ['] sigwinch-handler signal drop sigwinch-handler ;
+
+\ -----------------------------------------------------------------------------
+\ sleeping and waking
+\ -----------------------------------------------------------------------------
+
+: us>timespec ( us -- 0 ns 0 s )
+  0 swap 1000000 u/mod swap 1000 * 0 rot ;
+
+: timespec>us ( 0 ns 0 s -- us )
+  nip 1000000 * swap 1000 / + nip ;
+
+\ sleep for the given number of microseconds
+\ return remaining sleep time on interruption
+\ or 0 if not interrupted
+: sys-usleep ( us -- us )
+  us>timespec sp@ dup 240 syscall2? nip
+  if drop drop drop 0 0 0 then
+  timespec>us ;
+
+0 constant ITIMER_REAL    \ deliver SIGALRM on expiry, count real time
+1 constant ITIMER_VIRTUAL \ deliver SIGVTALRM on expiry, count run time
+2 constant ITIMER_PROF    \ deliver SIGPROF on expiry, count run & OS time
+
+: us>timeval ( us -- 0 us 0 s )
+  0 swap 1000000 u/mod 0 swap ;
+
+: timeval>us ( 0 us 0 s -- us )
+  nip 1000000 * + nip ;
+
+\ set an alarm to be delivered after us.  If
+\ interval <>0, repeat alarm every interval us.
+\ Return old timer configuration.
+\ which must be one of the ITIMER_... constants.
+: sys-setitimer ( interval us which -- interval us )
+  >r us>timeval 4 roll us>timeval
+  sp@ r> swap dup 83 syscall3 drop
+  timeval>us 4 -roll timeval>us ;
+
+\ obtain the configuration of timer which
+: sys-getitimer ( which -- interval us )
+  >r 0. 2dup 2dup 2dup sp@ r> swap dup 86 syscall2 drop
+  timeval>us 4 -roll timeval>us ;

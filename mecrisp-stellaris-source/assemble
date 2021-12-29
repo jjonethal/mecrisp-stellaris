@@ -32,6 +32,10 @@ cd lpc1115fbd48-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48-ra && cp *.hex ../../lpc1115fbd48-ra
 cd ..
 
+cd lpc845m301
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc845m301 && cp *.hex ../../lpc845m301
+cd ..
+
 cd kl25z128
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128 && cp *.srec ../../kl25z128
 cd ..
@@ -84,6 +88,10 @@ cd msp432p401r-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r-ra
 cd ..
 
+cd lm3s811-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm3s811-ra
+cd ..
+
 cd lm4f120
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
 cd ..
@@ -94,6 +102,14 @@ cd ..
 
 cd lm4f232
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f232
+cd ..
+
+cd palanqin
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../palanqin
+cd ..
+
+cd palanqin-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../palanqin-ra
 cd ..
 
 cd tm4c1294
@@ -116,6 +132,14 @@ cd stm32f030k6-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030k6-ra
 cd ..
 
+cd stm32f030r8
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030r8
+cd ..
+
+cd stm32f030r8-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030r8-ra
+cd ..
+
 cd stm32f042f6
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f042f6
 cd ..
@@ -130,6 +154,18 @@ cd ..
 
 cd stm32f051-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f051-ra
+cd ..
+
+cd stm32f072rb
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f072rb
+cd ..
+
+cd stm32f072rb-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f072rb-ra
+cd ..
+
+cd stm32l031k6
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l031k6
 cd ..
 
 cd stm32l053c8
@@ -174,6 +210,14 @@ cd ..
 
 cd stm32f103-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103-ra
+cd ..
+
+cd stm32f103rb
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103rb
+cd ..
+
+cd stm32f103rb-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103rb-ra
 cd ..
 
 cd stm32f207zg
@@ -224,8 +268,20 @@ cd stm32f407-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407-ra
 cd ..
 
+cd stm32f407diymore
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407diymore
+cd ..
+
+cd stm32f407diymore-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407diymore-ra
+cd ..
+
 cd stm32f411
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f411
+cd ..
+
+cd stm32f411-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f411-ra
 cd ..
 
 cd stm32f429
@@ -242,6 +298,34 @@ cd ..
 
 cd stm32f746-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
+cd ..
+
+cd stm32f767-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f767-ra && cp *.hex ../../stm32f767-ra
+cd ..
+
+cd stm32h743-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32h743-ra && cp *.hex ../../stm32h743-ra
+cd ..
+
+cd stm32g031f4
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f4
+cd ..
+
+cd stm32g031f8-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f8-ra
+cd ..
+
+cd stm32g031j6-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031j6-ra
+cd ..
+
+cd stm32g071rb-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g071rb-ra
+cd ..
+
+cd stm32wb55
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32wb55
 cd ..
 
 cd numworks-ra
@@ -288,6 +372,13 @@ cd nuc123-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123-ra && cp *.hex ../../nuc123-ra
 cd ..
 
+cd rp2040-ra
+./assemble
+cp *.bin ../../rp2040-ra
+cp    blinky-boot/*crc.bin ../../rp2040-ra/tools
+cp launchpad-boot/*crc.bin ../../rp2040-ra/tools
+cd ..
+
 # Intel Hex images for STM targets:
 
 cd ..
@@ -304,6 +395,14 @@ cd stm32f030k6-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f030k6.bin mecrisp-stellaris-stm32f030k6.hex
 cd ..
 
+cd stm32f030r8
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f030r8.bin mecrisp-stellaris-stm32f030r8.hex
+cd ..
+
+cd stm32f030r8-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f030r8.bin mecrisp-stellaris-stm32f030r8.hex
+cd ..
+
 cd stm32f042f6
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f042f6.bin mecrisp-stellaris-stm32f042f6.hex
 cd ..
@@ -318,6 +417,18 @@ cd ..
 
 cd stm32f051-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f051.bin mecrisp-stellaris-stm32f051.hex
+cd ..
+
+cd stm32f072rb
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f072rb.bin mecrisp-stellaris-stm32f072rb.hex
+cd ..
+
+cd stm32f072rb-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f072rb.bin mecrisp-stellaris-stm32f072rb.hex
+cd ..
+
+cd stm32l031k6
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l031k6.bin mecrisp-stellaris-stm32l031k6.hex
 cd ..
 
 cd stm32l053c8
@@ -362,6 +473,14 @@ cd ..
 
 cd stm32f103-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103.bin mecrisp-stellaris-stm32f103.hex
+cd ..
+
+cd stm32f103rb
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103rb.bin mecrisp-stellaris-stm32f103rb.hex
+cd ..
+
+cd stm32f103rb-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f103rb.bin mecrisp-stellaris-stm32f103rb.hex
 cd ..
 
 cd stm32f207zg
@@ -412,7 +531,19 @@ cd stm32f407-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
 cd ..
 
+cd stm32f407diymore
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407diymore.bin mecrisp-stellaris-stm32f407diymore.hex
+cd ..
+
+cd stm32f407diymore-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407diymore.bin mecrisp-stellaris-stm32f407diymore.hex
+cd ..
+
 cd stm32f411
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f411.bin mecrisp-stellaris-stm32f411.hex
+cd ..
+
+cd stm32f411-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f411.bin mecrisp-stellaris-stm32f411.hex
 cd ..
 
@@ -428,6 +559,22 @@ cd stm32l476-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32l476.bin mecrisp-stellaris-stm32l476.hex
 cd ..
 
+cd stm32g031f4
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031f4.bin mecrisp-stellaris-stm32g031f4.hex
+cd ..
+
+cd stm32g031f8-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031f8.bin mecrisp-stellaris-stm32g031f8.hex
+cd ..
+
+cd stm32g031j6-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031j6.bin mecrisp-stellaris-stm32g031j6.hex
+cd ..
+
+cd stm32g071rb-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g071rb.bin mecrisp-stellaris-stm32g071rb.hex
+cd ..
+
 # Special target for running on ARM Linux and Android:
 
 cd mecrisp-stellaris-source
@@ -441,3 +588,10 @@ cd linux-ra
 ./assemble
 cp mecrisp-stellaris-linux ../../linux-ra
 cd ..
+
+cd freebsd-ra
+./assemble
+cp mecrisp-stellaris-freebsd       ../../freebsd-ra
+cp mecrisp-stellaris-freebsd-armv6 ../../freebsd-ra
+cd ..
+

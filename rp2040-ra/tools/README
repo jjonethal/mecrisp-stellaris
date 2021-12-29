@@ -1,0 +1,9 @@
+
+pico-stageloader-xip.bin extracted from
+
+  https://github.com/raspberrypi/pico-examples
+  https://github.com/raspberrypi/pico-sdk
+
+uf2conv.py taken from
+
+  https://github.com/Microsoft/uf2

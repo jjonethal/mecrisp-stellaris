@@ -40,10 +40,33 @@ Date and time conversions by Andrew Palm
 ELF format self-replicator by Robert Clausecker
 Port for Nordic nRF52832 by juju2013@github
 Forth drivers for Numworks calculator by Wolfgang Strauss
+Port and examples for STM32F030R8 by Rick Kimball
+Ports for STM32L031K6 and STM32F072RB by Jan Spakula
+Port for STM32F103RB by Christian Nicolai
+Ports and examples for STM32G031F8, STM32G031J6 and STM32G071RB by Ralph Sahli
+Port for FreeBSD by Robert Clausecker
+Port and examples for STM32WB55 by Peter Schmid
+s31.32 Fixpoint <--> Single float conversion utilities by Ivan Dimitrov
+VIS extension (https://forth-ev.de/wiki/projects:forth-namespaces:start) by Manfred Mahlow
+Palanqin: ARM Cortex M0 emulator for DOS on 8088 by Robert Clausecker
+Line follower robot code for Microbit by Torsten Sadowski
+Terminal for STM32F429 on Nucleo-144 board by Mike Thompson
+Conditional compilation, Forth 200x style by Manfred Mahlow
+Terminal initialisation and bootrom trampoline for RP2040 by Jan Bramkamp
+Ports for STM32F767 and STM32H743 by Wim Verheyen
+Port for DIYMORE board by Christoph Kukulies (kuku@physik.rwth-aachen.de)
+Register definitions for RP2040 by Terry Porter
+FreeBSD ARMv6 support by Robert Clausecker
+Port for LM3S811 by Ivan Dimitrov
+Variable memmap split for RP2040 by Jan Bramkamp
+USB terminal driver for STM32F407 by Jan Bramkamp
+Signal handlers and syscall library for FreeBSD by Robert Clausecker
+RP2040 playground by Carsten Fulde
 
 Hardware donations:
 
 Dirk Brühl
+Robert Clausecker
 Guy Fortabat
 Michael Kalus
 Terry Porter
@@ -58,11 +81,14 @@ Bernd Paysan
 Testing and hints in alphabetical order:
 
 John O. 'Sandy' Bumgarner
+Andrew Clapp
+Robert Clausecker
 Ivan Dimitrov
 Thorsten von Eicken
 Ulrich Hoffmann
 Jean Jonethal
 Michael Kalus
+Lief Koepsel
 Remco Kortekaas
 Bert Lohmann
 Izidor Makuc
@@ -80,3 +106,5 @@ Forth register definition generator by Ralf Döring (https://github.com/ralfdoer
 Logic tricks from the book Hacker's Delight (http://www.hackersdelight.org/)
 Pinkysim by Adam Green (https://github.com/adamgreen/pinkySim)
 ARMUE (https://github.com/zmj64351508/ARMUE)
+Palanqin (https://github.com/clausecker/palanqin)
+

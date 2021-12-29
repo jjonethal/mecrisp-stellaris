@@ -1,0 +1,8 @@
+#!/bin/sh
+
+arm-none-eabi-as launchpad_boot.s -o launchpad_boot.o
+arm-none-eabi-ld -o launchpad_boot.elf -T launchpad_boot.ld launchpad_boot.o
+arm-none-eabi-objdump -D launchpad_boot.elf > launchpad_boot.list
+arm-none-eabi-objcopy launchpad_boot.elf launchpad_boot.bin -O binary
+
+./pad_checksum_binary -p256 -s-1 launchpad_boot.bin launchpad_boot_crc.bin

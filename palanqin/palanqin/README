@@ -1,0 +1,133 @@
+Palanqin, an ARM Cortex M0 emulator for DOS
+
+Copyright (c) 2020, Robert Clausecker <fuz@fuz.su>
+
+This software is in alpha state.  It is not ready for use and the only
+program known to work with it is Mecrisp Stellaris in the upcoming
+2.5.4b release.  All of its aspects are subject to change and cannot be
+expected to remain stable.
+
+# Examples
+
+An example program is provided in contrib/advent.  Make sure a copy of
+the gcc-arm-embedded toolchain is provided in your PATH and then type
+
+    cd contrib/advent; sh build.sh
+
+to compile it.  Then, open a DOSBOX in the project root directory and
+type
+
+    PALANQIN CONTRIB\ADVENT\ADVENT.IMG
+
+to run the advent binary.
+
+As another example, a variant of Mecrisp Stellaris adapted for Palanqin
+is provided in contrib/stellaris.  Make sure a copy of the
+gcc-arm-embedded toolchain is provided in your PATH and then type
+
+    cd contrib/stellaris; sh build.sh
+
+to compile it.  Forth binaries with some useful words preloaded can then
+be found in
+
+    contrib/stellaris/palanqin/precompiled/stelaqin.bin
+    contrib/stellaris/palanqin-ra/precompiled/stelaqin.bin
+
+where the ra version has a more sophisticated compiler with register
+allocation.
+
+# Register contents on reset:
+
+R0:  program image base address
+R1:  memory size
+SP: value taken from the vector table
+PC: value taken from the vector table
+
+# Memory map
+
+    0x00000000 -- 0x000fffff	program image (adj. to load addr)
+    0x10000000 -- 0x100fffff	host memory (unadjusted)
+    0x20000000 -- 0x200fffff    same as 0x00000000 -- 0x000fffff
+    0x30000000 -- 0x300fffff    same as 0x10000000 -- 0x100fffff
+    0x40000000 -- 0x400fffff	8086 IO address space
+    0xe0000000 -- 0xe00fffff    emulated PPB
+    0xf0000000 -- 0xf00fffff    emulator escape hatches
+
+The Cortex M0 program image is loaded right after 256 bytes of
+emulator stack space and extends all the way to the end of the program.
+Address translation is performed by the emulator such that emulated
+addresses 0x00000000 seen by ARM code corresponds to the load address
+of the program.
+
+The PPB and escape hatches aren't implemented yet.  This memory map is
+subject to change.
+
+# Escape hatches:
+
+The otherwise undefined instructions 0xb700 -- 0xb7ff are used to
+interact with the host system.  Escape hatch opcodes that aren't
+currently implemented behave like an undefined instruction.
+
+    B705
+
+Perform a host software interrupt.  On entry, the 8086 registers are
+set up as described below.  On exit from the interrupt handler, the
+8086 register values are copied into the ARM registers.
+
+    R0: AX
+    R1: CX
+    R2: DX
+    R3: BX
+    R4: SP (exit only)
+    R5: BP
+    R6: SI
+    R7: DI
+    R8: ES
+    R9: interrupt number
+    R10: SS (exit only)
+    R11: DS
+    R12: flags (exit only)
+    SP: unchanged
+    LR: unchanged
+    PC: advanced past the SVC instruction
+
+The software interrupt is executed on the host stack; the value given
+for SS:SP is ignored.  The arithmetic flags (NZCV) are translated into
+x86 flags on entry to the software interrupt.  On exit, the flags are
+translated back into NZCV and also saved into R12.
+
+    ????
+
+Perform a far call into native code.  The behaviour is the same as for
+BKPT #0xf0, except R9 is taken to contain a far pointer (segment/offset)
+to the function you want to call.  The function is called on the host
+stack.
+
+    ????
+
+Perform software interrupts/far calls on the emulated stack.  The
+register usage is as above, except that SS:SP is taken from R10 and R4.
+
+    0xb700
+
+Terminate the emulation and return to the host.  The contents of R0 are
+used to form an error level.
+
+    0xb701
+
+Print the current register contents to the terminal.
+
+    0xb702
+
+Print the low byte of R0 to the console (DOS function 0x02).
+
+    0bx703
+
+Read a character from the console without echo (DOS function 0x08).
+High ASCII characters are returned with 0x100 added to the character
+code.
+
+    0xb704
+
+Check for the availability of a keystroke.  Return -1 or 0 in R0
+to indicate if a keystroke is available (-1) or not available (0).

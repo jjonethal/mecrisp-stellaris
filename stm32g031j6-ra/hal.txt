@@ -1,0 +1,54 @@
+\ base definitions for STM32G0
+
+16000000 variable hclk 				\ 16 MHz default system clock from HSI
+   
+$40021000 constant RCC
+     RCC $00 + constant RCC.CR
+     RCC $08 + constant RCC.CFGR
+     RCC $0C + constant RCC.PLLCFGR
+     RCC $38 + constant RCC.AHBENR
+     RCC $3C + constant RCC.APB1ENR
+     RCC $40 + constant RCC.APB2ENR
+
+$40022000 constant FLASH.ACR
+$40010000 constant SYSCFG
+
+\ emulate c, which is not available in hardware on some chips.
+\ copied from Mecrisp's common/charcomma.txt
+0 variable c,collection
+
+: c, ( c -- )  \ emulate c, with h,
+  c,collection @ ?dup if $FF and swap 8 lshift or h,
+                         0 c,collection !
+                      else $100 or c,collection ! then ;
+
+: calign ( -- )  \ must be called to flush after odd number of c, calls
+  c,collection @ if 0 c, then ;
+  
+\ get size kB from Flash size register
+: flashSize ( -- n )
+	$1FFF75E0 h@ 10 lshift ;	
+
+\ calculate size kB from address from last mecrisp-core variable (hook-emit) in RAM	
+: ramSize ( -- n )
+	hook-emit $F or 1+ $20000000 - ;
+
+\ calculate free flash size kB
+: freeFlash ( -- n )
+	compileToRam?					\ get compile source flag
+	compileToFlash 					\ source flash
+	flashSize here - 				\ calculate size
+	swap if compileToRam then ;		\ store back compile source 
+	
+\ calculate free ram size kB
+: freeRam ( -- n )
+	compileToRam?							\ get compile source flag
+	compileToRam 							\ source ram
+	$20000024 @ here - 						\ calculate size
+	swap not if compileToFlash then ;		\ store back compile source 
+
+\ display CPU's memory info 	
+: info. ( -- )
+	cr ." Flash: " flashSize . ." / " freeFlash . 
+	cr ." Ram: " ramSize . ." / " freeRam . cr ;
+	

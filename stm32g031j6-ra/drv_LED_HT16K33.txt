@@ -1,0 +1,76 @@
+\
+\ 		led driver HT16K33
+\
+\		Ralph Sahli, 2018
+\		
+\		resources used: 
+\			- I2C  
+\
+\		REQUIRES: drv_i2c.txt
+\
+
+$E0 constant SEG_DEVICE_ADDR
+
+8 constant COM#					\ COM0 - COM7
+COM# 2* constant SBUFFLEN#		\ segment buffer length
+SBUFFLEN# buffer: segBuff		\ segment buffer
+
+false variable segmentReverse	\ reverse order: from right to left
+	
+: seg. ( -- )
+	segBuff SBUFFLEN# dump ;
+
+: segClear ( -- )
+	segBuff SBUFFLEN# 0 fill ;
+
+\ read segment @ pos 	
+: seg@ ( pos -- n )
+	7 and 2* segBuff + h@ ;
+	
+\ write segment @ pos
+: seg! ( n pos -- )
+	7 and 2* segBuff + h! ;
+		
+\ combine device address and number of bytes to process
+\ ( for compatibility with stm32F3 and stm32L4 series )
+: segDevLenAddr ( len -- n )
+	16 lshift
+	SEG_DEVICE_ADDR or 1-foldable ;
+
+\ write command
+: >segCmd ( cmd -- )
+	1 segDevLenAddr i2c-tx drop
+	>i2cData ;	
+
+\ blinkrate  0 .. 3
+: segBlinkRate ( n -- )
+	3 and 1 lshift $81 or					\ 7seg on
+	>segCmd ;
+
+\ brightness 0 .. 15
+: segBrightness ( n -- )
+	$F and $E0 or							\ dimming set
+	>segCmd ;
+
+\ send segBuffer data to LED-array
+: >segData ( -- )
+	segmentReverse @ if				\ reverse order for segment table!
+		COM# 0 do i seg@ loop
+		COM# 0 do i seg! loop
+	then
+	SBUFFLEN# 1+ segDevLenAddr i2c-tx drop
+	0 i2c!							\ startaddr
+	segBuff SBUFFLEN# >>i2cData ;	\ segBuffer content
+	
+\ initialize segment led driver, return true if failure
+: seg-init ( -- f )
+	i2c-init						\ I2C1 initialize
+	SEG_DEVICE_ADDR i2c-tx if 
+		cr ." HT16K33 LED driver not available !!!" 
+		cr true exit 
+	then
+	$21 >segCmd						\ turn on oscillator
+	0 segBlinkRate
+	segClear >segData
+	false ;
+

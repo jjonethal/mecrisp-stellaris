@@ -6,7 +6,7 @@
 //   Changelog:
 //
 //   30.09.2013, Matthias Koch:
-//   Adapted for use with Freescale Freedom KL25Z128 images 
+//   Adapted for use with Freescale Freedom KL25Z128 images
 //   to have an emulator for Mecrisp-Stellaris M0
 //
 //   05.02.2014, Matthias Koch:
@@ -79,7 +79,7 @@ void write16 ( unsigned int addr, unsigned int data )
        putchar(data&0xFF);
        fflush(stdout);
        return;
-   }  
+   }
 
    switch(addr&0xF0000000)
    {
@@ -112,9 +112,9 @@ unsigned int read16 ( unsigned int addr )
      case 0x40013824: // USART1_RDR
        data=getchar();
        if (data==127) { data=8; } // Replace DEL with Backspace
-       return(data);  
+       return(data);
 
-     // USART1_ISR is not handled, as default value for all memory access into void is $FF: Always be prepared to receive and transmit.      
+     // USART1_ISR is not handled, as default value for all memory access into void is $FF: Always be prepared to receive and transmit.
    }
 
    switch(addr&0xF0000000)
@@ -131,7 +131,7 @@ unsigned int read16 ( unsigned int addr )
            data=ram[addr];
            return(data);
 
-       default:    
+       default:
            data=0xFFFF;
            return(data);
    }
@@ -144,21 +144,21 @@ unsigned int fetch16 ( unsigned int addr ) { return(read16(addr)); }
 void write32 ( unsigned int addr, unsigned int data )
 {
 
-  FILE *coredump;    
+  FILE *coredump;
   unsigned int rc;
-      
+
   switch(addr)
   {
-  
+
     case 0xDABBAD00: // C0DEBA5E:
       coredump = fopen("coredump.bin", "w");
       rc = fwrite(rom, 1, data, coredump);
       fclose(coredump);
       exit(0);
     return;
-  
-   
-    default:    
+
+
+    default:
       write16(addr+0,(data>> 0)&0xFFFF);
       write16(addr+2,(data>>16)&0xFFFF);
   }
@@ -172,7 +172,7 @@ unsigned int read32 ( unsigned int addr )
 
    data =read16(addr+0);
    data|=((unsigned int)read16(addr+2))<<16;
-   return(data); 
+   return(data);
 }
 
 unsigned int fetch32 ( unsigned int addr ) { return(read32(addr)); }
@@ -194,7 +194,7 @@ void write8 ( unsigned int addr, unsigned int data )
    content&=0xFF00;
    content|=data&0x00FF;
  }
- write16(addr&(~1),content&0xFFFF);    
+ write16(addr&(~1),content&0xFFFF);
 }
 
 //-------------------------------------------------------------------
@@ -248,8 +248,7 @@ int reset ( void )
    cpsr=0;
    reg_norm[13]=fetch32(0x00000000); // Return stack pointer
    reg_norm[14]=0xFFFFFFFF;          // Link register
-   reg_norm[15]=fetch32(0x00000004); // Reset vector
-   reg_norm[15]&=~1;
+   reg_norm[15]=(fetch32(0x00000004) + 2) & ~1; // Reset vector
 
    return(0);
 }
