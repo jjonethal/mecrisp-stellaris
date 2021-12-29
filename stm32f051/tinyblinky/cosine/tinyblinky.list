@@ -1,0 +1,172 @@
+
+tinyblinky.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <blinky>:
+   0:	40020c5c 	andmi	r0, r2, ip, asr ip
+   4:	00000009 	andeq	r0, r0, r9
+
+00000008 <reset>:
+   8:	2248      	movs	r2, #72	; 0x48
+   a:	0412      	lsls	r2, r2, #16
+   c:	92ee      	str	r2, [sp, #952]	; 0x3b8
+   e:	3208      	adds	r2, #8
+  10:	0212      	lsls	r2, r2, #8
+  12:	0151      	lsls	r1, r2, #5
+  14:	6011      	str	r1, [r2, #0]
+  16:	2501      	movs	r5, #1
+  18:	04ee      	lsls	r6, r5, #19
+
+0000001a <breathe_led>:
+  1a:	1469      	asrs	r1, r5, #17
+  1c:	1a76      	subs	r6, r6, r1
+  1e:	1471      	asrs	r1, r6, #17
+  20:	186d      	adds	r5, r5, r1
+  22:	1371      	asrs	r1, r6, #13
+  24:	31a7      	adds	r1, #167	; 0xa7
+  26:	2307      	movs	r3, #7
+  28:	400b      	ands	r3, r1
+  2a:	3308      	adds	r3, #8
+  2c:	08c9      	lsrs	r1, r1, #3
+  2e:	408b      	lsls	r3, r1
+  30:	1aff      	subs	r7, r7, r3
+  32:	419b      	sbcs	r3, r3
+  34:	6153      	str	r3, [r2, #20]
+  36:	e7f0      	b.n	1a <breathe_led>
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00002041 	andeq	r2, r0, r1, asr #32
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000016 	andeq	r0, r0, r6, lsl r0
+  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
+  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  18:	0600304d 	streq	r3, [r0], -sp, asr #32
+  1c:	094d070c 	stmdbeq	sp, {r2, r3, r8, r9, sl}^
+  20:	Address 0x0000000000000020 is out of bounds.
+
+
+Disassembly of section .stab:
+
+00000000 <.stab>:
+   0:	00000001 	andeq	r0, r0, r1
+   4:	001a0000 	andseq	r0, sl, r0
+   8:	0000007e 	andeq	r0, r0, lr, ror r0
+   c:	0000000e 	andeq	r0, r0, lr
+  10:	00000064 	andeq	r0, r0, r4, rrx
+  14:	00000000 	andeq	r0, r0, r0
+  18:	00000001 	andeq	r0, r0, r1
+  1c:	00000064 	andeq	r0, r0, r4, rrx
+	...
+  28:	00190044 	andseq	r0, r9, r4, asr #32
+  2c:	00000008 	andeq	r0, r0, r8
+  30:	00000000 	andeq	r0, r0, r0
+  34:	001a0044 	andseq	r0, sl, r4, asr #32
+  38:	0000000a 	andeq	r0, r0, sl
+  3c:	00000000 	andeq	r0, r0, r0
+  40:	001b0044 	andseq	r0, fp, r4, asr #32
+  44:	0000000c 	andeq	r0, r0, ip
+  48:	00000000 	andeq	r0, r0, r0
+  4c:	001c0044 	andseq	r0, ip, r4, asr #32
+  50:	0000000e 	andeq	r0, r0, lr
+  54:	00000000 	andeq	r0, r0, r0
+  58:	001d0044 	andseq	r0, sp, r4, asr #32
+  5c:	00000010 	andeq	r0, r0, r0, lsl r0
+  60:	00000000 	andeq	r0, r0, r0
+  64:	001f0044 	andseq	r0, pc, r4, asr #32
+  68:	00000012 	andeq	r0, r0, r2, lsl r0
+  6c:	00000000 	andeq	r0, r0, r0
+  70:	00210044 	eoreq	r0, r1, r4, asr #32
+  74:	00000014 	andeq	r0, r0, r4, lsl r0
+  78:	00000000 	andeq	r0, r0, r0
+  7c:	00240044 	eoreq	r0, r4, r4, asr #32
+  80:	00000016 	andeq	r0, r0, r6, lsl r0
+  84:	00000000 	andeq	r0, r0, r0
+  88:	00250044 	eoreq	r0, r5, r4, asr #32
+  8c:	00000018 	andeq	r0, r0, r8, lsl r0
+  90:	00000000 	andeq	r0, r0, r0
+  94:	00370044 	eorseq	r0, r7, r4, asr #32
+  98:	0000001a 	andeq	r0, r0, sl, lsl r0
+  9c:	00000000 	andeq	r0, r0, r0
+  a0:	00380044 	eorseq	r0, r8, r4, asr #32
+  a4:	0000001c 	andeq	r0, r0, ip, lsl r0
+  a8:	00000000 	andeq	r0, r0, r0
+  ac:	00390044 	eorseq	r0, r9, r4, asr #32
+  b0:	0000001e 	andeq	r0, r0, lr, lsl r0
+  b4:	00000000 	andeq	r0, r0, r0
+  b8:	003a0044 	eorseq	r0, sl, r4, asr #32
+  bc:	00000020 	andeq	r0, r0, r0, lsr #32
+  c0:	00000000 	andeq	r0, r0, r0
+  c4:	003c0044 	eorseq	r0, ip, r4, asr #32
+  c8:	00000022 	andeq	r0, r0, r2, lsr #32
+  cc:	00000000 	andeq	r0, r0, r0
+  d0:	003d0044 	eorseq	r0, sp, r4, asr #32
+  d4:	00000024 	andeq	r0, r0, r4, lsr #32
+  d8:	00000000 	andeq	r0, r0, r0
+  dc:	003f0044 	eorseq	r0, pc, r4, asr #32
+  e0:	00000026 	andeq	r0, r0, r6, lsr #32
+  e4:	00000000 	andeq	r0, r0, r0
+  e8:	00400044 	subeq	r0, r0, r4, asr #32
+  ec:	00000028 	andeq	r0, r0, r8, lsr #32
+  f0:	00000000 	andeq	r0, r0, r0
+  f4:	00410044 	subeq	r0, r1, r4, asr #32
+  f8:	0000002a 	andeq	r0, r0, sl, lsr #32
+  fc:	00000000 	andeq	r0, r0, r0
+ 100:	00420044 	subeq	r0, r2, r4, asr #32
+ 104:	0000002c 	andeq	r0, r0, ip, lsr #32
+ 108:	00000000 	andeq	r0, r0, r0
+ 10c:	00430044 	subeq	r0, r3, r4, asr #32
+ 110:	0000002e 	andeq	r0, r0, lr, lsr #32
+ 114:	00000000 	andeq	r0, r0, r0
+ 118:	00450044 	subeq	r0, r5, r4, asr #32
+ 11c:	00000030 	andeq	r0, r0, r0, lsr r0
+ 120:	00000000 	andeq	r0, r0, r0
+ 124:	00460044 	subeq	r0, r6, r4, asr #32
+ 128:	00000032 	andeq	r0, r0, r2, lsr r0
+ 12c:	00000000 	andeq	r0, r0, r0
+ 130:	00480044 	subeq	r0, r8, r4, asr #32
+ 134:	00000034 	andeq	r0, r0, r4, lsr r0
+ 138:	00000000 	andeq	r0, r0, r0
+ 13c:	00490044 	subeq	r0, r9, r4, asr #32
+ 140:	00000036 	andeq	r0, r0, r6, lsr r0
+
+Disassembly of section .stabstr:
+
+00000000 <.stabstr>:
+   0:	6e697400 	cdpvs	4, 6, cr7, cr9, cr0, {0}
+   4:	696c6279 	stmdbvs	ip!, {r0, r3, r4, r5, r6, r9, sp, lr}^
+   8:	2e796b6e 	vsubcs.f64	d22, d9, d30
+   c:	682f0073 	stmdavs	pc!, {r0, r1, r4, r5, r6}	; <UNPREDICTABLE>
+  10:	2f656d6f 	svccs	0x00656d6f
+  14:	7474616d 	ldrbtvc	r6, [r4], #-365	; 0xfffffe93
+  18:	73616968 	cmnvc	r1, #104, 18	; 0x1a0000
+  1c:	6863532f 	stmdavs	r3!, {r0, r1, r2, r3, r5, r8, r9, ip, lr}^
+  20:	62696572 	rsbvs	r6, r9, #478150656	; 0x1c800000
+  24:	63736974 	cmnvs	r3, #116, 18	; 0x1d0000
+  28:	654d2f68 	strbvs	r2, [sp, #-3944]	; 0xfffff098
+  2c:	73697263 	cmnvc	r9, #805306374	; 0x30000006
+  30:	74532d70 	ldrbvc	r2, [r3], #-3440	; 0xfffff290
+  34:	616c6c65 	cmnvs	ip, r5, ror #24
+  38:	2f736972 	svccs	0x00736972
+  3c:	20667541 	rsbcs	r7, r6, r1, asr #10
+  40:	206d6564 	rsbcs	r6, sp, r4, ror #10
+  44:	20676557 	rsbcs	r6, r7, r7, asr r5
+  48:	3220757a 	eorcc	r7, r0, #511705088	; 0x1e800000
+  4c:	372e352e 	strcc	r3, [lr, -lr, lsr #10]!
+  50:	7265542f 	rsbvc	r5, r5, #788529152	; 0x2f000000
+  54:	6c627972 			; <UNDEFINED> instruction: 0x6c627972
+  58:	2f6b6e69 	svccs	0x006b6e69
+  5c:	796e6974 	stmdbvc	lr!, {r2, r4, r5, r6, r8, fp, sp, lr}^
+  60:	6e696c62 	cdpvs	12, 6, cr6, cr9, cr2, {3}
+  64:	732d796b 			; <UNDEFINED> instruction: 0x732d796b
+  68:	746f6f6d 	strbtvc	r6, [pc], #-3949	; 70 <breathe_led+0x56>
+  6c:	73612d68 	cmnvc	r1, #104, 26	; 0x1a00
+  70:	6c69732d 	stclvs	3, cr7, [r9], #-180	; 0xffffff4c
+  74:	6f632f6b 	svcvs	0x00632f6b
+  78:	656e6973 	strbvs	r6, [lr, #-2419]!	; 0xfffff68d
+  7c:	Address 0x000000000000007c is out of bounds.
+

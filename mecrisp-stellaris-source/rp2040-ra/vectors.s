@@ -20,8 +20,6 @@
 @ Interruptvektortabelle
 @ -----------------------------------------------------------------------------
 
-.equ addresszero, . - 0x20000000 @ This is needed to circumvent address relocation issues.
-
 .word returnstackanfang         @ 00: Stack top address
 .word Reset                 + 1 @ 01: Reset Vector  +1 wegen des Thumb-Einsprunges
 

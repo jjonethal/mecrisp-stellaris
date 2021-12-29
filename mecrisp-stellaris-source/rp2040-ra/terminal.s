@@ -114,7 +114,6 @@
 .equ XOSC_STARTUP, 0x0c @ Controls the startup delay
 .equ XOSC_COUNT  , 0x1c @ A down counter running at the XOSC frequency which counts to zero and stops.
 
-.equ XOSC_RANGE_12MHZ , 0x000aa0
 .equ XOSC_ENABLE_12MHZ, 0xfabaa0
 .equ XOSC_DELAY       , 47 @ ceil((f_crystal * t_stable) / 256)
 
@@ -298,9 +297,6 @@ Disable_Resus:
 
 XOSC_Init:
 	ldr  r1, =XOSC_BASE
-	ldr  r0, =XOSC_RANGE_12MHZ
-	str  r0, [r1, #XOSC_CTRL]
-
 	movs r0, XOSC_DELAY
 	str  r0, [r1, #XOSC_STARTUP]
 
@@ -499,16 +495,12 @@ UART_Baudrate:
 	str  r1, [r0, #UARTIBRD]
 	movs r1, #UART0_FBAUD
 	str  r1, [r0, #UARTFBRD]
-	movs r1, #BIT4 @ Enable FIFOs
-	str  r1, [r0, #UARTLCR_H]
-	movs r1, #UART_8N1
+	movs r1, #UART_8N1 | UART_FIFO
 	str  r1, [r0, #UARTLCR_H]
 
 UART_Enable:
 	ldr  r1, =UART_ENABLE
 	str  r1, [r0, #UARTCR]
-//	movs r1, #UART_FIFO
-//	str  r1, [r0, #UARTLCR_H]
 //	movs r1, #UART_DMA
 //	str  r1, [r0, #UARTDMACR]
 
@@ -610,14 +602,14 @@ serial_qemit:  @ ( -- ? ) Ready to send a character ?
    push {lr}
    bl pause
 
-   pushdaconst 0  @ False Flag
-   ldr r0, =UART0_BASE
-   ldr r1, [r0, #UARTFR] @ Fetch status
-   movs r0, #TXFF
-   ands r1, r0
-   bne 1f
-     mvns tos, tos @ True Flag
-1: pop {pc}
+   pushdatos
+   ldr r6, =UART0_BASE
+   ldr r6, [r6, #UARTFR] @ Fetch status
+   lsls r6, r6, 31-5     @ TX FIFO full, bit 5. Mask just a single bit by shifting
+   asrs r6, r6, 31
+   mvns r6, r6
+
+   pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "serial-key?"
@@ -626,13 +618,13 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
    push {lr}
    bl pause
 
-   pushdaconst 0  @ False Flag
-   ldr r0, =UART0_BASE
-   ldr r1, [r0, #UARTFR] @ Fetch status
-   movs r0, #RXFE
-   ands r1, r0
-   bne 1f
-     mvns tos, tos @ True Flag
-1: pop {pc}
+   pushdatos
+   ldr r6, =UART0_BASE
+   ldr r6, [r6, #UARTFR] @ Fetch status
+   lsls r6, r6, 31-4     @ RX FIFO empty, bit 4. Mask just a single bit by shifting
+   asrs r6, r6, 31
+   mvns r6, r6
+
+   pop {pc}
 
   .ltorg @ Hier werden viele spezielle Hardwarestellenkonstanten gebraucht, schreibe sie gleich !

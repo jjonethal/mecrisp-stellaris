@@ -1,0 +1,13 @@
+#!/bin/sh
+
+arm-none-eabi-as mandelboot.s -o mandelboot.o
+arm-none-eabi-ld -o mandelboot.elf -T mandelboot.ld mandelboot.o
+arm-none-eabi-objdump -D mandelboot.elf > mandelboot.list
+arm-none-eabi-objcopy mandelboot.elf mandelboot.bin -O binary
+
+ls -l mandelboot.bin
+md5sum mandelboot.bin
+
+./pad_checksum_binary -p256 -s-1 mandelboot.bin mandelboot_crc.bin
+
+./uf2conv.py --family 0xE48BFF56 --base 0x10000000 mandelboot_crc.bin -o mandelboot.uf2

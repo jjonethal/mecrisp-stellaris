@@ -1276,6 +1276,7 @@ Indefinite Loops:
 begin ... again
 begin ... flag until
 begin ... flag while ... repeat
+begin ... flag while ... flag while ... repeat ... else ... then
 
         repeat          ( -- ) Finish of a middle-flag-checking loop.
 

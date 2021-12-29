@@ -213,7 +213,7 @@ image2spioffset:                                 @ Calculate start address for i
 
 @------------------------------------------------------------------------------
    Wortbirne Flag_visible, "erase#" @ ( u -- )
-                                    @ Erase an image from the SPI flash
+eraseimage:                         @ Erase an image from the SPI flash
 @------------------------------------------------------------------------------
   push {lr}
 
@@ -234,6 +234,9 @@ save:                              @ Save current dictionary contents into SPI f
 @------------------------------------------------------------------------------
 
   push {lr}
+
+  dup
+  bl eraseimage
 
   bl connect_flash
   bl exit_xip

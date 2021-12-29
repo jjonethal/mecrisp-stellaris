@@ -1,0 +1,13 @@
+#!/bin/sh
+
+fpc minsky
+./minsky > Punkte.dat
+sort Punkte.dat > Punkte-sortiert.dat
+uniq -d Punkte-sortiert.dat > Punkte-wiederkehrend.dat
+
+tail -n 1 Punkte.dat
+cat Punkte-wiederkehrend.dat | wc -l
+
+tail Punkte-wiederkehrend.dat
+
+# cat Punkte-wiederkehrend.dat

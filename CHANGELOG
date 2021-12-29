@@ -819,3 +819,10 @@
 
   - Contribution by Terry Porter:
       Register definitions for RP2040
+
+7.03.2021, Matthias Koch, Mecrisp-Stellaris 2.5.7
+
+  - Removed addresszero contruction for does> on M0 in favour of using relocation directives
+  - Small improvements in RP2040 terminal code
+  - Added Mandelboot, fractal artwork in boot sector of RP2040
+  - Added Tinyblinky examples for STM32F051

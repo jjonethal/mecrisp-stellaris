@@ -20,8 +20,6 @@
 
 .ifdef m0core @ Common vector table for all Cortex M0 targets
 
-.equ addresszero, . @ This is needed to circumvent address relocation issues.
-
 .word returnstackanfang  @ 00: Stack top address
 .word Reset+1            @ 01: Reset Vector  +1 wegen des Thumb-Einsprunges
 
@@ -63,4 +61,4 @@
 .endif
 
 @ Bis hierhin ist die Interruptvektortabelle bei allen ARM Cortex Chips gleich.
-@ Danach geht es mit den Besonderheiten eines jeden Chips los.  
+@ Danach geht es mit den Besonderheiten eines jeden Chips los.

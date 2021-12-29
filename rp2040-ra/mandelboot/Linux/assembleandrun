@@ -1,0 +1,8 @@
+#!/bin/sh
+arm-linux-gnueabi-as -o mandelboot.o mandelboot.s && arm-linux-gnueabi-ld -s -T mecrisp.ld -z max-page-size=4096 -o mandelboot mandelboot.o
+
+./mandelboot > mandelboot.txt
+
+stty -icanon -echo
+./mandelboot
+stty sane
