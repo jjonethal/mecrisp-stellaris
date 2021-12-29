@@ -204,7 +204,7 @@ flush_cache:
 image2spioffset:                                 @ Calculate start address for image in SPI flash
 @------------------------------------------------------------------------------
 
-  ldr r0, =0xB000 @ Every image is $B000 bytes in size
+  ldr r0, =0x1B000 @ Every image is $1B000 bytes in size
   ldr r1, =0x6000 @ and follows after the Forth core, which is from $1000 to $6000 in SPI flash.
   muls tos, r0    @ Remember: The first 4 kb contain the boot block and padding.
   adds tos, r1
@@ -221,7 +221,7 @@ eraseimage:                         @ Erase an image from the SPI flash
   bl exit_xip
 
   bl image2spioffset
-  pushdaconstw 0xB000
+  pushdaconstw 0x1B000
   pushdaconstw 0x1000
   pushdaconst  0x20
   bl erase_range
@@ -243,7 +243,7 @@ save:                              @ Save current dictionary contents into SPI f
 
   bl image2spioffset         @ Source address
   pushdaconstw 0x20005000     @ Destination address
-  pushdaconstw 0xB000          @ 44 kb
+  pushdaconstw 0x1B000          @ 108 kb
   bl program_range
 
 restore_xip_intern:
@@ -263,7 +263,7 @@ restore_xip_intern:
   ldr r0, =0x10000000
   adds tos, r0               @ Source address
   pushdaconstw 0x20005000     @ Destination address
-  pushdaconstw 0xB000          @ 44 kb
+  pushdaconstw 0x1B000          @ 108 kb
   bl move
 
   bl Reset
@@ -282,7 +282,7 @@ restore_xip_intern:
   @ No need to push lr, as this never returns.
 
   ldr r0, =0x20005000
-  ldr r1, =0xB000
+  ldr r1, =0x1B000
   ldr r2, =0xFFFFFFFF
 
 1:subs r1, #4

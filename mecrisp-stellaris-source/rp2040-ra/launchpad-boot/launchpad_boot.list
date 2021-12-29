@@ -46,7 +46,7 @@ Disassembly of section .text:
 20041f56:	10000000 	andne	r0, r0, r0
 20041f5a:	00001000 	andeq	r1, r0, r0
 20041f5e:	00002000 	andeq	r2, r0, r0
-20041f62:	ed080001 	stc	0, cr0, [r8, #-4]
+20041f62:	ed080002 	stc	0, cr0, [r8, #-8]
 20041f66:	Address 0x0000000020041f66 is out of bounds.
 
 

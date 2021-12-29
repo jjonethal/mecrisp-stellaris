@@ -58,6 +58,8 @@ Port for DIYMORE board by Christoph Kukulies (kuku@physik.rwth-aachen.de)
 Register definitions for RP2040 by Terry Porter
 FreeBSD ARMv6 support by Robert Clausecker
 Port for LM3S811 by Ivan Dimitrov
+Variable memmap split for RP2040 by Jan Bramkamp
+USB terminal driver for STM32F407 by Jan Bramkamp
 
 Hardware donations:
 
@@ -77,12 +79,14 @@ Bernd Paysan
 Testing and hints in alphabetical order:
 
 John O. 'Sandy' Bumgarner
+Andrew Clapp
 Robert Clausecker
 Ivan Dimitrov
 Thorsten von Eicken
 Ulrich Hoffmann
 Jean Jonethal
 Michael Kalus
+Lief Koepsel
 Remco Kortekaas
 Bert Lohmann
 Izidor Makuc

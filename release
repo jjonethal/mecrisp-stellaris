@@ -69,6 +69,10 @@ cd rp2040-ra
 ./release
 cd ..
 
+cd stm32f407-ra
+./release
+cd ..
+
 # Final cleaning up ? Better keep thumbulator binaries.
 
 # cd thumbulator

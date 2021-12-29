@@ -1,0 +1,84 @@
+
+\ -------------------------------------------------------------
+\ Example on how to use pin interrupts on RP2040
+\ -------------------------------------------------------------
+
+: bit ( u -- x ) 1 swap lshift inline 1-foldable ;
+
+\ -------------------------------------------------------------
+\  Cortex M0 NVIC tools
+\ -------------------------------------------------------------
+
+$E000E100 constant NVIC_ISER ( Interrupt   Set-Enable Register )
+$E000E180 constant NVIC_ICER ( Interrupt Clear-Enable Register )
+
+: nvic-enable  ( irq# -- ) bit NVIC_ISER ! ;
+: nvic-disable ( irq# -- ) bit NVIC_ICER ! ;
+
+\ -------------------------------------------------------------
+\  IO Registers for RP2040
+\ -------------------------------------------------------------
+
+$40014000 constant IO_BANK0_BASE
+$4001c000 constant PADS_BANK0_BASE
+$d0000000 constant SIO_BASE
+
+\ Already configured in core for SIO (Software IO), function 5:
+
+\ IO_BANK0_BASE 0 8 * +     constant GPIO_0_STATUS
+\ IO_BANK0_BASE 0 8 * + 4 + constant GPIO_0_CTRL
+\ IO_BANK0_BASE 1 8 * +     constant GPIO_1_STATUS
+\ IO_BANK0_BASE 1 8 * + 4 + constant GPIO_1_CTRL
+\ ...
+
+IO_BANK0_BASE $0F0 + constant IO_BANK0_INTR0 \ Raw Interrupts
+IO_BANK0_BASE $0F4 + constant IO_BANK0_INTR1 \ Raw Interrupts
+IO_BANK0_BASE $0F8 + constant IO_BANK0_INTR2 \ Raw Interrupts
+IO_BANK0_BASE $0FC + constant IO_BANK0_INTR3 \ Raw Interrupts
+IO_BANK0_BASE $100 + constant IO_BANK0_PROC0_INTE0 \ Interrupt Enable for proc0
+IO_BANK0_BASE $104 + constant IO_BANK0_PROC0_INTE1 \ Interrupt Enable for proc0
+IO_BANK0_BASE $108 + constant IO_BANK0_PROC0_INTE2 \ Interrupt Enable for proc0
+IO_BANK0_BASE $10C + constant IO_BANK0_PROC0_INTE3 \ Interrupt Enable for proc0
+IO_BANK0_BASE $110 + constant IO_BANK0_PROC0_INTF0 \ Interrupt Force for proc0
+IO_BANK0_BASE $114 + constant IO_BANK0_PROC0_INTF1 \ Interrupt Force for proc0
+IO_BANK0_BASE $118 + constant IO_BANK0_PROC0_INTF2 \ Interrupt Force for proc0
+IO_BANK0_BASE $11C + constant IO_BANK0_PROC0_INTF3 \ Interrupt Force for proc0
+IO_BANK0_BASE $120 + constant IO_BANK0_PROC0_INTS0 \ Interrupt status after masking & forcing for proc0
+IO_BANK0_BASE $124 + constant IO_BANK0_PROC0_INTS1 \ Interrupt status after masking & forcing for proc0
+IO_BANK0_BASE $128 + constant IO_BANK0_PROC0_INTS2 \ Interrupt status after masking & forcing for proc0
+IO_BANK0_BASE $12C + constant IO_BANK0_PROC0_INTS3 \ Interrupt status after masking & forcing for proc0
+
+SIO_BASE $004 + constant GPIO_IN       \ Input value for GPIO pins
+SIO_BASE $010 + constant GPIO_OUT      \ GPIO output value
+SIO_BASE $014 + constant GPIO_OUT_SET  \ GPIO output value set
+SIO_BASE $018 + constant GPIO_OUT_CLR  \ GPIO output value clear
+SIO_BASE $01c + constant GPIO_OUT_XOR  \ GPIO output value XOR
+SIO_BASE $020 + constant GPIO_OE       \ GPIO output enable
+SIO_BASE $024 + constant GPIO_OE_SET   \ GPIO output enable set
+SIO_BASE $028 + constant GPIO_OE_CLR   \ GPIO output enable clear
+SIO_BASE $02c + constant GPIO_OE_XOR   \ GPIO output enable XOR
+
+\ -------------------------------------------------------------
+\   Initialisation and usage of pin interrupts
+\ -------------------------------------------------------------
+
+: clear-pin-irqs ( -- ) \ Clear all pending pin interrupt flags
+  -1 IO_BANK0_INTR0 !
+  -1 IO_BANK0_INTR1 !
+  -1 IO_BANK0_INTR2 !
+  -1 IO_BANK0_INTR3 !
+;
+
+: pin-irq ( -- )
+  clear-pin-irqs        \ Clear pin interrupts
+  25 bit GPIO_OUT_XOR ! \ Toggle LED on interrupt
+;
+
+: irq-demo ( -- )
+  25 bit GPIO_OE !              \ Set LED as output
+  ['] pin-irq irq-io_bank0 !    \ Hook interrupt handler  
+  13 nvic-enable                \ Enable IO_BANK0 interrupt in NVIC  
+  11 bit IO_BANK0_PROC0_INTE0 ! \ Enable low-to-high edge interrupt for GPIO 2
+  clear-pin-irqs                \ Start with all pin interrupt flags cleared    
+  eint                          \ Global interrupt enable
+;

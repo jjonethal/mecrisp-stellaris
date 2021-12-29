@@ -298,5 +298,4 @@ eraseflashsector:  @ Löscht einen Flash-Sektor
 
   pop {lr}
 
-  cpsie i
   b Restart

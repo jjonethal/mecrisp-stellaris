@@ -42,13 +42,13 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20010000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20040000 @ End   of RAM. 192 kb. Porting: Change this !
+.equ RamAnfang, 0x20020000 @ Start of RAM          Porting: Change this !
+.equ RamEnde,   0x20040000 @ End   of RAM. 128 kb. Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
 .equ FlashDictionaryAnfang, 0x20005000 @ 20 kb für den Kern reserviert...           20 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x20010000 @ 44 kb Platz für das Flash-Dictionary       44 kb Flash available. Porting: Change this
+.equ FlashDictionaryEnde,   0x20020000 @ 108 kb Platz für das Flash-Dictionary     108 kb Flash available. Porting: Change this
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 @ -----------------------------------------------------------------------------
@@ -81,4 +81,4 @@ Reset: @ Einsprung zu Beginn
    .include "../common/boot.s"
 
 .org  0x5000, 0x00
-.org 0x10000, 0xFF
+.org 0x20000, 0xFF

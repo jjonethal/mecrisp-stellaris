@@ -22,7 +22,7 @@
 
 .equ load_to,   0x20000000
 .equ load_from, 0x10001000
-.equ load_size, 0x00010000
+.equ load_size, 0x00020000
 
 .text
 
