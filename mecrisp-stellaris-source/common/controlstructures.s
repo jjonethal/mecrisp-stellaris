@@ -141,8 +141,7 @@ nullprobekomma: @ Write code for comparing TOS to zero.
   push {lr}
   pushdaconstw 0x2e00 @ cmp tos, #0
   bl hkomma
-  pushdaconstw 0xcf40 @ drop
-  bl hkomma
+  bl drop_hkomma
   pop {pc}
 
 branch_r:     @ ( -- Sprungziel )  Einleitung bedingter und unbedingter Rückwärtssprung

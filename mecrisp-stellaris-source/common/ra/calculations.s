@@ -269,7 +269,6 @@ allocator_not:
     pushdaconstw 0x0840 @ lsrs r0, r0, #1
     b.n smalltworegisters
 
-
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_1|Flag_allocator, "shl" @ ( x -- x' ) @ Um eine Stelle links schieben
 @ -----------------------------------------------------------------------------

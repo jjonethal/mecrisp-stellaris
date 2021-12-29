@@ -117,37 +117,84 @@ xor_allocator:
 
     orrs tos, tos, r3, lsl #8 @ Zielregister
     bl reversekomma
-    
+
     pop {pc}
 
   .endif
 
+  .ifdef bitreversal
+
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_foldable_1, "ror" @ ( x -- x' ) @ Um eine Stelle rechts rotieren
+  Wortbirne Flag_foldable_1|Flag_inline|Flag_allocator, "rev" @ ( x -- x' )
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-    movs r0, #1
-    rors tos, r0
-    bx lr
-  .else
-    rors tos, #1
-    bx lr
+  rev tos, tos
+  bx lr
+
+    pushdaconstw 0xBA00 @ rev r0, r0
+    b.n smalltworegisters
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_1|Flag_inline|Flag_allocator, "rev16" @ ( x -- x' )
+@ -----------------------------------------------------------------------------
+  rev16 tos, tos
+  bx lr
+
+    pushdaconstw 0xBA40 @ rev16 r0, r0
+    b.n smalltworegisters
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_1|Flag_inline|Flag_allocator, "revsh" @ ( x -- x' )
+@ -----------------------------------------------------------------------------
+  revsh tos, tos
+  bx lr
+
+    pushdaconstw 0xBAC0 @ revsh r0, r0
+    b.n smalltworegisters
+
   .endif
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_foldable_1, "rol" @ ( x -- x' ) @ Um eine Stelle links rotieren
+  Wortbirne Flag_inline|Flag_foldable_1|Flag_inlinecache|Flag_bxlr, "ror" @ ( x -- x' ) @ Um eine Stelle rechts rotieren
+@ -----------------------------------------------------------------------------
+  movs r0, #1
+  rors tos, r0
+  bx lr
+
+  .hword 2
+
+  .word  1
+  .hword Flag_Literator
+
+  .word  rrotate
+  .hword Flag_foldable_2|Flag_inline|Flag_allocator
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_inline|Flag_foldable_1|Flag_inlinecache|Flag_bxlr, "rol" @ ( x -- x' ) @ Um eine Stelle links rotieren
 @ -----------------------------------------------------------------------------
   @ Rotate left by one bit place
-  .ifdef m0core
-    movs r0, #0
-    adds tos, tos, tos
-    adcs tos, r0
-    bx lr
-  .else
-    adds tos, tos, tos
-    adcs tos, #0
-    bx lr
-  .endif
+  movs r0, #31
+  rors tos, r0
+  bx lr
+
+  .hword 2
+
+  .word  31
+  .hword Flag_Literator
+
+  .word  rrotate
+  .hword Flag_foldable_2|Flag_inline|Flag_allocator
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_2|Flag_inline|Flag_allocator, "rrotate" @ ( x n -- x' )
+rrotate:                    @ Rotate 'x' right by 'n' bits.
+@ -----------------------------------------------------------------------------
+  ldm psp!, {r0}
+  rors r0, tos
+  movs tos, r0
+  bx lr
+
+  pushdaconstw 0x41C0 @ rors r0, r0
+  b.n alloc_unkommutativ
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "arshift" @ ( x n -- x' )

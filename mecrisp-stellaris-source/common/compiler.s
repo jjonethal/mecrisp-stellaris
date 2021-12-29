@@ -48,7 +48,7 @@ tick: @ Nimmt das nächste Token aus dem Puffer, suche es und gibt den Einsprung
 
   bl tick @ Stores Flags into r0 !
 
-  @ ( Einsprungadresse )  
+  @ ( Einsprungadresse )
 
   .ifdef registerallocator
 
@@ -74,7 +74,7 @@ tick: @ Nimmt das nächste Token aus dem Puffer, suche es und gibt den Einsprung
     pushdatos
     ldr tos, =inlinekomma
     b 4f                             @ zum Aufruf bereitlegen
-    
+
 3:@ Normal                     @ In case definition is normal: Compile entry point as literal and a call to call, afterwards.
     bl literalkomma
     pushdatos
@@ -121,7 +121,7 @@ inlinekomma:
   bl hkomma @ Opcode einkompilieren  After checking is done, insert opcode into Dictionary.
 
 2:adds tos, #2 @ Pointer weiterrücken  Advance pointer
-  b 1b 
+  b 1b
 
 3:drop
   pop {pc}
@@ -192,15 +192,17 @@ retkomma: @ Write pop {pc} opcode
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible, "]" @ In den Compile-Modus übergehen  Switch to compile mode
+compile_state:
 @ -----------------------------------------------------------------------------
   ldr r0, =state
   movs r1, #0 @ true-Flag in State legen
   mvns r1, r1 @ -1
-  str r1, [r0] 
+  str r1, [r0]
   bx lr
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_immediate, "[" @ In den Execute-Modus übergehen  Switch to execute mode
+execute_state:
 @ -----------------------------------------------------------------------------
   ldr r0, =state
   movs r1, #0 @ false-Flag in State legen.
@@ -234,10 +236,7 @@ retkomma: @ Write pop {pc} opcode
   pushdaconstw 0xb500 @ Opcode für push {lr} schreiben  Write opcode for push {lr}
   bl hkomma
 
-  ldr r0, =state
-  movs r1, #0 @ true-Flag in State legen
-  mvns r1, r1 @ -1
-  str r1, [r0]
+  bl compile_state
 
   .endif
 
@@ -270,13 +269,13 @@ retkomma: @ Write pop {pc} opcode
 
   .ifdef registerallocator
     @ Jetzt entweder bx lr oder pop {pc} schreiben.
-     
+
      ldr r0, =state
      ldr r0, [r0]
      adds r1, r0, #1
      beq 3f
        cmp r0, #rawinlinelength + 1  @ Kurze Definitionen mit bis zu 5 Einfach-Opcodes (State zählt ab 1) werden direkt als inline markiert.
-       bhi 2f         
+       bhi 2f
          pushdaconstw (Flag_inline | Flag_bxlr ) & ~Flag_visible
          bl setflags
 2:     pushdaconstw 0x4770 @ bx lr
@@ -293,12 +292,10 @@ retkomma: @ Write pop {pc} opcode
 
   pushdaconstw 0xbd00 @ Opcode für pop {pc} schreiben  Write opcode for pop {pc}
   bl hkomma
-  
+
 4:bl smudge
 
-  ldr r0, =state
-  movs r1, #0 @ false-Flag in State legen.
-  str r1, [r0]
+  bl execute_state
 
   pop {pc}
 

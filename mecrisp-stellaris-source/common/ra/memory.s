@@ -249,7 +249,7 @@ allocator_2fetch:
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "h!" @ ( x 16-addr -- )
-@ Given a value 'x' and an 16-bit-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
+hstore: @ Given a value 'x' and an 16-bit-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0, r1} @ X is the new TOS after the store completes.
   strh r0, [tos]     @ Popping both saves a cycle.
@@ -363,7 +363,7 @@ allocator_1fetch:
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "c!" @ ( x 8-addr -- )
-@ Given a value 'x' and an 8-bit-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
+cstore: @ Given a value 'x' and an 8-bit-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0, r1} @ X is the new TOS after the store completes.
   strb r0, [tos]     @ Popping both saves a cycle.
@@ -447,15 +447,8 @@ allocator_1store:
   bx lr
 
     push {lr}
-      bl expect_two_elements
-      bl dup_allocator
-      bl allocator_4fetch
-      bl rot_allocator
       pushdaconstw 0x4300 @ orrs r0, r0      Opcode
-      bl alloc_kommutativ
-      bl swap_allocator
-      bl allocator_4store
-    pop {pc}
+      b.n allocator_xorstore_intern
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "bic!" @ ( x 32-addr -- )  Clear bits
@@ -491,11 +484,13 @@ allocator_1store:
   bx lr
 
     push {lr}
+      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+allocator_xorstore_intern:
       bl expect_two_elements
       bl dup_allocator
       bl allocator_4fetch
       bl rot_allocator
-      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+      @ ( Opcode )
       bl alloc_kommutativ
       bl swap_allocator
       bl allocator_4store
@@ -523,6 +518,7 @@ allocator_1store:
     push {lr}
       bl expect_two_elements
       bl allocator_4fetch
+allocator_bitfetch_intern:
       pushdaconstw 0x4000 @ ands r0, r0 Opcode
       bl alloc_kommutativ
       bl allocator_unequal_zero
@@ -540,15 +536,8 @@ allocator_1store:
   bx lr
 
     push {lr}
-      bl expect_two_elements
-      bl dup_allocator
-      bl allocator_2fetch
-      bl rot_allocator
       pushdaconstw 0x4300 @ orrs r0, r0      Opcode
-      bl alloc_kommutativ
-      bl swap_allocator
-      bl allocator_2store
-    pop {pc}
+      b.n allocator_hxorstore_intern
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "hbic!" @ ( x 16-addr -- )  Clear bits
@@ -584,11 +573,13 @@ allocator_1store:
   bx lr
 
     push {lr}
+      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+allocator_hxorstore_intern:
       bl expect_two_elements
       bl dup_allocator
       bl allocator_2fetch
       bl rot_allocator
-      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+      @ ( Opcode -- )
       bl alloc_kommutativ
       bl swap_allocator
       bl allocator_2store
@@ -616,10 +607,7 @@ allocator_1store:
     push {lr}
       bl expect_two_elements
       bl allocator_2fetch
-      pushdaconstw 0x4000 @ ands r0, r0 Opcode
-      bl alloc_kommutativ
-      bl allocator_unequal_zero
-    pop {pc}
+      b.n allocator_bitfetch_intern
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "cbis!" @ ( x 8-addr -- )  Set bits
@@ -633,15 +621,9 @@ allocator_1store:
   bx lr
 
     push {lr}
-      bl expect_two_elements
-      bl dup_allocator
-      bl allocator_1fetch
-      bl rot_allocator
       pushdaconstw 0x4300 @ orrs r0, r0      Opcode
-      bl alloc_kommutativ
-      bl swap_allocator
-      bl allocator_1store
-    pop {pc}
+      b.n allocator_cxorstore_intern
+
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "cbic!" @ ( x 8-addr -- )  Clear bits
   @ Setzt die Bits in der Speicherstelle
@@ -676,11 +658,13 @@ allocator_1store:
   bx lr
 
     push {lr}
+      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+allocator_cxorstore_intern:
       bl expect_two_elements
       bl dup_allocator
       bl allocator_1fetch
       bl rot_allocator
-      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+      @ ( Opcode -- )
       bl alloc_kommutativ
       bl swap_allocator
       bl allocator_1store
@@ -708,9 +692,6 @@ allocator_1store:
     push {lr}
       bl expect_two_elements
       bl allocator_1fetch
-      pushdaconstw 0x4000 @ ands r0, r0 Opcode
-      bl alloc_kommutativ
-      bl allocator_unequal_zero
-    pop {pc}
+      b.n allocator_bitfetch_intern
 
 .ltorg

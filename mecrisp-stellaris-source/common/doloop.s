@@ -18,7 +18,7 @@
 
 @ Die zählenden Schleifen
 @ Counting loops
- 
+
 rloopindex .req r4
 rlooplimit .req r5
 
@@ -84,7 +84,7 @@ rlooplimit .req r5
   @ Leave moves all elements of stack further, inserts address for jump opcode, increments counter and allots space.
 
   push {lr}
-  
+
   @ Agenda:
   @ An dieser Stelle eine Vorwärtssprunglücke präparieren:
   @ TOS bleibt TOS
@@ -101,13 +101,13 @@ rlooplimit .req r5
 
 1:@ Lückenschiebeschleife
   ldr r2, [r3]  @ mov @r10, -2(r10)
-  subs r3, #4 
+  subs r3, #4
   str r2, [r3]
 @  adds r3, #4
 
   adds r3, #8
   cmp r3, r1 @ r1 enthält die Stelle am Ende
-  bne 1b 
+  bne 1b
 
   @ Muss jetzt die Stelle auf dem Stack, wo die Sprünge gezählt werden um Eins erhöhen
   @ und an der freigewordenen Stelle die Lückenadresse einfügen.
@@ -159,7 +159,7 @@ unloop:                           @ Remove loop structure from returnstack
   b.n strukturen_passen_nicht
 1:drop
 
-  push {lr} 
+  push {lr}
   pushdatos
   ldr tos, =struktur_plusloop
   bl inlinekomma  @ Inline the code needed for +loop
@@ -186,7 +186,7 @@ struktur_plusloop:
   adds rloopindex, #0x80000000  @ Index + $8000
   subs rloopindex, rlooplimit   @ Index + $8000 - Limit
 
-  adds rloopindex, tos         @ Index + $8000 - Limit + Schritt  Hier werden die Flags gesetzt. Überlauf bedeutet: Schleife beenden.  
+  adds rloopindex, tos         @ Index + $8000 - Limit + Schritt  Hier werden die Flags gesetzt. Überlauf bedeutet: Schleife beenden.
                                @ Flags are set here, Overflow means: Terminate loop.
   drop                         @ Runterwerfen, dabei Flags nicht verändern  Drop, but don't change Flags anymore.
 
@@ -208,7 +208,7 @@ struktur_plusloop:
   b.n strukturen_passen_nicht
 1:drop
 
-  push {lr} 
+  push {lr}
   pushdatos
   ldr tos, =struktur_loop
   bl inlinekomma  @ Inline the code needed for +loop
@@ -230,9 +230,9 @@ struktur_loop:
   adds rloopindex, #1          @ Index erhöhen           Increment Index
   cmp rloopindex, rlooplimit   @ Mit Limit vergleichen   Compare with Limit
   bx lr @ Ende für inline,   End marker for inline,
-  
+
 @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly|Flag_opcodierbar_Spezialfall, "do" 
+  Wortbirne Flag_immediate_compileonly|Flag_opcodierbar_Spezialfall, "do"
   @ Es wird benutzt mit ( Limit Index -- ).
   @ ( -- AlterLeavePointer 0 Sprungziel 3 )
 
@@ -270,7 +270,7 @@ struktur_do:
 
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly|Flag_opcodierbar_Spezialfall, "?do" 
+  Wortbirne Flag_immediate_compileonly|Flag_opcodierbar_Spezialfall, "?do"
   @ Es wird benutzt mit ( Limit Index -- ).
   @ ( -- AlterLeavePointer Vorsprungadresse 1 Sprungziel 3 )
   @ Diese Schleife springt sofort ans Ende, wenn Limit=Index.
@@ -339,10 +339,9 @@ gemeinsame_schleifenoptimierung: @ This is a common part for opcoding optimized 
 1:@ No more constants available
 
   @ popda rlooplimit
-  pushdaconst  0x0035 
+  pushdaconst  0x0035
   bl hkomma
-  pushdaconstw 0xCF40
-  bl hkomma
+  bl drop_hkomma
 
   bl konstantenschreiben @ Maybe there are some more folding constants, then have to be written now.
   pop {pc}

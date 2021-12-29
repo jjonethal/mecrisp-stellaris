@@ -126,9 +126,6 @@
   endcase
 ;
 
-: rotateleft  ( x u -- x ) 0 ?do rol loop ;
-: rotateright ( x u -- x ) 0 ?do ror loop ;
-
 : imm12. ( Opcode -- Opcode )
   dup $FF and                 \ Bits 0-7
   over  4 rshift $700 and or  \ Bits 8-10
@@ -145,7 +142,7 @@
     swap
       \ Otherwise, the 32-bit constant is rotated left until the most significant bit is bit[7]. The size of the left
       \ rotation is encoded in bits[11:7], overwriting bit[7]. imm12 is bits[11:0] of the result.
-      dup 7 rshift swap $7F and $80 or swap rotateright const.
+      dup 7 rshift swap $7F and $80 or swap rrotate const.
   endcase
 ;
 
@@ -226,8 +223,6 @@
                               then
 
   case \ Decode remaining "singular" opcodes used in Mecrisp-Stellaris:
-
-    $EA5F0676 of ." rors r6 r6 #1" endof
 
     $F8470D04 of ." str r0 [ r7 #-4 ]!" endof
     $F8471D04 of ." str r1 [ r7 #-4 ]!" endof
@@ -353,7 +348,6 @@ $BA40 $FFC0 opcode? if ." rev16" 0 reg. 3 reg. then         \ REV16
 $BAC0 $FFC0 opcode? if ." revsh" 0 reg. 3 reg. then         \ REVSH
 $41C0 $FFC0 opcode? if ." rors"  0 reg. 3 reg. then         \ ROR
 $4180 $FFC0 opcode? if ." sbcs"  0 reg. 3 reg. then         \ SBC
-$B650 $FFF7 opcode? if ." setend" then                      \ SETEND
 
 $C000 $F800 opcode? if ." stmia" 8 reg. ."  {" registerlist. ." }" then     \ STMIA
 

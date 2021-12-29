@@ -74,10 +74,24 @@ Reset_with_arguments:
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn
 @ -----------------------------------------------------------------------------
-   @ No initialisation necessary, as we are not running bare metal.
 
    @ Catch the pointers for "Flash" dictionary
    .include "../common/catchflashpointers.s"
+
+   @ set up termios to not do input processing and to not echo
+   bl uart_init
+
+   @ set up signal handlers for SIGINT (^C) and SIGTERM
+   ldr r4, =bye
+   movs tos, #2			@ SIGINT -> bye
+   pushdatos
+   movs tos, r4
+   bl signal
+
+   movs tos, #15		@ SIGTERM -> bye
+   pushdatos
+   movs tos, r4
+   bl signal
 
    ldr r0, =arguments
    ldr r0, [r0]

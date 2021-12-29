@@ -591,6 +591,7 @@ cd ..
 
 cd freebsd-ra
 ./assemble
-cp mecrisp-stellaris-freebsd ../../freebsd-ra
+cp mecrisp-stellaris-freebsd       ../../freebsd-ra
+cp mecrisp-stellaris-freebsd-armv6 ../../freebsd-ra
 cd ..
 

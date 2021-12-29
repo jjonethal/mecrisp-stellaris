@@ -884,9 +884,6 @@ numbertable exp-coef
   endcase
 ;
 
-: rotateleft  ( x u -- x ) 0 ?do rol loop ;
-: rotateright ( x u -- x ) 0 ?do ror loop ;
-
 : imm12. ( Opcode -- Opcode )
   dup $FF and                 \ Bits 0-7
   over  4 rshift $700 and or  \ Bits 8-10
@@ -903,7 +900,7 @@ numbertable exp-coef
     swap
       \ Otherwise, the 32-bit constant is rotated left until the most significant bit is bit[7]. The size of the left
       \ rotation is encoded in bits[11:7], overwriting bit[7]. imm12 is bits[11:0] of the result.
-      dup 7 rshift swap $7F and $80 or swap rotateright const.
+      dup 7 rshift swap $7F and $80 or swap rrotate const.
   endcase
 ;
 
@@ -984,8 +981,6 @@ numbertable exp-coef
                               then
 
   case \ Decode remaining "singular" opcodes used in Mecrisp-Stellaris:
-
-    $EA5F0676 of ." rors r6 r6 #1" endof
 
     $F8470D04 of ." str r0 [ r7 #-4 ]!" endof
     $F8471D04 of ." str r1 [ r7 #-4 ]!" endof
@@ -1111,7 +1106,6 @@ $BA40 $FFC0 opcode? if ." rev16" 0 reg. 3 reg. then         \ REV16
 $BAC0 $FFC0 opcode? if ." revsh" 0 reg. 3 reg. then         \ REVSH
 $41C0 $FFC0 opcode? if ." rors"  0 reg. 3 reg. then         \ ROR
 $4180 $FFC0 opcode? if ." sbcs"  0 reg. 3 reg. then         \ SBC
-$B650 $FFF7 opcode? if ." setend" then                      \ SETEND
 
 $C000 $F800 opcode? if ." stmia" 8 reg. ."  {" registerlist. ." }" then     \ STMIA
 
@@ -1230,56 +1224,353 @@ drop \ Forget opcode
 ;
 
 \ -----------------------------------------------------------------------------
-\  Trace of the return stack entries
+\   A few tools for dictionary wizardy
 \ -----------------------------------------------------------------------------
 
+: executablelocation? ( addr -- ? )
+  dup  addrinram?              \ In RAM
+  over flashvar-here u< and     \ and below the variables and buffers
+  swap addrinflash? or           \ or in flash ?
+;
+
+: link>flags ( addr -- addr* ) 4 + 1-foldable ;
+: link>name  ( addr -- addr* ) 6 + 1-foldable ;
+: link>code  ( addr -- addr* ) 6 + skipstring ;
+
+0 variable searching-for
 0 variable closest-found
 
-: traceinside. ( Address -- )
-  1 bic \ Thumb has LSB of address set.
-  dup flashvar-here u>= if drop exit then \ Flash variables or peripheral registers cannot be resolved this way.
-  0 closest-found ! \ Address zero (vector table) is more far away than all other addresses
+: code>link  ( entrypoint -- addr | 0 ) \ Try to find this code start address in dictionary
 
-  >r
+    searching-for !
+  0 closest-found !
+
+  compiletoram? 0= >r  \ Save current compile mode
+  compiletoram          \ Always scan in compiletoram mode, in order to also find definitions in RAM.
+
   dictionarystart
   begin
-    dup r@ u< \ No need for u<= because we are scanning dictionary headers here.
-    if \ Is the address of this entry BEFORE the address which is to be found ?
-      \ Distance to current   Latest best distance
-      r@ over -               r@ closest-found @ -  <
-      if dup closest-found ! then \ Is the current entry closer to the address which is to be found ?
-    then
+    dup link>code searching-for @ = if dup closest-found ! then
     dictionarynext
   until
   drop
 
-  closest-found @ ?dup if dup ." ( " 6 + skipstring dup hex. ." + " r@ swap - hex. ." ) " 6 + ctype then
+  r> if compiletoflash then \ Restore compile mode
+
+  closest-found @
+;
+
+: inside-code>link ( addr-inside -- addr | 0 ) \ Try to find this address inside of a definition
+
+  dup executablelocation? not if drop 0 exit then  \ Do not try to find locations which are not executable
+
+    searching-for !
+  0 closest-found !
+
+  compiletoram? 0= >r  \ Save current compile mode
+  compiletoram          \ Always scan in compiletoram mode, in order to also find definitions in RAM.
+
+  dictionarystart
+  begin
+
+    dup link>code searching-for @ u<=
+    if \ Is the address of this entry BEFORE the address which is to be found ?
+      \ Distance to current   Latest best distance
+      searching-for @ over -  searching-for @ closest-found @ -  <
+      if dup closest-found ! then \ Is the current entry closer to the address which is to be found ?
+    then
+
+    dictionarynext
+  until
+  drop
+
+  r> if compiletoflash then \ Restore compile mode
+
+  \ Do not cross RAM/Flash borders:
+
+  searching-for @ addrinflash?
+  closest-found @ addrinflash? xor if 0 else closest-found @ then
+;
+
+: traceinside. ( addr -- )
+  inside-code>link if
+  ." ( "                 closest-found @ link>code   hex.
+  ." + " searching-for @ closest-found @ link>code - hex.
+  ." ) "
+  closest-found @ link>name ctype
+  then
+;
+
+: variable>link  ( location -- addr | 0 ) \ Try to find this variable or buffer in flash dictionary
+
+    searching-for !
+  0 closest-found !
+
+  compiletoram? 0= >r  \ Save current compile mode
+  compiletoram          \ Always scan in compiletoram mode, in order to also find definitions in RAM.
+
+  dictionarystart
+  begin
+
+    dup link>flags h@   \ Fetch Flags of current definition
+    $7FF0 and            \ Snip off visibility bit and reserved length
+    dup          $140 =   \ Variables and buffers are either initialised variables or
+    swap          $80 = or \ "0-foldable and reserves uninitialised memory" when defined in flash memory.
+                            \ Take care: You cannot easily use $40 bit "0-foldable" to check for variables and buffers in RAM.
+    if
+      dup link>code execute searching-for @ = if dup closest-found ! then
+    then
+
+    dictionarynext
+  until
+  drop
+
+  r> if compiletoflash then \ Restore compile mode
+
+  closest-found @
+;
+
+: variable-name. ( addr -- ) \ Print the name of this variable or buffer, if possible
+  dup flashvar-here u< if inside-code>link else variable>link then
+  ?dup if link>name ctype then
+;
+
+\ Requires dictionary-tools.txt
+
+: forget ( -- ) \ Usage: forget name, but it will work on definitions in RAM only.
+  ' code>link dup addrinram?
+  if
+    dup @ (latest) !
+    (dp) !
+  else drop then
+;
+
+: del ( -- ) \ Remove the latest definition in RAM.
+  (latest) @ addrinram?
+  if
+    (latest) @ (dp) !
+    (latest) @ @ (latest) !
+  then
+;
+\ -----------------------------------------------------------
+\   Cooperative Multitasking
+\ -----------------------------------------------------------
+
+\ Configuration:
+
+128 cells constant stackspace \ 128 stack elements for every task
+
+\ Internal stucture of task memory:
+\  0: Pointer to next task
+\  4: Task currently active ?
+\  8: Saved stack pointer
+\ 12: Handler for Catch/Throw
+\  Parameter stack space
+\  Return    stack space
+
+false 0 true flashvar-here 4 cells - 4 nvariable boot-task \ Boot task is active, without handler and has no extra stackspace.
+boot-task boot-task ! \ For compilation into RAM only
+
+boot-task variable up \ User Pointer
+: next-task  ( -- task )    up @ inline ;
+: task-state ( -- state )   up @ 1 cells + inline ;
+: save-task  ( -- save )    up @ 2 cells + inline ;
+: handler    ( -- handler ) up @ 3 cells + inline ;
+
+: (pause) ( stacks fly around )
+    [ $B430 h, ]        \ push { r4  r5 } to save I and I'
+    rp@ sp@ save-task !  \ save return stack and stack pointer
+    begin
+      next-task @ up !     \ switch to next running task
+    task-state @ until
+    save-task @ sp! rp!  \ restore pointers
+    unloop ;              \ pop { r4  r5 } to restore the loop registers
+
+: wake ( task -- ) 1 cells +  true swap ! ; \ Wake a random task (IRQ save)
+: idle ( task -- ) 1 cells + false swap ! ;  \ Idle a random task (IRQ save)
+
+\ -------------------------------------------------------
+\  Round-robin list task handling - do not use in IRQ !
+\ -------------------------------------------------------
+
+: stop ( -- ) false task-state ! pause ; \ Stop current task
+: multitask  ( -- ) ['] (pause) hook-pause ! ;
+: singletask ( -- ) [']  nop    hook-pause ! ;
+
+: task-in-list? ( task -- ? ) \ Checks if a task is currently inside of round-robin list (do not use in IRQ)
+  next-task
+  begin
+    ( Task-Address )
+    2dup = if 2drop true exit then
+    @ dup next-task = \ Stop when end of circular list is reached
+  until
+  2drop false
+;
+
+: previous ( task -- addr-of-task-before )
+  \ Find the task that has the desired one in its next field
+  >r next-task begin dup @ r@ <> while @ repeat rdrop
+;
+
+: insert ( task -- ) \ Insert a task into the round-robin list
+  dup task-in-list?  \ Is the desired task currently linked into ?
+  if drop else next-task @ over ! next-task ! then
+;
+
+: remove ( task -- ) \ Remove a task from the round-robin list
+  dup task-in-list?  \ Is the desired task currently linked into ?
+  if dup @ ( task next )
+     swap previous ( next previous ) !
+  else drop then
+;
+
+\ -----------------------------------------
+\ Create a new task - do not use in IRQ !
+\ -----------------------------------------
+
+: task: ( "name" -- )  stackspace cell+ 2*  4 cells +  buffer: ;
+
+: preparetask ( task continue -- )
+  swap >r ( continue R: task )
+
+    \ true  r@ 1 cells + ! \ Currently running
+      false r@ 3 cells + ! \ No handler
+
+    r@ 4 cells + stackspace + ( continue start-of-parameter-stack )
+      dup   r@ 2 cells + ! \ Start of parameter stack
+
+    dup stackspace + ( continue start-of-parameter-stack start-of-return-stack )
+    tuck      ( continue start-of-return-stack start-of-parameter-stack start-of-return-stack )
+    2 cells - ( continue start-of-return-stack start-of-parameter-stack start-of-return-stack* ) \ Adjust for saved loop index and limit
+    swap  !   ( continue start-of-return-stack ) \ Store the adjusted return stack pointer into the parameter stack
+    !         \ Store the desired entry address at top of the tasks return stack
+
+  r> insert
+;
+
+: activate ( task --   R: continue -- )
+  true over 1 cells + ! \ Currently running
+  r> preparetask
+;
+
+: background ( task --   R: continue -- )
+  false over 1 cells + ! \ Currently idling
+  r> preparetask
+;
+
+\ --------------------------------------------------
+\  Multitasking insight
+\ --------------------------------------------------
+
+: tasks ( -- ) \ Show tasks currently in round-robin list
+  hook-pause @ singletask \ Stop multitasking as this list may be changed during printout.
+
+  \ Start with current task.
+  next-task cr
+
+  begin
+    ( Task-Address )
+    dup             ." Task Address: " hex.
+    dup           @ ." Next Task: " hex.
+    dup 1 cells + @ ." State: " hex.
+    dup 2 cells + @ ." Stack: " hex.
+    dup 3 cells + @ ." Handler: " hex. cr
+
+    @ dup next-task = \ Stop when end of circular list is reached
+  until
+  drop
+
+  hook-pause ! \ Restore old state of multitasking
+;
+
+\ --------------------------------------------------
+\  Exception handling
+\ --------------------------------------------------
+
+: catch ( x1 .. xn xt -- y1 .. yn throwcode / z1 .. zm 0 )
+    [ $B430 h, ]  \ push { r4  r5 } to save I and I'
+    sp@ >r handler @ >r rp@ handler !  execute
+    r> handler !  rdrop  0 unloop ;
+
+: throw ( throwcode -- )  dup IF
+	handler @ 0= IF false task-state ! THEN \ unhandled error: stop task
+	handler @ rp! r> handler ! r> swap >r sp! drop r>
+	UNLOOP  EXIT
+    ELSE  drop  THEN ;
+
+\ Requires dictionary-tools.txt
+
+\ --------------------------------------------------
+\  Multitasking insight
+\ --------------------------------------------------
+
+: tasks ( -- ) \ Show tasks currently in round-robin list
+  hook-pause @ singletask \ Stop multitasking as this list may be changed during printout.
+
+  \ Start with current task.
+  next-task cr
+
+  begin
+    ( Task-Address )
+    dup             ." Task Address: " hex.
+    dup           @ ." Next Task: " hex.
+    dup 1 cells + @ ." State: " hex.
+    dup 2 cells + @ ." Stack: " hex.
+    dup 3 cells + @ ." Handler: " hex.
+    dup             ." Name: " variable-name. cr
+
+    @ dup next-task = \ Stop when end of circular list is reached
+  until
+  drop
+
+  hook-pause ! \ Restore old state of multitasking
+;
+
+\ --------------------------------------------------
+\  Multitasking debug tools
+\ --------------------------------------------------
+
+:  depth ( -- n ) up @ boot-task = if  depth    else up @ 4 cells stackspace    + + sp@ - 2 arshift then ;
+: rdepth ( -- n ) up @ boot-task = if rdepth 1- else up @ 4 cells stackspace 2* + + rp@ - 2 arshift then ;
+
+: .s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick .
+    r> 1- >r
+  repeat
   rdrop
+  ."  TOS: " dup . ."  *>" cr
 ;
 
-\ Call trace on return stack.
-
-\ Beware: This searches for the closest dictionary entry points to the addresses on the return stack
-\         and may give random results for values that aren't return addresses.
-\         I assume that users can decide from context which ones are correct.
-
-: ct ( -- )
-  cr
-  rdepth 0 do
-    i hex. i 2+ rpick dup hex. traceinside. cr
-  loop
+: u.s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick u.
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup u. ."  *>" cr
 ;
 
-: ct-irq ( -- ) \ Try your very best to help tracing unhandled interrupt causes...
-  cr cr
-  unhandled
-  cr
-  h.s
-  cr
-  ." Calltrace:" ct
-  begin again \ Trap execution
+: h.s ( -- )
+  base @ >r decimal depth ." Stack: [" . ." ] " r> base !
+  depth >r
+  begin
+    r@ 0 >
+  while
+    r@ pick hex.
+    r> 1- >r
+  repeat
+  rdrop
+  ."  TOS: " dup hex. ."  *>" cr
 ;
-
 
 \ A 32 bit cycle counter available on most M3/M4/M7 targets
 
@@ -2023,12 +2314,51 @@ emit-size cell+    buffer:  emit-ring
     ['] serial-emit  hook-emit  !
 ;
 
+\ -----------------------------------------------------------------------------
+\   Calltrace
+\ -----------------------------------------------------------------------------
+
+: ct ( -- )
+  cr
+  rdepth 0 do
+    i hex. i 2+ rpick dup hex. traceinside. cr
+  loop
+;
+
+: calltrace-irq ( -- ) \ Try your very best to help tracing unhandled interrupt causes...
+  cr cr
+  unhandled
+  cr
+  h.s
+  cr
+  ." Calltrace:" ct
+  begin usb-poll again \ Trap execution
+;
+
+\ -----------------------------------------------------------------------------
+\   USB Initialisation
+\ -----------------------------------------------------------------------------
+
+: singletask ( -- ) ['] usb-poll hook-pause ! ;
+
+task: usb-task
+
+: usb-task&
+  usb-task activate
+  begin
+    usb-poll
+    pause
+  again
+;
+
 : init ( -- )
   168mhz
   init-cycles
   init-rng
-  ['] ct-irq irq-fault !
-  usb-init ['] usb-poll hook-pause !
+  ['] calltrace-irq irq-fault !
+  usb-init
+  multitask usb-task&
+  \ singletask
   +usb
 ;
 

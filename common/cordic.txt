@@ -15,67 +15,68 @@ compiletoflash
 
 : 2lshift ( ud u -- ud* )
 [
-  $CF03 h,
-  $FA11 h,
-  $F206 h,
-  $F847 h,
-  $2D04 h,
-  $FA10 h,
-  $F206 h,
-  $F1D6 h,
-  $0320 h,
-  $FA31 h,
-  $F303 h,
-  $431A h,
-  $3E20 h,
-  $FA11 h,
-  $F606 h,
-  $4316 h,
+  $CF03 h,  \ ldm r7!, {r0, r1}
+  $FA11 h,  \ lsls r2, r1, r6
+  $F206 h,  \
+  $F847 h,  \ str r2, [r7, #-4]!
+  $2D04 h,  \
+  $FA10 h,  \ lsls r2, r0, r6
+  $F206 h,  \
+  $F1D6 h,  \ rsbs r3, r6, #32
+  $0320 h,  \
+  $FA31 h,  \ lsrs r3, r1, r3
+  $F303 h,  \
+  $431A h,  \ orrs r2, r3
+  $3E20 h,  \ subs r6, #32
+  $FA11 h,  \ lsls r6, r1, r6
+  $F606 h,  \
+  $4316 h,  \ orrs r6, r2
 ]
 3-foldable ;
 
 : 2rshift ( ud u -- ud* )
 [
-  $CF03 h,
-  $FA11 h,
-  $F206 h,
-  $F847 h,
-  $2D04 h,
-  $FA10 h,
-  $F206 h,
-  $F1D6 h,
-  $0320 h,
-  $FA31 h,
-  $F303 h,
-  $431A h,
-  $3E20 h,
-  $FA11 h,
-  $F606 h,
-  $4316 h,
+  $CF03 h,  \ ldm r7!, {r0, r1}
+  $FA31 h,  \ lsrs r2, r1, r6
+  $F206 h,  \
+  $F1D6 h,  \ rsbs r3, r6, #32
+  $0320 h,  \
+  $FA10 h,  \ lsls r3, r0, r3
+  $F303 h,  \
+  $431A h,  \ orrs r2, r3
+  $F1B6 h,  \ subs r3, r6, #32
+  $0320 h,  \
+  $FA30 h,  \ lsrs r3, r0, r3
+  $F303 h,  \
+  $431A h,  \ orrs r2, r3
+  $F847 h,  \ str r2, [r7, #-4]!
+  $2D04 h,  \
+  $FA30 h,  \ lsrs r6, r0, r6
+  $F606 h,  \
 ]
 3-foldable ;
 
 : 2arshift ( d u -- d* )
 [
-  $CF03 h,
-  $2E20 h,
-  $D304 h,
-  $F1B6 h,
-  $0320 h,
-  $FA50 h,
-  $F203 h,
-  $E006 h,
-  $FA31 h,
-  $F206 h,
-  $F1D6 h,
-  $0320 h,
-  $FA10 h,
-  $F303 h,
-  $431A h,
-  $F847 h,
-  $2D04 h,
-  $FA50 h,
-  $F606 h,
+  $CF03 h,  \    ldm r7!, {r0, r1}
+  $2E20 h,  \    cmp r6, #32
+  $D304 h,  \    blo 1f
+  $F1B6 h,  \    subs r3, r6, #32
+  $0320 h,  \
+  $FA50 h,  \    asrs r2, r0, r3
+  $F203 h,  \
+  $E006 h,  \    b 2f
+  $FA31 h,  \ 1: lsrs r2, r1, r6
+  $F206 h,  \
+  $F1D6 h,  \    rsbs r3, r6, #32
+  $0320 h,  \
+  $FA10 h,  \    lsls r3, r0, r3
+  $F303 h,  \
+  $431A h,  \    orrs r2, r3
+  $F847 h,  \ 2: str r2, [r7, #-4]!
+  $2D04 h,  \
+  $FA50 h,  \    asrs r6, r0, r6
+  $F606 h,  \
 ]
 3-foldable ;
 
@@ -276,7 +277,7 @@ double-cordic-constants constant double-cordic-constants \ Allow stronger optimi
     cordic-x 2@ cordic-y 2@ i 2arshift d+
     cordic-y 2@ cordic-x 2@ i 2arshift d- cordic-y  2!
                                           cordic-x  2!
-                                          
+
     cordic-z 2@             i 2e^ka    d- cordic-z  2!
 ;
 
@@ -288,33 +289,33 @@ double-cordic-constants constant double-cordic-constants \ Allow stronger optimi
     cordic-x 2@ cordic-y 2@ i 2arshift d-
     cordic-y 2@ cordic-x 2@ i 2arshift d+ cordic-y  2!
                                           cordic-x  2!
-                                          
+
     cordic-z 2@             i 2e^ka    d+ cordic-z  2!
 ;
 
 : arcsin ( f-arg -- f-arcsin )
-  
+
   \ Improve accuracy by exploiting 64 bit dynamic range during calculations
   28 2lshift
-      
+
   $10000000,0 cordic-x 2!
           0,0 cordic-y 2!
           0,0 cordic-z 2!
-    
+
   34 0 do
-  
-    cordic-y 2@ 2over d<      
+
+    cordic-y 2@ 2over d<
     cordic-x @ 0< not xor
-    if            
+    if
       arcsin-step-plus
     else
       arcsin-step-minus
     then
-    
+
     2dup i 2* 2arshift d+
   loop
   2drop
-  
+
   cordic-z 2@
 
 2-foldable ;

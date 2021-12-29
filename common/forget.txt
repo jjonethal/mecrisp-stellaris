@@ -1,0 +1,18 @@
+
+\ Requires dictionary-tools.txt
+
+: forget ( -- ) \ Usage: forget name, but it will work on definitions in RAM only.
+  ' code>link dup addrinram?
+  if
+    dup @ (latest) !
+    (dp) !
+  else drop then
+;
+
+: del ( -- ) \ Remove the latest definition in RAM.
+  (latest) @ addrinram?
+  if
+    (latest) @ (dp) !
+    (latest) @ @ (latest) !
+  then
+;

@@ -387,6 +387,5 @@ rm -f mecrisp-stellaris-linux
 cd ..
 
 cd freebsd-ra
-rm -f mecrisp-stellaris-freebsd.o
-rm -f mecrisp-stellaris-freebsd
+rm -f *.o *.elf mecrisp-stellaris-freebsd mecrisp-stellaris-freebsd-armv6
 cd ..

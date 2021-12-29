@@ -28,8 +28,6 @@
 
 @ Variablen des Kerns  Variables of core that are not visible
 
-ramallot Dictionarypointer, 4
-ramallot Fadenende, 4
 ramallot konstantenfaltungszeiger, 4
 ramallot leavepointer, 4
 ramallot Datenstacksicherung, 4
@@ -113,11 +111,15 @@ ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Län
 
 .ifdef within_os
 
-  ramallot datenstackende, 4096  @ Data stack
+  ramallot datenstackende, 4096   @ Data stack
   ramallot datenstackanfang, 0
 
   ramallot returnstackende, 4096  @ Return stack
   ramallot returnstackanfang, 0
+
+  @ signal handler trampolines
+  .equ MAXSIG, 64                 @ the highest signal number
+  ramallot sighandlers, 4*MAXSIG+1
 
 .else
 

@@ -1,8 +1,12 @@
 #!/bin/sh
 set -e
 
-# für ARMv6: AFLAGS="-march=armv6 --defsym m0core=1"
-arm-none-eabi-as $AFLAGS -o mecrisp-stellaris-freebsd.o mecrisp-stellaris-freebsd.s
+arm-none-eabi-as -o mecrisp-stellaris-freebsd.o mecrisp-stellaris-freebsd.s
 arm-none-eabi-ld -T mecrisp.ld -z max-page-size=4096 -o mecrisp-stellaris-freebsd.elf mecrisp-stellaris-freebsd.o
 arm-none-eabi-objcopy -O binary mecrisp-stellaris-freebsd.elf mecrisp-stellaris-freebsd
-rm -f mecrisp-stellaris-freebsd.o mecrisp-stellaris-freebsd.elf
+
+arm-none-eabi-as -march=armv6 --defsym m0core=1 -o mecrisp-stellaris-freebsd-armv6.o mecrisp-stellaris-freebsd.s
+arm-none-eabi-ld -T mecrisp.ld -z max-page-size=4096 -o mecrisp-stellaris-freebsd-armv6.elf mecrisp-stellaris-freebsd-armv6.o
+arm-none-eabi-objcopy -O binary mecrisp-stellaris-freebsd-armv6.elf mecrisp-stellaris-freebsd-armv6
+
+rm -f *.o *.elf

@@ -65,7 +65,7 @@ move:  @ ( Quelladdr Zieladdr Byteanzahl -- ) ( Source Destination Count -- )
   Wortbirne Flag_visible, "fill"  @ Fill memory with given byte.
   @ ( Destination Count Filling -- )
 @------------------------------------------------------------------------------
-  @ 6.1.1540 FILL CORE ( c-addr u char -- ) If u is greater than zero, store char in each of u consecutive characters of memory beginning at c-addr. 
+  @ 6.1.1540 FILL CORE ( c-addr u char -- ) If u is greater than zero, store char in each of u consecutive characters of memory beginning at c-addr.
 
   popda r0 @ Filling byte
   popda r1 @ Count
@@ -540,13 +540,13 @@ bitfetch_opcoding:
   b.n bitfetch_opcoding
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_foldable_1, "cell+" @ ( x -- x+4 ) 
+  Wortbirne Flag_inline|Flag_foldable_1, "cell+" @ ( x -- x+4 )
 @ -----------------------------------------------------------------------------
   adds tos, #4
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_foldable_1, "cells" @ ( x -- 4*x ) 
+  Wortbirne Flag_inline|Flag_foldable_1, "cells" @ ( x -- 4*x )
 @ -----------------------------------------------------------------------------
   lsls tos, #2
   bx lr

@@ -5,7 +5,10 @@ cat ../common/longcomment.txt \
     ../common/dump.txt \
     ../common/fixpt-math-lib.fs \
     ../common/disassembler-m3.txt \
-    ../common/calltrace.txt \
+    ../common/dictionary-tools.txt \
+    ../common/forget.txt \
+    ../common/multitask.txt \
+    ../common/multitask-debug.txt \
     ../common/cycles.txt \
     cornerstone.txt \
     gpio.fs \

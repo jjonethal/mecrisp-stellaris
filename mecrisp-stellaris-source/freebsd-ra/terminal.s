@@ -22,11 +22,36 @@
 
 .include "../common/terminalhooks.s"
 
+@ syscall.s and signal.s are unusually long; dump literals here so we don't
+@ exceed the maximum offset for ldr Rd, =...
+.ltorg
+
+.include "syscall.s"
+.include "signal.s"
+
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "nop" @ ( -- ) @ Handler for unused hooks
 nop_vektor:                    
 @ ----------------------------------------------------------------------------- 
   bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible|Flag_variable, "stdin" @ ( -- u )
+  CoreVariable stdin
+@ -----------------------------------------------------------------------------
+  pushdatos
+  ldr tos, =stdin
+  bx lr
+  .word 0
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible|Flag_variable, "stdout" @ ( -- addr )
+  CoreVariable stdout
+@ -----------------------------------------------------------------------------
+  pushdatos
+  ldr tos, =stdout
+  bx lr
+  .word 1
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "serial-emit"
@@ -35,20 +60,16 @@ serial_emit: @ ( c -- ) Emit one character
   push {lr}
   bl pause
  
-  push {r0, r1, r2, r3, r4, r5, r7}
- 
-  push {r6}
-  
-  movs r0, #1   @ File descriptor 1: STDOUT
-  mov  r1, sp   @ Pointer to Message
-  movs r2, #1   @ 1 Byte
-  movs r7, #4   @ Syscall 4: Write
-  swi #0
-  
-  pop {r6}
- 
-  pop {r0, r1, r2, r3, r4, r5, r7}
-  
+  push {r5, r6}
+
+  ldr r0, =stdout
+  ldr r0, [r0]		@ write to stdout
+  add r1, sp, #4	@ point r1 to the pushed r6
+  movs r2, #1		@ write 1 byte
+  movs r6, #4		@ SYS_WRITE
+  bl dosyscall
+
+  pop {r5, r6}
   drop
   pop {pc}
 
@@ -82,100 +103,38 @@ serial_key: @ ( -- c ) Receive one character
   bl pause
   pushdaconst 0
   
-  push {r0, r1, r2, r3, r4, r5, r7}
- 
-  push {r6}
-  
-  movs r0, #0   @ File descriptor 0: STDIN
-  mov  r1, sp   @ Pointer to Message
-  movs r2, #1   @ 1 Byte
-  movs r7, #3   @ Syscall 3: Read
-  swi #0
-  
-  cmp r0, #0 @ A size of zero bytes or less denotes EOF.
-  ble.n bye
+  push {r5, r6}
 
-  pop {r6}
-  
-  pop {r0, r1, r2, r3, r4, r5, r7}
-  
-  cmp tos, #4 @ Ctrl-D
+  ldr r0, =stdin
+  ldr r0, [r0]		@ read from stdin
+  add r1, sp, #4	@ point r1 to the pushed r6
+  movs r2, #1		@ read 1 byte
+  movs r6, #3		@ SYS_READ
+  bl dosyscall
+
+  cmp r6, #0		@ read error?
   beq.n bye
-  
+  cmp r0, #0		@ EOF?
+  beq.n bye
+
+  pop {r5, r6}
+
   pop {pc}
-
-@ -----------------------------------------------------------------------------
- Wortbirne Flag_visible, "syscall" @ ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 )
-@ -----------------------------------------------------------------------------
- push {lr}
- push {r4, r5, r7} @ Save registers !
-
- push {r6} @ Syscall number
-
- ldm psp!, {r6}
- ldm psp!, {r5}
- ldm psp!, {r4}
- ldm psp!, {r3}
- ldm psp!, {r2}
- ldm psp!, {r1}
- ldm psp!, {r0}
-
- pop {r7} @ into r7
-
- swi #0
-
- pop {r4, r5, r7}
-
- adds r7, #28 @ Drop 7 elements at once
- movs r6, r0 @ Syscall reply into TOS
- 
- pop {pc}
-
-@ -----------------------------------------------------------------------------
- Wortbirne Flag_visible, "syscall?" @ ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 error )
-@ -----------------------------------------------------------------------------
- push {lr}
- push {r4, r5, r7} @ Save registers !
-
- push {r6} @ Syscall number
-
- ldm psp!, {r6}
- ldm psp!, {r5}
- ldm psp!, {r4}
- ldm psp!, {r3}
- ldm psp!, {r2}
- ldm psp!, {r1}
- ldm psp!, {r0}
-
- pop {r7} @ into r7
-
- swi #0
-
-
- sbcs r6, r6 @ error = -1 on success, 0 on failure
- adds r6, r6, #1 @ error = 0 on success, 1 on failure 
-
- pop {r4, r5, r7}
-
- adds r7, #28 @ Drop 7 elements at once
- pushda r0    @ push syscall return value
- 
- pop {pc}
      
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "cacheflush" @ ( addr len -- )
 cacheflush:
 @ -----------------------------------------------------------------------------
-
-  mov r1, r6       @ Länge des zu sichernden Bereiches
-  ldmia r7!, {r0, r6} @ zweimal poppen, addr nach r0
-  push {r0, r1, r4-r7, lr} @ arm_synch_icache_args (addr, len) auf den Stack
-  movs r0, #0      @ ARM_SYNC_ICACHE
-  mov r1, sp       @ Die soeben auf den Stack gelegte Struktur
-  movs r7, #165    @ Syscall 165: sysarch()
-  swi #0           @ Systemaufruf: synchronisiere den icache
-                   @ also sysarch(ARM_SYNC_ICACHE, {addr, len})
-  pop {r0, r1, r4-r7, pc}
+  mov r1, tos			@ Länge des zu sichernden Bereiches
+  ldm psp!, {r0}		@ addr nach r0
+  push {r0, r1, r5, lr}		@ arm_synch_icache_args (addr, len) auf den Stack
+  movs r0, #0			@ ARM_SYNC_ICACHE
+  mov r1, sp			@ Die soeben auf den Stack gelegte Struktur
+  movs r6, #165			@ Syscall 165: sysarch()
+  bl dosyscall			@ Systemaufruf: synchronisiere den icache
+				@ also sysarch(ARM_SYNC_ICACHE, {addr, len})
+  ldm psp!, {tos}		@ TOS wiederherstellen
+  pop {r0, r1, r5, pc}		@ Stack aufräumen, Rücksprung
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_0, "arguments" @ ( -- a-addr )
@@ -194,9 +153,10 @@ cacheflush:
   Wortbirne Flag_visible, "bye"
 bye:
 @ -----------------------------------------------------------------------------
+  bl uart_reset
   movs r0, #0  @ Error code 0
-  movs r7, #1  @ Syscall 1: Exit
-  swi #0
+  movs r6, #1  @ Syscall 1: Exit
+  bl dosyscall
    
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "incipit"
@@ -212,7 +172,82 @@ bye:
   ldr tos, =explicit
   bx lr
 
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "uart-init"
+@ -----------------------------------------------------------------------------
+uart_init:
+  adr r2, termios_mecrisp
+  b tcsetattr
 
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "uart-reset"
+@ -----------------------------------------------------------------------------
+uart_reset:
+  adr r2, termios_sane
+  b tcsetattr
+
+  .equ termios_len, 44	@ size of the termios structure
+			@ the structure is laid out as such:
+			@  0 c_iflag  -- input flags
+			@  4 c_oflag  -- output flags
+			@  8 c_cflag  -- control flags
+			@ 12 c_lflag  -- local flags
+			@ 16 c_cc     -- control characters (20 characters)
+			@ 36 c_ispeed -- input speed (in Baud)
+			@ 40 c_ospeed -- output speed (in Baud)
+
+  @ fetch the termios structure for stdin into the buffer pointed to by R2.
+  @ if stdin is a terminal, return 0.  Else, the contents of the buffer are
+  @ not defined.  Preserves R4 to R7
+@tcgetattr:
+@  push {r5, lr}
+@  bl savepsp
+@  movs r6, #54			@ SYS_ioctl
+@  movs r0, #0			@ STDIN_FILENO
+@  ldr r1, =0x402c7413		@ TIOCGETA
+@  bl dosyscall
+@  pop {r5, pc}
+
+  @ set the termios structure for stdin to the buffer pointed to by R2.
+  @ if stdin is a terminal, return 0.  Else return some other value.
+  @ Preserves R4 to R7.
+tcsetattr:
+  push {r5, lr}
+  movs r6, #54			@ SYS_ioctl
+  movs r0, #0			@ STDIN_FILENO
+  ldr r1, =0x802c7414		@ TIOCSETA
+  bl dosyscall
+  pop {r5, pc}
+
+  @ a termios structure with sane default values
+  .align
+termios_sane:
+  .int 0x00002b02		@ c_iflag
+  .int 0x00000003		@ c_oflag
+  .int 0x00004b00		@ c_cflag
+  .int 0x000005cb		@ c_lflag
+  .byte 0x04, 0xff, 0xff, 0x7f	@ c_cc
+  .byte 0x17, 0x15, 0x12, 0x08 
+  .byte 0x03, 0x1c, 0x1a, 0x19
+  .byte 0x11, 0x13, 0x16, 0x0f
+  .byte 0x01, 0x00, 0x14, 0xff
+  .int 0x00002580		@ c_ispeed
+  .int 0x00002580		@ c_ospeed
+
+  @ a termios structure with values appropriate for Mecrisp Stellaris
+  @ same as termios_sane, but with ICANON and ECHO disabled.
+termios_mecrisp:
+  .int 0x00002b02		@ c_iflag
+  .int 0x00000003		@ c_oflag
+  .int 0x00004b00		@ c_cflag
+  .int 0x000004c3		@ c_lflag
+  .byte 0x04, 0xff, 0xff, 0x7f	@ c_cc
+  .byte 0x17, 0x15, 0x12, 0x08 
+  .byte 0x03, 0x1c, 0x1a, 0x19
+  .byte 0x11, 0x13, 0x16, 0x0f
+  .byte 0x01, 0x00, 0x14, 0xff
+  .int 0x00002580		@ c_ispeed
+  .int 0x00002580		@ c_ospeed
 
   .ltorg @ Hier werden viele spezielle Hardwarestellenkonstanten gebraucht, schreibe sie gleich !
          @ Write the many special hardware locations now !

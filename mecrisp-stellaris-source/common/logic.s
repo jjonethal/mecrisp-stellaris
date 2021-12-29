@@ -115,6 +115,28 @@
 
   .endif
 
+  .ifdef bitreversal
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_1|Flag_inline, "rev" @ ( x -- x' )
+@ -----------------------------------------------------------------------------
+  rev tos, tos
+  bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_1|Flag_inline, "rev16" @ ( x -- x' )
+@ -----------------------------------------------------------------------------
+  rev16 tos, tos
+  bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_foldable_1|Flag_inline, "revsh" @ ( x -- x' )
+@ -----------------------------------------------------------------------------
+  revsh tos, tos
+  bx lr
+
+  .endif
+
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_1, "shr" @ ( x -- x' ) @ Um eine Stelle rechts schieben
 @ -----------------------------------------------------------------------------
@@ -130,29 +152,26 @@
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_1, "ror" @ ( x -- x' ) @ Um eine Stelle rechts rotieren
 @ -----------------------------------------------------------------------------
-  .ifdef m0core
-    movs r0, #1
-    rors tos, r0
-    bx lr
-  .else
-    rors tos, #1
-    bx lr
-  .endif
+  movs r0, #1
+  rors tos, r0
+  bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_1, "rol" @ ( x -- x' ) @ Um eine Stelle links rotieren
 @ -----------------------------------------------------------------------------
   @ Rotate left by one bit place
-  .ifdef m0core
-    movs r0, #0
-    adds tos, tos, tos
-    adcs tos, r0
-    bx lr
-  .else
-    adds tos, tos, tos
-    adcs tos, #0
-    bx lr
-  .endif
+  movs r0, #31
+  rors tos, r0
+  bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_inline|Flag_foldable_2, "rrotate" @ ( x n -- x' )
+                           @ Rotate 'x' right by 'n' bits.
+@ -----------------------------------------------------------------------------
+  ldm psp!, {r0}
+  rors r0, tos
+  movs tos, r0
+  bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_opcodierbar_Schieben, "rshift" @ ( x n -- x' )

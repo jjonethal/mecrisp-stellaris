@@ -568,8 +568,7 @@ builds: @ Beginnt ein Defining-Wort.  Start a defining definition.
       cmp tos, #6
       drop
       beq 1f
-        pushdaconst 0x0036  @ nop = movs tos, tos
-        bl hkomma
+        bl nop_hkomma
         b 2b
 
 builds_ram:
@@ -599,8 +598,7 @@ builds_ram:
       cmp tos, #14
       drop
       beq 1f
-        pushdaconst 0x0036  @ nop = movs tos, tos
-        bl hkomma
+        bl nop_hkomma
         b 2b
 
 builds_ram:
@@ -612,8 +610,7 @@ builds_ram:
     ands tos, r0
     drop
     bne 1f
-      pushdaconst 0x0036  @ nop = movs tos, tos
-      bl hkomma
+      bl nop_hkomma
 1:
 
   pushdaconstw 0xb500 @ Opcode für push {lr} schreiben  Write opcode for push {lr}

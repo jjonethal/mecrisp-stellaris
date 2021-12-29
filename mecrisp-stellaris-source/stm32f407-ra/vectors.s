@@ -20,7 +20,23 @@
 @ Interruptvektortabelle
 @ -----------------------------------------------------------------------------
 
-.include "../common/vectors-common.s"
+.word returnstackanfang    @ 00: Stack top address
+.word Reset+1              @ 01: Reset Vector  +1 wegen des Thumb-Einsprunges
+
+.word faulthandler+1       @ 02: The NMI handler
+.word faulthandler+1       @ 03: The hard fault handler
+.word faulthandler+1       @ 04: The MPU fault handler
+.word faulthandler+1       @ 05: The bus fault handler
+.word faulthandler+1       @ 06: The usage fault handler
+.word 0                    @ 07: Reserved
+.word 0                    @ 08: Reserved
+.word 0                    @ 09: Reserved
+.word 0                    @ 10: Reserved
+.word irq_vektor_svcall+1  @ 11: SVCall handler
+.word nullhandler+1        @ 12: Debug monitor handler
+.word 0                    @ 13: Reserved
+.word irq_vektor_pendsv+1  @ 14: The PendSV handler
+.word irq_vektor_systick+1 @ 15: The SysTick handler
 
 @ Special interrupt handlers for this particular chip:
 

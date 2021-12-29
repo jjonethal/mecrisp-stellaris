@@ -456,8 +456,7 @@ not_found_addr_r0_len_r1:
     bl inlinekomma
 
     @ Compile Drop-Opcode
-    pushdaconstw 0xcf40 @ Opcode for ldmia r7!, {r6}
-    bl hkomma
+    bl drop_hkomma
     b.n 1b @ Finished.
 
 2:  @ Two or more constants.

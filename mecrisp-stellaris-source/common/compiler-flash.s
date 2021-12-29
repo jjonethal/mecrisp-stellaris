@@ -19,6 +19,7 @@
 @ Besondere Teile des Compilers, die mit der Dictionarystruktur im Flash zu tun haben.
 @ Special parts of compiler tightly linked with generating code for Flash memory.
 
+.ltorg
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "smudge" @ ( -- )
@@ -157,18 +158,12 @@ setflags_ram:
   strh r1, [r0]
   pop {pc}
 
- .ltorg
-
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_foldable_1, "aligned" @ ( c-addr -- a-addr )
 @ -----------------------------------------------------------------------------
-  movs r0, #1
-  ands r0, tos
-  adds tos, r0
-
-  movs r0, #2
-  ands r0, tos
-  adds tos, r0
+  adds r6, #3
+  movs r0, #3
+  bics r6, r0
   bx lr
 
 @ If your particular Flash controller doesn't support byte write access,
@@ -297,6 +292,14 @@ ckomma_fertig:
   pop {pc}
   .endif
 
+nop_hkomma:
+  pushdaconst 0x0036  @ nop = movs tos, tos
+  b.n hkomma
+
+drop_hkomma:
+  pushdaconstw 0xcf40  @ Opcode for ldmia r7!, {r6} --> drop
+  b.n hkomma
+
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "h," @ ( x -- )
 hkomma: @ Fügt 16 Bits an das Dictionary an.
@@ -361,28 +364,22 @@ hkomma_fertig:
   Wortbirne Flag_visible, "," @ ( x -- )
 komma: @ Fügt 32 Bits an das Dictionary an  Write 32 bits in Dictionary using 16 bit write access only.
 @ -----------------------------------------------------------------------------
-  push {lr}
-  dup
+  push {r0, lr}
+1:dup
   bl hkomma @ Low-Teil zuerst - Little Endian ! Außerdem stimmen so die Linkfelder.
 
   lsrs tos, #16 @ High-Teil danach
   bl hkomma
-  pop {pc}
-
+  pop {r0, pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "><," @ ( x -- )
 reversekomma: @ Fügt 32 Bits an das Dictionary an   Write 32 bits in Dictionary using 16 bit write access only, but reverse high and low order before.
 @ -----------------------------------------------------------------------------
-  push {lr}
-  dup
-  lsrs tos, #16 @ High-Teil danach
-  bl hkomma
-
-  bl hkomma @ Low-Teil zuerst - Little Endian ! Außerdem stimmen so die Linkfelder.
-  pop {pc}
-
-
+  push {r0, lr}
+  movs r0, #16
+  rors r6, r0  @ Swap halfwords
+  b 1b
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "string," @ ( c-addr length -- )
@@ -484,6 +481,23 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
   str r1, [r0]
   bx lr
 
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible|Flag_variable, "(latest)" @ ( -- addr )
+  CoreVariable Fadenende
+@ -----------------------------------------------------------------------------
+  pushdatos
+  ldr r6, =Fadenende
+  bx lr
+  .word CoreDictionaryAnfang
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible|Flag_variable, "(dp)" @ ( -- addr )
+  CoreVariable Dictionarypointer
+@ -----------------------------------------------------------------------------
+  pushdatos
+  ldr r6, =Dictionarypointer
+  bx lr
+  .word RamDictionaryAnfang
 
 @ There are two sets of Pointers: One set for RAM, one set for Flash Dictionary.
 @ They are exchanged if you want to write to the "other" memory type.
@@ -510,7 +524,7 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoram?"
 @ -----------------------------------------------------------------------------
-  pushdaconst 0
+  pushdatos
 
   @ Prüfe, ob der Dictionarypointer im Ram oder im Flash ist:
   ldr r0, =Dictionarypointer
@@ -518,13 +532,14 @@ allot_ok: @ Alles paletti, es ist noch Platz da !  Everything is fine, just allo
 
   ldr r1, =Backlinkgrenze
   cmp r0, r1
-.ifdef above_ram
-  bhs.n 1f @ Befinde mich im Flash --> False
-.else
-  blo.n 1f @ Befinde mich im Flash --> False
-.endif
-    mvns tos, tos @ Im Ram --> True
-1:bx lr
+
+  sbcs tos, tos
+
+  .ifndef above_ram
+    mvns tos, tos
+  .endif
+
+  bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "compiletoram"
@@ -598,7 +613,29 @@ Zweitpointertausch:
 
 1:bx lr
 
-  .ltorg
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "addrinflash?" @ ( a-addr -- a-addr ) Permanent memory there ?
+@ -----------------------------------------------------------------------------
+  ldr r0, =CoreDictionaryAnfang
+  ldr r1, =FlashDictionaryEnde
+  b.n 1f
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "addrinram?" @ ( a-addr -- a-addr ) Volatile memory there ?
+@ -----------------------------------------------------------------------------
+  ldr r0, =RamAnfang
+  ldr r1, =RamEnde
+
+1:cmp tos, r0
+  blo 2f
+  cmp tos, r1
+    sbcs tos, tos
+    bx lr
+
+2:movs r6, 0
+  bx lr
+
+.ltorg
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "(create)"
@@ -944,8 +981,7 @@ prepare_var_buf_ram:
     ands tos, r0
     drop
     bne 1f
-      pushdaconst 0x0036  @ nop = movs tos, tos
-      bl hkomma
+      bl nop_hkomma
 1:
 
   pushdatos
@@ -959,9 +995,6 @@ bx_lr_komma:
   bl hkomma
 
   pop {pc}
-
-  .ltorg @ Mal wieder Konstanten schreiben
-
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "dictionarystart"
@@ -1043,6 +1076,7 @@ dictionarynext: @ Scans dictionary chain and returns true if end is reached.
 @     if -1 else dup 6 + c@ $FF = then \ $FF instead of Name length denotes end of dictionary in Flash, too.
 @ ;
 
+  .ltorg @ Mal wieder Konstanten schreiben
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "skipstring"

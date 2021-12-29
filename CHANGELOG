@@ -856,3 +856,14 @@
 
   - Contribution by Jan Bramkamp:
       USB terminal driver for STM32F407
+
+21.10.2021, Matthias Koch, Mecrisp-Stellaris 2.6.1
+
+  - Added (dp) (latest) addrinflash? addrinram? rrotate to all cores
+  - Added SVCall and PendSV interrupt handlers to STM32F407 target
+  - Added dictionary-tools and fixed flaw in multitask-debug
+  - Fixed 2rshift in common/cordic
+
+  - Contribution by Robert Clausecker:
+      Signal handlers and syscall library for FreeBSD
+

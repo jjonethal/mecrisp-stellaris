@@ -1,0 +1,112 @@
+
+\ -----------------------------------------------------------------------------
+\   A few tools for dictionary wizardy
+\ -----------------------------------------------------------------------------
+
+: executablelocation? ( addr -- ? )
+  dup  addrinram?              \ In RAM
+  over flashvar-here u< and     \ and below the variables and buffers
+  swap addrinflash? or           \ or in flash ?
+;
+
+: link>flags ( addr -- addr* ) 4 + 1-foldable ;
+: link>name  ( addr -- addr* ) 6 + 1-foldable ;
+: link>code  ( addr -- addr* ) 6 + skipstring ;
+
+0 variable searching-for
+0 variable closest-found
+
+: code>link  ( entrypoint -- addr | 0 ) \ Try to find this code start address in dictionary
+
+    searching-for !
+  0 closest-found !
+
+  compiletoram? 0= >r  \ Save current compile mode
+  compiletoram          \ Always scan in compiletoram mode, in order to also find definitions in RAM.
+
+  dictionarystart
+  begin
+    dup link>code searching-for @ = if dup closest-found ! then
+    dictionarynext
+  until
+  drop
+
+  r> if compiletoflash then \ Restore compile mode
+
+  closest-found @
+;
+
+: inside-code>link ( addr-inside -- addr | 0 ) \ Try to find this address inside of a definition
+
+  dup executablelocation? not if drop 0 exit then  \ Do not try to find locations which are not executable
+
+    searching-for !
+  0 closest-found !
+
+  compiletoram? 0= >r  \ Save current compile mode
+  compiletoram          \ Always scan in compiletoram mode, in order to also find definitions in RAM.
+
+  dictionarystart
+  begin
+
+    dup link>code searching-for @ u<=
+    if \ Is the address of this entry BEFORE the address which is to be found ?
+      \ Distance to current   Latest best distance
+      searching-for @ over -  searching-for @ closest-found @ -  <
+      if dup closest-found ! then \ Is the current entry closer to the address which is to be found ?
+    then
+
+    dictionarynext
+  until
+  drop
+
+  r> if compiletoflash then \ Restore compile mode
+
+  \ Do not cross RAM/Flash borders:
+
+  searching-for @ addrinflash?
+  closest-found @ addrinflash? xor if 0 else closest-found @ then
+;
+
+: traceinside. ( addr -- )
+  inside-code>link if
+  ." ( "                 closest-found @ link>code   hex.
+  ." + " searching-for @ closest-found @ link>code - hex.
+  ." ) "
+  closest-found @ link>name ctype
+  then
+;
+
+: variable>link  ( location -- addr | 0 ) \ Try to find this variable or buffer in flash dictionary
+
+    searching-for !
+  0 closest-found !
+
+  compiletoram? 0= >r  \ Save current compile mode
+  compiletoram          \ Always scan in compiletoram mode, in order to also find definitions in RAM.
+
+  dictionarystart
+  begin
+
+    dup link>flags h@   \ Fetch Flags of current definition
+    $7FF0 and            \ Snip off visibility bit and reserved length
+    dup          $140 =   \ Variables and buffers are either initialised variables or
+    swap          $80 = or \ "0-foldable and reserves uninitialised memory" when defined in flash memory.
+                            \ Take care: You cannot easily use $40 bit "0-foldable" to check for variables and buffers in RAM.
+    if
+      dup link>code execute searching-for @ = if dup closest-found ! then
+    then
+
+    dictionarynext
+  until
+  drop
+
+  r> if compiletoflash then \ Restore compile mode
+
+  closest-found @
+;
+
+: variable-name. ( addr -- ) \ Print the name of this variable or buffer, if possible
+  dup flashvar-here u< if inside-code>link else variable>link then
+  ?dup if link>name ctype then
+;

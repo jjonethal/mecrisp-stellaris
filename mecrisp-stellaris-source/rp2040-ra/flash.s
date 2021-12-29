@@ -24,19 +24,13 @@
    Wortbirne Flag_visible, "cflash!" @ ( x Addr -- )
 c_flashkomma:
 @ -----------------------------------------------------------------------------
-   ldm  psp!, {r0, r1} @ X is the new TOS after the store completes.
-   strb r0, [tos]     @ Popping both saves a cycle.
-   movs tos, r1
-   bx   lr
+  b.n cstore
 
 @ -----------------------------------------------------------------------------
    Wortbirne Flag_visible, "hflash!" @ ( x Addr -- )
 h_flashkomma:
 @ -----------------------------------------------------------------------------
-   ldm  psp!, {r0, r1} @ X is the new TOS after the store completes.
-   strh r0, [tos]     @ Popping both saves a cycle.
-   movs tos, r1
-   bx   lr
+  b.n hstore
 
 @ -----------------------------------------------------------------------------
    Wortbirne Flag_visible, "rom-code" @ ( code -- addr )

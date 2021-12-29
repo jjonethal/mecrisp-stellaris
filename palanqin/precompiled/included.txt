@@ -907,7 +907,6 @@ $D000 $F000 opcode? not if else dup $0F00 and 8 rshift       \ B(1) conditional 
 
                          $0C of ." bgt" endof  \ Z==0 and N == V
                          $0D of ." ble" endof  \ Z==1 or N != V
-
                          \ $0E: Undefined Instruction
                          $0F of ." swi"  0 imm8.   drop exit endof
                        endcase
@@ -992,7 +991,6 @@ $BA40 $FFC0 opcode? if ." rev16" 0 reg. 3 reg. then         \ REV16
 $BAC0 $FFC0 opcode? if ." revsh" 0 reg. 3 reg. then         \ REVSH
 $41C0 $FFC0 opcode? if ." rors"  0 reg. 3 reg. then         \ ROR
 $4180 $FFC0 opcode? if ." sbcs"  0 reg. 3 reg. then         \ SBC
-$B650 $FFF7 opcode? if ." setend" then                      \ SETEND
 
 $C000 $F800 opcode? if ." stmia" 8 reg. ."  {" registerlist. ." }" then     \ STMIA
 
