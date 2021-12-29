@@ -100,6 +100,14 @@ cd lm4f232
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f232
 cd ..
 
+cd palanqin
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../palanqin
+cd ..
+
+cd palanqin-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../palanqin-ra
+cd ..
+
 cd tm4c1294
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../tm4c1294
 cd ..

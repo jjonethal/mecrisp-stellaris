@@ -1,0 +1,16 @@
+
+: Flamingo cr
+."      _" cr
+."     ^-)" cr
+."      (.._          .._" cr
+."       \`\\        (\`\\        (" cr
+."        |>         ) |>        |)" cr
+." ______/|________ (7 |` ______\|/_______a:f" cr
+;
+
+: init
+  cr
+  Flamingo
+  cr
+  ." Have a nice day !" cr
+;

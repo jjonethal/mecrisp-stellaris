@@ -784,3 +784,18 @@
 
   - Contribution by Manfred Mahlow:
       VIS extension
+
+01.11.2020, Matthias Koch, Mecrisp-Stellaris 2.5.5
+
+  - Faster implementation of "find"
+  - New experimental target: Palanqin by Robert Clausecker
+  - Cycle counter example for debug module on some targets
+
+  - Contribution by Robert Clausecker
+      Palanqin ARM Cortex M0 emulator for Intel 8088
+
+  - Contribution by Torsten Sadowski
+      Line follower robot code for Microbit
+
+  - Contribution by Mike Thompson
+      Terminal for STM32F429 on Nucleo-144 board

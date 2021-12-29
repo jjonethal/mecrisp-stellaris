@@ -761,21 +761,7 @@ nvariable: @ Creates an initialised variable of given length.
   @ Variablenpointer erniedrigen und zurückschreiben   Decrement variable pointer
 
   lsls r2, tos, #2 @ Multiply number of elements with 4 to get byte count
-
-  ldr r0, =VariablenPointer
-  ldr r1, [r0]
-  subs r1, r2  @ Ram voll ?  Maybe insert a check for enough RAM left ?
-    ldr r2, =RamDictionaryAnfang
-    cmp r1, r2
-    bhs 1f
-      Fehler_quit "Not enough RAM"
-1:str r1, [r0]
-
-  @ Code schreiben:  Write code
-  pushda r1
-  bl literalkomma    @ Adresse im Ram immer mit movt --> 12 Bytes
-  pushdaconstw 0x4770 @ Opcode für bx lr --> 2 Bytes
-  bl hkomma
+  bl prepare_var_buf_flash
 
   @ Amount of elements to write is in TOS.
   @ Write code and initialise elements.
@@ -804,56 +790,21 @@ nvariable: @ Creates an initialised variable of given length.
   @ Variable RAM
 variable_ram:
   @ This is simple: Write code, write value, a classic Forth variable.
-
-  @ pushdatos
-  @ mov tos, pc
-  @ adds tos, #2
-  @ bx lr
-  @ Value for Variable
-
-@  pushdaconstw 0x3f04  @ subs    r7, #4
-@  bl hkomma
-@  pushdaconstw 0x603e  @ str     r6, [r7, #0]
-@  bl hkomma
-@  pushdaconstw 0x467e  @ mov     r6, pc
-@  bl hkomma
-@  pushdaconstw 0x3602  @ adds    r6, #2
-@  bl hkomma
-@  pushdaconstw 0x4770 @ Opcode für bx lr --> 2 Bytes
-@  bl hkomma
-
-  @ This is to align dictionary pointer to have variable locations that are always 4-even
-    bl here
-    movs r0, #2
-    ands tos, r0
-    drop
-    bne 1f
-      pushdaconst 0x0036  @ nop = movs tos, tos
-      bl hkomma
-1:
-
-  pushdatos
-  ldr tos, =0x3f04603e @ subs r7, #4    str r6, [r7, #0]
-  bl reversekomma
-  pushdatos
-  ldr tos, =0x467e3602 @ mov r6, pc     adds r6, #2
-  bl reversekomma
-  pushdaconstw 0x4770  @ bx lr
-  bl hkomma
+  bl prepare_var_buf_ram
 
   @ Amount of elements to write is in TOS.
 
   popda r0   @ Fetch amount of cells
   cmp r0, #0 @ If nvariable is called with length zero... Maybe this could be useful sometimes.
-  beq 2f
+  beq.n finish_var_buf_ram
 
 1:bl komma
   subs r0, #1
   bne 1b
 
-2:@ Finished.
+finish_var_buf_ram: @ Finished.
 
-  bl setze_faltbarflag @ Variables always are 0-foldable as their address never changes.
+  bl setze_faltbarflag @ Variables and buffers always are 0-foldable as their address never changes.
   bl smudge
   pop {pc}
 
@@ -887,20 +838,8 @@ variable_ram:
 
   @ Variablenpointer erniedrigen und zurückschreiben   Decrement variable pointer
 
-  ldr r0, =VariablenPointer
-  ldr r1, [r0]
-  subs r1, tos  @ Ram voll ?  Check for enough RAM left ?
-    ldr r2, =RamDictionaryAnfang
-    cmp r1, r2
-    bhs 1f
-      Fehler_quit "Not enough RAM"
-1:str r1, [r0]
-
-  @ Code schreiben:  Write code
-  pushda r1
-  bl literalkomma    @ Adresse im Ram immer mit movt --> 12 Bytes
-  pushdaconstw 0x4770 @ Opcode für bx lr --> 2 Bytes
-  bl hkomma
+  movs r2, tos @ Number of bytes
+  bl prepare_var_buf_flash
 
   @ Write desired size of buffer at the end of the definition
   bl komma
@@ -915,8 +854,35 @@ variable_ram:
   @ Buffer RAM
 rambuffer_ram:
   @ This is simple: Write code, allot space, a classic Forth buffer.
+  bl prepare_var_buf_ram
 
-  @ This is to align dictionary pointer to have variable locations that are always 4-even
+  bl allot @ Reserve space. Allot checks for itself if there is enough RAM left.
+
+  b.n finish_var_buf_ram
+
+  @ -----------------------------------------------------------------------------
+prepare_var_buf_flash:
+  push {lr}
+
+  ldr r0, =VariablenPointer
+  ldr r1, [r0]
+  subs r1, r2  @ Ram voll ?  Maybe insert a check for enough RAM left ?
+    ldr r2, =RamDictionaryAnfang
+    cmp r1, r2
+    bhs 1f
+      Fehler_quit "Not enough RAM"
+1:str r1, [r0]
+
+  @ Code schreiben:  Write code
+  pushda r1
+  bl literalkomma    @ Adresse im Ram immer mit movt --> 12 Bytes
+  b.n bx_lr_komma    @ Opcode für bx lr --> 2 Bytes
+
+  @ -----------------------------------------------------------------------------
+prepare_var_buf_ram:
+  push {lr}
+
+    @ This is to align dictionary pointer to have variable locations that are always 4-even
     bl here
     movs r0, #2
     ands tos, r0
@@ -932,15 +898,11 @@ rambuffer_ram:
   pushdatos
   ldr tos, =0x467e3602 @ mov r6, pc     adds r6, #2
   bl reversekomma
+bx_lr_komma:
   pushdaconstw 0x4770  @ bx lr
   bl hkomma
 
-  bl allot @ Reserve space. Allot checks for itself if there is enough RAM left.
-
-  bl setze_faltbarflag @ Buffers always are 0-foldable as their address never changes.
-  bl smudge
   pop {pc}
-
 
   .ltorg @ Mal wieder Konstanten schreiben
 
@@ -1088,19 +1050,14 @@ find: @ ( address length -- Code-Adresse Flags )
 
   push {r4, r5, lr}
 
-  @ r0  Helferlein      Scratch
-  @ r1  Flags           Flags
-
-  @ r2  Zieladresse     Destination Address
-  @ r3  Zielflags       Destination Flags
-
   @ r4  Adresse des zu suchenden Strings  Address of string that is searched for
   @ r5  Dessen Länge                      Length
 
   @ TOS Hangelpointer   Pointer for crawl the dictionary
 
-  movs r2, #0  @ Noch keinen Treffer          No hits yet
-  movs r3, #0  @ Und noch keine Trefferflags  No hits have no Flags
+  movs r0, #0   @ Noch keinen Treffer          No hits yet
+  movs r1, #0   @ Und noch keine Trefferflags  No hits have no Flags
+  push {r0, r1} @ Auf dem Return-Stack merken  Save this to return stack
 
   popda r5 @ Fetch string length
   popda r4 @ Fetch string address
@@ -1114,43 +1071,65 @@ find: @ ( address length -- Code-Adresse Flags )
   beq 2f
 
   @ Definition is visible. Compare the name !
-  dup
-  adds tos, #6 @ Skip Link and Flags
-  bl count     @ Prepare an address-length string
 
-  pushda r4
-  pushda r5
-  bl compare
+  ldrb r1, [tos, #6] @ Fetch count, skip link and flags
+  cmp r1, r5
+  bne 2f @ Strings have different lengths, continue searching
 
-  cmp tos, #0 @ Flag vom Vergleich prüfen  Ckeck for Flag from string comparision
-  drop
-  beq 2f
+    @ Same length. Compare strings, be case insensitive.
+    @ Dictionary entries cannot have no name - string length therefore cannot be zero.
 
-    @ Gefunden ! Found !
-    @ String überlesen und Pointer gerade machen   Skip name string
-    adds r0, tos, #6
-    bl skipstring
+    adds r0, tos, #7 @ Get address, skip count, link and flags
 
-    movs r2, r0 @ Codestartadresse  Note Code start address
-    movs r3, r1 @ Flags             Note Flags
+    @ Count backwards on length in r1
 
-    @ Prüfe, ob ich mich im Flash oder im Ram befinde.  Check if in RAM or in Flash.
-    ldr r0, =Backlinkgrenze
-    cmp r2, r0
-    bhs 3f @ Im Ram beim ersten Treffer ausspringen. Search is over in RAM with first hit.
-           @ Im Flash wird weitergesucht, ob es noch eine neuere Definition mit dem Namen gibt.
-           @ If in Flash, whole dictionary has to be searched because of backwards link dictionary structure.
+4:  subs r1, #1
+    ldrb r2, [r0, r1]
+    ldrb r3, [r4, r1]
+
+    @ Beide Zeichen in Kleinbuchstaben verwandeln.  Convert booth to lowercase.
+    lowercase r2
+    lowercase r3
+
+    cmp r2, r3
+    bne 2f @ Different characters, continue searching
+
+    @ Equal characters: Next character ?
+    cmp r1, #0
+    bne 4b
+
+      @ Gefunden ! Strings are equal: Found !
+
+      add sp, #8 @ Forget old notes on return stack
+      adds r0, tos, #6
+      bl skipstring @ String überlesen und Pointer gerade machen   Skip name string in r0
+      ldrh r1, [tos, #4] @ Fetch flags, again.
+      push {r0, r1} @ Note code start address and flags
+
+      @ Prüfe, ob ich mich im Flash oder im Ram befinde.  Check if in RAM or in Flash.
+      ldr r0, =Backlinkgrenze
+      cmp tos, r0
+      bhs 3f @ Im Ram beim ersten Treffer ausspringen. Search is over in RAM with first hit.
+             @ Im Flash wird weitergesucht, ob es noch eine neuere Definition mit dem Namen gibt.
+             @ If in Flash, whole dictionary has to be searched because of backwards link dictionary structure.
 
 2:@ Weiterhangeln  Continue crawl.
-  bl dictionarynext
-  popda r0
-  beq 1b
+  @ This is the essence of "dictionarynext", inlined for speed.
 
+  ldr tos, [tos]
+  ldr r0, =erasedword
+  cmp tos, r0
+  beq 3f
+    ldrb r0, [tos, #6]
+    cmp r0, #erasedbyte
+    bne 1b
 
 3:@ Durchgehangelt. Habe ich etwas gefunden ?  Finished. Found something ?
   @ Zieladresse gesetzt, also nicht Null bedeutet: Etwas gefunden !    Destination address <> 0 means successfully found.
-  movs tos, r2  @ Zieladresse    oder 0, falls nichts gefunden            Address = 0 means: Not found. Check for that !
-  pushda r3     @ Zielflags      oder 0  --> @ ( 0 0 - Nicht gefunden )   Push Flags on Stack. ( Destination-Code Flags ) or ( 0 0 ).
+
+  pop {r0, r1}
+  movs tos, r0  @ Zieladresse    oder 0, falls nichts gefunden            Address = 0 means: Not found. Check for that !
+  pushda r1     @ Zielflags      oder 0  --> @ ( 0 0 - Nicht gefunden )   Push Flags on Stack. ( Destination-Code Flags ) or ( 0 0 ).
 
   pop {r4, r5, pc}
 

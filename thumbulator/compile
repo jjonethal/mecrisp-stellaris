@@ -6,5 +6,7 @@ gcc -o thumbulator-stm32f051        -O2 thumbulator-stm32f051.c
 gcc -o thumbulator-stm32f103        -O2 thumbulator-stm32f103.c
 gcc -o thumbulator-stm32f303        -O2 thumbulator-stm32f303.c
 gcc -o thumbulator-stm32l053        -O2 thumbulator-stm32l053.c
+gcc -o thumbulator-stm32g031        -O2 thumbulator-stm32g031.c
 gcc -o thumbulator-numworks         -O2 thumbulator-numworks.c
+gcc -o thumbulator-palanqin         -O2 thumbulator-palanqin.c
 

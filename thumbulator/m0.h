@@ -1432,7 +1432,7 @@ if(DISS) fprintf(stderr,"strb r%u,[r%u,#0x%X]\n",rd,rn,rb);
 if(DISS) fprintf(stderr,"strb r%u,[r%u,r%u]\n",rd,rn,rm);
        rb=read_register(rn)+read_register(rm);
        rc=read_register(rd);
-       write8(rb, rc);        
+       write8(rb, rc);
        return(0);
    }
 
@@ -1606,6 +1606,60 @@ if(DISS) fprintf(stderr,"uxth r%u,r%u\n",rd,rm);
        rc=ra&0xFFFF;
        write_register(rd,rc);
        return(0);
+   }
+
+
+   // Spezielle Opcodes vom Palanqin:
+
+   if (inst == 0xB700) // Bye
+   {
+     exit(0);
+   }
+
+   if (inst == 0xB701) // Debug
+   {
+
+     fprintf ( stdout, "R0  %08X  R1  %08X  R2  %08X  R3  %08X\nR4  %08X  R5  %08X  R6  %08X  R7  %08X\nR8  %08X  R9  %08X  R10 %08X  R11 %08X\nR12 %08X  SP  %08X  LR  %08X  PC  %08X\nNZCV  ",
+               read_register(0),
+               read_register(1),
+               read_register(2),
+               read_register(3),
+               read_register(4),
+               read_register(5),
+               read_register(6),
+               read_register(7),
+               read_register(8),
+               read_register(9),
+               read_register(10),
+               read_register(11),
+               read_register(12),
+               read_register(13),
+               read_register(14),
+               read_register(15) - 1
+             );
+
+     if (cpsr & CPSR_N) { fprintf (stdout, "N"); } else { fprintf (stdout, "-"); }
+     if (cpsr & CPSR_Z) { fprintf (stdout, "Z"); } else { fprintf (stdout, "-"); }
+     if (cpsr & CPSR_C) { fprintf (stdout, "C"); } else { fprintf (stdout, "-"); }
+     if (cpsr & CPSR_V) { fprintf (stdout, "V"); } else { fprintf (stdout, "-"); }
+     fprintf (stdout, "\n");
+
+     return(0);
+   }
+
+   if (inst == 0xB702)  // Emit
+   {
+     putchar(read_register(0) & 0xFF);
+     fflush(stdout);
+     return(0);
+   }
+
+   if (inst == 0xB703)  // Key
+   {
+     int data=getchar();
+     if (data==127) { data=8; } // Replace DEL with Backspace
+     write_register(0, data);
+     return(0);
    }
 
    fprintf(stderr,"invalid instruction 0x%08X 0x%04X\n",pc-4,inst);

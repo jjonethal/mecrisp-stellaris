@@ -41,11 +41,7 @@ cd thumbulator
 
 ./buildcore-stm  ./thumbulator-numworks           ../numworks-ra/mecrisp-stellaris-numworks.bin      ../numworks-ra/completesources.txt   ../numworks-ra/mecrisp-stellaris-numworks-with-sources.bin
 
-# Final cleaning up
-
-./tidyup
 cd ..
-
 
 # Linux core(s)
 
@@ -59,3 +55,18 @@ cd lpc845m301
 ./release
 cd ..
 
+# Experimental Palanqin precompilation
+
+cd palanqin
+./buildcore
+cd ..
+
+cd palanqin-ra
+./buildcore
+cd ..
+
+# Final cleaning up
+
+cd thumbulator
+./tidyup
+cd ..

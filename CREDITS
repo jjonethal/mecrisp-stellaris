@@ -48,6 +48,9 @@ Port for FreeBSD by Robert Clausecker
 Port and examples for STM32WB55 by Peter Schmid
 s31.32 Fixpoint <--> Single float conversion utilities by Ivan Dimitrov
 VIS extension (https://forth-ev.de/wiki/projects:forth-namespaces:start) by Manfred Mahlow
+Palanqin: ARM Cortex M0 emulator for DOS on 8088 by Robert Clausecker
+Line follower robot code for Microbit by Torsten Sadowski
+Terminal for STM32F429 on Nucleo-144 board by Mike Thompson
 
 Hardware donations:
 
@@ -90,3 +93,5 @@ Forth register definition generator by Ralf Döring (https://github.com/ralfdoer
 Logic tricks from the book Hacker's Delight (http://www.hackersdelight.org/)
 Pinkysim by Adam Green (https://github.com/adamgreen/pinkySim)
 ARMUE (https://github.com/zmj64351508/ARMUE)
+Pananqin (https://github.com/clausecker/palanqin)
+
