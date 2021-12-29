@@ -246,8 +246,7 @@ int reset ( void )
    cpsr=0;
    reg_norm[13]=fetch32(0x00000000); // Return stack pointer
    reg_norm[14]=0xFFFFFFFF;          // Link register
-   reg_norm[15]=fetch32(0x00000004); // Reset vector
-   reg_norm[15]&=~1;
+   reg_norm[15]=(fetch32(0x00000004) + 2) & ~1; // Reset vector
 
    return(0);
 }

@@ -9,4 +9,5 @@ gcc -o thumbulator-stm32l053        -O2 thumbulator-stm32l053.c
 gcc -o thumbulator-stm32g031        -O2 thumbulator-stm32g031.c
 gcc -o thumbulator-numworks         -O2 thumbulator-numworks.c
 gcc -o thumbulator-palanqin         -O2 thumbulator-palanqin.c
-
+gcc -o thumbulator-lpc845m301       -O2 thumbulator-lpc845m301.c
+gcc -o thumbulator-rp2040           -O2 thumbulator-rp2040.c

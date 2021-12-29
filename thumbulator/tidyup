@@ -9,3 +9,5 @@ rm -f thumbulator-stm32l053
 rm -f thumbulator-stm32g031
 rm -f thumbulator-numworks
 rm -f thumbulator-palanqin
+rm -f thumbulator-lpc845m301
+rm -f thumbulator-rp2040

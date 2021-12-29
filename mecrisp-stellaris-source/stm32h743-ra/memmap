@@ -1,0 +1,13 @@
+
+MEMORY
+{
+   rom(RX)   : ORIGIN = 0x08000000, LENGTH = 0x8000
+   ram(WAIL) : ORIGIN = 0x24000000, LENGTH = 0x4000
+}
+
+SECTIONS
+{
+   .text : { *(.text*) } > rom
+   .bss  : { *(.bss*) } > ram
+}
+

@@ -264,6 +264,14 @@ cd stm32f407-ra
 make clean
 cd ..
 
+cd stm32f407diymore
+make clean
+cd ..
+
+cd stm32f407diymore-ra
+make clean
+cd ..
+
 cd stm32f411
 make clean
 cd ..
@@ -285,6 +293,14 @@ make clean
 cd ..
 
 cd stm32f746-ra
+make clean
+cd ..
+
+cd stm32f767-ra
+make clean
+cd ..
+
+cd stm32h743-ra
 make clean
 cd ..
 
@@ -348,17 +364,21 @@ cd nuc123-ra
 make clean
 cd ..
 
+cd rp2040-ra
+./tidyup
+cd ..
+
 cd linux
-rm mecrisp-stellaris-linux.o
-rm mecrisp-stellaris-linux
+rm -f mecrisp-stellaris-linux.o
+rm -f mecrisp-stellaris-linux
 cd ..
 
 cd linux-ra
-rm mecrisp-stellaris-linux.o
-rm mecrisp-stellaris-linux
+rm -f mecrisp-stellaris-linux.o
+rm -f mecrisp-stellaris-linux
 cd ..
 
 cd freebsd-ra
-rm mecrisp-stellaris-freebsd.o
-rm mecrisp-stellaris-freebsd
+rm -f mecrisp-stellaris-freebsd.o
+rm -f mecrisp-stellaris-freebsd
 cd ..

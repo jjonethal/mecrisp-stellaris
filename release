@@ -65,8 +65,12 @@ cd palanqin-ra
 ./buildcore
 cd ..
 
-# Final cleaning up
-
-cd thumbulator
-./tidyup
+cd rp2040-ra
+./release
 cd ..
+
+# Final cleaning up ? Better keep thumbulator binaries.
+
+# cd thumbulator
+# ./tidyup
+# cd ..

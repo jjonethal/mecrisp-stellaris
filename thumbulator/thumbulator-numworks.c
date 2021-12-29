@@ -6,7 +6,7 @@
 //   Changelog:
 //
 //   30.09.2013, Matthias Koch:
-//   Adapted for use with Freescale Freedom KL25Z128 images 
+//   Adapted for use with Freescale Freedom KL25Z128 images
 //   to have an emulator for Mecrisp-Stellaris M0
 //
 //   05.02.2014, Matthias Koch:
@@ -101,14 +101,14 @@ unsigned int read16 ( unsigned int addr )
        return(data);
      case 0x40023C0E: // FLASH_SR high
        data=0x00;  // Never busy.
-       return(data);       
-    
+       return(data);
+
      case 0x40011404: // USART6_DR
        data=getchar();
        if (data==127) { data=8; } // Replace DEL with Backspace
-       return(data);  
+       return(data);
 
-     // USART6_SR is not handled, as default value for all memory access into void is $FF: Always be prepared to receive and transmit.      
+     // USART6_SR is not handled, as default value for all memory access into void is $FF: Always be prepared to receive and transmit.
    }
 
    switch(addr&0xF0000000)
@@ -125,8 +125,8 @@ unsigned int read16 ( unsigned int addr )
            data=ram[addr];
            return(data);
 
-       default:               
-           // fprintf(stderr,"Read 0x%08X\n",addr);           
+       default:
+           // fprintf(stderr,"Read 0x%08X\n",addr);
            data=0xFFFF;
            return(data);
    }
@@ -139,21 +139,21 @@ unsigned int fetch16 ( unsigned int addr ) { return(read16(addr)); }
 void write32 ( unsigned int addr, unsigned int data )
 {
 
-  FILE *coredump;    
+  FILE *coredump;
   unsigned int rc;
-      
+
   switch(addr)
   {
-  
+
     case 0xDABBAD00: // C0DEBA5E:
       coredump = fopen("coredump.bin", "w");
       rc = fwrite(rom, 1, data, coredump);
       fclose(coredump);
       exit(0);
     return;
-  
-   
-    default:    
+
+
+    default:
       write16(addr+0,(data>> 0)&0xFFFF);
       write16(addr+2,(data>>16)&0xFFFF);
   }
@@ -167,7 +167,7 @@ unsigned int read32 ( unsigned int addr )
 
    data =read16(addr+0);
    data|=((unsigned int)read16(addr+2))<<16;
-   return(data); 
+   return(data);
 }
 
 unsigned int fetch32 ( unsigned int addr ) { return(read32(addr)); }
@@ -177,15 +177,15 @@ unsigned int fetch32 ( unsigned int addr ) { return(read32(addr)); }
 void write8 ( unsigned int addr, unsigned int data )
 {
  unsigned int content;
- 
+
     switch(addr) // Special peripheral registers
    {
      case 0x40011404: // USART6_DR
        putchar(data&0xFF);
        fflush(stdout);
        return;
-   } 
- 
+   }
+
  content=read16(addr&(~1));  // Take care, this read may trigger some emulated peripheral action.
 
  if(addr&1)
@@ -198,7 +198,7 @@ void write8 ( unsigned int addr, unsigned int data )
    content&=0xFF00;
    content|=data&0x00FF;
  }
- write16(addr&(~1),content&0xFFFF);    
+ write16(addr&(~1),content&0xFFFF);
 }
 
 //-------------------------------------------------------------------
@@ -252,8 +252,7 @@ int reset ( void )
    cpsr=0;
    reg_norm[13]=fetch32(0x00000000); // Return stack pointer
    reg_norm[14]=0xFFFFFFFF;          // Link register
-   reg_norm[15]=fetch32(0x00000004); // Reset vector
-   reg_norm[15]&=~1;
+   reg_norm[15]=(fetch32(0x00000004) + 2) & ~1; // Reset vector
 
    return(0);
 }

@@ -236,6 +236,7 @@ $E000 jumps b
                  does> h@ h, ;
 
 $BF30 zero-operand wfi
+$BF40 zero-operand sev
 
 \ -----------------------------------------------------------------------------
 \ Instructions with its own special handling

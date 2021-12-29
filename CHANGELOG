@@ -799,3 +799,23 @@
 
   - Contribution by Mike Thompson
       Terminal for STM32F429 on Nucleo-144 board
+
+11.02.2021, Matthias Koch, Mecrisp-Stellaris 2.5.6
+
+  - New target: RP2040 on Raspberry Pico board
+  - Fixed reset address in thumbulator
+
+  - Contribution by Manfred Mahlow:
+      Conditional compilation, Forth 200x style
+
+  - Contribution by Christoph Kukulies:
+      New target: STM32F407 on DIYMORE board
+
+  - Contribution by Wim Verheyen:
+      New targets:  STM32F767 and STM32H743
+
+  - Contribution by Jan Bramkamp:
+      Terminal initialisation and bootrom trampoline for RP2040
+
+  - Contribution by Terry Porter:
+      Register definitions for RP2040

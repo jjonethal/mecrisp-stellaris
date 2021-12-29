@@ -102,6 +102,7 @@ Communication is via serial 115200 baud 8N1 over
   - USART1 in STM32L053C8  (TX on PA9, RX on PA10)
   - USART2 in STM32F401    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
   - USART2 in STM32F407    (TX on PA2, RX on PA3)
+  - USART1 in STM32F407DIYMORE (TX on PA9, RX on PA10)
   - USART2 in STM32F411    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
   - USART2 in STM32L152    (TX on PA2, RX on PA3 connected to USB-serial bridge on Nucleo board)
   - USART2 in STM32L476    (TX on PD5, RX on PD6 connected to USB-serial bridge on Discovery board)
@@ -268,6 +269,38 @@ Hardware and configuration for STM32F407:
 
   On startup, this runs with external 8 MHz crystal HSE clock,
   as internal oscillator is specified -8% + 4.5% over whole temp range.
+
+;------------------------------------------------------------------------------
+Hardware and configuration for STM32F407DIYMORE:
+;------------------------------------------------------------------------------
+  Refer to https://stm32-base.org/boards/STM32F407VGT6-diymore#DIYMORE
+
+  Connect serial adapter (e.g. FTDI Usb-Serial converter - hacked to get at the TTL levels)
+  to USART1 (PA10, PA9).
+
+  8.000 MHz external crystal clock used.
+
+  Flashing is possible with st-flash:
+  https://github.com/texane/stlink
+
+  Flash memory is mirrored in hardware starting from address 0. Mecrisp uses
+  the low address range to generate short opcodes for calling core words, but
+  for flashing the binary, you have to use the "true address" $08000000.
+
+  st-flash erase
+  st-flash write mecrisp-stellaris-stm32f407.bin 0x08000000
+
+  I used the STLINK-V2 section of an STM32F411-Nucleo Board in external mode and connected
+  SWCLK (Pin 2 od SWD pins) connected to PA14, SWDIO connected to pin PA13 of the DIYMORE.
+  +5V and GND also taken from the Nucleo. You may change that of course.
+
+  Furthermore I switched on the user LED (PE0) in the startup code.
+
+  The device can be programmed and run with the BOOT0 jumper set in place.
+  BOOT1 jumper is left open.
+
+  To connect, one can use the following picocom command:
+  picocom -b 115200 /dev/cu.usbserial-ftDEWXAX --imap lfcrlf,crcrlf --omap delbs,crlf
 
 ;------------------------------------------------------------------------------
 Hardware and configuration for STM32F429:
@@ -460,23 +493,23 @@ Hardware and configuration for nRF51822:
 Hardware and configuration for nRF52822:
 ;------------------------------------------------------------------------------
   nRF52832 port is an updated one from nRF51's.
-  
+
   One can change the UARTE pins in terminal.s, my defaults are:
-  
+
   .equ RX_PIN_NUMBER          ,	3
   .equ TX_PIN_NUMBER          ,	2
 
   I use only SWD (st link/v2, black magic prob) to flash the firmware, just
   connect the usual SWDIO, SWCLK and GND pins and use openocd as usual.
-  
+
   How ever, on boards with protection bit set, I'm not managed to do the
   mass_erase first. So I create another tool to do this with a blue-pill and
   some bits of forth: https://github.com/juju2013/swd-bb
-  
+
   Boards tested:
     * e73-2G4M04S from cdebyte.net
     * RF-BM-ND01  from szrfstar.com
-    
+
 ;------------------------------------------------------------------------------
 Hardware and configuration for Microbit:
 ;------------------------------------------------------------------------------
@@ -492,32 +525,32 @@ Hardware and configuration for Nutiny-SDK-NUC123:
 ;------------------------------------------------------------------------------
   Connect 3.3V power or USB cable.
 
-  Flashing is possible with (any clone of) st-link V2, (any clone of) black 
+  Flashing is possible with (any clone of) st-link V2, (any clone of) black
   magic probe, or Nuvoton's ICP software (windows only).
-  
+
   Here's how with openocd and st-link v2 on linux:
-  
+
   Connect SWDIO to ICE_DAT, SWCLK to ICE_CLK, GND to VSS and 3.3V to VCC if not
-  powered by USB. Get OpenOCD installed, chdir to nuc123 folder and adjust 
-  openocd.cfg there if needed. Then launch openocd, which should say something 
+  powered by USB. Get OpenOCD installed, chdir to nuc123 folder and adjust
+  openocd.cfg there if needed. Then launch openocd, which should say something
   like this:
-  
+
     TargetName         Type       Endian TapName            State
 --  ------------------ ---------- ------ ------------------ ------------
  0* NuMicro.cpu        hla_target little NuMicro.cpu        unknown
-  
-  keep openocd running and telnet localhost 4444, then: 
-  
+
+  keep openocd running and telnet localhost 4444, then:
+
   reset halt
   flash erase_sector 0 0 135
   flash write_image mecrisp-stellaris-nuc123.bin
   reset run
 
   Serial console pins are automatically configured:
-  
+
   PB0(RX)/PB1(TX) for 64-pin package
   PC4(RX)/PC5(TX) for 48-pin package
-  
+
   33-pin package don't have UART0 but only UART1 and I don't have one, so
   it will maybe run but without serial terminal.
 

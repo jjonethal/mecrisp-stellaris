@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Assemble blinky boot block
+
+cd blinky-boot
+./assemble
+cd ..
+
+# Assemble launchpad boot block
+
+cd launchpad-boot
+./assemble
+cd ..
+
+# Assemble Forth core
+
+arm-none-eabi-as -g mecrisp-stellaris-pico-core.s -o mecrisp-stellaris-pico-core.o
+arm-none-eabi-ld -g -o mecrisp-stellaris-pico-core.elf -T memmap mecrisp-stellaris-pico-core.o
+arm-none-eabi-objdump -g -D mecrisp-stellaris-pico-core.elf > mecrisp-stellaris-pico-core.list
+arm-none-eabi-objcopy -g mecrisp-stellaris-pico-core.elf mecrisp-stellaris-pico-core.bin -O binary

@@ -1,0 +1,52 @@
+\ -----------------------------------------------------------------------------
+\   Conditional compilation
+\ -----------------------------------------------------------------------------
+\ Derived from Mecrisp QUINTUS  conditional.txt                      MM-201227
+\ [ifdef] and [ifndef] removed, [defined] and [undefined] added
+\ ."  ok." added to nexttoken (for e4thcom compatibility)
+
+\ Idea similar to http://lars.nocrew.org/dpans/dpansa15.htm#A.15.6.2.2532
+
+: nexttoken ( -- addr len )
+  begin
+    token          \ Fetch new token.
+  dup 0= while      \ If length of token is zero, end of line is reached.
+\   2drop cr query   \ Fetch new line.
+    2drop ."  ok." cr query  \ Tell the terminal or user to send a next line.
+  repeat
+;
+
+: [else] ( -- )
+  1 \ Initial level of nesting
+  begin
+    nexttoken ( level addr len )
+    2dup s" [if]" compare
+    if
+      2drop 1+  \ One more level of nesting
+    else
+      2dup s" [else]" compare
+      if
+        2drop 1- dup if 1+ then  \ Finished if [else] is reached in level 1. Skip [else] branch otherwise.
+      else
+        s" [then]" compare if 1- then  \ Level completed.
+      then
+    then
+    ?dup 0=
+  until
+  immediate
+;
+
+: [then] ( -- ) immediate 0-foldable ;
+
+: [if]   ( ? -- ) 0=  if postpone [else] then immediate ;
+
+: [defined]  ( -- ) token find drop 0<> immediate ;
+
+: [undefined]  ( -- ) postpone [defined] 0= immediate ;
+
+
+\ [defined] [if] ... [else] ... [then] 
+\ [undefined] [if] ...
+
+\ EOF
+

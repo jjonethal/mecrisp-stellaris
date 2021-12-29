@@ -1,0 +1,110 @@
+
+Mecrisp-Stellaris for a special snowflake: RP2040.
+
+-------------------------------------------------------------------------------
+  How to install on the Raspberry Pico:
+-------------------------------------------------------------------------------
+
+Hold BOOTSEL button while plugging in USB.
+Copy mecrisp-stellaris-pico-with-tools.uf2 into the mass storage device
+
+You need to connect your own USB-serial-cable.
+
+Pico:               Cable:
+
+GND             --  GND
+GP0 (UART RX)  <--  TXD
+GP1 (UART TX)   --> RXD
+
+Communication is done with 115200 baud 8N1.
+
+-------------------------------------------------------------------------------
+  Special features and dictionary handling:
+-------------------------------------------------------------------------------
+
+This target boots from an external SPI flash memory, which is mapped into the
+main memory by XIP logic starting from $10000000.
+
+Mecrisp-Stellaris contains a bootloader for this target which copies the Forth
+core and the user flash dictionary into RAM for fast execution, which results
+in a few specialities.
+
+A few lines of explanation will be necessary:
+
+$10000000 to $100000FF: 256 bytes bootloader block with CRC32 (seed -1) at ...1FC to 1FF.
+                        This will be copied by the ROOTROM in the RP2040 to destination
+                        address $20041F00 and executed there.
+
+$10000100 to $10000FFF: 3840 bytes padding to align the Forth core on a 4 kb boundary
+
+$10001000 to $10005FFF: 20 kb Forth core image in SPI flash
+$10006000 to $10010FFF: 44 kb First user flash dictionary image in SPI flash
+
+The bootloader block will copy the Forth core and first user flash dictionary image into RAM:
+
+$20000000 to $20004FFF: 20 kb Forth core in RAM for execution
+$20005000 to $2000FFFF: 44 kb flash user dictionary in RAM for execution
+
+For short: Everything executed resides in RAM, including the traditional "flash dictionary".
+
+Now there are these definitions for handling dictionaries:
+
+  new   ( -- )   Clear the current RAM copy of the "flash dictionary" and restart Forth
+  save  ( -- )   Save  the current RAM copy of the "flash dictionary" to the first image in SPI flash
+                 This is the same as 0 save#
+
+  load#  ( u -- ) Load the u-th image of the "flash dictionary" from the SPI into RAM and restart Forth
+  save#  ( u -- ) Save the current RAM copy of the "flash dictionary" to the u-th image in SPI flash
+  erase# ( u -- ) Erase the u-th image from the SPI flash
+
+The first image, 0, will be loaded automatically on boot, and you can define the traditional "init"
+definition inside to launch your code.
+
+The images are stored in SPI flash at offset address u * $B000 + $6000, and are $B000 bytes in length.
+
+-------------------------------------------------------------------------------
+  For short:
+-------------------------------------------------------------------------------
+
+Compile as usual using "compiletoflash", and type "save" afterwards.
+
+-------------------------------------------------------------------------------
+  Notes on RAM usage:
+-------------------------------------------------------------------------------
+
+ 64 kb RAM is reserved for Forth core and "flash dictionary".
+192 kb RAM is reserved for RAM dictionary, buffers and variables.
+
+These values are hardwired in many places, but with a little effort, they can be changed in 4 kb steps.
+
+SRAM4, $20040000 to $20040FFF, 4 kb and
+SRAM5, $20041000 to $20041FFF, 4 kb are currently unused.
+
+You can also place large data tables into SPI flash, but reading these will be slow.
+
+-------------------------------------------------------------------------------
+  Notes on hardware initialisation and features:
+-------------------------------------------------------------------------------
+
+All GPIO pins (except GP0 and GP1 used for terminal) are configured as normal GPIO pins.
+
+For beginners:
+
+  Three registers are enough to control the GPIO pins.
+
+  $D0000004 IN
+  $D0000010 OUT
+  $D0000020 DIR
+
+More advanced usage: See blinky example.
+
+There is a counter configured to count microseconds at $40054028.
+
+No support for second CPU core or USB terminal included yet.
+
+-------------------------------------------------------------------------------
+  Credits:
+-------------------------------------------------------------------------------
+
+Many thanks to Jan Bramkamp, Robert Clausecker and Terry Porter for assistance
+conquering this target and to Robert Clausecker for the hardware donation.

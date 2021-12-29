@@ -1,3 +1,0 @@
-#!/bin/bash
-
-gcc -o thumbulator-lpc845m301       -O2 thumbulator-lpc845m301.c

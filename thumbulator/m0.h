@@ -1670,6 +1670,7 @@ int run ( void )
 {
    while(1)
    {
+       // fprintf(stderr,"PC: 0x%08X\n", reg_norm[15]);
        if(execute()) break;
    }
    return(0);

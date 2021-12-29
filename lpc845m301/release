@@ -1,5 +1,3 @@
 #!/bin/bash
 
-./compile
-./buildcore ./thumbulator-lpc845m301 mecrisp-stellaris-lpc845m301.bin ../common/disassembler-m0.txt mecrisp-stellaris-lpc845m301-with-disassembler.bin
-rm thumbulator-lpc845m301
+./buildcore ../thumbulator/thumbulator-lpc845m301 mecrisp-stellaris-lpc845m301.bin ../common/disassembler-m0.txt mecrisp-stellaris-lpc845m301-with-disassembler.bin

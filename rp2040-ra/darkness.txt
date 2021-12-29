@@ -1,0 +1,78 @@
+
+\ -----------------------------------------------------------------------------
+
+\ Light intensity measurement with a LED on digital IO pins.
+
+\ Take care: Leakage currents can heavily influence the measurement.
+\ Tiny currents ! Keep tracks clean and place board on a good insulator.
+\ The LED has a junction capacitance in the 10-20 pF range, therefore, use short wires.
+
+\ You can check for leakage currents:
+\ Let this run without LED connected, it should print constant measurement of $02000000 if you are not limited by leakage.
+\ The lower the value, the worse is your electrical condition.
+
+\ You can increase sensitivity by increasing the termination value in the darkness loop.
+
+\ -----------------------------------------------------------------------------
+
+$d0000004 constant port-in
+$d0000010 constant port-out
+$d0000020 constant port-dir
+
+\ -----------------------------------------------------------------------------
+
+2 constant   Anode-pin
+3 constant Cathode-pin
+
+1 Anode-pin   lshift constant Anode
+1 Cathode-pin lshift constant Cathode
+
+  Anode-pin 4 * $4001c004 + constant   Anode-pad
+Cathode-pin 4 * $4001c004 + constant Cathode-pad
+
+: darkness ( -- u )
+
+  Anode Cathode or port-dir ! \ Set anode and cathode as output
+        Cathode    port-out ! \ Anode low, cathode high
+
+  \ Wait a little bit to charge the junction capacitance to rail voltage
+  100 0 do loop
+
+  Anode            port-dir ! \ Set cathode as input
+
+  0
+  begin
+    port-in @ Cathode and  \ Is cathode discharged due to photocurrent ?
+  while
+    1+
+    \ Terminate when a maximum value is reached to gurantee end of the measurement in absolute darkness
+    dup $00200000 u>= if exit then
+  repeat
+
+  \ A short flash to visualise the duration of the measurement
+
+  Anode Cathode or port-dir ! \ Set anode and cathode as output
+  Anode            port-out ! \ Anode high, cathode low
+  100000 0 do loop
+                 0 port-out ! \ Off.
+;
+
+\ -----------------------------------------------------------------------------
+
+: printdarkness ( -- ) cr
+
+  $42   Anode-pad !  \ PAD configuration:
+  $42 Cathode-pad !   \ No pullup/pulldown, 2 mA drive, enable input, enable schmitt trigger
+
+  Anode Cathode or port-dir ! \ Set anode and cathode as output
+  Anode            port-out ! \ Anode high, cathode low
+
+
+  10000000 0 do loop \ Shiny welcome message.
+
+  begin
+    0  16 0 do darkness + loop   hex. cr  \ Average of 16 measurements to reduce noise
+  key? until
+;
+
+printdarkness

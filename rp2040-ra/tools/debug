@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec arm-none-eabi-gdb --tui --init-eval-command="target extended-remote | openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c 'gdb_port pipe'" mecrisp-stellaris-pico.elf

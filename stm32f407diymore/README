@@ -1,0 +1,8 @@
+
+kuku@physik.rwth-aachen.de
+
+st-flash erase
+st-flash write mecrisp-stellaris-stm32f407diymore.bin 0x08000000
+
+picocom -b 115200 /dev/cu.usbmodem14202  --imap lfcrlf,crcrlf --omap delbs,crlf --send-cmd "ascii-xfr -s -l 80 -n"
+

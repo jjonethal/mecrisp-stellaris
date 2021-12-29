@@ -266,6 +266,14 @@ cd stm32f407-ra
 md5sum *.bin
 cd ..
 
+cd stm32f407diymore
+md5sum *.bin
+cd ..
+
+cd stm32f407diymore-ra
+md5sum *.bin
+cd ..
+
 cd stm32f411
 md5sum *.bin
 cd ..
@@ -287,6 +295,14 @@ md5sum *.bin
 cd ..
 
 cd stm32f746-ra
+md5sum *.bin
+cd ..
+
+cd stm32f767-ra
+md5sum *.bin
+cd ..
+
+cd stm32h743-ra
 md5sum *.bin
 cd ..
 
@@ -347,6 +363,10 @@ md5sum *.bin
 cd ..
 
 cd nuc123-ra
+md5sum *.bin
+cd ..
+
+cd rp2040-ra
 md5sum *.bin
 cd ..
 

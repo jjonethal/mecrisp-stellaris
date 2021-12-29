@@ -264,6 +264,14 @@ cd stm32f407-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407-ra
 cd ..
 
+cd stm32f407diymore
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407diymore
+cd ..
+
+cd stm32f407diymore-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407diymore-ra
+cd ..
+
 cd stm32f411
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f411
 cd ..
@@ -286,6 +294,14 @@ cd ..
 
 cd stm32f746-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
+cd ..
+
+cd stm32f767-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f767-ra && cp *.hex ../../stm32f767-ra
+cd ..
+
+cd stm32h743-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32h743-ra && cp *.hex ../../stm32h743-ra
 cd ..
 
 cd stm32g031f8-ra
@@ -346,6 +362,13 @@ cd ..
 
 cd nuc123-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123-ra && cp *.hex ../../nuc123-ra
+cd ..
+
+cd rp2040-ra
+./assemble
+cp *.bin ../../rp2040-ra
+cp    blinky-boot/*crc.bin ../../rp2040-ra/tools
+cp launchpad-boot/*crc.bin ../../rp2040-ra/tools
 cd ..
 
 # Intel Hex images for STM targets:
@@ -498,6 +521,14 @@ cd ..
 
 cd stm32f407-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407.bin mecrisp-stellaris-stm32f407.hex
+cd ..
+
+cd stm32f407diymore
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407diymore.bin mecrisp-stellaris-stm32f407diymore.hex
+cd ..
+
+cd stm32f407diymore-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32f407diymore.bin mecrisp-stellaris-stm32f407diymore.hex
 cd ..
 
 cd stm32f411
