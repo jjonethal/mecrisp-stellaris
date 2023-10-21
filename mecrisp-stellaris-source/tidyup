@@ -320,6 +320,10 @@ cd stm32g031f4
 make clean
 cd ..
 
+cd stm32g031f6-ra
+make clean
+cd ..
+
 cd stm32g031f8-ra
 make clean
 cd ..

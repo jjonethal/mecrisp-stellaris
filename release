@@ -24,6 +24,7 @@ cd thumbulator
 
 ./buildcore-stm  ./thumbulator-stm32f103             ../stm32f103/mecrisp-stellaris-stm32f103.bin       ../common/disassembler-m3.txt        ../stm32f103/precompiled/mecrisp-stellaris-stm32f103-with-disassembler-m3.bin
 ./buildcore-stm  ./thumbulator-stm32f103          ../stm32f103-ra/mecrisp-stellaris-stm32f103.bin       ../common/disassembler-m3.txt     ../stm32f103-ra/precompiled/mecrisp-stellaris-stm32f103-with-disassembler-m3.bin
+./buildcore-stm  ./thumbulator-stm32f103          ../stm32f103-ra/mecrisp-stellaris-stm32f103.bin       ../stm32f103-ra/usb-f1.txt        ../stm32f103-ra/precompiled/mecrisp-stellaris-stm32f103-with-usb-terminal.bin
 
 ./buildcore-stm  ./thumbulator-stm32f303             ../stm32f303/mecrisp-stellaris-stm32f303.bin       ../common/disassembler-m3.txt        ../stm32f303/precompiled/mecrisp-stellaris-stm32f303-with-disassembler-m3.bin
 ./buildcore-stm  ./thumbulator-stm32f303          ../stm32f303-ra/mecrisp-stellaris-stm32f303.bin       ../common/disassembler-m3.txt     ../stm32f303-ra/precompiled/mecrisp-stellaris-stm32f303-with-disassembler-m3.bin

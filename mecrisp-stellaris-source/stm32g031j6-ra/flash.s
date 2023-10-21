@@ -46,31 +46,23 @@ hexflashstore_fehler:
   Fehler_Quit "Flash cannot be written twice"
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "16flash!" @ Writes 16 Bytes at once into Flash.
-hexflashstore: @ ( x1 x2 x3 x4 addr -- ) x1 contains LSB of those 128 bits.
+  Wortbirne Flag_visible, "8flash!" @ Writes 8 Bytes at once into Flash.
+eightflashstore: @ ( x1 x2 addr -- ) x1 contains LSB of those 64 bits.
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, r4, r5, lr}
   @ Check if this goes into core - don't allow that ! No need to check for because of the second check.
   @ Perform write only if desired destination is in erased state...
 
-  movs r0, #15
+  movs r0, #7
   ands r0, tos
   beq 1f
-    Fehler_Quit "16flash! needs 16-aligned address"
+    Fehler_Quit "8flash! needs 8-aligned address"
 
 1:ldr r0, [tos]  @ tos contains address to write
   adds r0, #1    @ quick check if memory contains $ffffffff
   bne hexflashstore_fehler
 
   ldr r0, [tos, #4] @ check next 4 bytes at offset 4
-  adds r0, #1
-  bne hexflashstore_fehler
-
-  ldr r0, [tos, #8] @ check empty at offset 8 - for stm32l476 
-  adds r0, #1
-  bne hexflashstore_fehler
-
-  ldr r0, [tos, #12]
   adds r0, #1
   bne hexflashstore_fehler
 
@@ -83,36 +75,26 @@ hexflashstore: @ ( x1 x2 x3 x4 addr -- ) x1 contains LSB of those 128 bits.
 
   @ Bereit zum Schreiben !
 
-  @ Unlock Flash Control
-  ldr r2, =FLASH_KEYR
-  ldr r3, =0x45670123
-  str r3, [r2]
-  ldr r3, =0xCDEF89AB
-  str r3, [r2]
+  bl unlock_flash_control
 
   @ Enable write
   ldr r2, =FLASH_CR
   movs r3, #1 @ Select Flash programming
   str r3, [r2]
   
-  
-  ldmia psp!, {r3}    @ Fetch data to be written
-  ldmia psp!, {r2}
-  ldmia psp!, {r1}
+  ldmia psp!, {r1}    @ Fetch data to be written
   ldmia psp!, {r0}
 
   stmia tos!,{r0}
   stmia tos!,{r1}
 
   @ Wait for Flash BUSY Flag to be cleared
-  bl waitflashopcomplete
+1:ldr r1, =FLASH_SR+2
+  ldrh r0, [r1]
+  movs r1, #1
+  ands r0, r1
+  bne 1b
   
-  stmia tos!,{r2}  @ program next 2 words
-  stmia tos!,{r3}
-
-  @ wait again for flash op complete
-  bl waitflashopcomplete
-
   @ turn off programming mode
   ldr r2, =FLASH_CR
   ldrh r0,[r2]
@@ -130,20 +112,15 @@ hexflashstore: @ ( x1 x2 x3 x4 addr -- ) x1 contains LSB of those 128 bits.
   drop @ Forget destination address
   pop {r0, r1, r2, r3, r4, r5, pc}
 
-.ltorg
-
-waitflashopcomplete:
-  push {r0, r1} 
-  @ Wait for Flash BUSY Flag to be cleared
-1:  ldr r1, =FLASH_SR+2
-    ldrh r0, [r1]
-    movs r1, #1
-    ands r0, r1
-    bne 1b
-@ Wait for EOP Flag to be Set
-    pop {r0, r1}
-    bx LR
   
+unlock_flash_control:
+  @ Unlock Flash Control
+  ldr r2, =FLASH_KEYR
+  ldr r3, =0x45670123
+  str r3, [r2]
+  ldr r3, =0xCDEF89AB
+  str r3, [r2]  
+  bx lr
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "flashpageerase" @ ( Addr -- )
@@ -158,11 +135,7 @@ flashpageerase:
   cmp r0, r3
   blo 2f
 
-  ldr r2, =FLASH_KEYR
-  ldr r3, =0x45670123
-  str r3, [r2]
-  ldr r3, =0xCDEF89AB
-  str r3, [r2]
+  bl unlock_flash_control
 
   @ Enable erase
   ldr r2, =FLASH_CR
@@ -195,32 +168,32 @@ flashpageerase:
       movs r0, #1
       ands r0, r3
       bne 1b
-
+  
   @ Lock Flash after finishing this
   ldr r2, =FLASH_CR + 3
   movs r3, #0x80
   strb r3, [r2]
-  
+
   @ clear cache
   @ save old cache settings
   ldr r2, =FLASH_ACR
   ldr r1, [r2]
   push {r1}
-  
+
   @ turn cache off
   ldr r0,=bit10+bit9
   bics r1, r0
   str r1, [r2]
-  
+
   @ reset cache
   ldr r0, =bit12+bit11
   orrs r1, r0
   str r1, [r2]
-  
+
   @ restore flash settings
-  pop {r1}  
+  pop {r1}
   str r1, [r2]
-  
+
 2:pop {r0, r1, r2, r3, pc}
 
 .ltorg  

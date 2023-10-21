@@ -1,0 +1,546 @@
+compiletoflash
+
+\ -------------------------------------------------------------
+\   Log in den QSPI-Flash
+\ -------------------------------------------------------------
+
+1024 4 * constant startblock  \ Beginne bei 512 kb in den Flash. Ein Block ist 256 Bytes groß.
+2048 4 * constant   endblock  \ Ende bei 2 MB.
+
+256 buffer: log.puffer
+ 0 variable log.zeichen
+
+\ Von hinten aus den ersten freien Block auf der SD-Karte finden.
+
+\ Idee:
+\ Prüfe die Mitte zwischen 0 und Ende auf Freiheit.
+\ Falls Frei: Vordere Hälfte. Falls Unfrei: Hintere Hälfte.
+
+0 variable log-position
+0 variable suche-anfang
+0 variable suche-ende
+
+: blk>addr ( u -- addr ) 8 lshift $10000000 or 1-foldable inline ;
+
+: block-leer? ( blk -- ? )
+  blk>addr
+
+  $FF swap
+  dup 256 + swap do
+    i c@ and
+  loop
+  $FF =
+;
+
+: log-init ( -- )
+
+  connect-flash exit-xip flush-cache enter-xip
+
+  0 log.zeichen !
+
+  startblock suche-anfang !
+    endblock suche-ende   !
+
+  begin
+    suche-anfang @   \ dup u.
+    suche-ende   @   \ dup u. cr
+    <>
+  while
+    suche-ende @ suche-anfang @ - shr suche-anfang @ +
+
+    dup block-leer?
+    if
+      suche-ende !
+    else
+      1+               \ Dieser Block war ja gerade belegt.
+      suche-anfang !
+    then
+  repeat
+
+  suche-anfang @ log-position !
+;
+
+: log-full ( -- ? ) endblock log-position @ = ;
+
+\ -------------------------------------------------------------
+\  Inhalt des Logs löschen
+\ -------------------------------------------------------------
+
+: log-erase ( -- )
+
+  connect-flash exit-xip
+
+           startblock   8 lshift
+  endblock startblock - 8 lshift
+                            4096 $20 erase-range
+
+  flush-cache enter-xip
+
+  log-init \ Danach muss der Logzeiger auch neu initialisiert werden.
+;
+
+\ -------------------------------------------------------------
+\  Inhalt des Logs ausgeben
+\ -------------------------------------------------------------
+
+: log-print ( -- )
+  log-init
+
+  cr
+  ." Log in den Blöcken " startblock . ." bis " log-position @ . cr
+  cr
+
+  log-position @ startblock ?do
+    i blk>addr 256 type
+  loop
+  cr
+;
+
+\ -------------------------------------------------------------
+\  Schreiben in den Log-Puffer
+\ -------------------------------------------------------------
+
+: writeblock ( buffer-addr blk )
+
+  8 lshift \ Wie blk>addr, aber ohne $10000000 zu setzen.
+
+  connect-flash exit-xip
+  swap 256 program-range
+  flush-cache enter-xip
+;
+
+: log-addblock ( buffer-addr -- )
+  log-full
+  if
+    \ Es kann nichts mehr gespeichert werden, also einfach nichts tun.
+    \ ." Log voll."
+    drop
+  else
+    log-position @ ( buffer-addr blk ) writeblock
+    1 log-position +!
+  then
+;
+
+: log-emit ( c -- )
+
+  pause
+
+  log.zeichen @ log.puffer + c!
+
+  log.zeichen @
+    1+
+    dup 256 = if drop log.puffer log-addblock 0 then
+  log.zeichen !
+;
+
+\ -------------------------------------------------------------
+\  Umbiegen des Terminals
+\ -------------------------------------------------------------
+
+:    log-terminal ( -- ) [']    log-emit hook-emit ! ;
+: normal-terminal ( -- ) ['] serial-emit hook-emit ! ;
+
+\ -----------------------------------------------------------------------------
+
+\ Light intensity measurement with a LED on digital IO pins.
+
+\ Take care: Leakage currents can heavily influence the measurement.
+\ Tiny currents ! Keep tracks clean and place board on a good insulator.
+\ The LED has a junction capacitance in the 10-20 pF range, therefore, use short wires.
+
+\ You can check for leakage currents:
+\ Let this run without LED connected, it should print constant measurement of $02000000 if you are not limited by leakage.
+\ The lower the value, the worse is your electrical condition.
+
+\ You can increase sensitivity by increasing the termination value in the darkness loop.
+
+\ -----------------------------------------------------------------------------
+
+$d0000004 constant port-in
+$d0000010 constant port-out
+$d0000020 constant port-dir
+
+: bit ( u -- x ) 1 swap lshift 1-foldable inline ;
+
+\ -----------------------------------------------------------------------------
+
+ \   7     rot   KBT L-7104SEC-H     635 nm   -   2.2  2.8  V   AlGaInP             34°    1000 mcd    Kingbright   KBT L-7104SEC-H
+ \  11   orange  LED 3-7800 OR       611 nm   -   2.2  2.8  V   AlGaInP             34°    7800 mcd    Kingbright   L-7104SEC-J4
+ \  13    gelb   LED 3-2800 GE       590 nm   -   2.0  2.5  V   AlGaInP             34°    2800 mcd    Kingbright   L-7104SYC-J3
+ \  17  gelbgrün KBT L-7104MGC       574 nm   -   2.1  2.5  V   AlGaInP             34°     700 mcd    Kingbright   L-7104MGC
+ \  10    grün   WUE 151034GS0300    525 nm   -   3.2  3.8  V   InGaN               30°   10000 mcd    Würth        151034GS03000
+ \  22   türkis  RND 135-00151       500 nm  2.6  3.2  3.6  V   ?                   30°    8500 mcd    RND          RND 135-00151
+ \  25    blau   LED 3-2000 BL       465 nm  2.9  3.3  3.6  V   InGaN               30°    2000 mcd    Paralight?   L-314BC-A3
+
+ \  28    UV    LED LL 3-120 VI      400 nm  2.8  3.2  3.8  V   InGaN               20°     120 mcd    LuckyLight   LL-304UVC4B-Q5D
+ \ (12)   rot                        630 nm                                                            Jenoptik     EPD-630-394
+ \ (11) dunkelrot                    660 nm                                                            Jenoptik     EPD-660-3-0.9
+ \                                   860 nm                                                            Osram        SFH4356P
+ \                                   950 nm                                                            Osram        SFH4346
+
+\ -----------------------------------------------------------------------------
+
+ 2 constant  A1-Pin    A1-Pin bit constant  A1    A1-Pin cells $4001c004 + constant  A1-Pad
+ 3 constant  C1-Pin    C1-Pin bit constant  C1    C1-Pin cells $4001c004 + constant  C1-Pad
+
+ 4 constant  A2-Pin    A2-Pin bit constant  A2    A2-Pin cells $4001c004 + constant  A2-Pad
+ 5 constant  C2-Pin    C2-Pin bit constant  C2    C2-Pin cells $4001c004 + constant  C2-Pad
+
+ 6 constant  A3-Pin    A3-Pin bit constant  A3    A3-Pin cells $4001c004 + constant  A3-Pad
+ 7 constant  C3-Pin    C3-Pin bit constant  C3    C3-Pin cells $4001c004 + constant  C3-Pad
+
+ 8 constant  A4-Pin    A4-Pin bit constant  A4    A4-Pin cells $4001c004 + constant  A4-Pad
+ 9 constant  C4-Pin    C4-Pin bit constant  C4    C4-Pin cells $4001c004 + constant  C4-Pad
+
+10 constant  A5-Pin    A5-Pin bit constant  A5    A5-Pin cells $4001c004 + constant  A5-Pad
+11 constant  C5-Pin    C5-Pin bit constant  C5    C5-Pin cells $4001c004 + constant  C5-Pad
+
+12 constant  A6-Pin    A6-Pin bit constant  A6    A6-Pin cells $4001c004 + constant  A6-Pad
+13 constant  C6-Pin    C6-Pin bit constant  C6    C6-Pin cells $4001c004 + constant  C6-Pad
+
+14 constant  A7-Pin    A7-Pin bit constant  A7    A7-Pin cells $4001c004 + constant  A7-Pad
+15 constant  C7-Pin    C7-Pin bit constant  C7    C7-Pin cells $4001c004 + constant  C7-Pad
+
+17 constant  A8-Pin    A8-Pin bit constant  A8    A8-Pin cells $4001c004 + constant  A8-Pad
+16 constant  C8-Pin    C8-Pin bit constant  C8    C8-Pin cells $4001c004 + constant  C8-Pad
+
+19 constant  A9-Pin    A9-Pin bit constant  A9    A9-Pin cells $4001c004 + constant  A9-Pad
+18 constant  C9-Pin    C9-Pin bit constant  C9    C9-Pin cells $4001c004 + constant  C9-Pad
+
+21 constant A10-Pin   A10-Pin bit constant A10   A10-Pin cells $4001c004 + constant A10-Pad
+20 constant C10-Pin   C10-Pin bit constant C10   C10-Pin cells $4001c004 + constant C10-Pad
+
+26 constant A11-Pin   A11-Pin bit constant A11   A11-Pin cells $4001c004 + constant A11-Pad
+22 constant C11-Pin   C11-Pin bit constant C11   C11-Pin cells $4001c004 + constant C11-Pad
+
+28 constant A12-Pin   A12-Pin bit constant A12   A12-Pin cells $4001c004 + constant A12-Pad
+27 constant C12-Pin   C12-Pin bit constant C12   C12-Pin cells $4001c004 + constant C12-Pad
+
+
+A1    A2 or A3 or A4 or A5 or A6 or A7 or A8 or A9 or A10 or A11 or A12 or constant Anodes
+C1    C2 or C3 or C4 or C5 or C6 or C7 or C8 or C9 or C10 or C11 or C12 or constant Cathodes
+
+\ -----------------------------------------------------------------------------
+
+: flash ( -- )
+  \ A short flash to visualise the duration of the measurement
+
+  25 bit port-dir !
+  25 bit port-out !
+  10 ms
+  0 port-out !
+
+\  Anodes Cathodes or port-dir ! \ Set anode and cathode as output
+\  Anodes             port-out ! \ Anode high, cathode low
+\  100 us
+\                   0 port-out ! \ Off.
+;
+
+\ -----------------------------------------------------------------------------
+
+: charge ( -- )
+  Anodes Cathodes or port-dir ! \ Set anode and cathode as output
+         Cathodes    port-out ! \ Anode low, cathode high
+
+  10 us \ Wait a little bit to charge the junction capacitance to rail voltage
+;
+
+\ -----------------------------------------------------------------------------
+
+  $01000000 variable maximum  \ Etwa 61 Sekunden für 2*2 Messungen
+\ $00800000 variable maximum  \ Etwa 56 Sekunden für 2*4 Messungen
+\ $00200000 variable maximum  \ Etwa 30 Sekunden für 2*8 Messungen
+\ $00100000 variable maximum  \ Etwa 15 Sekunden für 2*8 Messungen
+\ $00010000 variable maximum
+
+12 constant #leds
+
+#leds cells buffer: drkns-c
+#leds cells buffer: drkns-a
+
+: datenpunkt-cathode ( -- )
+    port-in @  \ Is cathode discharged due to photocurrent ?
+
+    dup 31  C1-Pin - lshift 31 rshift drkns-c  0 cells + @ swap + drkns-c  0 cells + !
+    dup 31  C2-Pin - lshift 31 rshift drkns-c  1 cells + @ swap + drkns-c  1 cells + !
+    dup 31  C3-Pin - lshift 31 rshift drkns-c  2 cells + @ swap + drkns-c  2 cells + !
+    dup 31  C4-Pin - lshift 31 rshift drkns-c  3 cells + @ swap + drkns-c  3 cells + !
+    dup 31  C5-Pin - lshift 31 rshift drkns-c  4 cells + @ swap + drkns-c  4 cells + !
+    dup 31  C6-Pin - lshift 31 rshift drkns-c  5 cells + @ swap + drkns-c  5 cells + !
+    dup 31  C7-Pin - lshift 31 rshift drkns-c  6 cells + @ swap + drkns-c  6 cells + !
+    dup 31  C8-Pin - lshift 31 rshift drkns-c  7 cells + @ swap + drkns-c  7 cells + !
+    dup 31  C9-Pin - lshift 31 rshift drkns-c  8 cells + @ swap + drkns-c  8 cells + !
+    dup 31 C10-Pin - lshift 31 rshift drkns-c  9 cells + @ swap + drkns-c  9 cells + !
+    dup 31 C11-Pin - lshift 31 rshift drkns-c 10 cells + @ swap + drkns-c 10 cells + !
+        31 C12-Pin - lshift 31 rshift drkns-c 11 cells + @ swap + drkns-c 11 cells + !
+;
+
+: datenpunkt-anode ( -- )
+    port-in @ not \ Is anode discharged due to photocurrent ?
+
+    dup 31  A1-Pin - lshift 31 rshift drkns-a  0 cells + @ swap + drkns-a  0 cells + !
+    dup 31  A2-Pin - lshift 31 rshift drkns-a  1 cells + @ swap + drkns-a  1 cells + !
+    dup 31  A3-Pin - lshift 31 rshift drkns-a  2 cells + @ swap + drkns-a  2 cells + !
+    dup 31  A4-Pin - lshift 31 rshift drkns-a  3 cells + @ swap + drkns-a  3 cells + !
+    dup 31  A5-Pin - lshift 31 rshift drkns-a  4 cells + @ swap + drkns-a  4 cells + !
+    dup 31  A6-Pin - lshift 31 rshift drkns-a  5 cells + @ swap + drkns-a  5 cells + !
+    dup 31  A7-Pin - lshift 31 rshift drkns-a  6 cells + @ swap + drkns-a  6 cells + !
+    dup 31  A8-Pin - lshift 31 rshift drkns-a  7 cells + @ swap + drkns-a  7 cells + !
+    dup 31  A9-Pin - lshift 31 rshift drkns-a  8 cells + @ swap + drkns-a  8 cells + !
+    dup 31 A10-Pin - lshift 31 rshift drkns-a  9 cells + @ swap + drkns-a  9 cells + !
+    dup 31 A11-Pin - lshift 31 rshift drkns-a 10 cells + @ swap + drkns-a 10 cells + !
+        31 A12-Pin - lshift 31 rshift drkns-a 11 cells + @ swap + drkns-a 11 cells + !
+;
+
+
+: darkness-cathode ( -- u )
+  charge Anodes
+  port-dir ! \ Set cathode as input
+
+  0
+  begin
+    datenpunkt-cathode
+    1+ dup maximum @ u>=  \ Terminate when a maximum value is reached to gurantee end of the measurement in absolute darkness
+  until
+  drop
+;
+
+: darkness-anode ( -- u )
+  charge
+  Cathodes port-dir ! \ Set anode as input
+
+  0
+  begin
+    datenpunkt-anode
+    1+ dup maximum @ u>=  \ Terminate when a maximum value is reached to gurantee end of the measurement in absolute darkness
+  until
+  drop
+;
+
+\ -----------------------------------------------------------------------------
+
+\ Read the state of the Bootsel button.
+\ This one pulls the "Chip Select" wire of the QSPI flash low.
+
+\ Disconnect the SPI memory logic,
+\ wait a little for charge to settle, read button state
+\ and restore the old state.
+
+$4001800C constant IO_QSPI_GPIO_QSPI_SS_CTRL
+$D0000008 constant GPIO_HI_IN
+
+: button? ( -- ? )
+  IO_QSPI_GPIO_QSPI_SS_CTRL @ $00003000 and $00002000 or IO_QSPI_GPIO_QSPI_SS_CTRL !  \ Do not drive output
+  10 us
+  GPIO_HI_IN @ 2 and 0=
+  IO_QSPI_GPIO_QSPI_SS_CTRL @ $00003000 and              IO_QSPI_GPIO_QSPI_SS_CTRL !  \ Switch back to peripheral signal
+;
+
+\ -----------------------------------------------------------------------------
+
+: esc? ( -- ? ) key? if key 27 = else false then ;
+
+: time ( -- ud ) timelr @ timehr @ ; \ Zeit in Mikrosekunden
+: t. ( ud -- ) <# # # # # # # [char] . hold #s #> type space ; \ Sechs Nachkommastellen für die Mikrosekunden
+
+: led-init ( -- )
+  \ PAD configuration:
+   \ No pullup/pulldown, 2 mA drive, enable input, enable schmitt trigger
+
+  $42  A1-Pad !   $42  C1-Pad !
+  $42  A2-Pad !   $42  C2-Pad !
+  $42  A3-Pad !   $42  C3-Pad !
+  $42  A4-Pad !   $42  C4-Pad !
+  $42  A5-Pad !   $42  C5-Pad !
+  $42  A6-Pad !   $42  C6-Pad !
+  $42  A7-Pad !   $42  C7-Pad !
+  $42  A8-Pad !   $42  C8-Pad !
+  $42  A9-Pad !   $42  C9-Pad !
+  $42 A10-Pad !   $42 C10-Pad !
+  $42 A11-Pad !   $42 C11-Pad !
+  $42 A12-Pad !   $42 C12-Pad !
+;
+
+
+: printdarkness ( -- )
+
+  led-init
+
+  cr ." Wissen ist Nacht" cr
+
+  begin
+    log-full \ Melde wenn nichts mehr gespeichert werden kann.
+    if
+      begin
+        flash 200 ms
+        button? esc? or if exit then
+      again
+    then
+
+    drkns-c #leds cells 0 fill
+    drkns-a #leds cells 0 fill
+
+    time t.
+
+    2 0 do
+      darkness-cathode flash  button? esc? or if unloop exit then
+      darkness-anode   flash  button? esc? or if unloop exit then
+    loop
+
+    ." | "
+    #leds 0 do drkns-c i cells + @ u. loop ." | "
+    #leds 0 do drkns-a i cells + @ u. loop cr
+  again
+;
+
+: printdarkness-log ( -- )
+  log-init
+  log-terminal
+    printdarkness
+  normal-terminal
+;
+
+\ -----------------------------------------------------------------------------
+
+( Terminal handling routines )
+
+: u.base10 ( u -- ) base @ decimal swap 0 <# #s #> type base ! ;
+: ESC[ ( -- ) 27 emit 91 emit ;
+: at-xy ( column row -- ) 1+ swap 1+ swap ESC[ u.base10 ." ;" u.base10 ." H" ;
+: page ESC[ ." 2J" 0 0 at-xy ;
+
+
+: hide-cursor esc[ ." ?25l" ;
+: show-cursor esc[ ." ?25h" ;
+
+: default  ( -- ) ESC[ ." 0m"  ;
+: bold     ( -- ) ESC[ ." 1m"  ;
+
+: black    ( -- ) ESC[ ." 30m" ;
+: red      ( -- ) ESC[ ." 31m" ;
+: green    ( -- ) ESC[ ." 32m" ;
+: yellow   ( -- ) ESC[ ." 33m" ;
+: blue     ( -- ) ESC[ ." 34m" ;
+: magenta  ( -- ) ESC[ ." 35m" ;
+: cyan     ( -- ) ESC[ ." 36m" ;
+: white    ( -- ) ESC[ ." 37m" ;
+
+: rgb      ( -- ) ESC[ ." 38;2;" rot u.base10 ." ;" swap u.base10 ." ;" u.base10 ." m" ;
+
+\ -----------------------------------------------------------------------------
+
+\ Calculate Bitlog and Bitexp - close relatives to logarithm and exponent to base 2.
+
+: bitlog ( u -- u )
+
+ \ Invented by Tom Lehman at Invivo Research, Inc., ca. 1990
+ \ Gives an integer analog of the log function
+ \ For large x, B(x) = 8*(log(base 2)(x) - 1)
+
+  dup 8 u<= if 1 lshift
+            else
+              ( u )
+              30 over clz - 3 lshift
+              ( u s1 )
+              swap
+              ( s1 u )
+              28 over clz - rshift 7 and
+              ( s1 s2 ) +
+            then
+
+  1-foldable ;
+
+
+: bitexp ( u -- u )
+
+  \ Returns an integer value equivalent to
+  \ the exponential. For numbers > 16,
+  \ bitexp(x) approx = 2^(x/8 + 1)
+
+  \ B(E(x)) = x for 16 <= x <= 247.
+
+  dup 247 u>  \ Overflow ?
+  if drop $F0000000
+  else
+
+    dup 16 u<= if 1 rshift
+               else
+                 dup ( u u )
+                 7 and 8 or ( u b )
+                 swap ( b u )
+                 3 rshift 2 - lshift
+               then
+
+  then
+
+  1-foldable ;
+
+\ -----------------------------------------------------------------------------
+
+: bunteausgabevorbereiten ( -- )
+
+0 1 at-xy
+
+." 12 IR 940 nm     " cr
+." 11 IR 880 nm     " cr
+." 10 Darkred       " cr
+." 09 Red           " cr
+
+." 01 Red           " cr
+." 02 Orange        " cr
+." 03 Yellow        " cr
+." 04 Yellow-Green  " cr
+." 05 Green         " cr
+." 06 Turqoise      " cr
+." 07 Blue          " cr
+." 08 UV            " cr
+
+;
+
+: brown magenta ;
+
+: bunteausgabe ( -- )
+
+  black       12 1 - cells drkns-c + @   20 01 at-xy maximum @ bitlog 1+ spaces   20 01 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  black       11 1 - cells drkns-c + @   20 02 at-xy maximum @ bitlog 1+ spaces   20 02 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  brown       10 1 - cells drkns-c + @   20 03 at-xy maximum @ bitlog 1+ spaces   20 03 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  red         09 1 - cells drkns-c + @   20 04 at-xy maximum @ bitlog 1+ spaces   20 04 at-xy bitlog 0 ?do [char] - emit loop ." >"
+
+  red         01 1 - cells drkns-c + @   20 05 at-xy maximum @ bitlog 1+ spaces   20 05 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  red         02 1 - cells drkns-c + @   20 06 at-xy maximum @ bitlog 1+ spaces   20 06 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  yellow      03 1 - cells drkns-c + @   20 07 at-xy maximum @ bitlog 1+ spaces   20 07 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  yellow      04 1 - cells drkns-c + @   20 08 at-xy maximum @ bitlog 1+ spaces   20 08 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  green       05 1 - cells drkns-c + @   20 09 at-xy maximum @ bitlog 1+ spaces   20 09 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  green       06 1 - cells drkns-c + @   20 10 at-xy maximum @ bitlog 1+ spaces   20 10 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  blue        07 1 - cells drkns-c + @   20 11 at-xy maximum @ bitlog 1+ spaces   20 11 at-xy bitlog 0 ?do [char] - emit loop ." >"
+  blue        08 1 - cells drkns-c + @   20 12 at-xy maximum @ bitlog 1+ spaces   20 12 at-xy bitlog 0 ?do [char] - emit loop ." >"
+
+
+;
+
+: farbsensor ( -- ) \ Zeigt alle Kanäle nach Farben sortiert ständig an.
+
+  led-init
+
+  maximum @
+  $00080000 maximum !
+
+  page hide-cursor
+  bunteausgabevorbereiten
+
+  begin
+    drkns-c #leds cells 0 fill
+    darkness-cathode flash
+    bunteausgabe
+  esc? until
+
+  show-cursor default
+
+  maximum !
+;
+
+\ -----------------------------------------------------------------------------
+
+: init ( -- ) printdarkness-log ;
+
+save
