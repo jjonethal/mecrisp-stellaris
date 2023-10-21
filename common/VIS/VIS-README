@@ -1,6 +1,6 @@
 #    VIS: VOCabularies (VOCs), ITEMs and STICKY Words for Mecrisp-Stellaris
 #
-#    Copyright (C) 2017-2020  Manfred Mahlow
+#    Copyright (C) 2017-2022  Manfred Mahlow
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VIS-README for Mecrisp-Stellaris                                      MM-200522
+VIS-README for Mecrisp-Stellaris                               MM-200522-220814
 
 To add the VIS-Extension with support for VOCs, ITEMs and STICK Words to
 Mecrisp-Stellaris please take the following into consideration:

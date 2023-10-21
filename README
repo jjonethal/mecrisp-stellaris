@@ -1267,7 +1267,7 @@ n case
 
         case            ( n -- n )       Begins case structure
         of              ( m -- )         Compares m with n, choose this if n=m
-        ?of             ( flag -- )      Flag-of, for custom comparisions
+        ?of             ( n flag -- )    Flag-of, for custom comparisions
         endof           ( -- )           End of one possibility
         endcase         ( n -- )         Ends case structure, discards n
 

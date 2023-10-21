@@ -1,4 +1,4 @@
-\   Filename: vis-0.8.4.1-mecrisp-stellaris.fs
+\   Filename: vis-0.8.4.2-mecrisp-stellaris.fs
 \    Purpose: Adds VOCs, ITEMs and STICKY Words to Mecrisp-Stellaris
 \        MCU: *
 \      Board: * , tested with TI StellarisLaunchPad 
@@ -7,16 +7,22 @@
 \     Author: Manfred Mahlow          manfred.mahlow@forth-ev.de
 \   Based on: vis-0.8.2-mecrisp-stellaris.txt
 \    Licence: GPLv3
-\  Changelog: 2020-05-22
-\             Released as concatenation of the following files:
-\             wordlists-0.8.4.fs , vis-0.8.4.1-core.fs , vis-0.8.4-??.fs
+\  Changelog: 2022-08-13
+\             vis-0.8.4.2-mecrisp-stellaris.fs  created as concatenation of
+\             wordlists-0.8.4.1.fs , vis-0.8.4.1-core.fs , vis-0.8.4-??.fs
 \             vis-0.8.2-also.fs ,  vis-0.8.2-vocs.fs . vis-0.8.3-items.fs
+\
+\             2022-08-13
+\             wordlists-0.8.4.fs  _edfc_ (erased dictionary flash value) added
+\
 \             2021-09-23
 \             vis-0.8.4-core.fs  (' changed and vocnect bug fix for linux-ra ...
 \                                based on hints from Matthias Urlichs.
+\
+\             2020-05-22         First Release
 \ ----------------------------------------------------------------------------
 
-\   Filename: wordlists-0.8.4.fs
+\   Filename: wordlists-0.8.4.1.fs
 \    Purpose: Adds WORDLISTs to Mecrisp-Stellaris RA
 \        MCU: 
 \      Board: * , tested with TI StellarisLaunchPad 
@@ -28,6 +34,7 @@
 \  Changelog: 2020-04-19 wordlists-0.8.2.txt --> wordlists-0.8.3.fs
 \             2020-05-20 smudge? changed
 \             2020-05-22 wordlist changed  wid? added
+\             2022-08-13 constant _edfv_ (erased dictionary flash value) added
 
 \ Wordlists for Mecrisp-Stellaris                                      MM-170504
 \ ------------------------------------------------------------------------------
@@ -137,18 +144,24 @@
 
    align 0 , forth-wordlist , here constant root-wordlist
 
+  
+align inside-wordlist ,
+here @ constant _edfv_       \ erased dictionary flash value 
+                             \ returns 0 or -1 , depending on the flash type
 
   forth-wordlist ,
 \ Return a wordlist identifier for a new empty wordlist.
 : wordlist ( -- wid )
 \ align here 0 ,                               MM-200522
-  align here [ here @ not literal, ] ,
+\ align here [ here @ not literal, ] ,       \ MM-220813
+  align here ( wid ) _edfv_ not ,            \ 
 ;
 
   inside-wordlist ,
 \ Return true if lfa|wid is the wid of a wordlist.     MM-200522
 : wid? ( lfa|wid -- f )
-  @ [ here @ not literal, ] =
+\  @ [ here @ not literal, ] =               \ MM-220813
+  @ _edfv_ not =                             \
 ;
 
   inside-wordlist ,
@@ -271,7 +284,8 @@
 \ Return true if the word at lfa is smudged.
 : smudged? ( lfa -- flag )
 \ cell+ h@ FFFF <>
-  cell+ h@ [ here @ FFFFFFFF = FFFF and literal, ] <>   \ MM-200520
+\ cell+ h@ [ here @ FFFFFFFF = FFFF and literal, ] <>   \ MM-200520
+  cell+ h@ [ _edfv_ FFFFFFFF = FFFF and literal, ] <>   \ MM-220813
 ;
 
 
@@ -581,7 +595,58 @@ decimal
 \                MM-200419 0.8.3
 \                          init changed to only display (C) message on reset
 \                MM-200122 Final review of release 0.8.2.
+\                MM-200108 0.8.2 ?words, words and order added
+\                MM-191228 0.8.1
+\                MM-190803 set/get-context removed, set/get-order added
+\                MM-190802 minorchanges, some comments added
+\                MM-190728 wid>name .name removed  .wid .id ... added
+\                MM-190727 _sop_ ... moved to vocs.txt
+\                          ?? ??? order moved to wordlists+tools.txt
+\                MM-190721 voc-root --> root-wordlist    added , b 0.8.0
+\                MM-170728 #vocs added, new version 0.7.0-FR
 \
+\                MM-170713 show-wordlist redefined , \show-wordlist added
+\                          wlist , \wlist redefined
+\                MM-170712 wlist redefined
+\                MM-170711 show-wordlist redefined
+\                MM-170710 search and find changed, show-wordlist redefined
+\                MM-170709 modified to support compiletoram, v0.6.2-F+R
+\                          second search orders are required for compiletoram !
+\                MM-170705 filename changed: wordlist.txt --> wordlists.txt
+\                MM-170702 search-in-order factored out of search-in-dictionary
+\                          search-in-dictionary deleted , new version 0.6.2
+\                MM-170627 cp renamed to _sop_
+\                MM-170626 _indic_ added, _ccfnd_ deleted
+\                MM-170625 .? added
+\                MM-170624 wll => wlist, wl => ?? , eraseflash commented out
+\                          FORTH INSIDE DEFINITIONS ORDER added from file
+\                          vocabulary.txt 
+\                MM-170623 wlist deleted, wll and wl added, .name => .header
+\                          _ccfnd_ added
+\                MM-170622 _nocsr_ added
+\                MM-170621 new version 0.6.1
+\                          lfa>wid replaced with 'lfa>wtag tag>wid'
+\                          .ctag added , cps renamed to _csr_
+\                MM-170619 new version 0.5.1
+\                          lfa>wid --> lfa>wtag , new lfa>wid is aligned now
+\                MM-170617 new version 0.4.2, variable cps added, lfa>xt,flags
+\                          and search-in-dictionary factored out of find-in-
+\                          dictionary
+\                MM-170616 variable CP added, points to CONTEXT 
+\                MM-170615 root-wordlist removed, new version 0.4.1
+\                MM-170614 Code from file wordlists.txt factored in two files
+\                          named wordlist.txt and vocabulary.txt, new version 
+\                          is 0.3.1, more dokumentation added to wordlist.txt.
+\                MM-170613 Code review, new Version 0.3
+\                MM-170612 mecrisp-stellaris-2.3.6-hook-find.tar.gz
+\                          received from Mathias Koch
+\                          FIND is now vectored via HOOK-FIND and initially
+\                          calls CORE-FIND (the former FIND)
+\                          V 0.1 works as expected. HOOK-FIND interated,
+\                          ERASEFLASH redefined, new Version 0.2
+\                MM-170612 Version 0.1 send to Mathias Koch and others
+\                          Asked for support to integrate a HOOK-FIND into
+\                          Mecrisp-Stellaris.
 \                MM-170604 First test implementation (feasibilty test)
 
 \ ------------------------------------------------------------------------------
@@ -725,8 +790,7 @@ compiletoflash
 
 root-wordlist set-current  hex
 
-\ : vis ( -- ) ." 0.8.4" ;              MM-210923
-: vis ( -- ) ." 0.8.4.1" ;
+: vis ( -- ) ." 0.8.4.2" ;
 
 \ inside-wordlist first
 get-order nip inside-wordlist swap set-order
@@ -805,6 +869,7 @@ inside-wordlist set-current
   : vocnext ( wid1 -- wid2|0 )
 \   dup @ if [ 2 cells literal, ] - @ else dup - then ;
     dup wid? if dup - else [ 2 cells literal, ] - @ then ;
+
 
 \ Search the VOCs search order (voc-context) at a-addr for a match with the
 \ string c-addr,len. If found return the address (lfa) of the dictionary entry,
@@ -1040,6 +1105,7 @@ root definitions  inside first
   type ."  not found." abort
 ;  
 
+
 forth definitions
 
 : ' ( "name" -- xt ) (' lfa>xt ;  \ MM-200522
@@ -1073,6 +1139,31 @@ compiletoram
 \                MM-200522 0.8.3 : voc-init changed to only display (C) message
 \                          on reset  find and (' added  ' and postpone changed  
 \                MM-200122 0.8.2 revision
+\                MM-200104 ' and ['] and postpone redefined
+\                MM-200103 vocnext changed to also handle wordlist wids
+\                MM-200101 search-in-order changed, did only search the first
+\                          wordlist of the permanent search order entries.
+\                          now searches all but root.
+\                MM-191228 0.8.1
+\                MM-190803 get/set-context replaced with get/set-order
+\                MM-190727 _sop_ moved from wordlists.txt to vocs.txt
+\                MM-190725 bit1 is set in the wtag of vocs for TOOLS
+\                MM-190724 execution sematics of vocs ... is now the same in
+\                          interpret, compile and execute mode.
+\                MM-190721 replacing vocabularies with vocs
+\                          voc-root --> root-wordlist
+\                MM-170729 c2x-context changed from nvariable to variable
+\                MM-170725 voc-extend changed, failed with RA 2.3.x
+\                          new version 0.6.3-FR
+\                MM-170714 casted added to Forth
+\                MM-170713 voc-show-wordlist removed , ?? and ??? redefined
+\                MM-170712 _vcm_ and __ added, definitions rdefined
+\                MM-170710 show-voc-wordlist , vocnext , voc-extend redefined
+\                MM-170705 wordlist.txt --> wordlists.txt
+\                MM-170704 Code revision, comments added
+\                MM-170702 voc.txt-0.6.1 and vocs.txt-0.6.1 merged
+\                          to vocs.txt 0.6.2 , voc-extend added
+
 \ ------------------------------------------------------------------------------
 \ Implementation Notes:
 \ ------------------------------------------------------------------------------
@@ -1361,5 +1452,5 @@ forth first
 
 \ Last Revision: MM-200522 ?vid --> .vid
 
-compiletoram  \ EOF vis-0.8.4-mecrisp-stellaris.fs 
+compiletoram  \ EOF vis-0.8.4.2-mecrisp-stellaris.fs 
  

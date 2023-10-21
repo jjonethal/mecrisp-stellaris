@@ -1,0 +1,34 @@
+\     Filename: bowse  -->  vis-browse-ms.fs
+\     Purpose: Loader for a dictionary browser that shows VOCabularies in the 
+\              Forth style. Adds the words  ?? ( -- ) and  browse ( -- ) 
+\              to the root VOCabulary. 
+\    Required: Mecrisp-Stellaris RA 2.3.8 or later by Matthias Koch.
+\              vis-0.8.4-mecrisp-stellaris.fs      by Manfred Mahlow
+\         MCU: *
+\       Board: * , tested with TI Stellaris LaunchPad 
+\ Recommended: e4thcom Terminal
+\      Author: manfred.mahlow@forth-ev.de
+\    Based on: -
+\     Licence: GPLv3
+\   Changelog: 2021-0407 derived from VIS for Mecrisp Quitntus
+
+#ifndef browse  #include vis-browse-ms.fs
+
+{ Glossary :  browse  -->  vis-browse-ms.fs
+-------------------------------------------------------------------------------
+
+  [<voc>] browse ( -- ) S
+          Displays all words of the top entry of the active search order. It's
+          a StICKY word that does not change the search order.
+
+  [<voc>] ?? ( -- ) S,I
+          A dictionary browser that displays the actual Forth state and context.
+          It's a STICKY and IMMEDIATE word.
+
+  Hints:  Use  [<voc>] words  to display a VOCabulary in the tabular form.
+
+          Press the Enter key to stopp a VOCabulary listing.
+
+-------------------------------------------------------------------------------
+}
+
