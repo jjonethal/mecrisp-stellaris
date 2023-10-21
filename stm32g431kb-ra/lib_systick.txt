@@ -1,0 +1,100 @@
+\
+\ 	timing functions with Systick-Timer
+\
+\		Ralph Sahli, 2022
+\		
+\		resources used:
+\			- system timer
+\	
+
+
+\ 		requires lib_pll.txt
+
+$E000E010 constant STK_CTRL
+$E000E014 constant STK_RELOAD    
+$E000E018 constant STK_CURRENT
+
+0 variable tick#							\ tick counter of 1 ms ticks
+
+\ get MHz from hclk
+: mhz@ ( -- MHz )
+	hclk @ 1000000 / ;
+	
+: systimer-irq-handler
+	1 tick# +! ;
+
+: disableSystimer ( -- )
+    0 STK_CTRL ! ;							\ Disable SysTick 	
+
+: init-Systimer ( -- )
+    disableSystimer 						\ Disable SysTick during setup
+	hclk @ 1000 / 							\ 1 ms @ HCLK
+    1- STK_RELOAD !	    					\ reload value for 24 bit timer
+    0 STK_CURRENT !							\ Any write to current clears it
+	['] systimer-irq-handler irq-systick !  \ Hook for handler
+	%111 STK_CTRL !	;						\ AHB-clock, interrupt enabled, counter enabled
+
+: millis ( -- msCount )
+	tick# @ inline ;
+
+: start-timer ( ms -- endTime )
+	STK_CTRL @ 0= if init-Systimer then		\ initialize if not done
+	millis + ;
+
+: elapsed-ms ( startTime -- startTime ms ) 
+	millis over - inline ;
+
+: elapsed? ( endTime -- endTime flag )
+	pause elapsed-ms 0 >= ;
+
+: delay-ms ( ms -- )
+	start-timer 
+	begin
+		elapsed? 
+	until drop ;
+
+\ for uSec timing messurement
+: preload-usTimer ( preload -- )
+    disableSystimer 						\ Disable SysTick during setup
+    STK_RELOAD !	    					\ reload value for 24 bit timer
+    0 STK_CURRENT !							\ Any write to current clears it
+	%001 STK_CTRL !	;						\ AHB/8-clock, counter enabled
+
+: elapsed-us ( -- us )
+	$FFFFFF STK_CURRENT @ -
+	3 lshift mhz@ /							\ time in us @ hclk MHz	
+	16 bit STK_CTRL bit@ if
+		cr ." systick overflow!" cr
+	then
+    disableSystimer ;
+	
+: delay-us ( us -- )
+    mhz@ * 3 rshift preload-usTimer			\ ticks @ AHB/8-clock
+	begin
+		16 bit STK_CTRL @ and
+	until
+	disableSystimer ;
+
+\ --------------------- speed tests -------------------
+
+: loopTest ( n -- )
+	init-Systimer 
+	millis swap
+	0 do loop
+	elapsed-ms . ." ms @ "  mhz@ . ." MHz" cr drop ;
+
+: us-loopTest ( n -- )
+	$FFFFFF preload-usTimer
+	0 do loop
+	elapsed-us . ." us @ "  mhz@ . ." MHz" cr ;
+
+10000000 loopTest
+10000000 us-loopTest
+
+170MHz
+
+10000000 loopTest
+10000000 us-loopTest
+
+
+	

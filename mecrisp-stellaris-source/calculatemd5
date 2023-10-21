@@ -338,6 +338,10 @@ cd stm32g071rb-ra
 md5sum *.bin
 cd ..
 
+cd stm32g431kb-ra
+md5sum *.bin
+cd ..
+
 cd stm32wb55
 md5sum *.bin
 cd ..

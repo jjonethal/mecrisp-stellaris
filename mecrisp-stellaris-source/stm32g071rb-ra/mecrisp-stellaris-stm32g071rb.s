@@ -25,7 +25,7 @@
 @ -----------------------------------------------------------------------------
 
 .equ registerallocator, 1
-.equ flash16bytesblockwrite, 1
+.equ flash8bytesblockwrite, 1
 .equ m0core, 1
 @ Not available: .equ charkommaavailable, 1
 

@@ -1,0 +1,188 @@
+\
+\ 	RTC library
+\
+\		Ralph Sahli, 2022
+\
+\		resources used:
+\			- RTC
+\
+
+
+$40002800 constant RTC
+	RTC $00 + constant RTC.TR
+	RTC $04 + constant RTC.DR
+	RTC $0C + constant RTC.ICSR
+	RTC $10 + constant RTC.PRER
+	RTC $14 + constant RTC.WUTR
+	RTC $18 + constant RTC.CR
+	RTC $24 + constant RTC.WPR
+	RTC $3C + constant RTC.CALR
+	RTC $50 + constant RTC.SR
+	RTC $54 + constant RTC.MISR
+	RTC $5C + constant RTC.SCR
+
+$40007000 constant PWR
+	PWR $00 + constant PWR.CR
+
+$40021000 constant RCC
+	RCC $48 + constant RCC.AHBENR	\ AHB1 peripheral clock enable register
+	RCC $4C + constant RCC.AHB2ENR	\ AHB2 peripheral clock enable register
+	RCC $58 + constant RCC.APB1ENR	\ APB1 peripheral clock enable register
+	RCC $60 + constant RCC.APB2ENR	\ APB2 peripheral clock enable register
+	RCC $88 + constant RCC.CCIPR	\ Peripherals independent clock configuration register
+	RCC $90 + constant RCC.BDCR		\ Backup domain control register
+	RCC $94 + constant RCC.CSR		\ Control/status register
+
+: bit ( u -- u )  \ turn a bit position into a single-bit mask
+  1 swap lshift  1-foldable ;
+
+: digit@ ( addr -- n )
+	c@ digit not if cr ." no valid date-time" quit then ;
+
+\ init rtc with string-date in format YYYY-mm-dd hh:ii:ss_w 	as counted string
+\									  012345678901234567890
+: rtc-init ( cstr-addr -- )
+	count drop							\ drop string length
+	28 bit 10 bit + RCC.APB1ENR bis!	\ PWREN, RTC APB clock enable
+	8 bit PWR.CR bis!					\ set DBP to enable rtc backup registers write access
+
+	0 bit RCC.CSR bis!					\ LSI oscillator enable -> 32 kHz
+	begin 1 bit RCC.CSR bit@ until		\ wait until LSI oscillator ready
+
+	%10 8 lshift RCC.BDCR bis!			\ RTC clock source selection -> LSI oscillator clock
+	15 bit RCC.BDCR bis!				\ RTC clock enable
+
+	$CA RTC.WPR !						\ unlock write protection
+	$53 RTC.WPR !						\ ...
+	7 bit RTC.ICSR bis!					\ set INIT -> enter initialisation mode
+	begin 6 bit RTC.ICSR bit@ until		\ test for INITF is set
+
+	127 16 lshift 						\ a-prescaler
+	255 or RTC.PRER !					\ s-prescaler
+
+	2 over + digit@ 20 lshift			\ y tens
+	over 3 + digit@ 16 lshift or		\ y unit
+	over 20 + digit@ 13 lshift or		\ weedday units: 1 monday .. 7 sunday
+	over 5 + digit@ 12 lshift or		\ m tens
+	over 6 + digit@ 8 lshift or			\ m unit
+	over 8 + digit@ 4 lshift or			\ d tens
+	over 9 + digit@ or RTC.DR !			\ d unit
+
+	11 over + digit@ 20 lshift			\ h tens
+	over 12 + digit@ 16 lshift or		\ h unit
+	over 14 + digit@ 12 lshift or		\ i tens
+	over 15 + digit@ 8 lshift or		\ i unit
+	over 17 + digit@ 4 lshift or		\ s tens
+	swap 18 + digit@ or RTC.TR !		\ s unit
+
+	7 bit RTC.ICSR bic!					\ clear INIT -> leave initialisation mode
+	$FF RTC.WPR ! ;						\ lock write protection
+
+\ -511 - +512 calibration values are valid
+: rtcCal! ( n -- )
+	-511 max 512 min
+	$CA RTC.WPR !						\ unlock write protection
+	$53 RTC.WPR !						\ ...
+	dup 0< if							\ negative ?
+		abs
+	else								\ positive
+		512 swap -
+		15 bit or
+	then
+	RTC.CALR !
+	$FF RTC.WPR ! ;						\ lock write protection
+
+: rtcTime ( -- timeStrAddr len )
+	BASE @ >R HEX						\ save base
+	RTC.TR @
+	0 <# # # [char] : hold # # [char] : hold # # #>
+	R> BASE ! ;							\ restore base
+
+: rtcTime> ( -- hh mm ss )
+	RTC.TR @ >R
+	R@ 16 rshift $F and R@ 20 rshift 3 and 10 * +	\ hh
+	R@ 8 rshift $F and R@ 12 rshift 7 and 10 * + 	\ mm
+	R@ $F and R> 4 rshift 7 and 10 * + ;			\ ss
+
+: rtcDate ( -- dateStrAddr len )
+	BASE @ >R HEX						\ save base
+	RTC.DR @ $E000 not and $20000000 or
+	0 <# # # [char] - hold # # [char] - hold # # # # #>
+	R> BASE ! ;							\ restore base
+
+: rtcDate> ( -- yyyy MM dd )
+	RTC.DR @ >R 2000
+	R@ 16 rshift $F and R@ 20 rshift 7 and 10 * + +	\ yyyy
+	R@ 8 rshift $F and R@ 12 rshift 1 and 10 * + 	\ MM
+	R@ $F and R> 4 rshift 3 and 10 * + ;			\ dd
+
+\ get minutes in decimal
+: rtc.ii ( -- n )
+	RTC.TR @ $FF00 and 8 rshift			\ min in hex
+	$F over and							\ 1. digit
+	swap 4 rshift 10 * + ;				\ 2. digit + 1.digit
+
+\ get seconds in decimal
+: rtc.ss ( -- n )
+	RTC.TR @ $FF and					\ sec in hex
+	$F over and							\ 1. digit
+	swap 4 rshift 10 * + ;				\ 2. digit + 1.digit
+
+\ get hh:ii in minutes
+: rtc.minutes ( -- n )
+	RTC.TR @ >R
+	R@ 16 rshift $F and R@ 20 rshift 3 and 10 * + 60 *		\ hh in minutes
+	R@ 8 rshift $F and R> 12 rshift 7 and 10 * + + ;		\ ii
+
+\ print date and time to console
+: dateTime.  ( -- )
+	cr rtcDate type space rtcTime type ;
+
+\ set wakup timer [sec]
+: setWUPtime ( n -- )
+	$CA RTC.WPR !					\ unlock write protection
+	$53 RTC.WPR !					\ ...
+	10 bit RTC.CR bic! 				\ Wakeup timer disable
+	begin 2 bit RTC.ICSR bit@ until	\ test for Wakeup timer write flag is set
+	%100 RTC.CR bis!				\ Wakeup clock selection
+	1- RTC.WUTR h!					\ store Wakeup unit counter value
+	10 bit RTC.CR bis! 				\ Wakeup timer enable
+	2 bit RTC.SCR bis!				\ Clear wakeup timer flag
+	$FF RTC.WPR ! ;					\ lock write protection
+
+
+\ ========== tests ===========
+
+\ quit if ESC key pressed
+: checkESCkey ( -- )
+	key? if key 27 = if h.s quit then then ;
+
+: rtcInit ( -- )
+	10 bit RCC.APB1ENR bit@ not if		\ RTC clock not yet enable
+		c" 2022-11-08 12:00:00_7" rtc-init
+	then ;
+
+\ print date-time every second
+: dateTest ( -- )
+	rtcInit
+	RTC.TR @
+	begin
+		RTC.TR @ swap over <> if dateTime. then
+		checkESCkey
+	again ;
+
+
+\ print date-time on wakeup
+: wupTest ( -- )
+	rtcInit
+	5 setwuptime	\ 5 second wakeup time
+	begin
+		2 bit RTC.SR bit@ if
+			dateTime.
+			2 bit RTC.SCR bis!		\ Clear wakeup timer flag
+		then
+		checkESCkey
+	again ;
+
+
+

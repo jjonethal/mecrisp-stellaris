@@ -908,3 +908,8 @@
 
   - Contribution by Manfred Mahlow:
       Updated VIS to 0.8.4.2
+
+11.11.2022, Matthias Koch, Mecrisp-Stellaris 2.6.5
+
+  - Contribution by Ralph Sahli:
+    New target: STM32G431KB
