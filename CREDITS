@@ -62,6 +62,10 @@ Variable memmap split for RP2040 by Jan Bramkamp
 USB terminal driver for STM32F407 by Jan Bramkamp
 Signal handlers and syscall library for FreeBSD by Robert Clausecker
 RP2040 playground by Carsten Fulde
+Port for STM32F401CC on Black pill by Gareth Edwards
+Bit field tools by Jan Bramkamp
+Tachyon extensions for RP2040 by Peter Jakacki
+
 
 Hardware donations:
 

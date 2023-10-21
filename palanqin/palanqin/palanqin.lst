@@ -1,0 +1,2679 @@
+     1                                  ; Palanquin -- Cortex-M0 emulator for 8086
+     2                                  ; Copyright (c) 2020 Robert Clausecker <fuz@fuz.su>
+     3                                  
+     4                                  	cpu	8086		; restrict nasm to 8086 instructions
+     5                                  	bits	16
+     6                                  
+     7                                  	; symbols provided by the linker script
+     8                                  	extern	end, edata, etext, bsswords
+     9                                  
+    10                                  	section	.data
+    11 00000000 50616C616E71696E20-     ident	db	"Palanqin 0.1 (c) 2020 Robert Clausecker <fuz@fuz.su>"
+    11 00000009 302E31202863292032-
+    11 00000012 30323020526F626572-
+    11 0000001B 7420436C6175736563-
+    11 00000024 6B6572203C66757A40-
+    11 0000002D 66757A2E73753E     
+    12 00000034 0D0A00                  crlf	db	13, 10, 0
+    13                                  
+    14                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    15                                  ;; Parameters                                                                 ;;
+    16                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    17                                  
+    18                                  stack	equ	0x100		; emulator stack size in bytes (multiple of 16)
+    19                                  
+    20                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    21                                  ;; Macros and Constants                                                       ;;
+    22                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    23                                  
+    24                                  	; low and high registers.
+    25                                  	; no parentheses so we can use segment overrides if desired
+    26                                  %define	rlo(r)	[r*4+bp+regs]
+    27                                  %define	rhi(r)	[r*4+bp+regs+hi]
+    28                                  
+    29                                  	; functionality not implemented
+    30                                  %macro	todo	0
+    31                                  	int3
+    32                                  	ret
+    33                                  %endmacro
+    34                                  
+    35                                  	; compare DI with [bp+zsreg].  If both are equal, fix the flags.
+    36                                  	; Trashes AX, preserves all other registers.
+    37                                  	; the intent is to save the flags if Rd == [bp+zsreg] and flag
+    38                                  	; recovery would otherwise be impossible.
+    39                                  	; a fixrest macro must be placed under the same label
+    40                                  %macro	fixRd	0
+    41                                  	cmp	di, [bp+zsreg]	; is Rd == [bp+zsreg]?
+    42                                  	je	.fixRd
+    43                                  .endfixRd:			; used by fixrest
+    44                                  %endmacro
+    45                                  
+    46                                  %macro	fixrest	0
+    47                                  .fixRd:	mov	ax, .endfixRd	; return address
+    48                                  	push	ax		; for fixflags.entry
+    49                                  	jmp	fixflags.entry	; which we call by means of a jump
+    50                                  %endmacro
+    51                                  
+    52                                  	; load one instruction into AX and advance PC past it.
+    53                                  	; trashes BX, CX, and SI.  Assumes the PC cache is set up correctly.
+    54                                  %macro	ifetch	0
+    55                                  	mov	si, rlo(15)	; load offset
+    56                                  	dec	si		; clear thumb bit
+    57                                  	mov	cx, es		; remember old DS
+    58                                  	mov	es, [bp+pcseg]	; load translated PC segment
+    59                                  	call	[bp+pcldrh]	; load instruction from memory (sets ES=CX)
+    60                                  	add	word rlo(15), 2	; PC += 2
+    61                                  	jnc	%%nofix		; fix PC cache if rhi(15) changes
+    62                                  	call	ifetchtail
+    63                                  %%nofix:
+    64                                  %endmacro
+    65                                  
+    66                                  	; align to an even address, use 0xcc for padding
+    67                                  %macro	aligncc	0
+    68                                  	align	2, int3
+    69                                  %endmacro
+    70                                  
+    71                                  	; 8086 flags (those we find useful)
+    72                                  CF	equ	0x0001
+    73                                  ZF	equ	0x0040
+    74                                  SF	equ	0x0080
+    75                                  OF	equ	0x0800
+    76                                  
+    77                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    78                                  ;; Startup and Initialisation                                                 ;;
+    79                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    80                                  
+    81                                  	section	.text
+    82                                  	global	start
+    83                                  
+    84                                  	; relocate the stack
+    85 00000000 BC[0001]                start:	mov	sp, end+stack	; beginning of stack
+    86                                  
+    87                                  	; set up bp with emulator state
+    88 00000003 BD[0400]                	mov	bp, state
+    89                                  
+    90                                  	; print copyright notice
+    91 00000006 BE[0000]                	mov	si, ident
+    92 00000009 E8300B                  	call	puts
+    93                                  
+    94                                  	; initialise .bss
+    95 0000000C 31C0                    	xor	ax, ax
+    96 0000000E BF[0000]                	mov	di, edata
+    97 00000011 B9[0000]                	mov	cx, bsswords	; .bss section length in words
+    98 00000014 F3AB                    	rep	stosw		; clear .bss
+    99                                  
+   100                                  	; configure emulator base address
+   101 00000016 89E2                    	mov	dx, sp		; an address just past the end of the memory
+   102 00000018 B104                    	mov	cl, 4
+   103 0000001A D3EA                    	shr	dx, cl		; convert to paragraph count
+   104 0000001C 8CC8                    	mov	ax, cs
+   105 0000001E 01D0                    	add	ax, dx		; emulator image base address
+   106                                  
+   107                                  	; initialise memory maps
+   108 00000020 8D7E70                  	lea	di, [bp+mmadj]	; initialise adjusted memory tables
+   109 00000023 E8A709                  	call	mminit		; to be relative to the image base address
+   110 00000026 8D7E50                  	lea	di, [bp+mmraw]	; initialise raw memory tables
+   111 00000029 31C0                    	xor	ax, ax		; to base segment 0
+   112 0000002B E89F09                  	call	mminit
+   113                                  
+   114                                  	; terminate argument vector
+   115 0000002E BF8000                  	mov	di, 0x80	; argument vector length pointer
+   116 00000031 31DB                    	xor	bx, bx		; clear bx
+   117 00000033 8A1D                    	mov	bl, [di]	; load argument vector length
+   118 00000035 47                      	inc	di		; beginning of arguments
+   119 00000036 8839                    	mov	[bx+di], bh	; NUL-terminate arguments
+   120                                  
+   121 00000038 B020                    	mov	al, 0x20	; AL = ' '
+   122 0000003A 89D9                    	mov	cx, bx		; max length: argument vector length
+   123 0000003C F3AE                    	repe	scasb		; find first non-space
+   124 0000003E 4F                      	dec	di		; go back to first non-space
+   125 0000003F 893E[0000]              	mov	[file], di	; remember file name for later
+   126                                  
+   127 00000043 383D                    	cmp	byte [di], bh	; was there any argument at all?
+   128 00000045 750B                    	jne	.0
+   129                                  
+   130                                  	; no argument was given: print usage and exit
+   131 00000047 BE[3700]                	mov	si, usage
+   132 0000004A E8EF0A                  	call	puts		; print usage
+   133 0000004D B8014C                  .die:	mov	ax, 0x4c01	; error level 1 (failure)
+   134 00000050 CD21                    	int	0x21		; 0x4c: TERMINATE PROGRAM
+   135                                  
+   136                                  	; an argument was given: try to open it
+   137 00000052 89FA                    .0:	mov	dx, di		; file name
+   138 00000054 B8003D                  	mov	ax, 0x3d00	; AL=00 (open file for reading)
+   139 00000057 CD21                    	int	0x21		; 0x3d: OPEN EXISTING FILE
+   140 00000059 730B                    	jnc	.1		; did an error occur?
+   141                                  
+   142                                  	; opening, reading, or closing the file failed
+   143 0000005B 0E                      .err:	push	cs
+   144 0000005C 1F                      	pop	ds		; set DS = CS
+   145 0000005D 8B36[0000]              	mov	si, [file]	; load file name for error message
+   146 00000061 E8E50A                  	call	perror		; print error message
+   147 00000064 EBE7                    	jmp	.die		; and die
+   148                                  
+   149                                  	; opening the file was succesful: load program image
+   150 00000066 93                      .1:	xchg	bx, ax		; the file handle is needed in BX
+   151 00000067 89E0                    	mov	ax, sp
+   152 00000069 8CCA                    	mov	dx, cs		; DX:AX = image base
+   153                                  
+   154                                  	; read until EOF
+   155                                  	; TODO: reject image if it is too large
+   156 0000006B 85C0                    .2:	test	ax, ax		; check if AX > 0x8000 to make sure that
+   157 0000006D 7906                    	jns	.3		; 0x8000 bytes remain in DX:AX
+   158 0000006F 2D0080                  	sub	ax, 0x8000	; if not, shift segments to ensure this
+   159 00000072 80C608                  	add	dh, 0x08
+   160 00000075 8EDA                    .3:	mov	ds, dx
+   161 00000077 92                      	xchg	dx, ax		; buffer address at DS:DX
+   162 00000078 B90080                  	mov	cx, 0x8000	; number of bytes to read
+   163 0000007B B43F                    	mov	ah, 0x3f
+   164 0000007D CD21                    	int	0x21		; 0x3f: READ FROM FILE VIA HANDLE
+   165 0000007F 72DA                    	jc	.err		; IO error?
+   166 00000081 85C0                    	test	ax, ax		; end of file reached?
+   167 00000083 7406                    	jz	.eof
+   168                                  
+   169 00000085 01D0                    	add	ax, dx		; compute new base address
+   170 00000087 8CDA                    	mov	dx, ds		; move buffer address to DX:AX
+   171 00000089 EBE0                    	jmp	.2		; and read some more data
+   172                                  
+   173                                  	; close the image file
+   174 0000008B B43E                    .eof:	mov	ah, 0x3e	; BX still contains the handle here
+   175 0000008D CD21                    	int	0x21		; 0x3e: CLOSE A FILE HANDLE
+   176 0000008F 72CA                    	jc	.err
+   177                                  
+   178                                  	; restore DS = CS
+   179 00000091 0E                      	push	cs
+   180 00000092 1F                      	pop	ds
+   181                                  
+   182                                  	; initial register set up: image base address (R0)
+   183 00000093 8B5E70                  	mov	bx, [bp+imgbase] ; load image base
+   184 00000096 89DA                    	mov	dx, bx
+   185 00000098 31C0                    	xor	ax, ax		; DX:AX contains the image base
+   186 0000009A E83A09                  	call	seglin		; as a linear address
+   187 0000009D 894600                  	mov	rlo(0), ax	; write load address to R0
+   188 000000A0 895602                  	mov	rhi(0), dx
+   189                                  
+   190                                  	; initial register set up: memory size (R1)
+   191 000000A3 8B160200                	mov	dx, [2]		; load first segment past program image from PSP
+   192 000000A7 29DA                    	sub	dx, bx		; compute number of paragraphs available
+   193 000000A9 31C0                    	xor	ax, ax		;  to the program
+   194 000000AB E82909                  	call	seglin		; and convert to a linear address
+   195 000000AE 894604                  	mov	rlo(1), ax	; write memory size to R1
+   196 000000B1 895606                  	mov	rhi(1), dx
+   197                                  
+   198                                  	; initial register set up: stack pointer and reset vector
+   199 000000B4 8EDB                    	mov	ds, bx		; load DS with emulated address space
+   200 000000B6 31F6                    	xor	si, si		; vector table begin
+   201 000000B8 8D7E34                  	lea	di, rlo(13)	; DI = &SP
+   202 000000BB A5                      	movsw			; load initial SP, low half
+   203 000000BC A5                      	movsw			; load initial SP, high half
+   204 000000BD 83C704                  	add	di, 4		; advance past LR
+   205 000000C0 A5                      	movsw			; load initial PC (reset vector), low half
+   206 000000C1 A5                      	movsw			; load initial PC (reset vector), high half
+   207                                  
+   208 000000C2 E80700                  	call	run		; emulate a Cortex M0
+   209                                  
+   210 000000C5 8A4600                  	mov	al, rlo(0)	; load error level from R0
+   211 000000C8 B44C                    	mov	ah, 0x4c
+   212 000000CA CD21                    	int	0x21		; 0x4c: TERMINATE PROGRAM
+   213                                  
+   214                                  	section	.data
+   215 00000037 55736167653A205041-     usage	db	"Usage: PALANQIN CORTEXM0.IMG", 0
+   215 00000040 4C414E51494E20434F-
+   215 00000049 525445584D302E494D-
+   215 00000052 4700               
+   216                                  
+   217                                  	section	.bss
+   218                                  	align	2
+   219 00000000 <res 00000002>          file	resw	1		; image file name
+   220                                  
+   221                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   222                                  ;; Emulator State                                                             ;;
+   223                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   224                                  
+   225                                  	; the emulator state structure
+   226                                  	struc	st
+   227 00000000 <res 00000040>          regs	resd	16		; ARM registers
+   228                                  hi	equ	2		; advances low register half to high half
+   229 00000040 <res 00000002>          flags	resw	1		; CPU flags in 8086 format
+   230                                  				; only CF, ZF, SF, and OF are meaningful
+   231 00000042 <res 00000002>          zsreg	resw	1		; pointer to the register according to which the
+   232                                  				; zero and sign flags shall be set or 0 if they
+   233                                  				; are already set up correctly.  This is R0--R7.
+   234                                  
+   235                                  	; instruction decoding state variables
+   236                                  	; immediate operands are zero/sign-extended to 16 bit
+   237                                  	; register operands are represented by a pointer to the appropriate
+   238                                  	; regs array member
+   239 00000044 <res 00000002>          oprC	resw	1		; third operand (towards least significant bit)
+   240 00000046 <res 00000002>          oprB	resw	1		; second operand (middle of the instruction)
+   241 00000048 <res 00000002>          oprA	resw	1		; first operand (towards most significant bit)
+   242                                  
+   243                                  	; PC decoding cache
+   244                                  	; this cache is used by ifetch to fetch code, avoiding the need to
+   245                                  	; translate PC unless the high word changes
+   246 0000004A <res 00000002>          pchi	resw	1		; high PC word currently translated
+   247 0000004C <res 00000002>          pcseg	resw	1		; translated segment corresponding to pchi
+   248 0000004E <res 00000002>          pcldrh	resw	1		; ldrh accessor function for pchi
+   249                                  
+   250                                  	; Memory maps.  The high word of an ARM address sans the address space
+   251                                  	; nibble is looked up in this table to form a segment.  The low word
+   252                                  	; stays the same, forming an offset.
+   253                                  mmsize	equ	16		; number of entries in a memory map
+   254 00000050 <res 00000020>          mmraw	resw	mmsize		; memory maps for unadjusted memory
+   255                                  imgbase	equ	$		; image base address (first seg. of adj. table)
+   256 00000070 <res 00000020>          mmadj	resw	mmsize		; memory maps for adjusted memory
+   257                                  	endstruc
+   258                                  
+   259                                  	section	.bss
+   260 00000002 <res 00000002>          	alignb	4
+   261 00000004 <res 00000090>          state	resb	st_size		; BP points here
+   262                                  
+   263                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   264                                  ;; Instruction Simulation                                                     ;;
+   265                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   266                                  
+   267                                  	section	.text
+   268                                  
+   269                                  	; run the emulation until we need to stop for some reason
+   270 000000CC 0E                      run:	push	cs		; set up es = ds = cs
+   271 000000CD 0E                      	push	cs
+   272 000000CE 1F                      	pop	ds
+   273 000000CF 07                      	pop	es
+   274 000000D0 E81A09                  	call	fixPC		; set up PC cache
+   275 000000D3 E80200                  .step:	call	step		; simulate one instruction
+   276 000000D6 EBFB                    	jmp	.step		; do it again and again
+   277                                  
+   278                                  	; simulate one instruction.  Assumes ES=DS=CS.
+   279                                  	aligncc
+   279                              <1>  align 2, int3
+   280                                  step:	ifetch			; fetch instruction
+   280                              <1> step: 
+   280 000000D8 8B763C              <1>  mov si, rlo(15)
+   280 000000DB 4E                  <1>  dec si
+   280 000000DC 8CC1                <1>  mov cx, es
+   280 000000DE 8E464C              <1>  mov es, [bp+pcseg]
+   280 000000E1 FF564E              <1>  call [bp+pcldrh]
+   280 000000E4 83463C02            <1>  add word rlo(15), 2
+   280 000000E8 7303                <1>  jnc %%nofix
+   280 000000EA E8FD08              <1>  call ifetchtail
+   280                              <1> %%nofix:
+   281 000000ED 50                      	push	ax		; push a copy of the current instruction
+   282 000000EE 89C3                    	mov	bx, ax		; and keep another one in AX
+   283 000000F0 B105                    	mov	cl, 5		; mask out the instruction's top 4 bits
+   284 000000F2 D3C3                    	rol	bx, cl		; and form a table offset
+   285 000000F4 83E31E                  	and	bx, 0x1e	; bx = ([insn] & 0xf000) >> (16 - 4) << 1
+   286 000000F7 BA1C00                  	mov	dx, 0x1c	; mask for use with the decode handlers
+   287 000000FA 8D7600                  	lea	si, [bp+regs]	; for use with the decode handlers
+   288 000000FD 8D7E44                  	lea	di, [bp+oprC]	; for use with the decode handlers
+   289                                  				; which also assume that AX=insn
+   290 00000100 FFA7[5400]              	jmp	[dtXXXX+bx]	; decode operands
+   291                                  
+   292                                  	section	.data
+   293                                  	align	2, db 0
+   294                                  
+   295                                  	; decoder jump table: decode the operands according
+   296                                  	; to the top 4 instruction bits
+   297                                  	; the decode handlers decode the various instruction fields and store
+   298                                  	; their contents into the emulator state variables.
+   299 00000054 [0E01]                  dtXXXX:	dw	imm5rr		; 000XX imm5 / Rm / Rd
+   300 00000056 [0401]                  	dw	d0001		; 000110 Rm / Rn / Rd
+   301                                  				; 000111 imm3 / Rn / Rd
+   302 00000058 [3001]                  	dw	rimm8		; 001XX Rdn / imm8
+   303 0000005A [3001]                  	dw	rimm8
+   304 0000005C [6801]                  	dw	d0100		; 010000 Rm / Rdn
+   305                                  				; 010001 DN / rm / Rdn
+   306                                  				; 01001 Rd / imm8
+   307 0000005E [4401]                  	dw	rrr		; 0101 Rm / Rn / Rd
+   308 00000060 [0E01]                  	dw	imm5rr		; 011XX imm5 / Rn / Rd
+   309 00000062 [0E01]                  	dw	imm5rr
+   310 00000064 [0E01]                  	dw	imm5rr		; 1000X imm5 / Rn / Rd
+   311 00000066 [3001]                  	dw	rimm8		; 1001X Rd / imm8
+   312 00000068 [3001]                  	dw	rimm8		; 1010X Rd / imm8
+   313 0000006A [6201]                  	dw	dnone		; 1011 misc. instructions
+   314 0000006C [3001]                  	dw	rimm8		; 1100X Rn / imm8
+   315 0000006E [6201]                  	dw	dnone		; 1101 cond / imm8
+   316 00000070 [6201]                  	dw	dnone		; 11100 imm11
+   317                                  				; 11101 32 bit instructions
+   318 00000072 [6201]                  	dw	dnone		; 1111 32 bit instructions
+   319                                  
+   320                                  	section	.text
+   321                                  
+   322                                  	; special decode handler for instructions starting with 0001
+   323                                  	; 000XX... where XX != 11 is decoded as imm5 / reg / reg,
+   324                                  	; 000110... as reg / reg / reg and
+   325                                  	; 000111 as imm5 / reg / reg again
+   326                                  	aligncc
+   326                              <1>  align 2, int3
+   327 00000104 89C1                    d0001:	mov	cx, ax		; make a copy of insn
+   328 00000106 80E50C                  	and	ch, 0xc		; mask the two bits 00001100
+   329 00000109 80FD08                  	cmp	ch, 0x08	; are these set to 10?
+   330 0000010C 7436                    	je	rrr		; if yes, decode as rrr
+   331                                  				; else fall through and decode as imm5rr
+   332                                  
+   333                                  	; decode handler for imm5 / reg / reg
+   334                                  	; instruction layout: XXXX XAAA AABB BCCC
+   335                                  	; for d000, we don't treat the 00011 opcodes specially;
+   336                                  	; the handler for these instructions must manually decode the
+   337                                  	; register from oprA
+   338                                  	align	2
+   339 0000010E 89C1                    imm5rr:	mov	cx, ax		; CX = XXXX XAAA AABB BCCC
+   340 00000110 D1E0                    	shl	ax, 1		; AX = XXXX AAAA ABBB CCC0
+   341 00000112 D1E0                    	shl	ax, 1		; AX = XXXA AAAA BBBC CC00
+   342 00000114 88E5                    	mov	ch, ah		; CX = XXXA AAAA **BB BCCC
+   343 00000116 21D0                    	and	ax, dx		; AX = 0000 0000 000C CC00
+   344 00000118 01F0                    	add	ax, si		; AX = &regs[C]
+   345 0000011A AB                      	stosw			; oprC = &regs[C]
+   346 0000011B D0E9                    	shr	cl, 1		; CX = XXXA AAAA 0**B BBCC
+   347 0000011D 89C8                    	mov	ax, cx
+   348 0000011F 21D0                    	and	ax, dx		; AX = 0000 0000 000B BB00
+   349 00000121 01F0                    	add	ax, si		; AX == &regs[B]
+   350 00000123 AB                      	stosw			; oprB = &regs[B]
+   351 00000124 88E8                    	mov	al, ch		; AL = XXXA AAAA
+   352 00000126 83E01F                  	and	ax, 0x1f	; AX = 0000 0000 000A AAAA
+   353 00000129 AB                      	stosw			; oprA = A
+   354 0000012A 58                      	pop	ax		; the current instruction
+   355 0000012B FFA7[7400]              	jmp	[htXXXX+bx]	; execute behaviour
+   356                                  
+   357                                  	; decode handler for reg / imm8
+   358                                  	; instruction layout: XXXX XBBB CCCC CCCC
+   359                                  	; TODO: oprC isn't actually needed anywere.  Can we skip setting it up?
+   360                                  	aligncc
+   360 0000012F CC                  <1>  align 2, int3
+   361 00000130 31C9                    rimm8:	xor	cx, cx
+   362 00000132 86E1                    	xchg	ah, cl		; AX=imm8, CX=reg
+   363 00000134 AB                      	stosw			; oprC=imm8
+   364 00000135 91                      	xchg	ax, cx		; AX=reg
+   365 00000136 D1E0                    	shl	ax, 1		; AX = XXXX XXXX XXXX BBB0
+   366 00000138 D1E0                    	shl	ax, 1		; AX = XXXX XXXX XXXB BB00
+   367 0000013A 21D0                    	and	ax, dx		; AX = 0000 0000 000B BB00
+   368 0000013C 01F0                    	add	ax, si		; AX = &regs[B]
+   369 0000013E AB                      	stosw			; oprB = &regs[B]
+   370 0000013F 58                      	pop	ax		; the current instruction
+   371 00000140 FFA7[7400]              	jmp	[htXXXX+bx]	; execute behaviour
+   372                                  
+   373                                  	; decode handler for reg / reg / reg
+   374                                  	; instruction layout: XXXXXXXAAABBBCCC
+   375                                  	aligncc
+   375                              <1>  align 2, int3
+   376 00000144 89C1                    rrr:	mov	cx, ax		; CX = XXXX XXXA AABB BCCC
+   377 00000146 D1E0                    	shl	ax, 1		; AX = XXXX XXAA ABBB CCC0
+   378 00000148 D1E0                    	shl	ax, 1		; AX = XXXX XAAA BBBC CC00
+   379 0000014A 21D0                    	and	ax, dx		; AX = 0000 0000 000C CC00
+   380 0000014C 01F0                    	add	ax, si		; AX = &regs[C]
+   381 0000014E AB                      	stosw			; oprC = &regs[C]
+   382 0000014F D1E9                    	shr	cx, 1		; CX = 0XXX XXXX AAAB BBCC
+   383 00000151 89C8                    	mov	ax, cx
+   384 00000153 21D0                    	and	ax, dx		; AX = 0000 0000 000B BB00
+   385 00000155 01F0                    	add	ax, si		; AX = &regs[B]
+   386 00000157 AB                      	stosw			; oprB = &regs[B]
+   387 00000158 91                      	xchg	ax, cx
+   388 00000159 B103                    	mov	cl, 3		; prepare shift amount
+   389 0000015B D3E8                    	shr	ax, cl		; AX = 0000 XXXX 000A AABB
+   390 0000015D 21D0                    	and	ax, dx		; AX = 0000 0000 000A AA00
+   391 0000015F 01F0                    	add	ax, si		; AX = &regs[A]
+   392 00000161 AB                      	stosw			; oprA = &regs[A]
+   393                                  	; fallthrough
+   394                                  
+   395                                  	; decode handlers that perform no decoding
+   396                                  	align	2
+   397 00000162 58                      dnone:	pop	ax		; the current instruction
+   398 00000163 FFA7[7400]              	jmp	[htXXXX+bx]	; execute behaviour
+   399                                  
+   400                                  	; special decode handler for instructions starting with 0100
+   401                                  	; 010000... is decoded as imm5 / reg / reg (imm4, really)
+   402                                  	; 010001... is decoded in a special manner
+   403                                  	; 01001... is decoded as reg / imm8
+   404                                  	aligncc
+   404 00000167 CC                  <1>  align 2, int3
+   405 00000168 A90008                  d0100:	test	ax, 0x0800	; is this 01001...?
+   406 0000016B 75C3                    	jnz	rimm8		; if yes, decode as reg / imm8
+   407 0000016D A90004                  	test	ax, 0x0400	; else, is this 010000...?
+   408 00000170 749C                    	jz	imm5rr		; if yes, decode as imm5 / reg / reg
+   409                                  
+   410                                  	; if we get here, we have instruction 0100 01XX CBBB BCCC
+   411                                  	; note how the C operand is split in two!
+   412 00000172 89C1                    	mov	cx, ax		; CX = 0100 01XX CBBB BCCC
+   413 00000174 D1E0                    	shl	ax, 1		; AX = XXXX XXXC BBBB CCC0
+   414 00000176 D1E0                    	shl	ax, 1		; AX = XXXX XXCB BBBC CC00
+   415 00000178 21D0                    	and	ax, dx		; AX = 0000 0000 000C CC00
+   416 0000017A D1E9                    	shr	cx, 1		; CX = 0010 001X XCBB BBCC
+   417 0000017C 89CA                    	mov	dx, cx		; make a copy for masking
+   418 0000017E D1EA                    	shr	dx, 1		; DX = 0001 0001 XXCB BBBC
+   419 00000180 83E220                  	and	dx, 0x20	; DX = 0000 0000 00C0 0000
+   420 00000183 09D0                    	or	ax, dx		; AX = 0000 0000 00CC CC00
+   421 00000185 01F0                    	add	ax, si		; AX = &regs[C]
+   422 00000187 AB                      	stosw			; oprC = &regs[C]
+   423 00000188 91                      	xchg	cx, ax
+   424 00000189 83E03C                  	and	ax, 0x3c	; AX = 0000 0000 00BB BB00
+   425 0000018C 01F0                    	add	ax, si		; AX = &regs[B]
+   426 0000018E AB                      	stosw			; oprB = &regs[B]
+   427 0000018F 58                      	pop	ax		; the current instruction
+   428 00000190 FFA7[7400]              	jmp	[htXXXX+bx]	; execute behaviour
+   429                                  
+   430                                  	section	.data
+   431                                  	align	2, db 0
+   432                                  
+   433                                  	; first level handler jump table: decode the top 4 instruction bits
+   434 00000074 [9401]                  htXXXX	dw	h000		; 000XX shift immediate
+   435 00000076 [9401]                  	dw	h000		; 00011 add/subtract register/immediate
+   436 00000078 [FC01]                  	dw	h001		; 001XX add/subtract/compare/move immediate
+   437 0000007A [FC01]                  	dw	h001
+   438 0000007C [4402]                  	dw	h0100		; 010000XXXX data-processing register
+   439                                  				; 010001XX special data processing
+   440                                  				; 01001 LDR  (literal pool)
+   441 0000007E [B604]                  	dw	h0101		; 0101 load/store register offset
+   442 00000080 [DC04]                  	dw	h011 		; 011XX load/store word/byte immediate offset
+   443 00000082 [DC04]                  	dw	h011
+   444 00000084 [DC04]                  	dw	h1000		; 1000X load/store halfword immediate offset
+   445 00000086 [0205]                  	dw	h1001		; 1001X load from/store to stack
+   446 00000088 [2C05]                  	dw	h1010		; 1010X add to SP or PC
+   447 0000008A [5805]                  	dw	h1011		; 1011XXXX miscellaneous instructions
+   448 0000008C [9406]                  	dw	h1100		; 1100X load/store multiple
+   449 0000008E [FA06]                  	dw	h1101		; 1101XXXX conditional branch
+   450                                  				; 11011110 undefined instruction
+   451                                  				; 11011111 service call
+   452 00000090 [6607]                  	dw	h1110		; 11100 B (unconditional branch)
+   453 00000092 [8807]                  	dw	h1111		; 11110 branch and misc. control
+   454                                  
+   455                                  	; Jump table for instructions 000XXX interleaved with the
+   456                                  	; jump table for add/subtract/compare/move immediate.
+   457 00000094 [AE02]                  ht000XX	dw	h00000		; LSLS Rd, Rm, #imm5
+   458 00000096 [1202]                  ht001XX	dw	h00100		; MOVS Rd, #imm8
+   459 00000098 [F302]                  	dw	h00001		; LSR Rd, Rm, #imm5
+   460 0000009A [1602]                  	dw	h00101		; CMP  Rd, #imm8
+   461 0000009C [3103]                  	dw	h00010		; ASR Rd, Rm, #imm5
+   462 0000009E [2E02]                  	dw	h00110		; ADDS Rd, #imm8
+   463 000000A0 [BE01]                  	dw	h00011		; ADD/SUB register/immediate
+   464 000000A2 [3802]                  	dw	h00111		; SUBS Rd, #imm8
+   465                                  
+   466                                  	; jump table for data-processing register instructions
+   467                                  ht010000XXXX:
+   468 000000A4 [9002]                  	dw	h0100000000	; ANDS Rdn, Rm
+   469 000000A6 [9802]                  	dw	h0100000001	; EORS Rdn, Rm
+   470 000000A8 [A002]                  	dw	h0100000010	; LSLS Rdn, Rm
+   471 000000AA [E602]                  	dw	h0100000011	; LSRS Rdn, Rm
+   472 000000AC [2403]                  	dw	h0100000100	; ASRS Rdn, Rm
+   473 000000AE [6E03]                  	dw	h0100000101	; ADCS Rdn, Rm
+   474 000000B0 [7E03]                  	dw	h0100000110	; SBCS Rdn, Rm
+   475 000000B2 [9003]                  	dw	h0100000111	; RORS Rdn, Rm
+   476 000000B4 [C203]                  	dw	h0100001000	; TST  Rn, Rm
+   477 000000B6 [E403]                  	dw	h0100001001	; RSBS Rdn, Rm, #0
+   478 000000B8 [F403]                  	dw	h0100001010	; CMP  Rn, Rm
+   479 000000BA [0E04]                  	dw	h0100001011	; CMN  Rn, Rm
+   480 000000BC [1A04]                  	dw	h0100001100	; ORRS Rdn, Rm
+   481 000000BE [2204]                  	dw	h0100001101	; MULS Rdn, Rm
+   482 000000C0 [3A04]                  	dw	h0100001110	; BICS Rdn, Rm
+   483 000000C2 [4604]                  	dw	h0100001111	; MVNS Rdn, Rm
+   484                                  
+   485                                  	; jump table for special data-processing instructions
+   486                                  ht010001XX:
+   487 000000C4 [5004]                  	dw	h01000100	; ADD Rdn, Rm
+   488 000000C6 [F403]                  	dw	h01000101	; CMP Rd, Rm
+   489 000000C8 [7804]                  	dw	h01000110	; MOV Rd, Rm
+   490 000000CA [8E04]                  	dw	h01000111	; BX Rm, BLX Rm
+   491                                  
+   492                                  	; jump table for load/store register offset
+   493 000000CC [A009]                  ht0101	dw	str		; 0101000 STR   Rt, [Rn, Rm]
+   494 000000CE [B409]                  	dw	strh		; 0101001 STRH  Rt, [Rn, Rm]
+   495 000000D0 [C409]                  	dw	strb		; 0101010 STRB	Rt, [Rn, Rm]
+   496 000000D2 [8809]                  	dw	ldrsb		; 0101011 LDRSB Rt, [Rn, Rm]
+   497 000000D4 [4809]                  	dw	ldr		; 0101100 LDR   Rt, [Rn, Rm]
+   498 000000D6 [5C09]                  	dw	ldrh		; 0101101 LDRH  Rt, [Rn, Rm]
+   499 000000D8 [7A09]                  	dw	ldrb		; 0101110 LDRB  Rt, [Rn, Rm]
+   500 000000DA [6809]                  	dw	ldrsh		; 0101111 LDRSH Rt, [Rn, Rm]
+   501                                  
+   502                                  	; jump table for load/store immediate offset
+   503 000000DC [AC09]                  ht011	dw	strhimm		; 10000 STRH Rt, [Rn, #imm5]
+   504 000000DE [5409]                  	dw	ldrhimm		; 10001 LDRH Rt, [Rn, #imm5]
+   505 000000E0 [020A]                  	dw	undefined
+   506 000000E2 [020A]                  	dw	undefined
+   507 000000E4 [9609]                  	dw	strimm		; 01100 STR  Rt, [Rn, #imm5]
+   508 000000E6 [3E09]                  	dw	ldrimm		; 01101 LDR  Rt, [Rn, #imm5]
+   509 000000E8 [BE09]                  	dw	strbimm		; 01110 STRB Rt, [Rn, #imm5]
+   510 000000EA [7409]                  	dw	ldrbimm		; 01111 LDRB Rt, [Rn, #imm5]
+   511                                  
+   512                                  	; jump table for the miscellaneous instructions 1011XXXX
+   513                                  	; instructions in parentheses are not available on Cortex-M0
+   514                                  	; cores and generate an undefined instruction exception.
+   515                                  ht1011XXXX:
+   516 000000EC [6405]                  	dw	h10110000	; ADD/SUB SP, SP, #imm7
+   517 000000EE [020A]                  	dw	h10110001	; (CBZ Rn, #imm5)
+   518 000000F0 [7805]                  	dw	h10110010	; SXTB/SXTH/UXTB/UXTH
+   519 000000F2 [020A]                  	dw	h10110011	; (CBZ Rn, #imm5)
+   520 000000F4 [C205]                  	dw	h1011010	; PUSH {...}
+   521 000000F6 [C205]                  	dw	h1011010	; PUSH {..., LR}
+   522 000000F8 [0606]                  	dw	h10110110	; CPS
+   523 000000FA [0806]                  	dw	h10110111	; escape hatch
+   524 000000FC [020A]                  	dw	h10111000	; undefined
+   525 000000FE [020A]                  	dw	h10111001	; (CBNZ Rn, #imm5)
+   526 00000100 [7605]                  	dw	h10111010	; REV/REV16/REVSH
+   527 00000102 [020A]                  	dw	h10111011	; (CBNZ Rn, #imm5)
+   528 00000104 [3206]                  	dw	h1011110	; POP {...}
+   529 00000106 [3206]                  	dw	h1011110	; POP {..., PC}
+   530 00000108 [8A06]                  	dw	h10111110	; BKPT #imm8
+   531 0000010A [8C06]                  	dw	h10111111	; (IT), hints
+   532                                  
+   533                                  	; jump table for (un)signed byte/halfword extend
+   534                                  	; and jump table for reverse bytes
+   535 0000010C [AA05]                  htB2BA	dw	hB200		; SXTH Rd, Rm
+   536 0000010E [B005]                  	dw	hB201		; SXTB Rd, Rm
+   537 00000110 [B605]                  	dw	hB210		; UXTH Rd, Rm
+   538 00000112 [BC05]                  	dw	hB211		; UXTB Rd, Rm
+   539 00000114 [1806]                  	dw	hBA00		; REV Rd, Rm
+   540 00000116 [2206]                  	dw	hBA01		; undefined
+   541 00000118 [020A]                  	dw	hBA10		; REV16 Rd, Rm
+   542 0000011A [2A06]                  	dw	hBA11		; REVSH Rd, Rm
+   543                                  
+   544                                  	section	.text
+   545                                  
+   546                                  	; 000XXAAAAABBBCCC shift immediate
+   547                                  	; 00011XYAAABBBCCC add/subtract register/immediate
+   548                                  	aligncc
+   548                              <1>  align 2, int3
+   549 00000194 88E3                    h000:	mov	bl, ah		; BL = 000XXAAA
+   550 00000196 D0EB                    	shr	bl, 1		; BL = 0000XXAA
+   551 00000198 83E30C                  	and	bx, 0x0c	; BL = 0000XX00
+   552 0000019B 8B7646                  	mov	si, [bp+oprB]	; SI = &regs[Rm]
+   553 0000019E 8B7E44                  	mov	di, [bp+oprC]	; DI = &regs[Rd]
+   554 000001A1 897E42                  	mov	[bp+zsreg], di	; set SF and ZF according to Rd
+   555 000001A4 8B4E48                  	mov	cx, [bp+oprA]	; CL = imm5 (or Rm for 000110...)
+   556 000001A7 85C9                    	test	cx, cx		; if CL == 0 and it's not LSLS, adjust to 32
+   557 000001A9 7405                    	jz	.adj
+   558 000001AB FFA7[9400]              	jmp	[ht000XX+bx]	; call instruction specific handler
+   559                                  
+   560 000001AF 90                      	align	2
+   561 000001B0 84DB                    .adj:	test	bl, bl		; is this LSLS?
+   562 000001B2 7406                    	jz	h0000000000
+   563 000001B4 B120                    	mov	cl, 32		; otherwise adjust CL to 32
+   564 000001B6 FFA7[9400]              	jmp	[ht000XX+bx]
+   565                                  
+   566                                  	; 0000000000BBBCCC MOVS Rd, Rm
+   567                                  	aligncc
+   567                              <1>  align 2, int3
+   568                                  h0000000000:
+   569 000001BA A5                      	movsw			; Rd = Rm
+   570 000001BB A5                      	movsw
+   571 000001BC C3                      	ret
+   572                                  
+   573                                  	; 00011XXAAABBBCCC add/sub register/immediate
+   574                                  	aligncc
+   574 000001BD CC                  <1>  align 2, int3
+   575 000001BE A90004                  h00011:	test	ax, 0x0400	; is this register or immediate?
+   576 000001C1 7521                    	jnz	h000111
+   577                                  
+   578                                  	; 0001100AAABBBCCC ADDS Rd, Rn, Rm
+   579                                  	; 0001101AAABBBCCC SUBS Rd, Rn, Rm
+   580 000001C3 89CB                    	mov	bx, cx		; need BX to form an address
+   581 000001C5 8B0F                    	mov	cx, [bx]	; DX:CX = Rm
+   582 000001C7 8B5702                  	mov	dx, [bx+hi]
+   583 000001CA A90002                  	test	ax, 0x0200	; is this ADDS or SUBS?
+   584 000001CD 7405                    	jz	.adds
+   585 000001CF F7D1                    	not	cx		; complement DX:CX and set CF
+   586 000001D1 F7D2                    	not	dx
+   587 000001D3 F9                      	stc
+   588 000001D4 130C                    .adds:	adc	cx, [si]	; DX:CX = ADDS ? Rn + Rm : Rn - Rm
+   589 000001D6 135402                  	adc	dx, [si+hi]
+   590 000001D9 890D                    	mov	[di], cx	; Rd = DX:CX
+   591 000001DB 895502                  	mov	[di+hi], dx
+   592 000001DE 9C                      	pushf			; remember CF and OF
+   593 000001DF 8F4640                  	pop	word [bp+flags]
+   594 000001E2 C3                      	ret
+   595                                  
+   596                                  	; 0001110AAABBBCCC ADDS Rd, Rn, #imm3
+   597                                  	; 0001111AAABBBCCC SUBS Rd, Rn, #imm3
+   598                                  	aligncc
+   598 000001E3 CC                  <1>  align 2, int3
+   599 000001E4 0500E2                  h000111:add	ax, -0x1e00	; CF = instruction is SUBS
+   600 000001E7 91                      	xchg	ax, cx		; AX = 000BBCCC
+   601 000001E8 19D2                    	sbb	dx, dx		; DX = ADD ? 0 : -1
+   602 000001EA 2407                    	and	al, 0x07	; AX = #imm3
+   603 000001EC 31D0                    	xor	ax, dx		; AX = ADD ? #imm3 : ~#imm3
+   604 000001EE 9E                      	sahf			; CF = instruction is SUBS
+   605 000001EF 1304                    	adc	ax, [si]	; DX:AX = ADDS ? Rn + #imm3 : Rn - #imm3
+   606 000001F1 135402                  	adc	dx, [si+hi]
+   607 000001F4 AB                      	stosw			; Rd = DX:AX
+   608 000001F5 8915                    	mov	[di], dx
+   609 000001F7 9C                      	pushf			; remember CF and OF in flags
+   610 000001F8 8F4640                  	pop	word [bp+flags]
+   611 000001FB C3                      	ret
+   612                                  
+   613                                  	; 001XXBBBCCCCCCCC add/subtract/compare/move immediate
+   614                                  	aligncc
+   614                              <1>  align 2, int3
+   615 000001FC 88E3                    h001:	mov	bl, ah		; BL = 001XXAAA
+   616 000001FE D0EB                    	shr	bl, 1		; BL = 0001XXAA
+   617 00000200 83E30C                  	and	bx, 0xc		; BL = 0000XX00
+   618 00000203 31F6                    	xor	si, si		; SI = 0
+   619 00000205 8B7E46                  	mov	di, [bp+oprB]	; DI = &regs[Rd]
+   620 00000208 30E4                    	xor	ah, ah		; AX = #imm8
+   621 0000020A 897E42                  	mov	[bp+zsreg], di	; set SF and ZF according to Rd
+   622 0000020D FFA7[9600]              	jmp	[ht001XX+bx]	; call instruction specific handler
+   623                                  
+   624                                  	; 00100BBBCCCCCCCC MOVS Rd, #imm8
+   625                                  	aligncc
+   625 00000211 CC                  <1>  align 2, int3
+   626 00000212 AB                      h00100:	stosw			; Rd = #imm8
+   627 00000213 8935                    	mov	[di], si
+   628 00000215 C3                      	ret
+   629                                  
+   630                                  	; 00101BBBCCCCCCCC CMP Rn, #imm8
+   631                                  	aligncc
+   631                              <1>  align 2, int3
+   632 00000216 8B5502                  h00101:	mov	dx, [di+hi]
+   633 00000219 3905                    	cmp	[di], ax	; Rd(lo) - #imm8 (for ZF and borrow)
+   634 0000021B 9F                      	lahf			; remember ZF according to Rd(lo) - #imm8 in AH
+   635 0000021C 19F2                    	sbb	dx, si		; Rd - #imm8 (for CF, SF, OF, and ZF)
+   636 0000021E F5                      	cmc			; adjust CF to ARM conventions
+   637 0000021F 9C                      	pushf			; load flags in DX
+   638 00000220 5A                      	pop	dx
+   639 00000221 80CCBF                  	or	ah, ~ZF		; isolate ZF in AH
+   640 00000224 20E2                    	and	dl, ah		; set ZF in DX if Rn == Rm
+   641 00000226 895640                  	mov	[bp+flags], dx	; save flags in flags
+   642 00000229 897642                  	mov	[bp+zsreg], si	; mark flags as fixed
+   643 0000022C C3                      	ret
+   644                                  
+   645                                  	; 00110BBBCCCCCCCC ADDS Rd, #imm8
+   646                                  	aligncc
+   646 0000022D CC                  <1>  align 2, int3
+   647 0000022E 0105                    h00110:	add	[di], ax	; Rd += AX
+   648 00000230 117502                  	adc	[di+hi], si
+   649 00000233 9C                      	pushf			; remember flags
+   650 00000234 8F4640                  	pop	word [bp+flags]
+   651 00000237 C3                      	ret
+   652                                  
+   653                                  	; 00111BBBCCCCCCCC SUBS Rd, #imm8
+   654                                  	aligncc
+   654                              <1>  align 2, int3
+   655 00000238 2905                    h00111:	sub	[di], ax	; Rd -= AX
+   656 0000023A 197502                  	sbb	[di+hi], si
+   657 0000023D F5                      	cmc			; adjust CF to ARM conventions
+   658 0000023E 9C                      	pushf			; and remember flags
+   659 0000023F 8F4640                  	pop	word [bp+flags]
+   660 00000242 C3                      	ret
+   661                                  
+   662                                  	; 010000AAAABBBCCC data-processing register
+   663                                  	; 010001AACBBBBCCC special data processing
+   664                                  	; 01001BBBCCCCCCCC LDR Rd, [PC, #imm8]
+   665                                  	aligncc
+   665 00000243 CC                  <1>  align 2, int3
+   666 00000244 8B7E44                  h0100:	mov	di, [bp+oprC]	; DI = &Rdn
+   667 00000247 8B7646                  	mov	si, [bp+oprB]	; SI = &Rm
+   668 0000024A A90008                  	test	ax, 0x0800	; is this LDR Rd, [PC, #imm8]?
+   669 0000024D 751F                    	jnz	.ldr
+   670 0000024F A90004                  	test	ax, 0x0400	; else, is this special data processing?
+   671 00000252 750C                    	jnz	.sdp		; otherwise, it's data-processing register
+   672 00000254 897E42                  	mov	[bp+zsreg], di	; set flags according to Rdn
+   673 00000257 8B5E48                  	mov	bx, [bp+oprA]	; BX = 0000AAAA
+   674 0000025A D1E3                    	shl	bx, 1		; BX = 000AAAA0
+   675 0000025C FFA7[A400]              	jmp	[ht010000XXXX+bx]
+   676                                  
+   677                                  	aligncc
+   677                              <1>  align 2, int3
+   678 00000260 88E3                    .sdp:	mov	bl, ah		; BL = 010001AA
+   679 00000262 83E303                  	and	bx, 0x03	; BX = 000000AA
+   680 00000265 D1E3                    	shl	bx, 1		; BX = 00000AA0
+   681 00000267 8D4E3C                  	lea	cx, rlo(15)	; CX = &PC
+   682 0000026A FFA7[C400]              	jmp	[ht010001XX+bx]
+   683                                  
+   684                                  	; 01001BBBCCCCCCCC LDR Rt, [PC, #imm8]
+   685                                  	aligncc
+   685                              <1>  align 2, int3
+   686 0000026E 87FE                    .ldr:	xchg	di, si		; set up DI = &Rt, SI = #imm8
+   687                                  	fixRd			; set flags on Rd if needed
+   687 00000270 3B7E42              <1>  cmp di, [bp+zsreg]
+   687 00000273 7414                <1>  je .fixRd
+   687                              <1> .endfixRd:
+   688 00000275 8B463C                  	mov	ax, rlo(15)	; AX = R15(lo)
+   689 00000278 D1E6                    	shl	si, 1		; SI = #imm8 << 2 + 2
+   690 0000027A 46                      	inc	si
+   691 0000027B D1E6                    	shl	si, 1
+   692 0000027D 31C9                    	xor	cx, cx
+   693 0000027F 01F0                    	add	ax, si		; CX:AX = R15 + #imm8
+   694 00000281 134E3E                  	adc	cx, rhi(15)
+   695 00000284 24FC                    	and	al, ~3		; align to word boundary
+   696 00000286 E9BF06                  	jmp	ldr		; perform the actual load
+   697                                  	fixrest
+   697 00000289 B8[7502]            <1> .fixRd: mov ax, .endfixRd
+   697 0000028C 50                  <1>  push ax
+   697 0000028D E9EA05              <1>  jmp fixflags.entry
+   698                                  
+   699                                  	; 0100000000BBBCCC ANDS Rdn, Rm
+   700                                  	aligncc
+   700                              <1>  align 2, int3
+   701                                  h0100000000:
+   702 00000290 AD                      	lodsw			; AX = Rm(lo)
+   703 00000291 2105                    	and	[di], ax	; Rdn(lo) &= Rm(lo)
+   704 00000293 AD                      	lodsw			; AX = Rm(hi)
+   705 00000294 214502                  	and	[di+hi], ax	; Rdn(hi) &= Rm(hi)
+   706 00000297 C3                      	ret
+   707                                  
+   708                                  	; 0100000001BBBCCC EORS Rdn, Rm
+   709                                  	aligncc
+   709                              <1>  align 2, int3
+   710                                  h0100000001:
+   711 00000298 AD                      	lodsw			; AX = Rm(lo)
+   712 00000299 3105                    	xor	[di], ax	; Rdn(lo) ^= Rm(lo)
+   713 0000029B AD                      	lodsw			; AX = Rm(hi)
+   714 0000029C 314502                  	xor	[di+hi], ax	; Rdn(hi) ^= Rm(hi)
+   715 0000029F C3                      	ret
+   716                                  
+   717                                  	; 0100000010BBBCCC LSLS Rdn, Rm
+   718                                  	aligncc
+   718                              <1>  align 2, int3
+   719                                  h0100000010:
+   720 000002A0 8A0C                    	mov	cl, [si]	; CL = Rm
+   721 000002A2 84C9                    	test	cl, cl		; no shift?
+   722 000002A4 741E                    	jz	h00000.ret
+   723 000002A6 80F920                  	cmp	cl, 32		; shift by more than 32?
+   724 000002A9 7733                    	ja	h00000.hi
+   725 000002AB 89FE                    	mov	si, di		; SI = DI = Rdn
+   726                                  	; fallthrough
+   727                                  
+   728                                  	; 00000AAAAABBBCCC LSLS Rd, Rm, #imm5
+   729 000002AD 90                      	align	2
+   730 000002AE 80F910                  h00000:	cmp	cl, 16		; shift by more than 16?
+   731 000002B1 7613                    	jbe	.lo
+   732                                  
+   733                                  	; shift by 16 < CL <= 32
+   734 000002B3 80E910                  	sub	cl, 16		; adjust shift amount to 0 < CL <= 16
+   735 000002B6 AD                      	lodsw			; AX = Rm(lo),
+   736 000002B7 D3E0                    	shl	ax, cl		; AX = Rm(lo) << imm5 - 16
+   737 000002B9 C7050000                	mov	word [di], 0	; Rd(lo) = 0
+   738 000002BD 894502                  	mov	[di+hi], ax	; Rd(hi) = Rm(lo) << imm5 - 16
+   739 000002C0 9F                      	lahf			; update CF in flags
+   740 000002C1 886640                  	mov	[bp+flags], ah
+   741 000002C4 C3                      .ret:	ret
+   742                                  
+   743                                  	; shift by 0 < CL <= 16
+   744                                  	aligncc
+   744 000002C5 CC                  <1>  align 2, int3
+   745 000002C6 AD                      .lo:	lodsw			; AX = Rm(lo)
+   746 000002C7 89C3                    	mov	bx, ax		; keep a copy
+   747 000002C9 D3E0                    	shl	ax, cl		; AX = Rm(lo) << #imm5
+   748 000002CB AB                      	stosw			; Rd(lo) = Rm(lo) << #imm5
+   749 000002CC 8B34                    	mov	si, [si]	; SI = Rm(hi)
+   750 000002CE D3E6                    	shl	si, cl		; SI = Rm(hi) << #imm5
+   751 000002D0 9F                      	lahf			; update CF in flags
+   752 000002D1 886640                  	mov	[bp+flags], ah
+   753 000002D4 49                      	dec	cx		; CL = 16 - CL
+   754 000002D5 83F10F                  	xor	cx, 15
+   755 000002D8 D3EB                    	shr	bx, cl		; BX = Rm(lo) >> 16 - #imm5
+   756 000002DA 8D00                    	lea	ax, [bx+si]	; AX = Rm(hi) << #imm5 | Rm(lo) >> 16 - #imm5
+   757 000002DC AB                      	stosw			; Rd(hi) = Rm << #imm5 (hi)
+   758 000002DD C3                      	ret
+   759                                  
+   760                                  	; shift by 32 < CL
+   761                                  	aligncc
+   761                              <1>  align 2, int3
+   762 000002DE 31C0                    .hi:	xor	ax, ax		; Rd = 0
+   763 000002E0 AB                      	stosw
+   764 000002E1 AB                      	stosw
+   765 000002E2 884640                  	mov	byte [bp+flags], al ; clear CF in flags
+   766 000002E5 C3                      	ret
+   767                                  
+   768                                  	; 0100000011BBBCCC LSRS Rdn, Rm
+   769                                  	aligncc
+   769                              <1>  align 2, int3
+   770                                  h0100000011:
+   771 000002E6 8A0C                    	mov	cl, [si]	; CL = Rm
+   772 000002E8 84C9                    	test	cl, cl		; no shift?
+   773 000002EA 741C                    	jz	h00001.ret
+   774 000002EC 80F920                  	cmp	cl, 32		; shift by more than 32?
+   775 000002EF 77ED                    	ja	h00000.hi	; same as lsl by more than 32
+   776 000002F1 89FE                    	mov	si, di		; SI = DI = Rdn
+   777                                  
+   778                                  	; 00001AAAAABBBCCC LSRS Rd, Rm, #imm5
+   779 000002F3 80F910                  h00001:	cmp	cl, 16		; shift by more than 16?
+   780 000002F6 7612                    	jbe	.lo
+   781                                  
+   782                                  	; shift by 16 < CL <= 32
+   783 000002F8 80E910                  	sub	cl, 16		; CL = imm5 - 16
+   784 000002FB 8B4402                  	mov	ax, [si+hi]	; AX = Rm(hi)
+   785 000002FE D3E8                    	shr	ax, cl		; AX = Rm(hi) >> imm5 - 16
+   786 00000300 AB                      	stosw			; Rd(lo) = Rm(hi) >> imm5 - 16
+   787 00000301 9F                      	lahf			; update CF, SF, and ZF in flags
+   788 00000302 886640                  	mov	[bp+flags], ah
+   789 00000305 31C0                    	xor	ax, ax
+   790 00000307 AB                      	stosw			; Rd(hi) = 0
+   791 00000308 C3                      .ret:	ret
+   792                                  
+   793                                  	; shift by 0 < CL <= 16
+   794                                  	aligncc
+   794 00000309 CC                  <1>  align 2, int3
+   795 0000030A AD                      .lo:	lodsw			; DX = Rm(lo)
+   796 0000030B 92                      	xchg	ax, dx
+   797 0000030C D3EA                    	shr	dx, cl		; DX = Rm(lo) >> #imm5
+   798 0000030E 9F                      	lahf			; update CF in flags
+   799 0000030F 886640                  	mov	[bp+flags], ah
+   800 00000312 AD                      	lodsw			; AX = Rm(hi)
+   801 00000313 89C6                    	mov	si, ax		; keep a copy
+   802 00000315 D3EE                    	shr	si, cl		; SI = Rm(hi) >> #imm5
+   803 00000317 897502                  	mov	[di+hi], si	; Rd(hi) = Rm(hi) >> #imm5
+   804 0000031A 49                      	dec	cx		; CL = 16 - CL
+   805 0000031B 83F10F                  	xor	cx, 15
+   806 0000031E D3E0                    	shl	ax, cl		; AX = Rm(hi) << 16 - #imm5
+   807 00000320 09D0                    	or	ax, dx		; AX = Rm(hi) << 16 - #imm5 | Rm(lo) >> #imm5
+   808 00000322 AB                      	stosw			; Rd(lo) = Rm >> #imm5 (lo)
+   809 00000323 C3                      	ret
+   810                                  
+   811                                  	; 0100000100BBBCCC ASRS Rdn, Rm
+   812                                  	aligncc
+   812                              <1>  align 2, int3
+   813                                  h0100000100:
+   814 00000324 8A0C                    	mov	cl, [si]	; CL = Rm
+   815 00000326 84C9                    	test	cl, cl		; shift by 0?
+   816 00000328 741C                    	jz	h00010.ret
+   817 0000032A 80F920                  	cmp	cl, 32		; shift by 32 or more?
+   818 0000032D 7333                    	jae	h00010.hi
+   819 0000032F 89FE                    	mov	si, di		; SI = DI = Rdn
+   820                                  
+   821                                  	; 00010AAAAABBBCCC ASRS Rd, Rm, #imm5
+   822 00000331 80F910                  h00010:	cmp	cl, 16		; shift by more than 16?
+   823 00000334 7612                    	jbe	.lo
+   824                                  
+   825                                  	; shift by 16 < CL < 32
+   826 00000336 80E910                  	sub	cl, 16		; CL = imm5 - 16
+   827 00000339 8B4402                  	mov	ax, [si+hi]	; AX = Rm(hi)
+   828 0000033C D3F8                    	sar	ax, cl		; AX = Rm(hi) >> imm5 - 16
+   829 0000033E 99                      	cwd			; DX = Rm(hi) < 0 ? -1 : 0
+   830 0000033F AB                      	stosw			; Rd = DX:AX
+   831 00000340 9F                      	lahf			; update CF in flags
+   832 00000341 886640                  	mov	[bp+flags], ah
+   833 00000344 92                      	xchg	ax, dx
+   834 00000345 AB                      	stosw
+   835 00000346 C3                      .ret:	ret
+   836                                  
+   837                                  	; shift by 0 < CL <= 16
+   838                                  	aligncc
+   838 00000347 CC                  <1>  align 2, int3
+   839 00000348 AD                      .lo:	lodsw			; DX = Rm(lo)
+   840 00000349 92                      	xchg	ax, dx
+   841 0000034A D3EA                    	shr	dx, cl		; DX = Rm(lo) >> #imm5
+   842 0000034C 9F                      	lahf			; update CF in flags
+   843 0000034D 886640                  	mov	[bp+flags], ah
+   844 00000350 AD                      	lodsw			; AX = Rm(hi)
+   845 00000351 89C6                    	mov	si, ax		; keep a copy
+   846 00000353 D3FE                    	sar	si, cl		; SI = Rm(hi) >> #imm5
+   847 00000355 897502                  	mov	[di+hi], si	; Rd(hi) = Rm(hi) >> #imm5
+   848 00000358 49                      	dec	cx		; CL = 16 - CL
+   849 00000359 83F10F                  	xor	cx, 15
+   850 0000035C D3E0                    	shl	ax, cl		; AX = Rm(hi) << 16 - #imm5
+   851 0000035E 09D0                    	or	ax, dx		; AX = Rm(hi) << 16 - #imm5 | Rm(lo) >> #imm5
+   852 00000360 AB                      	stosw			; Rd(lo) = Rm >> #imm5 (lo)
+   853 00000361 C3                      	ret
+   854                                  
+   855                                  	; shift by 32 <= CL
+   856                                  	aligncc
+   856                              <1>  align 2, int3
+   857 00000362 8A6403                  .hi:	mov	ah, [si+hi+1]	; AH = Rm(hi) (high byte)
+   858 00000365 99                      	cwd			; DX = Rm < 0 ? -1 : 0
+   859 00000366 885640                  	mov	[bp+flags], dl	; set CF depending on DX
+   860 00000369 92                      	xchg	ax, dx		; Rd = DX:DX
+   861 0000036A AB                      	stosw
+   862 0000036B AB                      	stosw
+   863 0000036C C3                      	ret
+   864                                  
+   865                                  	; 0100000101BBBCCC ADCS Rdn, Rm
+   866                                  	aligncc
+   866 0000036D CC                  <1>  align 2, int3
+   867                                  h0100000101:
+   868 0000036E 8A6640                  	mov	ah, [bp+flags]	; restore CF from flags
+   869 00000371 9E                      	sahf
+   870 00000372 AD                      	lodsw			; AX = Rm(lo)
+   871 00000373 1105                    	adc	[di], ax	; Rdn(lo) += Rm(lo) + CF
+   872 00000375 AD                      	lodsw			; AX = Rm(hi)
+   873 00000376 114502                  	adc	[di+hi], ax	; Rdn(hi) += Rm(hi) + CF
+   874 00000379 9C                      	pushf			; remember CF and OF in flags
+   875 0000037A 8F4640                  	pop	word [bp+flags]
+   876 0000037D C3                      	ret
+   877                                  
+   878                                  	; 0100000110BBBCCC SBCS Rdn, Rm
+   879                                  	aligncc
+   879                              <1>  align 2, int3
+   880                                  h0100000110:
+   881 0000037E 8A6640                  	mov	ah, [bp+flags]	; restore CF from flags
+   882 00000381 9E                      	sahf
+   883 00000382 F5                      	cmc			; adapt CF from ARM conventions
+   884 00000383 AD                      	lodsw
+   885 00000384 1905                    	sbb	[di], ax	; Rdn(lo) -= Rm(lo) - 1 + CF
+   886 00000386 AD                      	lodsw			; AX = Rm(hi)
+   887 00000387 194502                  	sbb	[di+hi], ax	; Rdn(hi) += Rm(hi) + CF
+   888 0000038A F5                      	cmc			; adjust CF to ARM conventions
+   889 0000038B 9C                      	pushf			; remember CF and OF in flags
+   890 0000038C 8F4640                  	pop	word [bp+flags]
+   891 0000038F C3                      	ret
+   892                                  
+   893                                  	; 0100000111BBBCCC RORS Rdn, Rm
+   894                                  	aligncc
+   894                              <1>  align 2, int3
+   895                                  h0100000111:
+   896 00000390 8A0C                    	mov	cl, [si]	; CL = Rm
+   897 00000392 80E11F                  	and	cl, 31		; mask out useless extra rotates
+   898 00000395 7429                    	jz	.ret		; no rotate?
+   899 00000397 8B05                    	mov	ax, [di]	; DX:AX = Rdn
+   900 00000399 8B5502                  	mov	dx, [di+hi]
+   901 0000039C 80F910                  	cmp	cl, 16		; rotating by 16 or more?
+   902 0000039F 7204                    	jb	.lo
+   903 000003A1 80E910                  	sub	cl, 16		; if yes, reduce to rotation to 0 <= cl < 16
+   904 000003A4 92                      	xchg	ax, dx		; with a pre-rotate by 16
+   905                                  
+   906                                  	; rotate by 0 <= CL < 16
+   907 000003A5 89C3                    .lo:	mov	bx, ax		; BX = Rdn(lo)
+   908 000003A7 D3E8                    	shr	ax, cl		; AX = Rdn(lo) >> CL
+   909 000003A9 89D6                    	mov	si, dx		; SI = Rdn(hi)
+   910 000003AB D3EE                    	shr	si, cl		; DX = Rdn(hi) >> CL
+   911 000003AD 83F10F                  	xor	cx, 15		; CL = 16 - CL
+   912 000003B0 41                      	inc	cx
+   913 000003B1 D3E2                    	shl	dx, cl		; DX = Rdn(hi) << 16 - CL
+   914 000003B3 09D0                    	or	ax, dx		; AX = Rdn(lo) >> CL | Rdn(hi) << 16 - CL
+   915 000003B5 AB                      	stosw			; Rdn(lo) = Rdn ror CL (lo)
+   916 000003B6 D3E3                    	shl	bx, cl		; BX = Rdn(lo) << 16 - CL
+   917 000003B8 8D00                    	lea	ax, [bx+si]	; AX = Rdn(hi) >> CL | Rdn(lo) << 16 - CL
+   918 000003BA AB                      	stosw			; Rdn(hi) = Rdn ror CL (hi)
+   919 000003BB D0C4                    	rol	ah, 1		; shift Rdn sign bit into LSB of AH
+   920 000003BD 886640                  	mov	[bp+flags], ah	; and deposit into flags as CF
+   921 000003C0 C3                      .ret:	ret
+   922                                  
+   923                                  	; 0100001000BBBCCC TST Rn, Rm
+   924                                  	aligncc
+   924 000003C1 CC                  <1>  align 2, int3
+   925                                  h0100001000:
+   926 000003C2 AD                      	lodsw			; DX:AX = Rm
+   927 000003C3 8B14                    	mov	dx, [si]
+   928 000003C5 8505                    	test	[di], ax	; set ZF according to Rm(lo) & Rn(lo)
+   929 000003C7 9F                      	lahf
+   930 000003C8 88E0                    	mov	al, ah		; AL = Rm(lo) & Rn(lo) flags
+   931 000003CA 855502                  	test	[di+hi], dx	; set ZF and SF according Rm(hi) & Rn(hi)
+   932 000003CD 9F                      	lahf
+   933 000003CE 0CBF                    	or	al, ~ZF		; isolate ZF in AL
+   934 000003D0 20C4                    	and	ah, al		; AH = SF, ZF according to Rm(lo) & Rn(lo)
+   935 000003D2 8A4640                  	mov	al, [bp+flags]
+   936 000003D5 253FC0                  	and	ax, (ZF|SF)<<8|~(ZF|SF)&0xff
+   937                                  				; mask AL to all but ZF and SF,
+   938                                  				; AH to just ZF and SF
+   939 000003D8 08E0                    	or	al, ah		; merge the two
+   940 000003DA 884640                  	mov	[bp+flags], al	; write them back
+   941 000003DD C746420000              	mov	word [bp+zsreg], 0 ; mark flags as being fixed
+   942 000003E2 C3                      	ret
+   943                                  
+   944                                  	; 0100001001BBBCCC RSBS Rd, Rm, #0
+   945                                  	; CF = Rn == 0
+   946                                  	aligncc
+   946 000003E3 CC                  <1>  align 2, int3
+   947                                  h0100001001:
+   948 000003E4 AD                      	lodsw			; AX = Rm(lo)
+   949 000003E5 F7D8                    	neg	ax		; AX = -AX
+   950 000003E7 AB                      	stosw
+   951 000003E8 19C0                    	sbb	ax, ax		; AX = Rm(lo) == 0 ? -1 : 0
+   952 000003EA 2B04                    	sub	ax, [si]	; AX = -Rm(hi) - carry
+   953 000003EC AB                      	stosw			; Rd = DX:AX
+   954 000003ED F5                      	cmc			; adjust CF to ARM conventions
+   955 000003EE 9C                      	pushf
+   956 000003EF 8F4640                  	pop	word [bp+flags]	; remember OF and CF in flags
+   957 000003F2 C3                      	ret
+   958                                  
+   959                                  	; 0100001010BBBCCC CMP Rn, Rm
+   960                                  	; 01000101CBBBBCCC CMP Rn, Rm
+   961                                  	aligncc
+   961 000003F3 CC                  <1>  align 2, int3
+   962                                  h01000101:
+   963                                  h0100001010:
+   964 000003F4 AD                      	lodsw			; AX = Rm(lo)
+   965 000003F5 8B5502                  	mov	dx, [di+hi]	; DX = Rn(hi)
+   966 000003F8 3905                    	cmp	[di], ax	; set flags according to Rn(lo) - Rm(lo)
+   967 000003FA 9F                      	lahf			; and remember ZF in AH
+   968 000003FB 1B14                    	sbb	dx, [si]	; set CF, SF, and OF according to Rn - Rm
+   969 000003FD F5                      	cmc			; adapt CF to ARM conventions
+   970 000003FE 9C                      .flags:	pushf			; load flags into DX
+   971 000003FF 5A                      	pop	dx
+   972 00000400 80CCBF                  	or	ah, ~ZF		; isolate ZF in AH
+   973 00000403 20E2                    	and	dl, ah		; set ZF in DX if Rn == Rm
+   974 00000405 895640                  	mov	[bp+flags], dx	; save flags in flags
+   975 00000408 C746420000              	mov	word [bp+zsreg], 0 ; mark flags as fixed
+   976 0000040D C3                      	ret
+   977                                  
+   978                                  	; 0100001011BBBCCC CMN Rn, Rm
+   979                                  	aligncc
+   979                              <1>  align 2, int3
+   980                                  h0100001011:
+   981 0000040E AD                      	lodsw			; AX = Rm(lo)
+   982 0000040F 0305                    	add	ax, [di]	; set flags according to Rn(lo) + Rm(lo)
+   983 00000411 9F                      	lahf			; and remember ZF in AH
+   984 00000412 8B14                    	mov	dx, [si]	; DX = Rm(hi)
+   985 00000414 135502                  	adc	dx, [di+hi]	; set CF, SF, and OF according to Rn - Rm
+   986 00000417 EBE5                    	jmp	h0100001010.flags ; rest is the same as with CMP Rn, Rm
+   987                                  
+   988                                  	; 0100001100BBBCCC ORRS Rd, Rm
+   989                                  	aligncc
+   989 00000419 CC                  <1>  align 2, int3
+   990                                  h0100001100:
+   991 0000041A AD                      	lodsw			; AX = Rm(lo)
+   992 0000041B 0905                    	or	[di], ax	; Rdn(lo) |= Rm(lo)
+   993 0000041D AD                      	lodsw			; AX = Rm(hi)
+   994 0000041E 094502                  	or	[di+hi], ax	; Rdn(hi) |= Rm(hi)
+   995 00000421 C3                      	ret
+   996                                  
+   997                                  	; 0100001101BBBCCC MULS Rd, Rm
+   998                                  	aligncc
+   998                              <1>  align 2, int3
+   999                                  h0100001101:
+  1000 00000422 AD                      	lodsw			; AX = Rm(lo)
+  1001 00000423 89C3                    	mov	bx, ax		; remember a copy
+  1002 00000425 F725                    	mul	word [di]	; DX:AX = Rm(lo) * Rd(lo)
+  1003 00000427 89D1                    	mov	cx, dx		; CX = Rm(lo) * Rd(lo) (hi)
+  1004 00000429 93                      	xchg	bx, ax		; BX = Rm * Rd (lo), AX = Rm(lo)
+  1005 0000042A F76502                  	mul	word [di+hi]	; AX = Rm(lo) * Rd(hi) (lo), DX = junk
+  1006 0000042D 01C1                    	add	cx, ax		; CX = Rm(lo)*Rd(lo) (hi) + Rm(lo)*Rd(hi) (lo)
+  1007 0000042F AD                      	lodsw			; AX = Rm(hi)
+  1008 00000430 F725                    	mul	word [di]	; AX = Rm(hi)*Rd(lo), DX = junk
+  1009 00000432 01C1                    	add	cx, ax		; AX = Rm * Rd (hi)
+  1010 00000434 93                      	xchg	ax, bx		; Rd = CX:BX
+  1011 00000435 AB                      	stosw
+  1012 00000436 890D                    	mov	[di], cx
+  1013 00000438 C3                      	ret
+  1014                                  
+  1015                                  	; 0100001110BBBCCC BICS Rd, Rm
+  1016                                  	aligncc
+  1016 00000439 CC                  <1>  align 2, int3
+  1017                                  h0100001110:
+  1018 0000043A AD                      	lodsw			; AX = Rm(lo)
+  1019 0000043B F7D0                    	not	ax		; AX = ~Rm(lo)
+  1020 0000043D 2105                    	and	[di], ax	; Rdn(lo) |= Rm(lo)
+  1021 0000043F AD                      	lodsw			; AX = Rm(hi)
+  1022 00000440 F7D0                    	not	ax		; AX = ~Rm(hi)
+  1023 00000442 214502                  	and	[di+hi], ax	; Rdn(hi) |= Rm(hi)
+  1024 00000445 C3                      	ret
+  1025                                  
+  1026                                  
+  1027                                  	; 0100001111BBBCCC MVNS Rd, Rm
+  1028                                  	aligncc
+  1028                              <1>  align 2, int3
+  1029                                  h0100001111:
+  1030 00000446 AD                      	lodsw			; AX = Rm(lo)
+  1031 00000447 F7D0                    	not	ax		; AX = ~Rm(lo)
+  1032 00000449 AB                      	stosw			; Rd(lo) = ~Rm(lo)
+  1033 0000044A AD                      	lodsw			; AX = Rm(hi)
+  1034 0000044B F7D0                    	not	ax		; AX = ~Rm(hi)
+  1035 0000044D AB                      	stosw			; Rd(hi) = ~Rm(hi)
+  1036 0000044E C3                      	ret
+  1037                                  
+  1038                                  	; ADD Rd, Rm
+  1039                                  	aligncc
+  1039 0000044F CC                  <1>  align 2, int3
+  1040                                  h01000100:
+  1041                                  	fixRd			; fix flags if needed
+  1041 00000450 3B7E42              <1>  cmp di, [bp+zsreg]
+  1041 00000453 741B                <1>  je .fixRd
+  1041                              <1> .endfixRd:
+  1042 00000455 AD                      	lodsw			; AX = Rm(lo)
+  1043 00000456 0105                    	add	[di], ax	; Rd(lo) += Rm(lo)
+  1044 00000458 AD                      	lodsw			; AX = Rm(hi)
+  1045 00000459 114502                  	adc	[di+hi], ax	; Rd(hi) += Rm(hi) + C
+  1046 0000045C 39CF                    	cmp	di, cx		; is DI = &PC?
+  1047 0000045E 7401                    	jz	.fix		; if yes, fix up PC cache
+  1048 00000460 C3                      	ret
+  1049 00000461 800D01                  .fix:	or	byte [di], 1	; make sure the thumb bit is not cleared
+  1050 00000464 8B4D02                  	mov	cx, [di+hi]	; high part of PC
+  1051 00000467 3B4E4A                  	cmp	cx, [bp+pchi]	; is the cache up to date?
+  1052 0000046A 7501                    	jne	.updt		; if not, update it!
+  1053 0000046C C3                      	ret			; otherwise return without doing anything
+  1054 0000046D E98005                  .updt:	jmp	fixPC.update
+  1055                                  	fixrest
+  1055 00000470 B8[5504]            <1> .fixRd: mov ax, .endfixRd
+  1055 00000473 50                  <1>  push ax
+  1055 00000474 E90304              <1>  jmp fixflags.entry
+  1056                                  
+  1057                                  	; 01000110CBBBBCCC MOV Rd, Rm
+  1058                                  	aligncc
+  1058 00000477 CC                  <1>  align 2, int3
+  1059                                  h01000110:
+  1060                                  	fixRd			; fix flags if needed
+  1060 00000478 3B7E42              <1>  cmp di, [bp+zsreg]
+  1060 0000047B 740A                <1>  je .fixRd
+  1060                              <1> .endfixRd:
+  1061 0000047D A5                      	movsw			; Rd = Rm
+  1062 0000047E A5                      	movsw
+  1063 0000047F 83EF04                  	sub	di, 4		; restore DI
+  1064 00000482 39CF                    	cmp	di, cx		; is DI = &PC?
+  1065 00000484 74DB                    	jz	h01000100.fix	; if yes, fix up PC cache
+  1066 00000486 C3                      	ret
+  1067                                  	fixrest
+  1067 00000487 B8[7D04]            <1> .fixRd: mov ax, .endfixRd
+  1067 0000048A 50                  <1>  push ax
+  1067 0000048B E9EC03              <1>  jmp fixflags.entry
+  1068                                  
+  1069                                  	; 010001110BBBBXXX BX Rm
+  1070                                  	; 010001111BBBBXXX BLX Rm
+  1071                                  	aligncc
+  1071                              <1>  align 2, int3
+  1072                                  h01000111:
+  1073 0000048E 89CF                    	mov	di, cx		; DI = &PC
+  1074 00000490 A880                    	test	al, 0x80	; is this BLX?
+  1075 00000492 8B1D                    	mov	bx, [di]	; DX:BX = PC
+  1076 00000494 8B5502                  	mov	dx, [di+2]	;
+  1077 00000497 AD                      	lodsw			; CX:AX = Rm
+  1078 00000498 8B0C                    	mov	cx, [si]
+  1079 0000049A AB                      	stosw			; PC(lo) = Rm(lo)
+  1080 0000049B 7406                    	jz	.bx
+  1081 0000049D 895E38                  	mov	rlo(14), bx	; LR = DX:BX (old PC)
+  1082 000004A0 89563A                  	mov	rhi(14), dx
+  1083 000004A3 A801                    .bx:	test	al, 1		; is the thumb bit set?
+  1084 000004A5 740A                    	jz	.arm
+  1085 000004A7 39D1                    	cmp	cx, dx		; is the PC cache up to date?
+  1086 000004A9 7501                    	jne	.updt		; if not, update it
+  1087 000004AB C3                      	ret			; if it is up to date, so is PC(hi)
+  1088 000004AC 890D                    .updt:	mov	[di], cx	; PC(hi) = Rm(hi)
+  1089 000004AE E93F05                  	jmp	fixPC.update
+  1090 000004B1 890D                    .arm:	mov	[di], cx	; PC(hi) = Rm(hi)
+  1091 000004B3 E94C05                  	jmp	undefined
+  1092                                  
+  1093                                  	; 0101XXXAAABBBCCC load/store register offset
+  1094                                  	aligncc
+  1094                              <1>  align 2, int3
+  1095 000004B6 88E3                    h0101:	mov	bl, ah		; BL = 0101XXXA
+  1096 000004B8 83E30E                  	and	bx, 0x0e	; BX = 0000XXX0
+  1097 000004BB 8B7E44                  	mov	di, [bp+oprC]	; DI = &Rt
+  1098                                  	fixRd			; fix flags for Rt
+  1098 000004BE 3B7E42              <1>  cmp di, [bp+zsreg]
+  1098 000004C1 7412                <1>  je .fixRd
+  1098                              <1> .endfixRd:
+  1099 000004C3 8B7646                  	mov	si, [bp+oprB]	; SI = &Rn
+  1100 000004C6 AD                      	lodsw			; CX:AX = Rn
+  1101 000004C7 8B0C                    	mov	cx, [si]
+  1102 000004C9 8B7648                  	mov	si, [bp+oprA]	; SI = &rm
+  1103 000004CC 0304                    	add	ax, [si]	; CX:AX = Rn + Rm
+  1104 000004CE 134C02                  	adc	cx, [si+hi]
+  1105 000004D1 FFA7[CC00]              	jmp	[ht0101+bx]	; perform instruction behavior
+  1106                                  	fixrest
+  1106 000004D5 B8[C304]            <1> .fixRd: mov ax, .endfixRd
+  1106 000004D8 50                  <1>  push ax
+  1106 000004D9 E99E03              <1>  jmp fixflags.entry
+  1107                                  
+  1108                                  	; load/store immediate offset
+  1109                                  	; 01100AAAAABBBCCC STR	Rt, [Rn, #imm5]
+  1110                                  	; 01110AAAAABBBCCC STRB Rt, [Rn, #imm5]
+  1111                                  	; 01101AAAAABBBCCC LDR  Rt, [Rn, #imm5]
+  1112                                  	; 01111AAAAABBBCCC LDRB Rt, [Rn, #imm5]
+  1113                                  	; 10000AAAAABBBCCC STRH Rt, [Rn, #imm5]
+  1114                                  	; 10001AAAAABBBCCC LDRH Rt, [Rn, #imm5]
+  1115                                  	aligncc
+  1115                              <1>  align 2, int3
+  1116                                  h1000:
+  1117 000004DC 8B7646                  h011:	mov	si, [bp+oprB]	; SI = &Rn
+  1118 000004DF 8B7E44                  	mov	di, [bp+oprC]	; DI = &Rt
+  1119 000004E2 93                      	xchg	bx, ax		; BX = instruction
+  1120                                  	fixRd			; fix flags on Rt
+  1120 000004E3 3B7E42              <1>  cmp di, [bp+zsreg]
+  1120 000004E6 7412                <1>  je .fixRd
+  1120                              <1> .endfixRd:
+  1121 000004E8 8B4648                  	mov	ax, [bp+oprA]	; CX:AX = #imm5
+  1122 000004EB 31C9                    	xor	cx, cx
+  1123 000004ED 88FB                    	mov	bl, bh		; BX = 00000000 XXXXXAAA
+  1124 000004EF 83E338                  	and	bx, 0x38	; BX = 00000000 00XXX000
+  1125 000004F2 D1EB                    	shr	bx, 1		; prepare index
+  1126 000004F4 D1EB                    	shr	bx, 1
+  1127 000004F6 FFA7[DC00]              	jmp	[ht011+bx]	; perform load/store
+  1128                                  	fixrest
+  1128 000004FA B8[E804]            <1> .fixRd: mov ax, .endfixRd
+  1128 000004FD 50                  <1>  push ax
+  1128 000004FE E97903              <1>  jmp fixflags.entry
+  1129                                  
+  1130                                  	; 10010BBBCCCCCCCC STR Rd, [SP, #imm8]
+  1131                                  	; 10011BBBCCCCCCCC LDR Rd, [SP, #imm8]
+  1132                                  	aligncc
+  1132 00000501 CC                  <1>  align 2, int3
+  1133 00000502 92                      h1001:	xchg	dx, ax		; DX = instruction
+  1134 00000503 8B7E46                  	mov	di, [bp+oprB]	; DI = &Rt
+  1135                                  	fixRd
+  1135 00000506 3B7E42              <1>  cmp di, [bp+zsreg]
+  1135 00000509 741A                <1>  je .fixRd
+  1135                              <1> .endfixRd:
+  1136 0000050B 8B4644                  	mov	ax, [bp+oprC]	; AX = #imm8
+  1137 0000050E D1E0                    	shl	ax, 1		; AX = #imm8 << 2
+  1138 00000510 D1E0                    	shl	ax, 1
+  1139 00000512 31C9                    	xor	cx, cx
+  1140 00000514 034634                  	add	ax, rlo(13)	; CX:AX = SP + #imm8
+  1141 00000517 134E36                  	adc	cx, rhi(13)
+  1142 0000051A F6C608                  	test	dh, 0x08	; is this LDR?
+  1143 0000051D 7403                    	jz	.str		; otherwise it is STR
+  1144 0000051F E92604                  	jmp	ldr
+  1145 00000522 E97B04                  .str:	jmp	str
+  1146                                  	fixrest
+  1146 00000525 B8[0B05]            <1> .fixRd: mov ax, .endfixRd
+  1146 00000528 50                  <1>  push ax
+  1146 00000529 E94E03              <1>  jmp fixflags.entry
+  1147                                  
+  1148                                  	; 10100BBBCCCCCCCC ADD Rd, PC, #imm8 (ADR Rd, label)
+  1149                                  	; 10101BBBCCCCCCCC ADD Rd, SP, #imm8
+  1150                                  	aligncc
+  1150                              <1>  align 2, int3
+  1151 0000052C 8B7E46                  h1010:	mov	di, [bp+oprB]	; di = &Rd
+  1152 0000052F 91                      	xchg	cx, ax		; save instruction around fixRd
+  1153                                  	fixRd			; fix up flags to Rd if needed
+  1153 00000530 3B7E42              <1>  cmp di, [bp+zsreg]
+  1153 00000533 741C                <1>  je .fixRd
+  1153                              <1> .endfixRd:
+  1154 00000535 31C0                    	xor	ax, ax
+  1155 00000537 86C5                    	xchg	al, ch		; AX = 1010XBBB, CX = #imm8 >> 2
+  1156 00000539 99                      	cwd			; DX = 0
+  1157 0000053A 8D763C                  	lea	si, rlo(15)	; SI = &PC
+  1158 0000053D 2408                    	and	al, 0x08	; set AX to 8 if "ADD Rd, SP, #imm8" else 0
+  1159 0000053F 29C6                    	sub	si, ax		; set SI = &SP if "ADD Rd, SP, #imm8"
+  1160 00000541 D1E1                    	shl	cx, 1
+  1161 00000543 41                      	inc	cx
+  1162 00000544 D1E1                    	shl	cx, 1		; CX = #imm8 + 2
+  1163 00000546 AD                      	lodsw
+  1164 00000547 01C8                    	add	ax, cx		; DX:AX = SP/PC + #imm8 + 2
+  1165 00000549 1314                    	adc	dx, [si]
+  1166 0000054B 24FC                    	and	al, ~3		; align to word boundary
+  1167 0000054D AB                      	stosw			; Rd = DX:AX
+  1168 0000054E 8915                    	mov	[di], dx
+  1169 00000550 C3                      	ret
+  1170                                  	fixrest
+  1170 00000551 B8[3505]            <1> .fixRd: mov ax, .endfixRd
+  1170 00000554 50                  <1>  push ax
+  1170 00000555 E92203              <1>  jmp fixflags.entry
+  1171                                  
+  1172                                  	; miscellaneous instructions
+  1173                                  	; 4 more instruction bits decode the subinstruction
+  1174                                  	aligncc
+  1174                              <1>  align 2, int3
+  1175 00000558 88E3                    h1011:	mov	bl, ah		; BL = 1011XXXX
+  1176 0000055A D0E3                    	shl	bl, 1		; BL = 011XXXX0
+  1177 0000055C 83E31E                  	and	bx, 0x1e	; BX = 000XXXX0
+  1178 0000055F FFA7[EC00]              	jmp	[ht1011XXXX+bx]
+  1179                                  
+  1180                                  	; 101100000AAAAAAA ADD SP, SP, #imm7
+  1181                                  	; 101100001AAAAAAA SUB SP, SP, #imm7
+  1182                                  	aligncc
+  1182 00000563 CC                  <1>  align 2, int3
+  1183                                  h10110000:
+  1184 00000564 30E4                    	xor	ah, ah		; AX = 00000000XAAAAAAA
+  1185 00000566 D0E0                    	shl	al, 1		; AX = #imm7 >> 1, CF = ADD/SUB
+  1186 00000568 19D2                    	sbb	dx, dx		; DX = ADD ? 0 : -1
+  1187 0000056A 31D0                    	xor	ax, dx		; AX = ADD ? AX : ~AX
+  1188 0000056C D1C0                    	rol	ax, 1		; AX = ADD ? #imm7 : ~#imm7 - 1, CF = ADD/SUB
+  1189 0000056E 114634                  	adc	rlo(13), ax	; R13 = ADD ? R13 + #imm7 : R13 - #imm7
+  1190 00000571 115636                  	adc	rhi(13), dx
+  1191 00000574 C3                      	ret
+  1192                                  
+  1193                                  	; 101100B1BBBBBCCC (CBZ Rd, #imm5)
+  1194                                  h10110001 equ	undefined
+  1195                                  
+  1196                                  	; 10111010XXBBBCCC reverse bytes
+  1197                                  	aligncc
+  1197 00000575 CC                  <1>  align 2, int3
+  1198                                  h10111010:
+  1199 00000576 FEC4                    	inc	ah		; AX = 10111011XXBBBCCC
+  1200                                  				; to select the second set of jumps in htB2BA
+  1201                                  	; fallthrough
+  1202                                  
+  1203                                  	; 10110010XXBBBCCC (un)signed extend byte/word
+  1204                                  	; 10111011XXBBBCCC reverse bytes (adjusted opcode)
+  1205                                  	align	2
+  1206                                  h10110010:
+  1207 00000578 BA1C00                  	mov	dx, 0x1c	; mask for extracting the instruction fields
+  1208 0000057B 8D7600                  	lea	si, [bp+regs]
+  1209 0000057E 89C7                    	mov	di, ax		; DI = #### ###X XXBB BCCC
+  1210 00000580 D1E7                    	shl	di, 1		; DI = #### ##XX XBBB CCC0
+  1211 00000582 D1E7                    	shl	di, 1		; DI = #### #XXX BBBC CC00
+  1212 00000584 21D7                    	and	di, dx		; DI = 0000 0000 000C CC00
+  1213 00000586 01F7                    	add	di, si		; DI = &regs[C]
+  1214                                  
+  1215 00000588 D1E8                    	shr	ax, 1		; AX = 0### #### XXXB BBCC
+  1216 0000058A 89C3                    	mov	bx, ax
+  1217 0000058C 21D3                    	and	bx, dx		; BX = 0000 0000 000B BB00
+  1218 0000058E 01DE                    	add	si, bx		; SI = &regs[B]
+  1219                                  
+  1220 00000590 B104                    	mov	cl, 4
+  1221 00000592 D3E8                    	shr	ax, cl		; AX = 0000 0### #### XXXB
+  1222 00000594 83E00E                  	and	ax, 0xe		; AX = 0000 0000 0000 XXX0
+  1223 00000597 93                      	xchg	ax, bx		; move XXX field to BX for jump
+  1224                                  	fixRd			; set flags on Rd if needed
+  1224 00000598 3B7E42              <1>  cmp di, [bp+zsreg]
+  1224 0000059B 7405                <1>  je .fixRd
+  1224                              <1> .endfixRd:
+  1225 0000059D AD                      	lodsw			; AX = Rm(lo), SI += 2
+  1226 0000059E FFA7[0C01]              	jmp	[htB2BA+bx]	; perform instruction handler
+  1227                                  	fixrest
+  1227 000005A2 B8[9D05]            <1> .fixRd: mov ax, .endfixRd
+  1227 000005A5 50                  <1>  push ax
+  1227 000005A6 E9D102              <1>  jmp fixflags.entry
+  1228                                  
+  1229                                  	; 1011001000AAABBB SXTH Rd, Rm
+  1230                                  	aligncc
+  1230 000005A9 CC                  <1>  align 2, int3
+  1231 000005AA 99                      hB200:	cwd			; DX:AX = SXTH(Rm(lo))
+  1232 000005AB AB                      	stosw			; Rd = DX:AX
+  1233 000005AC 8915                    	mov	[di], dx
+  1234 000005AE C3                      	ret
+  1235                                  
+  1236                                  	; 1011001001AAABBB SXTB Rd, Rm
+  1237                                  	aligncc
+  1237 000005AF CC                  <1>  align 2, int3
+  1238 000005B0 98                      hB201:	cbw			; DX:AX = SXTB(Rm(lo))
+  1239 000005B1 99                      	cwd
+  1240 000005B2 AB                      	stosw			; Rd = DX:AX
+  1241 000005B3 8915                    	mov	[di], dx
+  1242 000005B5 C3                      	ret
+  1243                                  
+  1244                                  	; 1011001010AAABBB UXTH Rd, Rm
+  1245                                  	aligncc
+  1245                              <1>  align 2, int3
+  1246 000005B6 AB                      hB210:	stosw			; Rd = UXTH(Rm(lo))
+  1247 000005B7 31C0                    	xor	ax, ax
+  1248 000005B9 AB                      	stosw
+  1249 000005BA C3                      	ret
+  1250                                  
+  1251                                  	; 1011001011AAABBB UXTB Rd, Rm
+  1252                                  	aligncc
+  1252 000005BB CC                  <1>  align 2, int3
+  1253 000005BC AA                      hB211:	stosb			; Rd = UXTB(Rm(lo))
+  1254 000005BD 31C0                    	xor	ax, ax
+  1255 000005BF AA                      	stosb
+  1256 000005C0 AB                      	stosw
+  1257 000005C1 C3                      	ret
+  1258                                  
+  1259                                  	; 101100B1BBBBBCCC (CBZ Rd, #imm5)
+  1260                                  h10110011 equ	undefined
+  1261                                  
+  1262                                  	; 10110100BBBBBBBB PUSH {...}
+  1263                                  	; 10110101BBBBBBBB PUSH {..., LR}
+  1264                                  	aligncc
+  1264                              <1>  align 2, int3
+  1265                                  h1011010:
+  1266 000005C2 884644                  	mov	[bp+oprC], al	; remember register set
+  1267 000005C5 A90001                  	test	ax, 0x0100	; want to push LR?
+  1268 000005C8 8B4634                  	mov	ax, rlo(13)	; CX:AX = SP
+  1269 000005CB 8B4E36                  	mov	cx, rhi(13)
+  1270 000005CE 7410                    	jz	.nolr		; (mov preserves flags)
+  1271 000005D0 8D7E38                  	lea	di, rlo(14)
+  1272 000005D3 83E804                  	sub	ax, 4		; CX:AX -= 4
+  1273 000005D6 83D900                  	sbb	cx, 0
+  1274 000005D9 50                      	push	ax		; preserve CX:AX around str call
+  1275 000005DA 51                      	push	cx
+  1276 000005DB E8C203                  	call	str		; deposit LR
+  1277 000005DE 59                      	pop	cx
+  1278 000005DF 58                      	pop	ax
+  1279 000005E0 8D7E1C                  .nolr:	lea	di, rlo(7)	; DI = &R7
+  1280 000005E3 90                      	align	2
+  1281 000005E4 D06644                  .loop:	shl	byte [bp+oprC], 1 ; advance bit-mask to next register
+  1282 000005E7 7313                    	jnc	.nostr		; store current register?
+  1283 000005E9 83E804                  	sub	ax, 4		; CX:AX -= 4
+  1284 000005EC 83D900                  	sbb	cx, 0
+  1285 000005EF 50                      	push	ax		; preserve CX:AX around str call
+  1286 000005F0 51                      	push	cx
+  1287 000005F1 E8AC03                  	call	str		; deposit register into memory
+  1288 000005F4 59                      	pop	cx
+  1289 000005F5 58                      	pop	ax
+  1290 000005F6 83EF04                  .iter:	sub	di, 4		; advance to next register
+  1291 000005F9 EBE9                    	jmp	.loop		; and try again if any registers are left
+  1292                                  	aligncc
+  1292 000005FB CC                  <1>  align 2, int3
+  1293 000005FC 75F8                    .nostr:	jnz	.iter		; any registers left to push?
+  1294 000005FE 894634                  	mov	rlo(13), ax	; write back SP
+  1295 00000601 894E36                  	mov	rhi(13), cx
+  1296 00000604 C3                      	ret
+  1297                                  
+  1298                                  	; 10110110011ABBBB CPS
+  1299                                  	aligncc
+  1299 00000605 CC                  <1>  align 2, int3
+  1300                                  h10110110:
+  1301                                  	todo
+  1301 00000606 CC                  <1>  int3
+  1301 00000607 C3                  <1>  ret
+  1302                                  
+  1303                                  	; 10110111 escape hatch
+  1304                                  	; this instruction allows the program to interact with the host
+  1305                                  	aligncc
+  1305                              <1>  align 2, int3
+  1306                                  h10110111:
+  1307 00000608 3C05                    	cmp	al, B7max	; is this a valid escape hatch opcode?
+  1308 0000060A 7709                    	ja	.ud		; if not, treat as undefined instruction
+  1309 0000060C 30E4                    	xor	ah, ah		; AX = operation code
+  1310 0000060E 93                      	xchg	ax, bx		; BX = operation code
+  1311 0000060F D0E3                    	shl	bl, 1		; form table index
+  1312 00000611 FFA7[7C01]              	jmp	[htB7+bx]
+  1313 00000615 E9EA03                  .ud:	jmp	undefined	; treat as undefined instruction
+  1314                                  
+  1315                                  	; 10111000XXXXXXXX undefined
+  1316                                  h10111000 equ	undefined
+  1317                                  
+  1318                                  	; 101110A1AAAAABBB (CBNZ Rd, #imm5)
+  1319                                  h10111001 equ	undefined
+  1320                                  
+  1321                                  	; 10111010XXAAABBB reverse bytes (see h10110010)
+  1322                                  
+  1323                                  	; 1011101000AAABBB REV Rd, Rm
+  1324                                  	aligncc
+  1324                              <1>  align 2, int3
+  1325 00000618 92                      hBA00:	xchg	ax, dx
+  1326 00000619 AD                      	lodsw			; AX = Rm(hi)
+  1327 0000061A 86E0                    	xchg	ah, al		; reverse Rm(hi)
+  1328 0000061C AB                      	stosw			; Rd = REV(Rm)
+  1329 0000061D 86F2                    	xchg	dh, dl		; reverse Rm(lo)
+  1330 0000061F 8915                    	mov	[di], dx
+  1331 00000621 C3                      	ret
+  1332                                  
+  1333                                  	; 1011101001AAABBB REV16 Rd, Rm
+  1334                                  	aligncc
+  1334                              <1>  align 2, int3
+  1335 00000622 86E0                    hBA01:	xchg	ah, al		; reverse Rm(lo)
+  1336 00000624 AB                      	stosw			; Rd(lo) = REV(Rm(lo))
+  1337 00000625 AD                      	lodsw			; AX = Rm(hi)
+  1338 00000626 86E0                    	xchg	ah, al		; reverse Rm(hi)
+  1339 00000628 AB                      	stosw			; Rd(hi) = REV(Rm(hi))
+  1340 00000629 C3                      	ret
+  1341                                  
+  1342                                  	; 1011101010XXXXXX undefined
+  1343                                  hBA10	equ	undefined
+  1344                                  
+  1345                                  	; 1011101011AAABBB REVSH Rd, Rm
+  1346                                  	aligncc
+  1346                              <1>  align 2, int3
+  1347 0000062A 86E0                    hBA11:	xchg	ah, al		; reverse Rm(lo)
+  1348 0000062C 99                      	cwd			; sign extend into DX:AX
+  1349 0000062D AB                      	stosw			; Rd = DX:AX
+  1350 0000062E 8915                    	mov	[di], dx
+  1351 00000630 C3                      	ret
+  1352                                  
+  1353                                  	; 101110A1AAAAABBB (CBNZ Rd, #imm5)
+  1354                                  h10111011 equ	undefined
+  1355                                  
+  1356                                  	; 10111100AAAAAAAA POP {...}
+  1357                                  	; 10111101AAAAAAAA POP {..., PC}
+  1358                                  	aligncc
+  1358 00000631 CC                  <1>  align 2, int3
+  1359                                  h1011110:
+  1360 00000632 894644                  	mov	[bp+oprC], ax	; remember the instruction
+  1361 00000635 E83A02                  	call	fixflags	; fix flags (easier than checking for each reg)
+  1362 00000638 8B4634                  	mov	ax, rlo(13)	; CX:AX = SP
+  1363 0000063B 8B4E36                  	mov	cx, rhi(13)
+  1364 0000063E 8D7E00                  	lea	di, rlo(0)	; DI = &R0
+  1365 00000641 90                      	align	2
+  1366 00000642 D06E44                  .loop:	shr	byte [bp+oprC], 1 ; advance bit-mask to next register
+  1367 00000645 7313                    	jnc	.noldr		; store current register?
+  1368 00000647 50                      	push	ax		; preserve CX:AX around ldr call
+  1369 00000648 51                      	push	cx
+  1370 00000649 E8FC02                  	call	ldr		; load register from memory
+  1371 0000064C 59                      	pop	cx
+  1372 0000064D 58                      	pop	ax
+  1373 0000064E 83C004                  	add	ax, 4		; CX:AX += 4
+  1374 00000651 83D100                  	adc	cx, 0
+  1375 00000654 83C704                  .iter:	add	di, 4		; advance to next register
+  1376 00000657 EBE9                    	jmp	.loop		; and try again if any registers are left
+  1377                                  	aligncc
+  1377 00000659 CC                  <1>  align 2, int3
+  1378 0000065A 75F8                    .noldr:	jnz	.iter		; any registers left to pop?
+  1379 0000065C F6464501                	test	byte [bp+oprC+1], 0x01 ; load PC?
+  1380 00000660 741E                    	jz	.nopc
+  1381 00000662 8D7E3C                  	lea	di, rlo(15)	; DI = &PC
+  1382 00000665 50                      	push	ax		; preserve CX:AX around ldr call
+  1383 00000666 51                      	push	cx
+  1384 00000667 E8DE02                  	call	ldr		; load PC from memory
+  1385 0000066A A801                    	test	al, 1		; is the thumb bit set?
+  1386 0000066C 7419                    	jz	.arm
+  1387 0000066E 3B564A                  	cmp	dx, [bp+pchi]	; is the PC cache up to date?
+  1388 00000671 7405                    	je	.noupd		; if yes, update it!
+  1389 00000673 89D1                    	mov	cx, dx		; move PC(hi) to where it is expected
+  1390 00000675 E87803                  	call	fixPC.update
+  1391 00000678 59                      .noupd:	pop	cx		; restore previously saved CX:AX
+  1392 00000679 58                      	pop	ax
+  1393 0000067A 83C004                  	add	ax, 4		; CX:AX += 4
+  1394 0000067D 83D100                  	adc	cx, 0
+  1395 00000680 894634                  .nopc:	mov	rlo(13), ax	; write back SP
+  1396 00000683 894E36                  	mov	rhi(13), cx
+  1397 00000686 C3                      	ret
+  1398 00000687 E97803                  .arm:	jmp	undefined
+  1399                                  
+  1400                                  	; 10111110AAAAAAAA BKPT #imm8
+  1401                                  h10111110:
+  1402 0000068A CC                      	int3			; issue a host break point with immediate in AL
+  1403 0000068B C3                      	ret
+  1404                                  
+  1405                                  	; hint instructions
+  1406                                  	; 10111111XXXXYYYY (IT) where YYYY != 0000
+  1407                                  	; 1011111100000000 NOP
+  1408                                  	; 1011111100010000 YIELD
+  1409                                  	; 1011111100100000 WFE
+  1410                                  	; 1011111100110000 WFI
+  1411                                  	; 1011111101000000 SEV
+  1412                                  	aligncc
+  1412                              <1>  align 2, int3
+  1413                                  h10111111:
+  1414 0000068C A80F                    	test	al, 0x0f	; is this IT?
+  1415 0000068E 7401                    	je	.it		; if yes, generate UNDEFINED
+  1416 00000690 C3                      	ret			; else, treat as NOP
+  1417 00000691 E96E03                  .it:	jmp	undefined	; generate an undefined instruction exception
+  1418                                  
+  1419                                  	aligncc
+  1419                              <1>  align 2, int3
+  1420 00000694 50                      h1100:	push	ax		; remember the instruction on the stack
+  1421 00000695 93                      	xchg	ax, bx		; and in BX
+  1422 00000696 E8D901                  	call	fixflags	; fix flags unconditionally as it is too
+  1423                                  				; complicated to determine if we need to or not
+  1424 00000699 8B7646                  	mov	si, [bp+oprB]	; SI = &Rn
+  1425 0000069C 56                      	push	si		; remember a copy of &Rn
+  1426 0000069D AD                      	lodsw			; CX:AX = Rn
+  1427 0000069E 8B0C                    	mov	cx, [si]
+  1428 000006A0 F6C708                  	test	bh, 0x08	; is this a load or is it a store?
+  1429 000006A3 8D7E00                  	lea	di, rlo(0)	; DI = &R0
+  1430 000006A6 7522                    	jnz	h11001
+  1431                                  	; fall through to h11000
+  1432                                  
+  1433                                  	; 11000AAABBBBBBBB STMIA Rn!, {...}
+  1434                                  	aligncc
+  1434                              <1>  align 2, int3
+  1435 000006A8 D06E44                  h11000:	shr	byte [bp+oprC], 1 ; advance bit-mask to next register
+  1436 000006AB 7313                    	jnc	.nostr		; store the current register?
+  1437 000006AD 50                      	push	ax		; remember the current address
+  1438 000006AE 51                      	push	cx
+  1439 000006AF E8EE02                  	call	str		; deposit register into memory
+  1440 000006B2 59                      	pop	cx		; restore the current address
+  1441 000006B3 58                      	pop	ax
+  1442 000006B4 83C004                  	add	ax, 4		; advance address by 4
+  1443 000006B7 83D100                  	adc	cx, 0
+  1444 000006BA 83C704                  .iter:	add	di, 4		; advance to next register
+  1445 000006BD EBE9                    	jmp	h11000
+  1446                                  	aligncc
+  1446 000006BF CC                  <1>  align 2, int3
+  1447 000006C0 75F8                    .nostr:	jnz	.iter		; want to store further registers?
+  1448 000006C2 5F                      	pop	di		; DI = &Rn
+  1449 000006C3 AB                      	stosw			; Rn = CX:AX
+  1450 000006C4 890D                    	mov	[di], cx
+  1451 000006C6 44                      	inc	sp		; advance past instruction copy
+  1452 000006C7 44                      	inc	sp
+  1453 000006C8 C3                      	ret
+  1454                                  
+  1455                                  	; 11001AAABBBBBBBB LDMIA Rn!, {...}
+  1456                                  	aligncc
+  1456 000006C9 CC                  <1>  align 2, int3
+  1457 000006CA D06E44                  h11001: shr	byte [bp+oprC], 1 ; advance bit-mask to next register
+  1458 000006CD 7313                    	jnc	.noldr		; store the current register?
+  1459 000006CF 50                      	push	ax		; remember the current address
+  1460 000006D0 51                      	push	cx
+  1461 000006D1 E87402                  	call	ldr		; load register from memory
+  1462 000006D4 59                      	pop	cx		; restore the current address
+  1463 000006D5 58                      	pop	ax
+  1464 000006D6 83C004                  	add	ax, 4		; advance address by 4
+  1465 000006D9 83D100                  	adc	cx, 0
+  1466 000006DC 83C704                  .iter:	add	di, 4		; advance to next register
+  1467 000006DF EBE9                    	jmp	h11001
+  1468                                  	aligncc
+  1468 000006E1 CC                  <1>  align 2, int3
+  1469 000006E2 75F8                    .noldr:	jnz	.iter		; want to load further registers?
+  1470 000006E4 5F                      	pop	di		; DI = &Rn
+  1471 000006E5 89CA                    	mov	dx, cx		; DX:AX = final address
+  1472 000006E7 59                      	pop	cx		; restore instruction
+  1473 000006E8 86CD                    	xchg	cl, ch		; extract field AAA
+  1474 000006EA 80E107                  	and	cl, 0x07
+  1475 000006ED B301                    	mov	bl, 0x01	; BL = 1 << AAA
+  1476 000006EF D2E3                    	shl	bl, cl
+  1477 000006F1 84EB                    	test	bl, ch		; is Rn in the register list?
+  1478 000006F3 7503                    	jnz	.ret		; if not, write back Rn
+  1479 000006F5 AB                      	stosw			; Rn = DX:AX
+  1480 000006F6 8915                    	mov	[di], dx
+  1481 000006F8 C3                      .ret:	ret
+  1482                                  
+  1483                                  	; 1101BBBBCCCCCCCC B<c> <label>
+  1484                                  	; 11011110CCCCCCCC UDF #imm8
+  1485                                  	; 11011111CCCCCCCC SVC #imm8
+  1486                                  	aligncc
+  1486 000006F9 CC                  <1>  align 2, int3
+  1487 000006FA 88E1                    h1101:	mov	cl, ah		; CL = 1101AAAA
+  1488 000006FC 91                      	xchg	cx, ax		; CX = insn, AL = 1101AAAA
+  1489 000006FD D0E0                    	shl	al, 1		; AL = 101AAAA0
+  1490 000006FF D0E0                    	shl	al, 1		; AL = 01AAAA00
+  1491 00000701 98                      	cbw			; AX = 01AAAA00
+  1492 00000702 05[D006]                	add	ax, h1101xxxx-0x40
+  1493 00000705 93                      	xchg	bx, ax		; BX = h1101xxxx[AAAA]
+  1494 00000706 E86901                  	call	fixflags	; set up true flags in flags
+  1495 00000709 FF7640                  	push	word [bp+flags]
+  1496 0000070C 9D                      	popf			; set up SF, OF, ZF, and CF according to flags
+  1497 0000070D FFE3                    	jmp	bx
+  1498                                  
+  1499                                  	; conditional branch jump table.  Each entry is four bytes long and
+  1500                                  	; corresponds to one conditional code.  If the jump is not taken, the
+  1501                                  	; table entry returns, otherwise it branches to .taken.  UDF and SVC
+  1502                                  	; receive special treatment.
+  1503 0000070F CC                      	align	4, int3
+  1504                                  h1101xxxx:
+  1505                                  	; 0000 BEQ
+  1506 00000710 743C                    	je	.taken
+  1507 00000712 C3                      	ret
+  1508 00000713 CC                      	int3
+  1509                                  
+  1510                                  	; 0001 BNE
+  1511 00000714 7538                    	jne	.taken
+  1512 00000716 C3                      	ret
+  1513 00000717 CC                      	int3
+  1514                                  
+  1515                                  	; 0010 BCS, BHS
+  1516 00000718 7234                    	jc	.taken
+  1517 0000071A C3                      	ret
+  1518 0000071B CC                      	int3
+  1519                                  
+  1520                                  	; 0011 BCC, BLO
+  1521 0000071C 7330                    	jnc	.taken
+  1522 0000071E C3                      	ret
+  1523 0000071F CC                      	int3
+  1524                                  
+  1525                                  	; 0100 BMI
+  1526 00000720 782C                    	js	.taken
+  1527 00000722 C3                      	ret
+  1528 00000723 CC                      	int3
+  1529                                  
+  1530                                  	; 0101 BPL
+  1531 00000724 7928                    	jns	.taken
+  1532 00000726 C3                      	ret
+  1533 00000727 CC                      	int3
+  1534                                  
+  1535                                  	; 0110 BVS
+  1536 00000728 7024                    	jo	.taken
+  1537 0000072A C3                      	ret
+  1538 0000072B CC                      	int3
+  1539                                  
+  1540                                  	; 0111 BVC
+  1541 0000072C 7120                    	jno	.taken
+  1542 0000072E C3                      	ret
+  1543 0000072F CC                      	int3
+  1544                                  
+  1545                                  	; 1000 BHI
+  1546 00000730 F5                      	cmc
+  1547 00000731 771B                    	ja	.taken
+  1548 00000733 C3                      	ret
+  1549                                  
+  1550                                  	; 1001 BLS
+  1551 00000734 F5                      	cmc
+  1552 00000735 7617                    	jbe	.taken
+  1553 00000737 C3                      	ret
+  1554                                  
+  1555                                  	; 1010	BGE
+  1556 00000738 7D14                    	jge	.taken
+  1557 0000073A C3                      	ret
+  1558 0000073B CC                      	int3
+  1559                                  
+  1560                                  	; 1011	BLT
+  1561 0000073C 7C10                    	jl	.taken
+  1562 0000073E C3                      	ret
+  1563 0000073F CC                      	int3
+  1564                                  
+  1565                                  	; 1100	BGT
+  1566 00000740 7F0C                    	jg	.taken
+  1567 00000742 C3                      	ret
+  1568 00000743 CC                      	int3
+  1569                                  
+  1570                                  	; 1101	BLE
+  1571 00000744 7E08                    	jle	.taken
+  1572 00000746 C3                      	ret
+  1573 00000747 CC                      	int3
+  1574                                  
+  1575                                  	; 1110	UDF (BAL)
+  1576 00000748 E9B702                  	jmp	undefined
+  1577                                  
+  1578                                  	; 1111	SVC (BNV)
+  1579 0000074B CC                      	align	4, int3
+  1580 0000074C EB15                    	jmp	.svc
+  1581                                  
+  1582                                  	aligncc
+  1582                              <1>  align 2, int3
+  1583 0000074E 91                      .taken:	xchg	ax, cx		; AL = #imm8
+  1584 0000074F 98                      	cbw			; AX = #imm8
+  1585 00000750 40                      	inc	ax		; AX = #imm8 + 1
+  1586 00000751 D1E0                    	shl	ax, 1		; AX = #imm8:0 + 2
+  1587 00000753 99                      	cwd			; DX:AX = #imm8 + 2
+  1588 00000754 01463C                  	add	rlo(15), ax	; R15(lo) += #imm8 + 2 + 2 (note that R15 had
+  1589                                  				; already been advanced by two by ifetch)
+  1590 00000757 83D200                  	adc	dx, 0		; compute carry
+  1591 0000075A 7501                    	jnz	.carry		; if there is no carry, we are done here
+  1592 0000075C C3                      	ret
+  1593 0000075D 01563E                  .carry:	add	rhi(15), dx	; apply carry to R15(hi)
+  1594 00000760 E98A02                  	jmp	fixPC		; and fix up the PC cache
+  1595                                  
+  1596                                  	; 11011111XXXXXXXX SVC #imm8
+  1597                                  .svc:	todo			; todo
+  1597                              <1> .svc: 
+  1597 00000763 CC                  <1>  int3
+  1597 00000764 C3                  <1>  ret
+  1598                                  
+  1599                                  	; 11100CCCCCCCCCCC B #imm11
+  1600                                  	; 11101XXXXXXXXXXX 32-bit instructions
+  1601                                  	aligncc
+  1601 00000765 CC                  <1>  align 2, int3
+  1602 00000766 A90008                  h1110:	test	ax, 0x0800	; is this B #imm11?
+  1603 00000769 7519                    	jnz	.udf		; or is it a 32 bit instruction?
+  1604 0000076B 05001C                  	add	ax, 0x1c00	; AX = ccccccCCCCCCCCCC (c = complemented sign)
+  1605 0000076E 3500FC                  	xor	ax, 0xfc00	; AX = CCCCCCCCCCCCCCCC (imm11>>1 sign extended)
+  1606 00000771 40                      	inc	ax		; AX = #imm11 >> 1 + 1
+  1607 00000772 D1E0                    	shl	ax, 1		; AX = #imm11 + 2
+  1608 00000774 99                      	cwd			; DX:AX = #imm11 + 2
+  1609 00000775 01463C                  	add	rlo(15), ax	; R15 += #imm11 + 2
+  1610 00000778 83D200                  	adc	dx, 0		; apply carry
+  1611 0000077B 7501                    	jnz	.carry		; if there was no carry
+  1612 0000077D C3                      	ret			; PC(hi) is up to date
+  1613 0000077E 01563E                  .carry:	add	rhi(15), dx	; otherwise, update PC(hi)
+  1614 00000781 E96902                  	jmp	fixPC		; and fix the PC cache
+  1615 00000784 E97B02                  .udf:	jmp	undefined	; 11101XXXXXXXXXXX is undefined
+  1616                                  
+  1617                                  	; 32 bit instructions
+  1618                                  	aligncc
+  1618 00000787 CC                  <1>  align 2, int3
+  1619 00000788 A90008                  h1111:	test	ax, 0x0800	; is this 11111XXXXXXXXXXX?
+  1620 0000078B 75F7                    	jnz	h1110.udf	; if yes, execute as undefined.
+  1621 0000078D 50                      	push	ax		; remember low instruction word
+  1622                                  	ifetch			; fetch high instruction word into AX
+  1622 0000078E 8B763C              <1>  mov si, rlo(15)
+  1622 00000791 4E                  <1>  dec si
+  1622 00000792 8CC1                <1>  mov cx, es
+  1622 00000794 8E464C              <1>  mov es, [bp+pcseg]
+  1622 00000797 FF564E              <1>  call [bp+pcldrh]
+  1622 0000079A 83463C02            <1>  add word rlo(15), 2
+  1622 0000079E 7303                <1>  jnc %%nofix
+  1622 000007A0 E84702              <1>  call ifetchtail
+  1622                              <1> %%nofix:
+  1623 000007A3 5A                      	pop	dx		; AX:DX holds the instruction
+  1624 000007A4 85C0                    	test	ax, ax		; is AX 0XXXXXXXXXXXXXXX?
+  1625 000007A6 7941                    	jns	.udf		; if yes, execute as undefined.
+  1626 000007A8 F6C450                  	test	ah, 0x50	; test high word with 010100000000
+  1627 000007AB 7447                    	jz	.notbl		; for the case X0X0XXXXXXXX
+  1628 000007AD 7B3A                    	jpo	.udf		; if it was not X1X1XXXXXXXX
+  1629                                  	; fallthrough to BL #imm24
+  1630                                  
+  1631                                  	; 11110SBBBBBBBBBB 11J1JAAAAAAAAAAA BL #imm24
+  1632 000007AF 8D763C                  	lea	si, rlo(15)	; SI = &PC
+  1633 000007B2 8D7E38                  	lea	di, rlo(14)	; DI = &LR
+  1634 000007B5 A5                      	movsw			; LR = PC
+  1635 000007B6 A5                      	movsw
+  1636 000007B7 B104                    	mov	cl, 4
+  1637 000007B9 D3E2                    	shl	dx, cl		; DX = 0SBBBBBBBBBB0000
+  1638 000007BB 89C3                    	mov	bx, ax		; keep a copy of BX for later
+  1639 000007BD D1E3                    	shl	bx, 1		; BX = 1J1JAAAAAAAAAAA0
+  1640 000007BF 80E70F                  	and	bh, 0x0f	; BX = 0000AAAAAAAAAAA0
+  1641 000007C2 08D7                    	or	bh, dl		; BX = BBBBAAAAAAAAAAA0
+  1642 000007C4 D1E2                    	shl	dx, 1		; DX = SBBBBBBBBBB00000
+  1643 000007C6 B109                    	mov	cl, 9
+  1644 000007C8 D3FA                    	sar	dx, cl		; DX = SSSSSSSSSSBBBBBB
+  1645 000007CA A90010                  	test	ax, 0x1000	; is J1 set?
+  1646 000007CD 7503                    	jnz	.j1
+  1647 000007CF 80F240                  	xor	dl, 0x40	; DX = SSSSSSSSSyBBBBBB
+  1648 000007D2 A90020                  .j1:	test	ax, 0x2000	; is J2 set?
+  1649 000007D5 7503                    	jnz	.j2
+  1650 000007D7 80F280                  	xor	dl, 0x80	; DX = SSSSSSSSxyBBBBBB, xy = ~SS^JJ
+  1651 000007DA 015E3C                  .j2:	add	rlo(15), bx	; PC += #imm24:0
+  1652 000007DD 83D200                  	adc	dx, 0		; DX gets the carry
+  1653 000007E0 7501                    	jnz	.carry		; if there is no carry, we are done
+  1654 000007E2 C3                      	ret
+  1655 000007E3 01563E                  .carry:	add	rhi(15), dx	; if there is, update PC(hi)
+  1656 000007E6 E90402                  	jmp	fixPC		; and the PC cache
+  1657                                  
+  1658                                  	; 111101111111AAAA 1010AAAAAAAAAAAA UDF #imm16
+  1659                                  	; and other undefined instructions
+  1660 000007E9 836E3C02                .udf:	sub	word rlo(15), 2	; move PC back to current instruction + 2
+  1661 000007ED 835E3E00                	sbb	word rhi(15), 0
+  1662 000007F1 E90E02                  	jmp	undefined	; and treat as an undefined instruction
+  1663                                  
+  1664                                  	; if we get here, it is known that the instruction has the form
+  1665                                  	; 11110XXXXXXXXXXX 10Y0YYYYYYYYYYYY
+  1666                                  	aligncc
+  1666                              <1>  align 2, int3
+  1667 000007F4 80FEF3                  .notbl:	cmp	dh, 0xf3	; is it 11110011?
+  1668 000007F7 75F0                    	jne	.udf
+  1669 000007F9 80FAEF                  	cmp	dl, 0xef	; is it 1111001111101111 (MRS)?
+  1670 000007FC 741C                    	je	mrs
+  1671 000007FE 89D1                    	mov	cx, dx		; CX = 11110XXXXXXXXXXX
+  1672 00000800 80E1F0                  	and	cl, 0xf0	; CX = 11110XXXXXXX0000
+  1673 00000803 80F980                  	cmp	cl, 0x80	; is it 111100111000XXXX?
+  1674 00000806 7466                    	je	msr
+  1675 00000808 80F9B0                  	cmp	cl, 0xb0	; is it 111100111011XXXX?
+  1676 0000080B 75DC                    	jne	.udf		; if not, we have an undefined instruction
+  1677 0000080D 3C40                    	cmp	al, 0x40	; is it 10Y0YYYY0100AAAA -- 10Y0YYYY0110AAAA?
+  1678 0000080F 72D8                    	jb	.udf
+  1679 00000811 3C6F                    	cmp	al, 0x6f
+  1680 00000813 77D4                    	ja	.udf
+  1681                                  
+  1682                                  	; 111100111011XXXX 10X0XXXX0100AAAA DSB #option
+  1683                                  	; 111100111011XXXX 10X0XXXX0101AAAA DMB #option
+  1684                                  	; 111100111011XXXX 10X0XXXX0110AAAA ISB #option
+  1685 00000815 874648                  	xchg	ax, [bp+oprA]	; perform a poor man's mfence
+  1686 00000818 C3                      	ret
+  1687                                  
+  1688                                  	; 11110011111XXXXX 10X0AAAABBBBBBBB MRS Rn, spec_reg
+  1689                                  	aligncc
+  1689 00000819 CC                  <1>  align 2, int3
+  1690 0000081A B106                    mrs:	mov	cl, 6
+  1691 0000081C 89C6                    	mov	si, ax
+  1692 0000081E D3EE                    	shr	si, cl		; DI = 00000010 X0AAAA00
+  1693 00000820 83E63C                  	and	si, 0x3c	; DI = 00000000 00AAAA00
+  1694 00000823 31D2                    	xor	dx, dx		; DX = 0
+  1695 00000825 89C1                    	mov	cx, ax		; keep a copy of the second instruction byte
+  1696 00000827 24F8                    	and	al, 0xf8	; AX = 10X0AAAABBBBB000
+  1697 00000829 84C0                    	test	al, al		; is this one of the APSR/EPSR/IPSR registers?
+  1698 0000082B 740A                    	je	.psr
+  1699 0000082D 3C08                    	cmp	al, 0x08	; is this an SP access instruction?
+  1700 0000082F 742B                    	je	.sp
+  1701                                  
+  1702                                  	; TODO: handle priority mask/control register access
+  1703                                  	; once interrupt handling is in
+  1704                                  	;cmp	al, 0x10	; is this a priority mask or CONTROL access?
+  1705                                  	;je	.prio
+  1706                                  
+  1707                                  	; otherwise, this is an unknown register -- read as 0
+  1708 00000831 8912                    .clr:	mov	[bp+si+regs], dx ; clear Rd
+  1709 00000833 895202                  	mov	[bp+si+regs+hi], dx
+  1710 00000836 C3                      	ret
+  1711                                  
+  1712                                  	; construct the APRS/IPSR combination in AX:DX and return it
+  1713                                  	; TODO: add IPSR code once interrupt handling is implemented
+  1714 00000837 E83800                  .psr:	call	fixflags	; set up flags, kills AX
+  1715 0000083A 31C0                    	xor	ax, ax
+  1716 0000083C F6C104                  	test	cl, 0x04	; want the APSR bits?
+  1717 0000083F 7415                    	jz	.wb
+  1718 00000841 8B4640                  	mov	ax, [bp+flags]	; set up flags
+  1719 00000844 86E0                    	xchg	ah, al		; AX = NZXXXXXC XXXXVXXX
+  1720 00000846 2508C1                  	and	ax, 0xc108	; AX = NZ00000C 0000V000
+  1721 00000849 D0E0                    	shl	al, 1		; AX = NZ00000C 000V0000
+  1722 0000084B 08C4                    	or	ah, al		; AX = NZ0V000C 000V0000
+  1723 0000084D 9E                      	sahf			; load AH into flags
+  1724 0000084E 7303                    	jnc	.nc
+  1725 00000850 80CC20                  	or	ah, 0x20	; AX = NZCV000C 000V0000
+  1726 00000853 2500F0                  .nc:	and	ax, 0xf000	; AX = NZCV0000 00000000
+  1727 00000856 8912                    .wb:	mov	[bp+si+regs], dx ; write registers back
+  1728 00000858 894202                  	mov	[bp+si+regs+hi], ax
+  1729 0000085B C3                      	ret
+  1730                                  
+  1731 0000085C F6C107                  .sp:	test	cl, 0x07	; do we want the user stack?
+  1732 0000085F 75D0                    	jnz	.clr		; if not, we don't have anything	
+  1733 00000861 8B4634                  	mov	ax, rlo(13)	; dx:ax = SP
+  1734 00000864 8B5636                  	mov	dx, rhi(13)	; Rd = SP
+  1735 00000867 8902                    	mov	[bp+si+regs], ax
+  1736 00000869 895202                  	mov	[bp+si+regs+hi], dx
+  1737 0000086C C3                      	ret
+  1738                                  
+  1739                                  	; 11110011100XAAAA 10X0XXXXBBBBBBBB MSR spec_reg, Rn
+  1740                                  	aligncc
+  1740 0000086D CC                  <1>  align 2, int3
+  1741 0000086E 29CA                    msr:	sub	dx, cx		; DX = 000000000000AAAA
+  1742                                  	todo
+  1742 00000870 CC                  <1>  int3
+  1742 00000871 C3                  <1>  ret
+  1743                                  
+  1744                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  1745                                  ;; Flag Manipulation                                                          ;;
+  1746                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  1747                                  
+  1748                                  	; set ZF and SF in flags according to zsreg
+  1749                                  	; trashes AX and DI.
+  1750                                  	aligncc
+  1750                              <1>  align 2, int3
+  1751                                  fixflags:
+  1752 00000872 8B7E42                  	mov	di, [bp+zsreg]
+  1753 00000875 85FF                    	test	di, di		; flags already fixed?
+  1754 00000877 7501                    	jnz	.entry
+  1755 00000879 C3                      	ret			; if yes, there's nothing left to do
+  1756                                  
+  1757                                  	; fixRd entry point
+  1758                                  	aligncc
+  1758                              <1>  align 2, int3
+  1759 0000087A 8B05                    .entry:	mov	ax, [di]	; ax = zsreg(lo)
+  1760 0000087C 08E0                    	or	al, ah		; make sure LSB of AH is accounted for
+  1761 0000087E D0EC                    	shr	ah, 1		; clear MSB of AX, destroy LSB of AH
+  1762 00000880 0B4502                  	or	ax, [di+hi]	; set SF and ZF on zsreg
+  1763 00000883 9F                      	lahf			; AH = SF, ZF according to zsreg
+  1764 00000884 8A4640                  	mov	al, [bp+flags]
+  1765 00000887 253FC0                  	and	ax, (ZF|SF)<<8|~(ZF|SF)&0xff
+  1766                                  				; mask AL to all but ZF and SF,
+  1767                                  				; AH to just ZF and SF
+  1768 0000088A 08E0                    	or	al, ah		; merge the two
+  1769 0000088C 884640                  	mov	[bp+flags], al	; write them back
+  1770 0000088F C746420000              	mov	word [bp+zsreg], 0 ; and mark the flags as fixed
+  1771 00000894 C3                      	ret
+  1772                                  
+  1773                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  1774                                  ;; Memory Access                                                              ;;
+  1775                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  1776                                  
+  1777                                  	; Translate an ARM address and return a pointer to a set of
+  1778                                  	; accessor functions.  These functions can then be used to
+  1779                                  	; access the memory behind it.  The offset in AX can be adjusted
+  1780                                  	; by the caller to perform multiple memory accesses on related
+  1781                                  	; addresses, but once it overflows, translate must be called anew.
+  1782                                  	; Expects an ARM address high word in CX.  Returns a translated segment
+  1783                                  	; in ES and a pointer to a structure of accessor functions in BX.
+  1784                                  	; Sets CX to the original value of ES.  Trashes SI.
+  1785                                  	section	.text
+  1786                                  	aligncc
+  1786 00000895 CC                  <1>  align 2, int3
+  1787                                  translate:
+  1788 00000896 88EB                    	mov	bl, ch		; load address space nibble
+  1789 00000898 81E3F000                	and	bx, 0xf0	; isolate address space nibble
+  1790 0000089C D1EB                    	shr	bx, 1		; form a table index
+  1791 0000089E D1EB                    	shr	bx, 1
+  1792 000008A0 D1EB                    	shr	bx, 1
+  1793 000008A2 FFA7[1C01]              	jmp	[xlttab+bx]	; call nibble-specific translator
+  1794                                  
+  1795                                  	; Address space translators.  One for each part of the address space.
+  1796                                  	section	.data
+  1797                                  	align	2, db 0
+  1798 0000011C [A608]                  xlttab:	dw	xltadj		; 00000000--000fffff adjusted memory
+  1799 0000011E [B608]                  	dw	xltraw		; 10000000--100fffff unadjusted memory
+  1800 00000120 [A608]                  	dw	xltadj		; 20000000--200fffff adjusted memory (mirror)
+  1801 00000122 [B608]                  	dw	xltraw		; 30000000--300fffff unadjusted memory (mirror)
+  1802 00000124 [C608]                  	dw	xltio		; 40000000--4000ffff I/O ports
+  1803 00000126 [CC08]                  	dw	xltnone		; 50000000--5fffffff open bus
+  1804 00000128 [CC08]                  	dw	xltnone		; 60000000--6fffffff open bus
+  1805 0000012A [CC08]                  	dw	xltnone		; 70000000--7fffffff open bus
+  1806 0000012C [CC08]                  	dw	xltnone		; 80000000--8fffffff open bus
+  1807 0000012E [CC08]                  	dw	xltnone		; 90000000--9fffffff open bus
+  1808 00000130 [CC08]                  	dw	xltnone		; a0000000--afffffff open bus
+  1809 00000132 [CC08]                  	dw	xltnone		; b0000000--bfffffff open bus
+  1810 00000134 [CC08]                  	dw	xltnone		; c0000000--cfffffff open bus
+  1811 00000136 [CC08]                  	dw	xltnone		; d0000000--dfffffff open bus
+  1812 00000138 [D208]                  	dw	xltppb		; e0000000--e00fffff private peripheral bus PPB
+  1813 0000013A [D608]                  	dw	xltvendor	; f0000000--ffffffff vendor use
+  1814                                  
+  1815                                  	; translator for imgbase adjusted memory
+  1816                                  	section	.text
+  1817                                  	aligncc
+  1817                              <1>  align 2, int3
+  1818 000008A6 89CE                    xltadj:	mov	si, cx		; preserve old SI
+  1819 000008A8 8CC1                    	mov	cx, es		; save old ES
+  1820 000008AA D1E6                    	shl	si, 1		; form a table index
+  1821 000008AC 83E61E                  	and	si, 0x001e	; mask out relevant nibble
+  1822 000008AF 8E4270                  	mov	es, [bp+si+mmadj] ; translate address
+  1823 000008B2 BB[3C01]                	mov	bx, memmem	; load accessor function address
+  1824 000008B5 C3                      	ret
+  1825                                  
+  1826                                  	; translator for unadjusted memory
+  1827                                  	aligncc
+  1827                              <1>  align 2, int3
+  1828 000008B6 89CE                    xltraw:	mov	si, cx		; preserve old SI
+  1829 000008B8 8CC1                    	mov	cx, es		; save old ES
+  1830 000008BA D1E6                    	shl	si, 1		; form a table index
+  1831 000008BC 83E61E                  	and	si, 0x001e	; mask out relevant nibble
+  1832 000008BF 8E4250                  	mov	es, [bp+si+mmraw] ; translate address
+  1833 000008C2 BB[3C01]                	mov	bx, memmem	; load accessor function address
+  1834 000008C5 C3                      	ret
+  1835                                  
+  1836                                  	; translator for I/O ports
+  1837                                  	aligncc
+  1837                              <1>  align 2, int3
+  1838 000008C6 8CC1                    xltio:	mov	cx, es		; save ES
+  1839 000008C8 BB[4801]                	mov	bx, memio	; I/O memory access
+  1840 000008CB C3                      	ret
+  1841                                  
+  1842                                  	; translator for open bus
+  1843                                  	aligncc
+  1843                              <1>  align 2, int3
+  1844 000008CC 8CC1                    xltnone:mov	cx, es		; save ES
+  1845 000008CE BB[5401]                	mov	bx, memnone	; no memory access
+  1846 000008D1 C3                      	ret
+  1847                                  
+  1848                                  	; translator for the private peripheral bus (PPB)
+  1849                                  	aligncc
+  1849                              <1>  align 2, int3
+  1850 000008D2 8CC1                    xltppb:	mov	cx, es		; save ES
+  1851                                  	todo
+  1851 000008D4 CC                  <1>  int3
+  1851 000008D5 C3                  <1>  ret
+  1852                                  
+  1853                                  	; translator for the vendor-use area
+  1854                                  	aligncc
+  1854                              <1>  align 2, int3
+  1855                                  xltvendor:
+  1856 000008D6 8CC1                    	mov	cx, es		; save ES
+  1857                                  	todo
+  1857 000008D8 CC                  <1>  int3
+  1857 000008D9 C3                  <1>  ret
+  1858                                  
+  1859                                  	; Memory accessor functions.  These functions all follow the same
+  1860                                  	; convention: DS:SI holds the translated address, DX:AX holds the datum
+  1861                                  	; to be written (in case of a store function) and CX holds the old value
+  1862                                  	; of DS.  On return, DX:AX holds the datum loaded (in case of a load
+  1863                                  	; function).  In case of a store function, DX:AX is undefined on return.
+  1864                                  	; The function preserves CX:SI as well as all segment registers except
+  1865                                  	; for DS (which is restored from CX).  The caller is responsible for
+  1866                                  	; checking for alignment problems.
+  1867                                  	struc	mem
+  1868 00000000 <res 00000002>          .ldr	resw	1		; load word
+  1869 00000002 <res 00000002>          .ldrh	resw	1		; load half word
+  1870 00000004 <res 00000002>          .ldrb	resw	1		; load byte
+  1871 00000006 <res 00000002>          .str	resw	1		; store word
+  1872 00000008 <res 00000002>          .strh	resw	1		; store half word
+  1873 0000000A <res 00000002>          .strb	resw	1		; store byte
+  1874                                  	endstruc
+  1875                                  
+  1876                                  	; memory accessor functions for ordinary memory
+  1877                                  	section	.data
+  1878 0000013C [DA08]                  memmem	dw	ldrmem
+  1879 0000013E [E408]                  	dw	ldrhmem
+  1880 00000140 [EA08]                  	dw	ldrbmem
+  1881 00000142 [F008]                  	dw	strmem
+  1882 00000144 [FA08]                  	dw	strhmem
+  1883 00000146 [0009]                  	dw	strbmem
+  1884                                  
+  1885                                  	; memory accessor functions for I/O ports
+  1886 00000148 [0609]                  memio	dw	ldrio
+  1887 0000014A [1209]                  	dw	ldrhio
+  1888 0000014C [1809]                  	dw	ldrbio
+  1889 0000014E [1E09]                  	dw	strio
+  1890 00000150 [2A09]                  	dw	strhio
+  1891 00000152 [3009]                  	dw	strbio
+  1892                                  
+  1893                                  	; memory accessor functions for open bus
+  1894 00000154 [3609]<rept>            memnone	times	6 dw ldstnone
+  1895                                  
+  1896                                  	; load word from memory
+  1897                                  	section	.text
+  1898                                  	aligncc
+  1898                              <1>  align 2, int3
+  1899 000008DA 268B04                  ldrmem:	mov	ax, [es:si]	; DX:AX = [ES:SI]
+  1900 000008DD 268B5402                	mov	dx, [es:si+2]
+  1901 000008E1 8EC1                    	mov	es, cx		; restore ES
+  1902 000008E3 C3                      	ret
+  1903                                  
+  1904                                  	; load half word from memory
+  1905                                  	aligncc
+  1905                              <1>  align 2, int3
+  1906 000008E4 268B04                  ldrhmem:mov	ax, [es:si]	; AX = [ES:SI]
+  1907 000008E7 8EC1                    	mov	es, cx		; restore ES
+  1908 000008E9 C3                      	ret
+  1909                                  
+  1910                                  	; load byte from memory
+  1911                                  	aligncc
+  1911                              <1>  align 2, int3
+  1912 000008EA 268A04                  ldrbmem:mov	al, [es:si]	; AL = [ES:SI]
+  1913 000008ED 8EC1                    	mov	es, cx		; restore ES
+  1914 000008EF C3                      	ret
+  1915                                  
+  1916                                  	; store word to memory
+  1917                                  	aligncc
+  1917                              <1>  align 2, int3
+  1918 000008F0 268904                  strmem:	mov	[es:si], ax	; [ES:SI] = AX:DX
+  1919 000008F3 26895402                	mov	[es:si+2], dx
+  1920 000008F7 8EC1                    	mov	es, cx		; restore ES
+  1921 000008F9 C3                      	ret
+  1922                                  
+  1923                                  	; store half word to memory
+  1924                                  	aligncc
+  1924                              <1>  align 2, int3
+  1925 000008FA 268904                  strhmem:mov	[es:si], ax	; [ES:SI] = AX
+  1926 000008FD 8EC1                    	mov	es, cx		; restore ES
+  1927 000008FF C3                      	ret
+  1928                                  
+  1929                                  	; store byte to memory
+  1930                                  	aligncc
+  1930                              <1>  align 2, int3
+  1931 00000900 268804                  strbmem:mov	[es:si], al	; [ES:SI] = AL
+  1932 00000903 8EC1                    	mov	es, cx		; restore ES
+  1933 00000905 C3                      	ret
+  1934                                  
+  1935                                  	; load word from I/O port
+  1936                                  	aligncc
+  1936                              <1>  align 2, int3
+  1937 00000906 89F2                    ldrio:	mov	dx, si		; set up DX for IN instruction
+  1938 00000908 ED                      	in	ax, dx		; load low word
+  1939 00000909 42                      	inc	dx
+  1940 0000090A 42                      	inc	dx		; advance to high port
+  1941 0000090B 50                      	push	ax		; remember low word
+  1942 0000090C ED                      	in	ax, dx		; load high word
+  1943 0000090D 92                      	xchg	ax, dx		; move high word to dx
+  1944 0000090E 58                      	pop	ax		; restore low word
+  1945 0000090F 8EC1                    	mov	es, cx		; restore ES
+  1946 00000911 C3                      	ret
+  1947                                  
+  1948                                  	; load half word from I/O port
+  1949                                  	aligncc
+  1949                              <1>  align 2, int3
+  1950 00000912 89F2                    ldrhio:	mov	dx, si		; set up DX for IN instruction
+  1951 00000914 ED                      	in	ax, dx		; load word
+  1952 00000915 8EC1                    	mov	es, cx		; restore ES
+  1953 00000917 C3                      	ret
+  1954                                  
+  1955                                  	; load byte from I/O port
+  1956                                  	aligncc
+  1956                              <1>  align 2, int3
+  1957 00000918 89F2                    ldrbio:	mov	dx, si		; set up DX for IN instruction
+  1958 0000091A EC                      	in	al, dx		; load byte
+  1959 0000091B 8EC1                    	mov	es, cx		; restore ES
+  1960 0000091D C3                      	ret
+  1961                                  
+  1962                                  	; store word to I/O port
+  1963                                  	aligncc
+  1963                              <1>  align 2, int3
+  1964 0000091E 52                      strio:	push	dx		; temporarily remember high word
+  1965 0000091F 89F2                    	mov	dx, si		; set up DX for OUT instruction
+  1966 00000921 EF                      	out	dx, ax		; store low word
+  1967 00000922 42                      	inc	dx		; advance to high port
+  1968 00000923 42                      	inc	dx
+  1969 00000924 58                      	pop	ax		; load high word
+  1970 00000925 EF                      	out	dx, ax		; store high word
+  1971 00000926 8EC1                    	mov	es, cx		; restore ES
+  1972 00000928 C3                      	ret
+  1973                                  
+  1974                                  	; store half word to I/O port
+  1975                                  	aligncc
+  1975 00000929 CC                  <1>  align 2, int3
+  1976 0000092A 89F2                    strhio:	mov	dx, si		; set up DX for OUT instruction
+  1977 0000092C EF                      	out	dx, ax		; store word
+  1978 0000092D 8EC1                    	mov	es, cx		; restore ES
+  1979 0000092F C3                      	ret
+  1980                                  
+  1981                                  	; store byte to I/O port
+  1982                                  	aligncc
+  1982                              <1>  align 2, int3
+  1983 00000930 89F2                    strbio:	mov	dx, si		; set up DX for OUT instruction
+  1984 00000932 EE                      	out	dx, al		; store byte
+  1985 00000933 8EC1                    	mov	es, cx		; restore ES
+  1986 00000935 C3                      	ret
+  1987                                  
+  1988                                  	; store nothing/load 0xffffffff
+  1989                                  	aligncc
+  1989                              <1>  align 2, int3
+  1990                                  ldstnone:
+  1991 00000936 B8FFFF                  	mov	ax, 0xffff	; DX:AX = -1
+  1992 00000939 89C2                    	mov	dx, ax
+  1993 0000093B 8EC1                    	mov	es, cx		; restore ES
+  1994 0000093D C3                      	ret
+  1995                                  
+  1996                                  	; scale immediate in CX:AX by 4, add to source address in [SI]
+  1997                                  	; and then perform ldr effect
+  1998                                  	aligncc
+  1998                              <1>  align 2, int3
+  1999 0000093E D1E0                    ldrimm:	shl	ax, 1		; scale immediate
+  2000 00000940 D1E0                    	shl	ax, 1
+  2001 00000942 034400                  	add	ax, [byte si]	; add useless index byte to avoid NOP for
+  2002 00000945 134C02                  	adc	cx, [si+2]	; alignment
+  2003                                  	; fallthrough
+  2004                                  
+  2005                                  	; load word from ARM address CX:AX and deposit into the register
+  2006                                  	; pointed to by DI.  Preserve DI.
+  2007                                  	align	2
+  2008 00000948 E84BFF                  ldr:	call	translate	; ES:AX: translated address, BX: handler
+  2009 0000094B 96                      	xchg	ax, si		; ES:SI = DS:AX, CX = CS
+  2010 0000094C FF17                    	call	[bx+mem.ldr]	; DX:AX = mem[ES:SI], ES = CX
+  2011 0000094E 8905                    	mov	[di], ax	; Rt = mem[ES:SI]
+  2012 00000950 895502                  	mov	[di+hi], dx
+  2013 00000953 C3                      	ret
+  2014                                  
+  2015                                  	; scale immediate in CX:AX by 2, add to source address in [SI]
+  2016                                  	; and then perform ldrh effect
+  2017                                  	aligncc
+  2017                              <1>  align 2, int3
+  2018 00000954 D1E0                    ldrhimm:shl	ax, 1		; scale immediate
+  2019 00000956 034400                  	add	ax, [byte si]	; add useless index byte to avoid NOP for
+  2020 00000959 134C02                  	adc	cx, [si+2]	; alignment
+  2021                                  	; fallthrough
+  2022                                  
+  2023                                  	; load halfword from ARM address CX:AX and deposit into the register
+  2024                                  	; pointed to by DI.
+  2025                                  	align	2
+  2026 0000095C E837FF                  ldrh:	call	translate	; ES:AX: translated address, BX: handler
+  2027 0000095F 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2028 00000960 FF5702                  	call	[bx+mem.ldrh]	; AX = mem[ES:SI], ES = CX
+  2029 00000963 AB                      	stosw			; Rt = mem[ES:SI]
+  2030 00000964 31C0                    	xor	ax, ax
+  2031 00000966 AB                      	stosw
+  2032 00000967 C3                      	ret
+  2033                                  
+  2034                                  	; load signed halfword from ARM address CX:AX and deposit into the
+  2035                                  	; the register pointed to by DI.
+  2036                                  	aligncc
+  2036                              <1>  align 2, int3
+  2037 00000968 E82BFF                  ldrsh:	call	translate	; ES:AX: translated address, BX: handler
+  2038 0000096B 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2039 0000096C FF5702                  	call	[bx+mem.ldrh]	; AX = mem[ES:SI], ES = CX
+  2040 0000096F 99                      	cwd			; DX:AX = mem[ES:SI]
+  2041 00000970 AB                      	stosw			; Rt = mem[ES:SI] (sign extended)
+  2042 00000971 8915                    	mov	[di], dx
+  2043 00000973 C3                      	ret
+  2044                                  
+  2045                                  	; add source address in [SI] to CX:AX, then perform ldrb effect
+  2046                                  	aligncc
+  2046                              <1>  align 2, int3
+  2047 00000974 034400                  ldrbimm:add	ax, [byte si]	; add useless index byte to avoid NOP for
+  2048 00000977 134C02                  	adc	cx, [si+2]	; alignment
+  2049                                  	; fallthrough
+  2050                                  
+  2051                                  	; load byte from ARM address CX:AX, zero-extend and deposit into the
+  2052                                  	; register pointed to by DI.
+  2053                                  	align	2
+  2054 0000097A E819FF                  ldrb:	call	translate	; ES:AX: translated address, BX: handler
+  2055 0000097D 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2056 0000097E FF5704                  	call	[bx+mem.ldrb]	; AL = mem[ES:SI], ES = CX
+  2057 00000981 AA                      	stosb			; Rt = mem[ES:SI]
+  2058 00000982 31C0                    	xor	ax, ax
+  2059 00000984 AA                      	stosb
+  2060 00000985 AB                      	stosw
+  2061 00000986 C3                      	ret
+  2062                                  
+  2063                                  	; load signed byte from ARM address CX:AX and deposit into the
+  2064                                  	; the register pointed to by DI.
+  2065                                  	aligncc
+  2065 00000987 CC                  <1>  align 2, int3
+  2066 00000988 E80BFF                  ldrsb:	call	translate	; ES:AX: translated address, BX: handler
+  2067 0000098B 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2068 0000098C FF5704                  	call	[bx+mem.ldrb]	; AL = mem[ES:SI], ES = CX
+  2069 0000098F 1F                      	pop	ds		; restore DS
+  2070 00000990 98                      	cbw			; AX = mem[ES:SI]
+  2071 00000991 99                      	cwd			; DX:AX = mem[ES:SI]
+  2072 00000992 AB                      	stosw			; Rt = mem[ES:SI] (sign extended)
+  2073 00000993 8915                    	mov	[di], dx
+  2074 00000995 C3                      	ret
+  2075                                  
+  2076                                  	; scale immediate in CX:AX by 4, add to source address in [SI]
+  2077                                  	; and then perform str effect
+  2078                                  	aligncc
+  2078                              <1>  align 2, int3
+  2079 00000996 D1E0                    strimm:	shl	ax, 1		; scale immediate
+  2080 00000998 D1E0                    	shl	ax, 1
+  2081 0000099A 034400                  	add	ax, [byte si]	; add useless index byte to avoid NOP for
+  2082 0000099D 134C02                  	adc	cx, [si+2]	; alignment
+  2083                                  	; fallthrough
+  2084                                  
+  2085                                  	; store word from register pointed to by DI to ARM address CX:AX.
+  2086                                  	; Preserve DI.
+  2087                                  	align	2
+  2088 000009A0 E8F3FE                  str:	call	translate	; ES:AX: translated address, BX: handler
+  2089 000009A3 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2090 000009A4 8B05                    	mov	ax, [di]	; DX:AX = Rt
+  2091 000009A6 8B5502                  	mov	dx, [di+hi]
+  2092 000009A9 FF6706                  	jmp	[bx+mem.str]	; perform store, restore ES
+  2093                                  
+  2094                                  	; scale immediate in CX:AX by 2, add to source address in [SI]
+  2095                                  	; and then perform strh effect
+  2096                                  	aligncc
+  2096                              <1>  align 2, int3
+  2097 000009AC D1E0                    strhimm:shl	ax, 1		; scale immediate
+  2098 000009AE 034400                  	add	ax, [byte si]	; add useless index byte to avoid NOP for
+  2099 000009B1 134C02                  	adc	cx, [si+2]	; alignment
+  2100                                  	; fallthrough
+  2101                                  
+  2102                                  	; store halfword from register pointed to by DI to ARM address CX:AX.
+  2103                                  	align	2
+  2104 000009B4 E8DFFE                  strh:	call	translate	; ES:AX: translated address, BX: handler
+  2105 000009B7 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2106 000009B8 8B05                    	mov	ax, [di]	; AX = Rt
+  2107 000009BA FF6708                  	jmp	[bx+mem.strh]	; perform store, restore ES
+  2108                                  
+  2109                                  	; add CX:AX to source address in [SI], then perform strb effect
+  2110                                  	aligncc
+  2110 000009BD CC                  <1>  align 2, int3
+  2111 000009BE 034400                  strbimm:add	ax, [byte si]	; add useless index byte to avoid NOP for
+  2112 000009C1 134C02                  	adc	cx, [si+2]	; alignment
+  2113                                  	; fallthrough
+  2114                                  
+  2115                                  	; store byte from register pointed to by DI to ARM address CX:AX.
+  2116                                  	align	2
+  2117 000009C4 E8CFFE                  strb:	call	translate	; ES:AX: translated address, BX: handler
+  2118 000009C7 96                      	xchg	ax, si		; ES:SI = ES:AX, CX = CS
+  2119 000009C8 8A05                    	mov	al, [di]	; AL = Rt
+  2120 000009CA FF670A                  	jmp	[bx+mem.strb]	; perform store, restore ES
+  2121                                  
+  2122                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2123                                  ;; Address Space Conversion                                                   ;;
+  2124                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2125                                  
+  2126                                  	; Initialise memory map DI with consecutive segments starting with the
+  2127                                  	; segment in AX.  Trashes AX, CX, and DI.
+  2128                                  	section	.text
+  2129 000009CD B91000                  mminit:	mov	cx, mmsize	; fill one memory map
+  2130 000009D0 AB                      .loop:	stosw			; deposit segment into memory map
+  2131 000009D1 050010                  	add	ax, 0x1000	; advance to next segment
+  2132 000009D4 E2FA                    	loop	.loop		; and loop mmsize times
+  2133 000009D6 C3                      	ret
+  2134                                  
+  2135                                  	; convert DX:AX into a linear address in DX:AX.  Trashes CX
+  2136 000009D7 B104                    seglin:	mov	cl, 4
+  2137 000009D9 D3C2                    	rol	dx, cl		; dx = ds >> 12 | ds << 4
+  2138 000009DB 89D1                    	mov	cx, dx
+  2139 000009DD 83E20F                  	and	dx, 0xf		; dx = ds >> 12
+  2140 000009E0 80E1F0                  	and	cl, 0xf0	; cx = ds <<  4
+  2141 000009E3 01C8                    	add	ax, cx		; ax = ax + (ds >> 12)
+  2142 000009E5 83D200                  	adc	dx, 0		; apply carry
+  2143 000009E8 C3                      	ret
+  2144                                  
+  2145                                  	; Translate the address in rhi(15) and fill in pchi, pcseg, and
+  2146                                  	; pcldrh.  Returns pcldrh in BX. Sets CX=CS.
+  2147                                  	aligncc
+  2147 000009E9 CC                  <1>  align 2, int3
+  2148                                  ifetchtail:			; entry point when coming from ifetch
+  2149 000009EA FF463E                  	inc	word rhi(15)	; apply carry from rlo(15)
+  2150 000009ED 8B4E3E                  fixPC:	mov	cx, rhi(15)	; high part of PC for translation
+  2151 000009F0 894E4A                  .update:mov	[bp+pchi], cx	; remember it
+  2152 000009F3 E8A0FE                  	call	translate	; BX: handler structure, CX: high part of addr
+  2153 000009F6 8C464C                  	mov	[bp+pcseg], es	; remember translated segment
+  2154 000009F9 8EC1                    	mov	es, cx		; restore ES
+  2155 000009FB 8B5F02                  	mov	bx, [bx+mem.ldrh] ; retrieve ldrh accessor function
+  2156 000009FE 895E4E                  	mov	[bp+pcldrh], bx	; remember ldrh accessor function
+  2157 00000A01 C3                      	ret
+  2158                                  
+  2159                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2160                                  ;; Exceptions, Events, and Interrupts                                         ;;
+  2161                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2162                                  
+  2163                                  	section .data
+  2164 00000160 756E646566696E6564-     undmsg	db	"undefined instruction "
+  2164 00000169 20696E737472756374-
+  2164 00000172 696F6E20           
+  2165 00000176 5858585800              .insn	db	"XXXX", 0
+  2166                                  
+  2167                                  	; print a message that an undefined instruction has occured
+  2168                                  	; and terminate the emulation
+  2169                                  	; TODO: generate an undefined instruction exception
+  2170                                  	section	.text
+  2171                                  undefined:
+  2172 00000A02 836E3C02                	sub	word rlo(15), 2	; roll PC back to the current instruction
+  2173 00000A06 835E3E00                	sbb	word rhi(15), 0
+  2174 00000A0A E82400                  	call	hB701		; dump register contents
+  2175 00000A0D E8DDFF                  	call	fixPC		; set up translation tables for old PC
+  2176 00000A10 8B763C                  	mov	si, rlo(15)	; load low half of PC
+  2177 00000A13 4E                      	dec	si		; clear thumb bit
+  2178 00000A14 8E464C                  	mov	es, [bp+pcseg]	; load translated segment
+  2179 00000A17 FFD3                    	call	bx		; load PC from memory
+  2180 00000A19 BF[7601]                	mov	di, undmsg.insn	; convert instruction to hex
+  2181 00000A1C E8FE00                  	call	tohex
+  2182 00000A1F BE[6001]                	mov	si, undmsg
+  2183 00000A22 E81701                  	call	puts		; print "undefined instruction ####" message
+  2184 00000A25 B8014C                  	mov	ax, 0x4c01	; error level 1 (failure)
+  2185 00000A28 CD21                    	int	0x21		; 0x4c: TERMINATE PROGRAM
+  2186                                  
+  2187                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2188                                  ;; Escape Hatches                                                             ;;
+  2189                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2190                                  
+  2191                                  	; jump table for escape hatch instructions
+  2192                                  	section	.data
+  2193 0000017B 00                      	align	2, db 0
+  2194 0000017C [2A0A]                  htB7	dw	hB700		; terminate emulation
+  2195 0000017E [310A]                  	dw	hB701		; dump registers
+  2196 00000180 [770A]                  	dw	hB702		; console output
+  2197 00000182 [7F0A]                  	dw	hB703		; console input (no echo)
+  2198 00000184 [990A]                  	dw	hB704		; check input status
+  2199 00000186 [A40A]                  	dw	hB705		; perform DOS interrupt
+  2200                                  B7max	equ	($-htB7-2)/2	; highest escape hatch number used
+  2201                                  
+  2202                                  	; register dump template
+  2203                                  	section	.data
+  2204 00000188 52302020                dump	db	"R0  "
+  2205 0000018C 585858585858585820-     .r0	db          "XXXXXXXX  " ; start of the field for R0 within the dump
+  2205 00000195 20                 
+  2206                                  .field	equ	$-dump		; length of one register field
+  2207 00000196 523120205858585858-     	db	              "R1  XXXXXXXX  R2  XXXXXXXX  R3  XXXXXXXX", 13, 10
+  2207 0000019F 585858202052322020-
+  2207 000001A8 585858585858585820-
+  2207 000001B1 205233202058585858-
+  2207 000001BA 585858580D0A       
+  2208 000001C0 523420205858585858-     	db	"R4  XXXXXXXX  R5  XXXXXXXX  R6  XXXXXXXX  R7  XXXXXXXX", 13, 10
+  2208 000001C9 585858202052352020-
+  2208 000001D2 585858585858585820-
+  2208 000001DB 205236202058585858-
+  2208 000001E4 585858582020523720-
+  2208 000001ED 205858585858585858-
+  2208 000001F6 0D0A               
+  2209 000001F8 523820205858585858-     	db	"R8  XXXXXXXX  R9  XXXXXXXX  R10 XXXXXXXX  R11 XXXXXXXX", 13, 10
+  2209 00000201 585858202052392020-
+  2209 0000020A 585858585858585820-
+  2209 00000213 205231302058585858-
+  2209 0000021C 585858582020523131-
+  2209 00000225 205858585858585858-
+  2209 0000022E 0D0A               
+  2210 00000230 523132205858585858-     	db	"R12 XXXXXXXX  SP  XXXXXXXX  LR  XXXXXXXX  PC  XXXXXXXX", 13, 10
+  2210 00000239 585858202053502020-
+  2210 00000242 585858585858585820-
+  2210 0000024B 204C52202058585858-
+  2210 00000254 585858582020504320-
+  2210 0000025D 205858585858585858-
+  2210 00000266 0D0A               
+  2211 00000268 4E5A43562020            .endr	db	"NZCV  "
+  2212 0000026E 2D2D2D2D0D0A00          .nzcv	db	"----", 13, 10, 0
+  2213                                  
+  2214                                  	; b700 terminate emulation
+  2215                                  	section	.text
+  2216 00000A2A 8A4600                  hB700:	mov	al, rlo(0)	; AL = R0(lo) (error level)
+  2217 00000A2D B44C                    	mov	ah, 0x4c
+  2218 00000A2F CD21                    	int	0x21		; 0x4c: TERMINATE PROGRAM
+  2219                                  
+  2220                                  	; b701 dump registers
+  2221 00000A31 E83EFE                  hB701:	call	fixflags	; set up flags
+  2222 00000A34 BF[8C01]                	mov	di, dump.r0	; load R0 value field
+  2223 00000A37 8D7600                  	lea	si, [bp+regs]	; SI = &R0
+  2224 00000A3A AD                      .regs:	lodsw			; AX = reg(lo)
+  2225 00000A3B 50                      	push	ax
+  2226 00000A3C AD                      	lodsw			; AX = reg(hi), advance to next register
+  2227 00000A3D E8DD00                  	call	tohex		; convert high half to hex
+  2228 00000A40 58                      	pop	ax		; AX = reg(lo)
+  2229 00000A41 E8D900                  	call	tohex		; convert low half to hex
+  2230 00000A44 83C706                  	add	di, dump.field - 8 ; advance to next field
+  2231 00000A47 81FF[6802]              	cmp	di, dump.endr	; finished dumping registers?
+  2232 00000A4B 72ED                    	jb	.regs
+  2233 00000A4D BF[6E02]                	mov	di, dump.nzcv	; advance SI to NZCV field
+  2234 00000A50 B82D2D                  	mov	ax, '--'	; clear all flags in the template
+  2235 00000A53 AB                      	stosw
+  2236 00000A54 AB                      	stosw
+  2237 00000A55 FF7640                  	push	word [bp+flags]	; set up flags according to emulator state
+  2238 00000A58 9D                      	popf
+  2239 00000A59 7904                    	jns	.nn		; is SF (N) set in flags?
+  2240 00000A5B C645FC4E                	mov	byte [di-4], 'N'
+  2241 00000A5F 7504                    .nn:	jnz	.nz		; is ZF (Z) set in flags?
+  2242 00000A61 C645FD5A                	mov	byte [di-3], 'Z'
+  2243 00000A65 7304                    .nz:	jnc	.nc		; is CF (C) set in flags?
+  2244 00000A67 C645FE43                	mov	byte [di-2], 'C'
+  2245 00000A6B 7104                    .nc:	jno	.nv		; is OF (V) set in flags?
+  2246 00000A6D C645FF56                	mov	byte [di-1], 'V'
+  2247 00000A71 BE[8801]                .nv:	mov	si, dump	; load register dump template into DS:SI
+  2248 00000A74 E9C500                  	jmp	puts		; dump registers and return
+  2249                                  
+  2250                                  	; b702 console output
+  2251 00000A77 8A5600                  hB702:	mov	dl, rlo(0)	; AL = R0(lo)
+  2252 00000A7A B402                    	mov	ah, 0x02
+  2253 00000A7C CD21                    	int	0x21		; 0x02: DISPLAY OUTPUT
+  2254 00000A7E C3                      	ret
+  2255                                  
+  2256                                  	; b703 console input (no echo)
+  2257 00000A7F 8D7E00                  hB703:	lea	di, rlo(0)	; di = &R0
+  2258 00000A82 C745020000              	mov	word [di+hi], 0	; R0(hi) = 0
+  2259 00000A87 B408                    	mov	ah, 0x08
+  2260 00000A89 CD21                    	int	0x21		; 0x08: NO ECHO CONSOLE INPUT
+  2261 00000A8B 84C0                    	test	al, al		; is this extended ASCII?
+  2262 00000A8D 7404                    	jz	.ext		; if yes, read again for ext. ASCII character
+  2263 00000A8F 30E4                    	xor	ah, ah
+  2264 00000A91 AB                      	stosw			; R0(lo) = character
+  2265 00000A92 C3                      	ret
+  2266 00000A93 CD21                    .ext:	int	0x21		; 0x08: NO ECHO CONSOLE INPUT
+  2267 00000A95 B401                    	mov	ah, 0x01	; mark as extended ASCII
+  2268 00000A97 AB                      	stosw			; R0(lo) = 0x100 + character
+  2269 00000A98 C3                      	ret
+  2270                                  
+  2271                                  	; b704 check input status
+  2272 00000A99 B40B                    hB704:	mov	ah, 0x0b
+  2273 00000A9B CD21                    	int	0x21		; 0x0B: CHECK INPUT STATUS
+  2274 00000A9D 98                      	cbw			; AX: input status
+  2275 00000A9E 8D7E00                  	lea	di, rlo(0)
+  2276 00000AA1 AB                      	stosw			; R0 = input status (0 or -1)
+  2277 00000AA2 AB                      	stosw
+  2278 00000AA3 C3                      	ret
+  2279                                  
+  2280                                  	section	.bss
+  2281 00000094 <res 00000002>          spsav	resw	1		; stack pointer save area
+  2282                                  
+  2283                                  	; b705 perform DOS interrupt
+  2284                                  	section	.text
+  2285 00000AA4 E8CBFD                  hB705:	call	fixflags	; set up [bp+flags]
+  2286 00000AA7 8926[9400]              	mov	[spsav], sp	; save stack pointer
+  2287 00000AAB 31DB                    	xor	bx, bx
+  2288 00000AAD 8EDB                    	mov	ds, bx		; access interrupt table
+  2289 00000AAF 8A5E24                  	mov	bl, rlo(9)	; interrupt number
+  2290 00000AB2 D1E3                    	shl	bx, 1		; interrupt table offset
+  2291 00000AB4 D1E3                    	shl	bx, 1
+  2292 00000AB6 FF7640                  	push	word [bp+flags]	; set up flags according to emulator state
+  2293 00000AB9 9D                      	popf
+  2294 00000ABA 9C                      	pushf			; push return address and flags
+  2295 00000ABB B8[E10A]                	mov	ax, .done	; as the INT instruction does
+  2296 00000ABE 50                      	push	ax
+  2297 00000ABF FF7702                  	push	word [bx+2]	; push interrupt handler address
+  2298 00000AC2 FF37                    	push	word [bx]
+  2299 00000AC4 8B4600                  	mov	ax, rlo(0)	; set up registers
+  2300 00000AC7 8B4E04                  	mov	cx, rlo(1)
+  2301 00000ACA 8B5608                  	mov	dx, rlo(2)
+  2302 00000ACD 8B5E0C                  	mov	bx, rlo(3)
+  2303 00000AD0 8B7618                  	mov	si, rlo(6)
+  2304 00000AD3 8B7E1C                  	mov	di, rlo(7)
+  2305 00000AD6 8E4620                  	mov	es, rlo(8)
+  2306 00000AD9 8E5E2C                  	mov	ds, rlo(11)
+  2307 00000ADC 8B6E14                  	mov	bp, rlo(5)	; must be done last (destroys state pointer)
+  2308 00000ADF FA                      	cli			; simulate an INT instruction
+  2309 00000AE0 CB                      	retf
+  2310 00000AE1 FB                      .done:	sti			; enable interrupts
+  2311                                  				; (protects against dodgy INT handlers)
+  2312 00000AE2 0E                      	push	cs		; restore SS:SP
+  2313 00000AE3 17                      	pop	ss
+  2314 00000AE4 2E8B26[9400]            	mov	sp, [cs:spsav]
+  2315 00000AE9 55                      	push	bp		; save orig. return value of bp
+  2316 00000AEA BD[0400]                	mov	bp, state	; restore state pointer
+  2317 00000AED 894600                  	mov	rlo(0), ax	; restore registers
+  2318 00000AF0 894E04                  	mov	rlo(1), cx
+  2319 00000AF3 895608                  	mov	rlo(2), dx
+  2320 00000AF6 895E0C                  	mov	rlo(3), bx
+  2321 00000AF9 896610                  	mov	rlo(4), sp
+  2322 00000AFC 8F4614                  	pop	word rlo(5)	; the bp value we just pushed
+  2323 00000AFF 897618                  	mov	rlo(6), si
+  2324 00000B02 897E1C                  	mov	rlo(7), di
+  2325 00000B05 8C4620                  	mov	rlo(8), es
+  2326 00000B08 8C5628                  	mov	rlo(10), ss
+  2327 00000B0B 8C5E2C                  	mov	rlo(11), ds
+  2328 00000B0E 9C                      	pushf
+  2329 00000B0F 58                      	pop	ax		; the flags we received from the int handler
+  2330 00000B10 894630                  	mov	rlo(12), ax	; return them in R12 and set up NZCV
+  2331 00000B13 894640                  	mov	[bp+flags], ax
+  2332 00000B16 8CC8                    	mov	ax, cs		; restore segment registers
+  2333 00000B18 8ED8                    	mov	ds, ax
+  2334 00000B1A 8EC0                    	mov	es, ax
+  2335 00000B1C C3                      	ret
+  2336                                  
+  2337                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2338                                  ;; IO Routines                                                                ;;
+  2339                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  2340                                  
+  2341                                  	; hexadecimal digits
+  2342                                  	section	.data
+  2343 00000275 303132333435363738-     hextab	db	"0123456789ABCDEF"
+  2343 0000027E 39414243444546     
+  2344                                  
+  2345                                  	; convert number in AX to hexadecimal and write to DS:DI
+  2346                                  	; trashes AX, BX, CX, and DX.  Advances DI by 4 bytes.
+  2347                                  	section	.text
+  2348 00000B1D BB[7502]                tohex:	mov	bx, hextab	; base address for xlat
+  2349 00000B20 B104                    	mov	cl, 4		; for shifting
+  2350 00000B22 89C2                    	mov	dx, ax		; make a copy for later use
+  2351 00000B24 D3C0                    	rol	ax, cl		; shift digit X000 into place
+  2352 00000B26 240F                    	and	al, 0xf		; isolate digit
+  2353 00000B28 D7                      	xlat			; translate to hex
+  2354 00000B29 AA                      	stosb			; deposit into string
+  2355 00000B2A 88F0                    	mov	al, dh		; load digit 0X00
+  2356 00000B2C 240F                    	and	al, 0xf		; isolate digit
+  2357 00000B2E D7                      	xlat			; translate to hex
+  2358 00000B2F AA                      	stosb			; deposit into string
+  2359 00000B30 88D0                    	mov	al, dl		; load digit 00X0
+  2360 00000B32 D2E8                    	shr	al, cl		; shift into place
+  2361 00000B34 D7                      	xlat			; translate to hex
+  2362 00000B35 AA                      	stosb			; deposit into string
+  2363 00000B36 92                      	xchg	ax, dx		; load digit 000X
+  2364 00000B37 240F                    	and	al, 0xf		; isolate digit
+  2365 00000B39 D7                      	xlat			; translate to hex
+  2366 00000B3A AA                      	stosb			; deposit into string
+  2367 00000B3B C3                      	ret
+  2368                                  
+  2369                                  	; print string in ds:si to stdout
+  2370 00000B3C AC                      puts:	lodsb
+  2371 00000B3D 84C0                    	test	al, al		; end of string reached?
+  2372 00000B3F 7407                    	jz	.end
+  2373 00000B41 92                      	xchg	ax, dx		; DOS wants the character in dl
+  2374 00000B42 B402                    	mov	ah, 0x02
+  2375 00000B44 CD21                    	int	0x21		; 0x02: WRITE CHARACTER TO STDOUT
+  2376 00000B46 EBF4                    	jmp	puts
+  2377                                  
+  2378 00000B48 C3                      .end:	ret
+  2379                                  
+  2380                                  	; print ds:si and then a colon and a space
+  2381                                  	; then print a message for the error in AX
+  2382 00000B49 50                      perror:	push	ax		; remember error code
+  2383 00000B4A E8EFFF                  	call	puts		; print string
+  2384                                  
+  2385 00000B4D 0E                      	push	cs
+  2386 00000B4E 1F                      	pop	ds		; prepare ds
+  2387 00000B4F BE[0504]                	mov	si, colsp	; ": "
+  2388 00000B52 E8E7FF                  	call	puts
+  2389                                  
+  2390 00000B55 5E                      	pop	si		; reload error code
+  2391 00000B56 01F6                    	add	si, si
+  2392 00000B58 8BB4[8602]              	mov	si, [errors+si]	; load error code
+  2393 00000B5C E8DDFF                  	call	puts		; print error message
+  2394                                  
+  2395 00000B5F BE[3400]                	mov	si, crlf	; load "\r\n"
+  2396 00000B62 E8D7FF                  	call	puts
+  2397                                  
+  2398 00000B65 C3                      	ret
+  2399                                  
+  2400                                  	; DOS error codes and messages
+  2401                                  	section	.data
+  2402 00000285 90                      	align	2
+  2403                                  
+  2404 00000286 [AC02][BA02][D202]-     errors	dw	.E00, .E01, .E02, .E03, .E04, .E05, .E06, .E07
+  2404 0000028C [E102][F002][0403]-
+  2404 00000292 [1203][2103]       
+  2405 00000296 [4003][5403][7103]-     	dw	.E08, .E09, .E0A, .E0B, .E0C, .E0D, .E0E, .E0F
+  2405 0000029C [8503][9403][A803]-
+  2405 000002A2 [AC02][B503]       
+  2406 000002A6 [C303][E703][F703]      	dw	.E10, .E11, .E12
+  2407                                  
+  2408 000002AC 756E6B6E6F776E2065-     .E00	db	"unknown error",0
+  2408 000002B5 72726F7200         
+  2409 000002BA 66756E6374696F6E20-     .E01	db	"function number invalid",0
+  2409 000002C3 6E756D62657220696E-
+  2409 000002CC 76616C696400       
+  2410 000002D2 66696C65206E6F7420-     .E02	db	"file not found",0
+  2410 000002DB 666F756E6400       
+  2411 000002E1 70617468206E6F7420-     .E03	db	"path not found",0
+  2411 000002EA 666F756E6400       
+  2412 000002F0 746F6F206D616E7920-     .E04	db	"too many open files",0
+  2412 000002F9 6F70656E2066696C65-
+  2412 00000302 7300               
+  2413 00000304 616363657373206465-     .E05	db	"access denied",0
+  2413 0000030D 6E69656400         
+  2414 00000312 696E76616C69642068-     .E06	db	"invalid handle",0
+  2414 0000031B 616E646C6500       
+  2415 00000321 6D656D6F727920636F-     .E07	db	"memory control block destroyed",0
+  2415 0000032A 6E74726F6C20626C6F-
+  2415 00000333 636B2064657374726F-
+  2415 0000033C 79656400           
+  2416 00000340 696E73756666696369-     .E08	db	"insufficient memory",0
+  2416 00000349 656E74206D656D6F72-
+  2416 00000352 7900               
+  2417 00000354 6D656D6F727920626C-     .E09	db	"memory block address invalid",0
+  2417 0000035D 6F636B206164647265-
+  2417 00000366 737320696E76616C69-
+  2417 0000036F 6400               
+  2418 00000371 656E7669726F6E6D65-     .E0A	db	"environment invalid",0
+  2418 0000037A 6E7420696E76616C69-
+  2418 00000383 6400               
+  2419 00000385 666F726D617420696E-     .E0B	db	"format invalid",0
+  2419 0000038E 76616C696400       
+  2420 00000394 61636365737320636F-     .E0C	db	"access code invalid",0
+  2420 0000039D 646520696E76616C69-
+  2420 000003A6 6400               
+  2421 000003A8 6461746120696E7661-     .E0D	db	"data invalid",0
+  2421 000003B1 6C696400           
+  2422                                  .E0E	equ	.E00		; error code E is reserved
+  2423 000003B5 696E76616C69642064-     .E0F	db	"invalid drive",0
+  2423 000003BE 7269766500         
+  2424 000003C3 617474656D70742074-     .E10	db	"attempt to remove current directory",0
+  2424 000003CC 6F2072656D6F766520-
+  2424 000003D5 63757272656E742064-
+  2424 000003DE 69726563746F727900 
+  2425 000003E7 6E6F742073616D6520-     .E11	db	"not same device",0
+  2425 000003F0 64657669636500     
+  2426 000003F7 6E6F206D6F72652066-     .E12	db	"no more files",0
+  2426 00000400 696C657300         
+  2427                                  
+  2428 00000405 3A2000                  colsp	db	": ",0
+  2429                                  

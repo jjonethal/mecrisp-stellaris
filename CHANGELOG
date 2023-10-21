@@ -867,3 +867,18 @@
   - Contribution by Robert Clausecker:
       Signal handlers and syscall library for FreeBSD
 
+26.02.2022, Matthias Koch, Mecrisp-Stellaris 2.6.2
+
+  - Fixed outsized binary for STM32G031F4
+  - Fixed :noname for RA in loadable ansification layer
+
+  - Contribution by Jan Bramkamp:
+      Bit field tools
+      Improved PLL initialisation code for STM32F411
+
+  - Contribution by Gareth Edwards
+      New target: Black pill with STM32F401CC
+      Bugfix for flash size and comments for STM32F401CD target
+
+  - Contribution by Peter Jakacki:
+      Tachyon extensions for RP2040

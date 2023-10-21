@@ -256,6 +256,14 @@ cd stm32f401-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401-ra
 cd ..
 
+cd stm32f401cc
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cc
+cd ..
+
+cd stm32f401cc-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cc-ra
+cd ..
+
 cd stm32f401cd-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
 cd ..

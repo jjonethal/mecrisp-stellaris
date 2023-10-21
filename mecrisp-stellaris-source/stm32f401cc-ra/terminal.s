@@ -43,9 +43,9 @@
 uart_init: @ ( -- )
 @ -----------------------------------------------------------------------------
 
-        @ Enable all GPIO peripheral clocks
+        @ Enable all GPIO peripheral clock
         ldr r1, = RCC_AHB1ENR
-        movs r0, #0x9F
+        ldr r0, = BIT7+BIT4+BIT3+BIT2+BIT1+BIT0
         str r0, [r1]
 
         @ Set PORTA pins in alternate function mode
@@ -54,17 +54,10 @@ uart_init: @ ( -- )
         orrs r0, #0xA0
         str r0, [r1]
 
-        @ Activate the internal PULL-UP in PORTA pin 3 (RxD)
-        ldr r1, = GPIOA_PUPDR
-        ldr r0, [r1]
-        orrs r0, #0x40 @ PUPDR3[1:0] = 01b
-        str r0, [r1] 
-
         @ Set alternate function 7 to enable USART2 pins on Port A
-        ldr  r1, = GPIOA_AFRL
-        and  r0, 0xFFFF00FF      @ Zero the bits 8-15
-        orrs r0, #0x7700         @ Alternate function 7 for TX and RX pins of USART2 on PORTA(2,3)
-        str  r0, [r1]
+        ldr r1, = GPIOA_AFRL
+        ldr r0, = 0x7700              @ Alternate function 7 for TX and RX pins of USART2 on PORTA 
+        str r0, [r1]
 
         @ Enable the USART2 peripheral clock by setting bit 17
         ldr r1, = RCC_APB1ENR
@@ -74,7 +67,7 @@ uart_init: @ ( -- )
     @ Configure BRR by deviding the bus clock with the baud rate
 
     ldr r1, =Terminal_USART_BRR
-    movs r0, #0x8B  @ 115200 bps / 16 MHz HSI
+    movs r0, #0x8B  @ 115200 bps
     str r0, [r1]
 
     @ Enable the USART, TX, and RX circuit
