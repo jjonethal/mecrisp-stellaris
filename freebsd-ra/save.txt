@@ -16,9 +16,17 @@
 : elfhdr>shdrs ( elfhdr -- shdrs )
   dup $20 + @ + ;
 
+\ retrieve program header size
+: elfhdr>phentsize ( elfhdr -- entsize )
+  $2a + h@ ;
+
 \ retrieve section header size
 : elfhdr>shentsize ( elfhdr -- entsize )
   $2e + h@ ;
+
+\ retrieve the desired program header
+: elfhdr>phdr ( elfhdr i -- phdr )
+  >r dup elfhdr>phdrs swap elfhdr>phentsize r> * + ;
 
 \ retrieve the desired section header
 : elfhdr>shdr ( elfhdr i -- shdr )
@@ -36,15 +44,29 @@
   r@ over $10 + +!          \ adjust sh_offset
   $14 + r> negate swap +! ; \ adjust sh_size
 
+\ adjust program header to end in file at addr
+: ph_fileend! ( phdr end -- )
+  over $08 + @ -  \ compute ph_filesize from ph_addr and end
+  swap $10 + ! ;
+
 \ ELF section numbers (see elfheader.s)
-2 constant #mecrisp
-3 constant #userdictionary
+2 constant shdr#kernel
+3 constant shdr#flash.used
+4 constant shdr#flash.free
+5 constant shdr#ramdict
 
 \ adjust our own ELF header according to here
 : adjustelf ( -- )
-  incipit elfhdr>phdrs here incipit - p_filesz!
-  incipit #mecrisp elfhdr>shdr here sh_end!
-  incipit #userdictionary elfhdr>shdr here sh_addr! ;
+  incipit 1 elfhdr>phdr here ph_fileend!
+  incipit shdr#flash.used elfhdr>shdr here sh_end!
+  incipit shdr#flash.free elfhdr>shdr here sh_addr! ;
+
+\ protecting and unprotecting the Forth kernel
+: protectkern ( -- )
+  incipit dup elfhdr>phdrs $14 + @ 5 sys-mprotect ;
+
+: unprotectkern ( -- )
+  incipit dup elfhdr>phdrs $14 + @ 7 sys-mprotect ;
 
 \ -----------------------------------------------------------------------------
 \ saving the program image back to disk
@@ -55,8 +77,8 @@
 
   compiletoram? compiletoflash >r
 
-  adjustelf
-  [ 8 base ! ]
+  unprotectkern adjustelf protectkern
+  [ octal ]
   777 sys-creat \ open new program image
   [ decimal ]
   if

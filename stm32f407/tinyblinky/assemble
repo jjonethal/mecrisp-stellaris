@@ -1,0 +1,6 @@
+#!/bin/bash
+
+arm-none-eabi-as tinyblinky.s -o tinyblinky.o
+arm-none-eabi-ld tinyblinky.o -o tinyblinky.elf -T memmap
+arm-none-eabi-objcopy tinyblinky.elf tinyblinky.bin -O binary
+arm-none-eabi-objdump -D tinyblinky.elf > tinyblinky.list

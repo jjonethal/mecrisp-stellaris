@@ -37,13 +37,13 @@ $10000000 to $100000FF: 256 bytes bootloader block with CRC32 (seed -1) at ...1F
 
 $10000100 to $10000FFF: 3840 bytes padding to align the Forth core on a 4 kb boundary
 
-$10001000 to $10005FFF: 20 kb Forth core image in SPI flash
-$10006000 to $10010FFF: 44 kb First user flash dictionary image in SPI flash
+$10001000 to $10005FFF:  20 kb Forth core image in SPI flash
+$10006000 to $10020FFF: 108 kb First user flash dictionary image in SPI flash
 
 The bootloader block will copy the Forth core and first user flash dictionary image into RAM:
 
-$20000000 to $20004FFF: 20 kb Forth core in RAM for execution
-$20005000 to $2000FFFF: 44 kb flash user dictionary in RAM for execution
+$20000000 to $20004FFF:  20 kb Forth core in RAM for execution
+$20005000 to $2001FFFF: 108 kb flash user dictionary in RAM for execution
 
 For short: Everything executed resides in RAM, including the traditional "flash dictionary".
 
@@ -60,7 +60,7 @@ Now there are these definitions for handling dictionaries:
 The first image, 0, will be loaded automatically on boot, and you can define the traditional "init"
 definition inside to launch your code.
 
-The images are stored in SPI flash at offset address u * $B000 + $6000, and are $B000 bytes in length.
+The images are stored in SPI flash at offset address u * $1B000 + $6000, and are $1B000 bytes in length.
 
 -------------------------------------------------------------------------------
   For short:
@@ -72,8 +72,8 @@ Compile as usual using "compiletoflash", and type "save" afterwards.
   Notes on RAM usage:
 -------------------------------------------------------------------------------
 
- 64 kb RAM is reserved for Forth core and "flash dictionary".
-192 kb RAM is reserved for RAM dictionary, buffers and variables.
+128 kb RAM is reserved for Forth core and "flash dictionary".
+128 kb RAM is reserved for RAM dictionary, buffers and variables.
 
 These values are hardwired in many places, but with a little effort, they can be changed in 4 kb steps.
 

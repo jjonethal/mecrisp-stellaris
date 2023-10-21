@@ -7,22 +7,19 @@ SECTIONS {                     /* lege Speicherinhalt fest          */
   
   mecrisp : {
     *(elfheader);              /* ELF header */
-    . = ALIGN(16);             /* ensure alignment */
+    . = ALIGN(4);              /* ensure alignment */
     mecrispoffset = . - incipit; /* where data begins in the file */
     *(mecrisp);                /* Daten */
     *(.text);                  /* Text (falls jemand .section mecrisp vergessen hat) */
     *(.data);                  /* Daten (dito) */
+    . = ALIGN(4096);           /* align to next page (for memory protection) */
+    kernsize = . - incipit;    /* Forth kernel size */
+
   }
-
-  datasize = . - incipit;        /* how long the initialised data segment is */
-
-  . = ALIGN(16);               /* ensure alignment */
-
   userdictionary (NOLOAD) : {
     userdictionaryoffset = . - incipit; /* where userdictionary begins in the file */
     *(.bss);                   /* Nullen */
   }
 
   explicit = .;                 /* Aus und vorbei! */
-  totalsize = explicit - incipit; /* number of bytes in the program */
 }

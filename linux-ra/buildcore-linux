@@ -23,7 +23,7 @@ stty -icanon -echo
 
 {
    echo -e "compiletoflash\n"
-   cat ../common/VIS/vis-0.8.4-mecrisp-stellaris.fs
+   cat ../common/VIS/vis-0.8.4.1-mecrisp-stellaris.fs
    echo -e "compiletoflash\n"
    cat ../common/VIS/vis-0.8.4-disassembler-m3.fs
    echo -e "compiletoram\n"

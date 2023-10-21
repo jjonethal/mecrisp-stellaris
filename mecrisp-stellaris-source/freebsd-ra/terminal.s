@@ -81,7 +81,7 @@ serial_qemit:  @ ( -- ? ) Ready to send a character ?
    bl pause
    pushdatos
    movs tos, #0
-   rsbs tos, tos, #0
+   rsbs tos, tos, #0	@ return -1 (always ready to send)
    pop {pc}
    
 @ -----------------------------------------------------------------------------
@@ -91,9 +91,24 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
    push {lr}
    bl pause
    pushdatos
-   movs tos, #0
-   rsbs tos, tos, #0
-   pop {pc}
+
+   push {r5, r6}
+
+   ldr r0, =stdin
+   ldr r0, [r0]		@ read from stdin
+   ldr r1, =0x4004667f	@ FIONREAD
+   add r2, sp, #4       @ point r2 to the pushed r6
+   movs r6, #54		@ SYS_ioctl
+   bl dosyscall
+
+   ldr r0, [sp, #4]	@ load number of characters available
+   str r6, [sp, #4]	@ store error status
+   ands r0, r6		@ check if r6 == 0 || r0 == 0, set r0 = r6 ? r0 : 0
+   bne 0f		@ if r6 == -1 (success) and r0 > 0 (chars available)
+			@ return -1 (from r6)
+   str r0, [sp, #4]	@ else return 0
+
+0: pop {r5, r6, pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "serial-key"
@@ -117,9 +132,7 @@ serial_key: @ ( -- c ) Receive one character
   cmp r0, #0		@ EOF?
   beq.n bye
 
-  pop {r5, r6}
-
-  pop {pc}
+  pop {r5, r6, pc}
      
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "cacheflush" @ ( addr len -- )
@@ -163,13 +176,6 @@ bye:
 @ -----------------------------------------------------------------------------
   pushdatos
   ldr tos, =incipit
-  bx lr
-
-@ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "explicit"
-@ -----------------------------------------------------------------------------
-  pushdatos
-  ldr tos, =explicit
   bx lr
 
 @ -----------------------------------------------------------------------------

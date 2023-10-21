@@ -1,4 +1,4 @@
-\   Filename: vis-0.8.4-mecrisp-stellaris.fs
+\   Filename: vis-0.8.4.1-mecrisp-stellaris.fs
 \    Purpose: Adds VOCs, ITEMs and STICKY Words to Mecrisp-Stellaris
 \        MCU: *
 \      Board: * , tested with TI StellarisLaunchPad 
@@ -9,8 +9,11 @@
 \    Licence: GPLv3
 \  Changelog: 2020-05-22
 \             Released as concatenation of the following files:
-\             wordlists-0.8.4.fs , vis-0.8.4-core.fs , vis-0.8.4-??.fs
+\             wordlists-0.8.4.fs , vis-0.8.4.1-core.fs , vis-0.8.4-??.fs
 \             vis-0.8.2-also.fs ,  vis-0.8.2-vocs.fs . vis-0.8.3-items.fs
+\             2021-09-23
+\             vis-0.8.4-core.fs  (' changed and vocnect bug fix for linux-ra ...
+\                                based on hints from Matthias Urlichs.
 \ ----------------------------------------------------------------------------
 
 \   Filename: wordlists-0.8.4.fs
@@ -634,7 +637,7 @@ decimal
 
 \  we are only using Bit0 here (to be 16 Bit compatibel)
 
-\   Filename: vis-0.8.4-core.fs
+\   Filename: vis-0.8.4.1-core.fs
 \    Purpose: Adds VOCs, ITEMs and STICKY Words to Mecrisp-Stellaris
 \        MCU: *
 \      Board: * , tested with TI StellarisLaunchPad 
@@ -645,6 +648,8 @@ decimal
 \    Licence: GPLv3
 \  Changelog: 2020-04-19 vis-0.8.2-core.txt --> vis-0.8.3-core.fs
 \             2020-05-22 vis-0.8.4-core.fs  minor changes
+\             2021-09-23 (' changed and vocnect bug fix for linux-ra ...
+\                        Based on hints from Matthias Urlichs.
 
 \ Source Code Library for Mecrisp-Stellaris                           MM-170628
 \ ------------------------------------------------------------------------------
@@ -720,7 +725,8 @@ compiletoflash
 
 root-wordlist set-current  hex
 
-: vis ( -- ) ." 0.8.4" ;
+\ : vis ( -- ) ." 0.8.4" ;              MM-210923
+: vis ( -- ) ." 0.8.4.1" ;
 
 \ inside-wordlist first
 get-order nip inside-wordlist swap set-order
@@ -793,12 +799,12 @@ inside-wordlist set-current
 \ inherited.
 \ : vocnext ( wid1 -- wid2|0 ) [ 2 cells literal, ] - @ ;
 
-\ MM-200103 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+\ MM-210923
 \ Given a vocs wid return the wid of the parent voc or zero if no voc was
 \ inherited. Return 0 if wid is the wid of a wordlist.
   : vocnext ( wid1 -- wid2|0 )
-    dup @ if [ 2 cells literal, ] - @ else dup - then ;
-
+\   dup @ if [ 2 cells literal, ] - @ else dup - then ;
+    dup wid? if dup - else [ 2 cells literal, ] - @ then ;
 
 \ Search the VOCs search order (voc-context) at a-addr for a match with the
 \ string c-addr,len. If found return the address (lfa) of the dictionary entry,
@@ -1024,8 +1030,14 @@ compiletoflash
 
 root definitions  inside first
 
+\ MM-210923  Based on hint from M. Urlichs.
+\ : (' ( "name" -- lfa )
+\   token search-in-dictionary ?dup if exit then ."  not found." abort
+\ ;  
+
 : (' ( "name" -- lfa )
-  token search-in-dictionary ?dup if exit then ."  not found." abort
+  token 2dup search-in-dictionary ?dup if nip nip exit then
+  type ."  not found." abort
 ;  
 
 forth definitions
@@ -1056,7 +1068,9 @@ root definitions
 compiletoram
 
 \ ------------------------------------------------------------------------------
-\ Last Revision: MM-200522 0.8.3 : voc-init changed to only display (C) message
+\ Last Revision: MM-210923 vis-0.8.4.1-core.fs
+\                MM-200522 vis-0.8.4-core.fs
+\                MM-200522 0.8.3 : voc-init changed to only display (C) message
 \                          on reset  find and (' added  ' and postpone changed  
 \                MM-200122 0.8.2 revision
 \ ------------------------------------------------------------------------------
@@ -1131,7 +1145,7 @@ compiletoram
   _sof_ @ u>= over forth-wordlist u< and
 ;
 
-\ Given a words lfa print its name with allVOCabulary prefixes. If it's  a
+\ Given a words lfa print its name with all VOCabulary prefixes. If it's  a
 \ word from the Stellaris core do not print the prefix forth.
 : .nid ( lfa -- )  \ MM-200522
 \  dup _sof_ @ u>= over forth-wordlist u< and if .id exit then

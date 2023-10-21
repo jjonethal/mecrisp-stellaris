@@ -202,9 +202,11 @@ generate_true:
                        @ Compares the top two stack elements for inequality.
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0}
-  subs  r1, r0, tos
-  subs tos, tos, r0
-  orrs tos, r1
+  subs tos, r0
+
+  subs tos, #1
+  sbcs tos, tos
+  mvns tos, tos
   bx lr
 
     pushdaconstw 0xD000 @ Opcode: beq
