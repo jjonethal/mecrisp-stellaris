@@ -111,6 +111,14 @@ m0core [if]
 : syscall4 dsyscall4? 2drop ; ( arg4 arg3 arg2 arg1 no -- val )
 
 \ -----------------------------------------------------------------------------
+\ misc system calls
+\ -----------------------------------------------------------------------------
+
+\ permissions are 4, 2, 1 for exec, write, read (flipped from file permissions)
+: sys-mprotect ( addr len prot -- )
+  74 syscall3 drop ;
+
+\ -----------------------------------------------------------------------------
 \ error handling
 \ -----------------------------------------------------------------------------
 
@@ -257,13 +265,16 @@ create sys_errlist
   here tuck swap 0terminate
 ;
 
-$0000 constant O_RDONLY \ open for reading only
-$0001 constant O_WRONLY \ open for writing only
-$0002 constant O_RDWR   \ open for reading and writing
-$0008 constant O_APPEND \ set append mode
-$0200 constant O_CREAT  \ create if nonexistent
-$0400 constant O_TRUNC  \ truncate to zero length
-$0800 constant O_EXCL   \ error if already exists
+$0000 constant O_RDONLY	\ open for reading only
+$0001 constant O_WRONLY	\ open for writing only
+$0002 constant O_RDWR	\ open for reading and writing
+$0008 constant O_APPEND	\ set append mode
+$0200 constant O_CREAT	\ create if nonexistent
+$0400 constant O_TRUNC	\ truncate to zero length
+$0800 constant O_EXCL	\ error if already exists
+
+\ for giving file permissions
+: octal ( -- ) 8 base ! ;
 
 : sys-read  3 syscall3? ; ( fd addr len -- len' ok )
 : sys-write 4 syscall3? ; ( fd addr len -- len' ok )

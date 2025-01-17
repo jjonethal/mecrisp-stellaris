@@ -35,9 +35,12 @@
 @ -----------------------------------------------------------------------------
 
   .global _start
+  @ On some versions of FreeBSD up to and including FreeBSD 12.2 and 13.0, only
+  @ ARM mode entry ports are supported, so we have to use this shim to work
+  @ around the problem.  The shim will be kept until FreeBSD 13.1 and 12.3 are
+  @ released.  For details see https://bugs.freebsd.org/256899
 _start:
-  ldr r0, =Reset_with_arguments+1
-  bx r0 @ Switch to thumb mode
+  blx Reset_with_arguments @ switch to thumb mode
 
 .thumb
 
@@ -107,25 +110,26 @@ Reset: @ Einsprung zu Beginn
 @ Special memory map for "Flash" and RAM sections within target RAM.
 @ -----------------------------------------------------------------------------
 
-.equ Kernschutzadresse,     . @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
+.equ Kernende,              . @ Ende des Forth-Kerns
 
 .bss
+.equ Kernschutzadresse,     . @ Darunter wird niemals etwas geschrieben !
+                              @ Mecrisp core never writes flash below this address.
 
-.equ FlashDictionaryAnfang, . @ Ein bisschen Platz für den Kern reserviert... Some space reserved for core.
 
-  .rept 1024 * 256            @ 1024 * 256*4 = 1 MB for "Flash" dictionary
-  .word 0x00000000
-  .endr
+.equ FlashDictionaryAnfang, . @ Ein bisschen Platz für den Kern reserviert...
+                              @ Some space reserved for core.
 
-.equ FlashDictionaryEnde,   .  @ 1 MB Platz für das Flash-Dictionary     1 MB Flash available. Porting: Change this !
+  .space 1024 * 1024          @ 1024 * 1024 = 1 MB for "Flash" dictionary
+
+.equ FlashDictionaryEnde,   .  @ 1 MB Platz für das Flash-Dictionary
+                               @ 1 MB Flash available. Porting: Change this !
 .equ Backlinkgrenze,        .  @ Ab dem Ram-Start.
    
 @ Konstanten für die Größe des Ram-Speichers
 
 .equ RamAnfang, . @ Start of RAM
 
-  .rept 1024 * 256      @ 1024 * 254*4 = 1 MB for RAM dictionary
-  .word 0x00000000
-  .endr
+  .space 1024 * 1024           @ 1024 * 1024 = 1 MB for RAM dictionary
   
 .equ RamEnde,   . @ End   of RAM.

@@ -75,7 +75,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " with M0+ core for STM32G031F4 by Matthias Koch"
+   welcome " for STM32G031F4"
 
    @ Ready to fly !
    .include "../common/boot.s"

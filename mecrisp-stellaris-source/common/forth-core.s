@@ -101,7 +101,7 @@ ramallot inline_cache, 6 * inline_cache_length
 
 @ Jetzt kommen Puffer und Stacks:  Buffers and Stacks
 
-.equ Zahlenpufferlaenge, 63 @ Zahlenpufferlänge+1 sollte durch 4 teilbar sein !      Number buffer (Length+1 mod 4 = 0)
+.equ Zahlenpufferlaenge, 67 @ Zahlenpufferlänge+1 sollte durch 4 teilbar sein !      Number buffer (Length+1 mod 4 = 0)
 ramallot Zahlenpuffer, Zahlenpufferlaenge+1 @ Reserviere mal großzügig 64 Bytes RAM für den Zahlenpuffer
 
 .equ Maximaleeingabe,    200             @ Input buffer for an Address-Length string
@@ -133,9 +133,9 @@ ramallot Eingabepuffer, Maximaleeingabe  @ Eingabepuffer wird einen Adresse-Län
 
   ramallot returnstackende, 256  @ Return stack
   ramallot returnstackanfang, 0
-  
+
 .endif
-  
+
 .ifdef emulated16bitflashwrites
   .equ Sammelstellen, 32 @ 32 * 6 = 192 Bytes.
   ramallot Sammeltabelle, Sammelstellen * 6 @ 16-Bit Flash write emulation collection buffer
@@ -214,7 +214,7 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .ltorg
   .include "../common/compiler.s"
   .include "../common/compiler-flash.s"
-  .ltorg 
+  .ltorg
   .include "../common/ra/controlstructures.s"
   .ltorg
   .include "../common/ra/doloop.s"

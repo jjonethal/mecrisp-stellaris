@@ -1,0 +1,140 @@
+\ -------------------------------------------------------------
+\   Log in den QSPI-Flash
+\ -------------------------------------------------------------
+
+1024 4 * constant startblock  \ Beginne bei 512 kb in den Flash. Ein Block ist 256 Bytes groß.
+2048 4 * constant   endblock  \ Ende bei 2 MB.
+
+256 buffer: log.puffer
+ 0 variable log.zeichen
+
+\ Von hinten aus den ersten freien Block auf der SD-Karte finden.
+
+\ Idee:
+\ Prüfe die Mitte zwischen 0 und Ende auf Freiheit.
+\ Falls Frei: Vordere Hälfte. Falls Unfrei: Hintere Hälfte.
+
+0 variable log-position
+0 variable suche-anfang
+0 variable suche-ende
+
+: blk>addr ( u -- addr ) 8 lshift $10000000 or 1-foldable inline ;
+
+: block-leer? ( blk -- ? )
+  blk>addr
+
+  $FF swap
+  dup 256 + swap do
+    i c@ and
+  loop
+  $FF =
+;
+
+: log-init ( -- )
+
+  connect-flash exit-xip flush-cache enter-xip
+
+  0 log.zeichen !
+
+  startblock suche-anfang !
+    endblock suche-ende   !
+
+  begin
+    suche-anfang @   \ dup u.
+    suche-ende   @   \ dup u. cr
+    <>
+  while
+    suche-ende @ suche-anfang @ - shr suche-anfang @ +
+
+    dup block-leer?
+    if
+      suche-ende !
+    else
+      1+               \ Dieser Block war ja gerade belegt.
+      suche-anfang !
+    then
+  repeat
+
+  suche-anfang @ log-position !
+;
+
+: log-full ( -- ? ) endblock log-position @ = ;
+
+\ -------------------------------------------------------------
+\  Inhalt des Logs löschen
+\ -------------------------------------------------------------
+
+: log-erase ( -- )
+
+  connect-flash exit-xip
+
+           startblock   8 lshift
+  endblock startblock - 8 lshift
+                            4096 $20 erase-range
+
+  flush-cache enter-xip
+
+  log-init \ Danach muss der Logzeiger auch neu initialisiert werden.
+;
+
+\ -------------------------------------------------------------
+\  Inhalt des Logs ausgeben
+\ -------------------------------------------------------------
+
+: log-print ( -- )
+  log-init
+
+  cr
+  ." Log in den Blöcken " startblock . ." bis " log-position @ . cr
+  cr
+
+  log-position @ startblock ?do
+    i blk>addr 256 type
+  loop
+  cr
+;
+
+\ -------------------------------------------------------------
+\  Schreiben in den Log-Puffer
+\ -------------------------------------------------------------
+
+: writeblock ( buffer-addr blk )
+
+  8 lshift \ Wie blk>addr, aber ohne $10000000 zu setzen.
+
+  connect-flash exit-xip
+  swap 256 program-range
+  flush-cache enter-xip
+;
+
+: log-addblock ( buffer-addr -- )
+  log-full
+  if
+    \ Es kann nichts mehr gespeichert werden, also einfach nichts tun.
+    \ ." Log voll."
+    drop
+  else
+    log-position @ ( buffer-addr blk ) writeblock
+    1 log-position +!
+  then
+;
+
+: log-emit ( c -- )
+
+  pause
+
+  log.zeichen @ log.puffer + c!
+
+  log.zeichen @
+    1+
+    dup 256 = if drop log.puffer log-addblock 0 then
+  log.zeichen !
+;
+
+\ -------------------------------------------------------------
+\  Umbiegen des Terminals
+\ -------------------------------------------------------------
+
+:    log-terminal ( -- ) [']    log-emit hook-emit ! ;
+: normal-terminal ( -- ) ['] serial-emit hook-emit ! ;
+

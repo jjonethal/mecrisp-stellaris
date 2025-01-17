@@ -258,6 +258,14 @@ cd stm32f401-ra
 md5sum *.bin
 cd ..
 
+cd stm32f401cc
+md5sum *.bin
+cd ..
+
+cd stm32f401cc-ra
+md5sum *.bin
+cd ..
+
 cd stm32f401cd-ra
 md5sum *.bin
 cd ..
@@ -314,6 +322,10 @@ cd stm32g031f4
 md5sum *.bin
 cd ..
 
+cd stm32g031f6-ra
+md5sum *.bin
+cd ..
+
 cd stm32g031f8-ra
 md5sum *.bin
 cd ..
@@ -323,6 +335,10 @@ md5sum *.bin
 cd ..
 
 cd stm32g071rb-ra
+md5sum *.bin
+cd ..
+
+cd stm32g431kb-ra
 md5sum *.bin
 cd ..
 

@@ -70,7 +70,7 @@ generate_true:
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_foldable_2, "<=" @ ( x1 x2 -- ? )          
+  Wortbirne Flag_foldable_2, "<=" @ ( x1 x2 -- ? )
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0}     @ Get x1 into a register.
   cmp r0, tos        @ Is x2 greater or equal ?

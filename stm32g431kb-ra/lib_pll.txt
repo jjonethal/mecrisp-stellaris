@@ -1,0 +1,70 @@
+\
+\ 	system clock handling for use PLL as systemclock STM32G431
+\
+\		Ralph Sahli, 2022
+\		
+\		resources used:
+\			- pll
+\
+
+16000000 variable hclk	\ system clock: initial 16 MHz from HSI RC
+
+$40021000 constant RCC
+	RCC $00 + constant RCC.CR
+	RCC $08 + constant RCC.CFGR
+	RCC $0C + constant RCC.PLLCFGR
+
+$40022000 constant FLASH.ACR 		\ Flash Access Control Register
+
+$40004400 constant USART2
+
+: baud ( n -- reg-val )
+	hclk @ over /mod -rot
+	swap 2/ >= if 1+ then ;		\ round	
+
+: bit ( u -- u )  \ turn a bit position into a single-bit mask
+  1 swap lshift  1-foldable ;
+	
+: waitState! ( n -- )
+	8 bit or FLASH.ACR bis!	;		\ wait state, PRFTEN: Prefetch enable
+	
+: vco ( PLLM PLLN PLLR -- )
+	25 lshift swap
+	8 lshift + swap
+	4 lshift + 
+	24 bit + 							\ PLLREN: Main PLL PLLCLK output enable
+	%10 + RCC.PLLCFGR bis! ;			\ HSI16 clock selected as PLL entry
+	
+\ set PLL as system clock with hclk = n MHz, (see case)
+\ actual hclk after reset = 16 MHz from HSI16
+: pllSysClk ( n -- )
+	dup case
+		32 of %0011 16 %00 vco 1 waitState! endof
+		36 of %0011 54 %10 vco 1 waitState! endof
+		40 of %0011 80 %11 vco 2 waitState! endof
+		48 of %0011 48 %01 vco 3 waitState! endof
+\		64 of %0011 32 %00 vco 3 waitState! endof
+\		72 of %0011 36 %00 vco 3 waitState! endof
+		80 of %0011 80 %01 vco 3 waitState! endof
+		100 of %0011 50 %00 vco 4 waitState! endof
+		120 of %0011 60 %00 vco 4 waitState! endof
+		160 of %0011 80 %00 vco 4 waitState! endof
+		170 of %0011 85 %00 vco 4 waitState! endof
+		2drop cr ." wrong MHz" exit
+	endcase
+	
+	1000000 * hclk !					\ save new system clock variable 
+
+	24 bit RCC.CR bis!					\ PLL enable
+	begin 25 bit RCC.CR bit@ until		\ wait for PLL ready flag
+
+	%11 RCC.CFGR bis! 					\ 11: PLL selected as system clock
+	begin %11 2 lshift RCC.CFGR bit@ until	\ PLL used as system clock
+
+	115200 baud USART2 $0C + ! ;		\ Set Baud rate divider for 115200 Baud @ n MHz
+
+	
+\ full speed clock
+: 170MHz ( -- )
+	170 pllSysClk ;
+	

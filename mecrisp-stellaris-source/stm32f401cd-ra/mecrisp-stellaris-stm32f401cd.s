@@ -47,7 +47,7 @@
 
 .equ Kernschutzadresse,     0x00008000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
 .equ FlashDictionaryAnfang, 0x00008000 @ 32 kb für den Kern reserviert...           32 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x00060000 @ 384 kb Platz für das Flash-Dictionary     384 kb Flash available. Porting: Change this !
+.equ FlashDictionaryEnde,   0x00060000 @ 352 kb Platz für das Flash-Dictionary     352 kb Flash available. Porting: Change this !
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 

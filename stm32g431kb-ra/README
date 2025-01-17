@@ -1,0 +1,25 @@
+
+STM NUCLEO-G431KB  Board  with STM32G431KB
+
+	- 128 KB Flash
+	- 32 KB RAM
+	- Embedded ST-LINK
+	- Virtual COM port interface on USB 
+	
+	
+;------------------------------------------------------------------------------
+Hardware and configuration for STM32G431KB:
+;------------------------------------------------------------------------------
+
+  Connect to onboard USB Micro-B connector to power up and flash the chip.
+  Virtual COM port is connected to PA2 (TX) and PA3 (RX).
+
+  Use a ST-LINK Utility such as:
+	- STM32 CubeProgrammer
+	- Erase full chip
+	- Load the mecrisp-stellaris-stm32g431kb.bin
+	- Start programming
+
+  On startup, this runs with internal 16 MHz HSI clock.
+  
+

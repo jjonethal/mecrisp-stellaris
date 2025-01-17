@@ -1,0 +1,9 @@
+\ mecrisp-stellaris : vis                                          MM-191229
+\ ------------------------------------------------------------------------------
+\           VOCs, ITEMS and STICKY words for Mecrisp-Stellaris
+
+  #include vis-0.8.4.2-mecrisp-stellaris.fs
+
+\ ------------------------------------------------------------------------------
+\ Last Revision: MM-220814
+

@@ -256,6 +256,14 @@ cd stm32f401-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401-ra
 cd ..
 
+cd stm32f401cc
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cc
+cd ..
+
+cd stm32f401cc-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cc-ra
+cd ..
+
 cd stm32f401cd-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
 cd ..
@@ -312,6 +320,10 @@ cd stm32g031f4
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f4
 cd ..
 
+cd stm32g031f6-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f6-ra
+cd ..
+
 cd stm32g031f8-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f8-ra
 cd ..
@@ -322,6 +334,10 @@ cd ..
 
 cd stm32g071rb-ra
 make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g071rb-ra
+cd ..
+
+cd stm32g431kb-ra
+make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g431kb-ra
 cd ..
 
 cd stm32wb55
@@ -563,6 +579,10 @@ cd stm32g031f4
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031f4.bin mecrisp-stellaris-stm32g031f4.hex
 cd ..
 
+cd stm32g031f6-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031f6.bin mecrisp-stellaris-stm32g031f6.hex
+cd ..
+
 cd stm32g031f8-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g031f8.bin mecrisp-stellaris-stm32g031f8.hex
 cd ..
@@ -573,6 +593,10 @@ cd ..
 
 cd stm32g071rb-ra
 arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g071rb.bin mecrisp-stellaris-stm32g071rb.hex
+cd ..
+
+cd stm32g431kb-ra
+arm-none-eabi-objcopy --change-addresses 0x08000000 -I binary -O ihex mecrisp-stellaris-stm32g431kb.bin mecrisp-stellaris-stm32g431kb.hex
 cd ..
 
 # Special target for running on ARM Linux and Android:

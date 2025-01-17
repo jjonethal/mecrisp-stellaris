@@ -1,0 +1,37 @@
+
+tinyblinky.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <blinky-0x8>:
+   0:	20001000 	andcs	r1, r0, r0
+   4:	00000009 	andeq	r0, r0, r9
+
+00000008 <blinky>:
+   8:	4905      	ldr	r1, [pc, #20]	; (20 <AFRL>)
+   a:	f240 10ff 	movw	r0, #511	; 0x1ff
+   e:	6008      	str	r0, [r1, #0]
+  10:	4904      	ldr	r1, [pc, #16]	; (24 <AFRH>)
+  12:	f04f 40aa 	mov.w	r0, #1426063360	; 0x55000000
+  16:	6008      	str	r0, [r1, #0]
+  18:	3301      	adds	r3, #1
+  1a:	0a1c      	lsrs	r4, r3, #8
+  1c:	614c      	str	r4, [r1, #20]
+  1e:	e7fb      	b.n	18 <BSRR>
+  20:	40023830 	andmi	r3, r2, r0, lsr r8
+  24:	40020c00 	andmi	r0, r2, r0, lsl #24
+
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00002041 	andeq	r2, r0, r1, asr #32
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000016 	andeq	r0, r0, r6, lsl r0
+  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
+  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  18:	0600344d 	streq	r3, [r0], -sp, asr #8
+  1c:	094d070d 	stmdbeq	sp, {r0, r2, r3, r8, r9, sl}^
+  20:	Address 0x0000000000000020 is out of bounds.
+

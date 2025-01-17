@@ -1,0 +1,17 @@
+
+\ Read the state of the Bootsel button.
+\ This one pulls the "Chip Select" wire of the QSPI flash low.
+
+\ Disconnect the SPI memory logic,
+\ wait a little for charge to settle, read button state
+\ and restore the old state.
+
+$4001800C constant IO_QSPI_GPIO_QSPI_SS_CTRL
+$D0000008 constant GPIO_HI_IN
+
+: button? ( -- ? )
+  IO_QSPI_GPIO_QSPI_SS_CTRL @ $00003000 and $00002000 or IO_QSPI_GPIO_QSPI_SS_CTRL !  \ Do not drive output
+  10 us
+  GPIO_HI_IN @ 2 and 0=
+  IO_QSPI_GPIO_QSPI_SS_CTRL @ $00003000 and              IO_QSPI_GPIO_QSPI_SS_CTRL !  \ Switch back to peripheral signal
+;

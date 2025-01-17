@@ -47,7 +47,7 @@ true variable ansification?
 
 : .( ( -- ) [char] ) ['] ." $1E + call, parse string, immediate 0-foldable ;
 
-: :noname ( -- addr ) 0 s" : (noname)" evaluate drop here 2 - ;
+: :noname ( -- addr ) 0 s" : (noname)" evaluate drop (latest) @ 6 + skipstring ;
 
 : 0> ( n -- ? ) 0 > 1-foldable ;
 
@@ -73,7 +73,7 @@ true variable ansification?
     um/mod          ( remainder quotient )
     swap r> 0< if negate then     \ apply sign to remainder
     swap r> 0< if negate then     \ apply sign to quotient
-3-foldable ; 
+3-foldable ;
 
 \ Divide d1 by n1, giving the floored quotient n3 and the remainder n2.
 \ Adapted from hForth
@@ -91,7 +91,7 @@ true variable ansification?
         then
     then
     r> drop
-3-foldable ; 
+3-foldable ;
 
 256 buffer: BUF0 \ At least 33 characters required
 
@@ -195,18 +195,18 @@ true variable ansification?
     min same? ?dup
     if r> drop exit then
     r> dup if 0< 2* 1+ then ;
-    
-: blank 
-    bl fill 
-;       
+
+: blank
+    bl fill
+;
 
 : -trailing
-    begin   
+    begin
         2dup + 1- c@ bl =
         over and
-    while   
-        1-  
-    repeat  
+    while
+        1-
+    repeat
 ;
 
 \ Search the string specified by c-addr1 u1 for the string

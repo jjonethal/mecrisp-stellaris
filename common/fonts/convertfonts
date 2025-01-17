@@ -43,6 +43,15 @@ cat Commodore-Font-*.txt > Commodore-Font.txt
 ./forthfont-8x16-drawing iso-8x16    iso-8x16.txt    0 255 0
 ./forthfont-8x16-drawing iso15-8x16  iso15-8x16.txt  0 255 0
 
-rm scanbinary *.o *~ Commodore-Font-*.txt
-rm forthfont-8x8 forthfont-8x8-drawing forthfont-8x16 forthfont-8x16-drawing
+# Datapoint 8600 font read from CP/RIM card ROMs
 
+fpc forthfont-8x12.pas
+fpc forthfont-8x12-drawing.pas
+
+./forthfont-8x12         905-008-1 Datapoint-8600-Font.fs  0x10AF 73
+./forthfont-8x12-drawing 905-008-1 Datapoint-8600-Font.txt 0x10AF 73
+
+# Tidyup
+
+rm scanbinary *.o *~ Commodore-Font-*.txt
+rm forthfont-8x8 forthfont-8x8-drawing forthfont-8x16 forthfont-8x16-drawing forthfont-8x12 forthfont-8x12-drawing
