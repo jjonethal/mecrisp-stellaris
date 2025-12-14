@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 cd mecrisp-stellaris-source
 ./assemble
@@ -44,11 +45,27 @@ cd thumbulator
 
 cd ..
 
-# Linux core(s)
+# Linux core
 
-cd linux-ra
-./buildcore-linux
-cd ..
+if command -p qemu-arm-static >/dev/null 2>/dev/null && [ `uname` = Linux ]
+then
+	cd linux-ra
+	./buildcore-linux
+	cd ..
+else
+	echo ... skipping linux-ra core: not on Linux or qemu-arm-static not installed ...
+fi
+
+# FreeBSD core
+
+if [ `uname` = FreeBSD ] && [ `uname -m` = arm ]
+then
+	cd freebsd-ra
+	./buildcore-freebsd
+	cd ..
+else
+	echo ... skipping freebsd-ra core: not on arm freebsd ...
+fi	 	
 
 # Experimental LPC845 precompilation
 

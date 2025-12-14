@@ -182,6 +182,7 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
 
   .include "../common/ra/double.s"
   .include "../common/ra/stackjugglers.s"
+  .include "../common/roll.s"
   .include "../common/ra/logic.s"
   .include "../common/ra/ra-logic.s"
   .include "../common/ra/comparisions.s"
@@ -238,6 +239,9 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
 
   .include "../common/double.s"
   .include "../common/stackjugglers.s"
+.ifdef letsroll
+  .include "../common/roll.s"
+.endif
   .include "../common/logic.s"
   .include "../common/comparisions.s"
   .ltorg

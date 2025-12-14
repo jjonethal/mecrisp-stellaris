@@ -816,25 +816,82 @@ int execute ( void )
       return(0);
     }
  
-
- 
-   if (inst == 0xe8bd400f) // ldmia.w sp!, {r0, r1, r2, r3, lr}
+   if ((inst & 0xFFD00000) == 0xE8900000) // ldm.w Rd{!}, <regs>
    {
-//     fprintf(stderr, "Verrücktes LDMIA.W\n");
-     uint32_t sp = read_register(13);
-     
-     write_register(0, read32(sp)); sp+=4;
-     write_register(1, read32(sp)); sp+=4;
-     write_register(2, read32(sp)); sp+=4;
-     write_register(3, read32(sp)); sp+=4;
-     write_register(14,read32(sp)); sp+=4;
-     
-     write_register(13, sp);
-     return(0);
+//   fprintf(stderr, "ldm.w Rd{!}, <regs>\n");
+
+     uint32_t Rd   = (inst >> 16) & 0xF;
+     uint32_t regs = inst & 0xDFFF;
+     uint32_t loc  = read_register(Rd);
+
+     for (; regs != 0; regs &= regs - 1) {
+         write_register(__builtin_ctz(regs), read32(loc));
+         loc += 4;
+     }
+
+     if (inst & 0x00200000)
+         write_register(Rd, loc);
+
+     return (0);
    }
+ 
+   if ((inst & 0xFFD00000) == 0xE9100000) // ldmdb Rd{!}, <regs>
+   {
+//   fprintf(stderr, "ldmdb Rd{!}, <regs>\n");   
    
+     uint32_t Rd   = (inst >> 16) & 0xF;
+     uint32_t regs = inst & 0xDFFF;
+     uint32_t loc  = read_register(Rd) - 4 * __builtin_popcount(regs);
+
+     for (uint32_t from = loc; regs != 0; regs &= regs - 1) {
+         write_register(__builtin_ctz(regs), read32(from));
+         from += 4;
+     }
+
+     if (inst & 0x00200000)
+         write_register(Rd, loc);
+
+     return (0);
+   }
+
+   if ((inst & 0xFFD00000) == 0xE8800000) // stm.w Rd{!}, <regs>
+   {
+//   fprintf(stderr, "stm.w Rd{!}, <regs>\n");
+
+     uint32_t Rd   = (inst >> 16) & 0xF;
+     uint32_t regs = inst & 0x5FFF;
+     uint32_t loc  = read_register(Rd);
+
+     for (; regs != 0; regs &= regs - 1) {
+         write32(loc, read_register(__builtin_ctz(regs)));
+         loc += 4;
+     }
+
+     if (inst & 0x00200000)
+         write_register(Rd, loc);
+
+     return (0);
+   }
+
+   if ((inst & 0xFFD00000) == 0xE9000000) // stmdb Rd{!}, <regs>
+   {
+//   fprintf(stderr, "stmdb Rd{!}, <regs>\n");   
    
-   
+     uint32_t Rd   = (inst >> 16) & 0xF;
+     uint32_t regs = inst & 0x5FFF;
+     uint32_t loc  = read_register(Rd) - 4 * __builtin_popcount(regs);
+
+     for (uint32_t from = loc; regs != 0; regs &= regs - 1) {
+         write32(from, read_register(__builtin_ctz(regs)));
+         from += 4;
+     }
+
+     if (inst & 0x00200000)
+         write_register(Rd, loc);
+
+     return (0);
+   }
+
    if (inst == 0xEA100201) // ands.w r2, r0, r1
    {
 //   fprintf(stderr, "ands.w r2, r0, r1\n");

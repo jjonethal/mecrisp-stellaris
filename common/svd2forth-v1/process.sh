@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 # For use with Mecrisp-Stellaris http://mecrisp.sourceforge.net/
 # ARM CMSIS-SVD extractor by Terry Porter "terry@tjporter.com.au"
 # Example usage: ./process.sh STM32F0xx.svd

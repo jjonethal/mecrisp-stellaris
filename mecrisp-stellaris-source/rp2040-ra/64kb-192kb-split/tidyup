@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 rm -f *.elf
 rm -f *.o

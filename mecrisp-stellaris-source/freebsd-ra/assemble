@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 set -e
 
 arm-none-eabi-as -o mecrisp-stellaris-freebsd.o mecrisp-stellaris-freebsd.s

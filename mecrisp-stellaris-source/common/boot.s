@@ -30,9 +30,11 @@
 
    @ Suche nach der init-Definition:
    @ Search for current init definition in dictionary:
-   pushdatos
+   subs psp, #8
+   str tos, [psp, #4]
    ldr tos, =init_name
-   pushdaconst 4
+   str tos, [psp]
+   movs tos, #4
    bl find
    drop @ Flags brauche ich nicht No need for flags
    cmp tos, #0

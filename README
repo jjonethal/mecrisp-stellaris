@@ -57,6 +57,7 @@ Contributions:
   - Teensy 3.1                   with MK20DX256VLH7
   - Chinese QF-LM4F232           with LM4F232H5QC
   - nRFgo Starter Kit & Microbit with nRF51822
+  - Microbit v2                  with nRF52833
   - STM L152 Discovery           with STM32L152RBT6
   - STM Nucleo L073RZ            with STM32L073RZ
   - STM Nucleo F207ZG            with STM32F207ZG
@@ -73,9 +74,7 @@ Contributions:
   - RF-BM-ND0x                   with nRF52832
   - e73-2G4M04S                  with nRF52832
 
-http://mecrisp.sourceforge.net/
-
-m-atthias@users.sf.net
+https://codeberg.org/clausecker/mecrisp-stellaris
 ;------------------------------------------------------------------------------
 
 Mecrisp finally got a younger sister and mastered the jump
@@ -2071,4 +2070,5 @@ System:
         bye             ( -- ) Leave Mecrisp-Stellaris
 
 
-Matthias Koch, Summer 2013, updated Winter 2019
+Matthias Koch, Summer 2013, updated Winter 2019.
+Robert Clausecker, Summer 2025.

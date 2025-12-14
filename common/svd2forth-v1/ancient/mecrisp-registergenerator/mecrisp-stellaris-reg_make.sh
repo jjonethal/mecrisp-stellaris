@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 ## Mecrisp-Stellaris http://mecrisp.sourceforge.net/
 ## ARM CMSIS-SVD extractor by Terry Porter "terry@tjporter.com.au"
 ## Example usage: ./mecrisp-stellaris-reg_make.sh STM32F303x.svd

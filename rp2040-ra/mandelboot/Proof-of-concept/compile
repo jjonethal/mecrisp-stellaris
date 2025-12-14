@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 fpc -XX asciimandel.pas && ./asciimandel > asciimandel.txt
 fpc -XX mandelint.pas   && ./mandelint   > mandelint.txt

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 fpc minsky
 ./minsky > Punkte.dat

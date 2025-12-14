@@ -1,9 +1,10 @@
 #!/bin/sh
+set -eu
 
 stty -icanon -echo
 
 {
-   echo -e "compiletoflash\n"
+   echo "compiletoflash"
    cat ../common/conditional.txt
    cat ../common/fixpt-math-lib.fs
    cat ../common/disassembler-m3.txt

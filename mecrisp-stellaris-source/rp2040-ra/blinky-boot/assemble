@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 arm-none-eabi-as blinky_boot.s -o blinky_boot.o
 arm-none-eabi-ld -o blinky_boot.elf -T blinky_boot.ld blinky_boot.o

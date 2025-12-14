@@ -1,3 +1,4 @@
 #!/bin/sh
+set -eu
 
 st-flash write tinyblinky.bin 0x08000000

@@ -66,7 +66,7 @@ Port for STM32F401CC on Black pill by Gareth Edwards
 Bit field tools by Jan Bramkamp
 Tachyon extensions for RP2040 by Peter Jakacki
 Port for STM32G431KB by Ralph Sahli
-
+Port for microbit-v2 (nRF52833) by Paul Jewell
 
 Hardware donations:
 

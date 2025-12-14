@@ -1,3 +1,4 @@
 #!/bin/sh
+set -eu
 
 openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "targets rp2040.core0; program mecrisp-stellaris-pico.elf verify reset exit"

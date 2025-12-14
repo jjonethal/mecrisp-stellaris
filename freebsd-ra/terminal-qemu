@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 stty -icanon -echo
 qemu-arm-static mecrisp-stellaris-freebsd
 stty sane
