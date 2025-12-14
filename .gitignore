@@ -1,6 +1,5 @@
 *.bin
 *.hex
-*.s
 *.o
 *.uf2
 *.lst
