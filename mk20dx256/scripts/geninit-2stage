@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 # This shell script generates a file called "s0init.txt" and "s1init.txt"
 # s0init.txt is the bare minimum to crank up the clock speed and implement flowcontrol

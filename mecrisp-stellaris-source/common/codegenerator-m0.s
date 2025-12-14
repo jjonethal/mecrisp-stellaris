@@ -28,13 +28,11 @@ registerliteralkomma:  @ Compile code to put a literal constant into a register.
   @ Ist die gewünschte Konstante eine kleine negative Zahl ?
   @ Is desired constant a small negative number ?
 
-  ldr r3, =0xFFFF0000
   ldr r0, [psp]
-  ands r0, r3
-  cmp r0, r3
+  asrs r3, r0, #16	@ 0xffffxxxx -> 0xffffffff
+  mvns r3, r3           @ r3 == 0xffffffff?
   bne 1f
 
-    ldr r0, [psp]
     mvns r0, r0   @ Invert constant
     str r0, [psp]
 
@@ -69,14 +67,12 @@ registerliteralkomma_intern:
   popda r5 @ Hole die Registermaske  Fetch register mask
 
   @ Generate opcode for lsls target, target, #...
-  movs r1, r5
-  lsls r1, #3
-  orrs r1, r5
+  movs r1, #9     @ 1 << 0 | 1 << 3
+  muls r1, r5     @ reg << 0 | reg << 3
 
   @ Generate opcode for movs target, #...
-  lsls r5, #8 @ Den Register um 8 Stellen schieben
-  ldr r0, =0x2000 @ MOVS-Opcode für gewünschten Register
-  orrs r5, r0
+  adds r5, #0x20
+  lsls r5, #8     @ MOVS-Opcode für das gewünschte Register (0x2000 | reg << 8)
 
   movs r3, #0xFF  @ Maske für die Bits, die in die Opcodes kommen
 
@@ -183,8 +179,6 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
 
   @ -----------------------------------
   lsrs r2, r0, #24 @ 76
-  movs r3, #0xFF
-  ands r2, r3
 
   ldr r3, =0x2000  @ MOVS-Opcode
   orrs r3, r1      @ Target register
@@ -199,8 +193,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
 
   @ -----------------------------------
   lsrs r2, r0, #16 @ 54
-  movs r3, #0xFF
-  ands r2, r3
+  uxtb r2, r2
 
   ldr r3, =0x3000  @ ADDS-Opcode
   orrs r3, r1      @ Target register
@@ -215,8 +208,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
 
   @ -----------------------------------
   lsrs r2, r0, #8 @ 32
-  movs r3, #0xFF
-  ands r2, r3
+  uxtb r2, r2
 
   ldr r3, =0x3000  @ ADDS-Opcode
   orrs r3, r1      @ Target register
@@ -231,9 +223,7 @@ registerliteralkommalang:  @ Compile code to put a literal constant into a regis
 
   @ -----------------------------------
   @ lsrs r2, r0, #0  @ 10
-  movs r2, r0
-  movs r3, #0xFF
-  ands r2, r3
+  uxtb r2, r0
 
   ldr r3, =0x3000  @ ADDS-Opcode
   orrs r3, r1      @ Target register
@@ -283,17 +273,15 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
   @ BL opcodes support 22 Bits jump range - one of that for sign.
   @ Check if BL range is enough to reach target:
 
-  ldr r1, =0xFFC00001   @ 21 Bits frei
-  ands r1, r3
-  cmp r1, #0  @ Wenn dies Null ergibt, positive Distanz ok.
+  lsls r1, r3, #31 @ Sprung in den ARM-Modus?
+  bne 0f
+  asrs r1, r3, #21 @ positives Sprungziel ok?
+  beq 1f
+  mvns r1, r1      @ negatives Sprungziel ok?
   beq 1f
 
-  ldr r2, =0xFFC00000
-  cmp r1, r2
-  beq 1f      @ Wenn es gleich ist: Negative Distanz ok.
-
     @ bl callkommakurz @ Too far away - BL cannot reach that destination. Time for long distance opcodes :-)
-        adds tos, #1 @ Ungerade Adresse für Thumb-Befehlssatz
+0:      adds tos, #1 @ Ungerade Adresse für Thumb-Befehlssatz
         pushdaconst 0 @ Register r0
         bl registerliteralkomma
         pushdaconstw 0x4780 @ blx r0
@@ -312,27 +300,16 @@ callkomma:  @ Versucht einen möglichst kurzen Aufruf einzukompilieren.
 
   @ r3 enthält die Distanz:
 
-  lsrs r3, #1            @ Bottom bit ignored
-    ldr r0, =0xF000F800  @ Opcode-Template
+  ldr r0, =0xF000F800  @ Opcode-Template
 
-    ldr r1, =0x7FF       @ Bottom 11 bits of immediate
-    ands r1, r3
-    orrs r0, r1
+  lsls r1, r3, #20     @ dest << 20
+  lsrs r1, r1, #21     @ (dest & 0xffe) >> 1
+  orrs r0, r1          @ low 11 bits in low half
 
-  lsrs r3, #11
-
-    ldr r1, =0x3FF       @ 10 more bits shifted to second half
-    ands r1, r3
-    lsls r1, #16
-    orrs r0, r1
-
-  lsrs r3, #10
-
-    @ands r1, r3, #1      @ Next bit, treated as sign, shifted into bit 26.
-    movs r1, #1
-    ands r1, r3
-    lsls r1, #26
-    orrs r0, r1
+  lsrs r3, #12
+  lsls r3, #21
+  lsrs r3, #5          @ (dest & 0x7ff000) << 4
+  orrs r0, r3          @ 11 more bits shifted to second half
 
   @ Opcode fertig in r0
   pushda r0
@@ -350,10 +327,8 @@ literalkomma: @ Save r1, r2 and r3 !
 @     128:	3f04      	subs	r7, #4
 @     12a:	603e      	str	r6, [r7, #0]
 
-  pushdaconstw 0x3f04  @ subs psp, #4
-  bl hkomma
-  pushdaconstw 0x603e  @ str tos, [psp, #0]
-  bl hkomma
+  pushdaconstw 0x603e3f04  @ subs psp, #4; str tos, [psp]
+  bl komma
 
   pushdaconst 6 @ Target register r6=tos
   bl registerliteralkomma

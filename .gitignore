@@ -1,6 +1,9 @@
-*.elf
 *.bin
+*.hex
 *.o
+*.uf2
 *.lst
 *.list
-*.hex
+*.elf
+*.srec
+*.map

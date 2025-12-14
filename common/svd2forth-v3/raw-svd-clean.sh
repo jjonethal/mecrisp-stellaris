@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 # A nasty hack to strip out the long lines and carriage returns from stm32F svd's
 # Terry Porter 2018 <terry@tjporter.com.au> released under the GPL V2
 # 0A = NL ,  0D = CR

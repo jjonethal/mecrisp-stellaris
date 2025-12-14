@@ -51,6 +51,7 @@ _start:
 .equ charkommaavailable, 1
 .equ does_above_64kb, 1
 .equ within_os, 1
+.equ letsroll, 1
 .equ registerallocator, 1
 .equ erasedflashcontainszero, 1
 

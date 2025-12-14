@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 cd ..
 
@@ -79,6 +80,14 @@ md5sum *.bin
 cd ..
 
 cd microbit-ra
+md5sum *.bin
+cd ..
+
+cd microbit-v2
+md5sum *.bin
+cd ..
+
+cd microbit-v2-ra
 md5sum *.bin
 cd ..
 

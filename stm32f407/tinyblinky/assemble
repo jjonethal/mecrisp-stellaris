@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 arm-none-eabi-as tinyblinky.s -o tinyblinky.o
 arm-none-eabi-ld tinyblinky.o -o tinyblinky.elf -T memmap

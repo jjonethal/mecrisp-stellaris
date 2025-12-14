@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 stty -icanon -echo
 ./mecrisp-stellaris-freebsd
 stty sane

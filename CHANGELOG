@@ -913,3 +913,27 @@
 
   - Contribution by Ralph Sahli:
     New target: STM32G431KB
+
+11.06.2025, Robert Clausecker, Mecrisp-Stellaris 3.0.0
+
+  By Matthias' wishes, this project has been passed over to
+  new maintainership.  To underline this change, the major
+  version has been changed to 3, despite there not being any
+  big changes.
+
+  The project is now maintained on Codeberg.  Please report
+  bugs there: https://codeberg.org/clausecker/mecrisp-stellaris/issues/new
+
+  - manage mecrisp-stellaris in a git repository at
+    https://github.com/clausecker/mecrisp-stellaris
+  - roll/-roll can now be compiled into classic-mode kernels,
+    based on the value of the letsroll macro.  They're used
+    in the freebsd port
+  - build script rework
+    - portability fixes
+    - consistent build failure reporting (Jan Bramkamp)
+    - consistent use of cc as the host compiler
+  - thumbulator now understands Armv7-M STM/LDM/STMDB/LDMDB
+  - improve various stack juggler and kernel code sequences
+  - Contribution by Paul Jewell:
+      New target: microbit-v2 (nRF52833)

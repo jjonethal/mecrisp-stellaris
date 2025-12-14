@@ -52,8 +52,8 @@ tick: @ Nimmt das nächste Token aus dem Puffer, suche es und gibt den Einsprung
 
   .ifdef registerallocator
 
-  pushda r0
-  swap
+  subs psp, #4
+  str r0, [psp]
   bl literalkomma
   bl literalkomma
   pushdatos
@@ -132,7 +132,7 @@ suchedefinitionsende: @ Rückt den Pointer in r0 ans Ende einer Definition vor.
                       @ Advance r0 to the end of code of current definition by searching for pop {pc} or bx lr opcodes.
 @ -----------------------------------------------------------------------------
         @ Suche wie in inline, nach pop {pc} oder bx lr.
-        push {r1, r2, r3}
+        push {r1, r2, r3, lr}
 
          .ifdef m0core
          ldr r2, =0xbd00 @ pop {pc}
@@ -151,8 +151,7 @@ suchedefinitionsende: @ Rückt den Pointer in r0 ans Ende einer Definition vor.
           cmp r1, r3  @ bx lr
           bne 1b
 
-2:      pop {r1, r2, r3}
-        bx lr
+2:      pop {r1, r2, r3, pc}
 
 
 @ -----------------------------------------------------------------------------
@@ -309,69 +308,73 @@ execute:
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate, "immediate" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_immediate & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_immediate & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "inline" @ ( -- )
 setze_inlineflag:
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_inline & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_inline & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate, "compileonly" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_immediate_compileonly & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_immediate_compileonly & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "0-foldable" @ ( -- )
 setze_faltbarflag:
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_0 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_0 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "1-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_1 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_1 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "2-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_2 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_2 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "3-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_3 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_3 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "4-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_4 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_4 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "5-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_5 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_5 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "6-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_6 & ~Flag_visible
-  b.n setflags
+  movs r0, #Flag_foldable_6 & ~Flag_visible
+  b.n setflags_r0
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_immediate|Flag_foldable_0, "7-foldable" @ ( -- )
 @ -----------------------------------------------------------------------------
-  pushdaconst Flag_foldable_7 & ~Flag_visible
+  movs r0, #Flag_foldable_7 & ~Flag_visible
+
+@ push r0 on the stack and call setflags
+setflags_r0:
+  pushda r0
   b.n setflags
 
 @ -----------------------------------------------------------------------------

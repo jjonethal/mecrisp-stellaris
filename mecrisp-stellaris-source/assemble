@@ -1,392 +1,133 @@
-#!/bin/bash
-
-cd aducm4050-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../aducm4050-ra
-cd ..
-
-cd atsame70-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../atsame70-ra && cp *.hex ../../atsame70-ra
-cd ..
-
-cd lpc1114fn28
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28 && cp *.hex ../../lpc1114fn28
-cd ..
-
-cd lpc1114fn28-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fn28-ra && cp *.hex ../../lpc1114fn28-ra
-cd ..
-
-cd lpc1114fbd48
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fbd48 && cp *.hex ../../lpc1114fbd48
-cd ..
-
-cd lpc1114fbd48-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1114fbd48-ra && cp *.hex ../../lpc1114fbd48-ra
-cd ..
-
-cd lpc1115fbd48
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48 && cp *.hex ../../lpc1115fbd48
-cd ..
-
-cd lpc1115fbd48-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc1115fbd48-ra && cp *.hex ../../lpc1115fbd48-ra
-cd ..
-
-cd lpc845m301
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lpc845m301 && cp *.hex ../../lpc845m301
-cd ..
-
-cd kl25z128
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128 && cp *.srec ../../kl25z128
-cd ..
-
-cd kl25z128-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl25z128-ra && cp *.srec ../../kl25z128-ra
-cd ..
-
-cd kl46z256
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl46z256 && cp *.srec ../../kl46z256
-cd ..
-
-cd kl46z256-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../kl46z256-ra && cp *.srec ../../kl46z256-ra
-cd ..
-
-cd mk20dx256
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk20dx256 && cp *.hex ../../mk20dx256
-cd ..
-
-cd mk64fn1m0
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk64fn1m0 && cp *.srec ../../mk64fn1m0
-cd ..
-
-cd mk64fn1m0-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../mk64fn1m0-ra && cp *.srec ../../mk64fn1m0-ra
-cd ..
-
-cd nrf51822
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf51822 && cp *.hex ../../nrf51822
-cd ..
-
-cd nrf52832
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nrf52832 && cp *.hex ../../nrf52832
-cd ..
-
-cd microbit
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit && cp *.hex ../../microbit
-cd ..
-
-cd microbit-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../microbit-ra && cp *.hex ../../microbit-ra
-cd ..
-
-cd msp432p401r
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r
-cd ..
-
-cd msp432p401r-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../msp432p401r-ra
-cd ..
-
-cd lm3s811-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm3s811-ra
-cd ..
-
-cd lm4f120
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120
-cd ..
-
-cd lm4f120-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f120-ra
-cd ..
-
-cd lm4f232
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../lm4f232
-cd ..
-
-cd palanqin
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../palanqin
-cd ..
-
-cd palanqin-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../palanqin-ra
-cd ..
-
-cd tm4c1294
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../tm4c1294
-cd ..
-
-cd tm4c1294-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../tm4c1294-ra
-cd ..
-
-cd stm32f030f4
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030f4
-cd ..
-
-cd stm32f030k6
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030k6
-cd ..
-
-cd stm32f030k6-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030k6-ra
-cd ..
-
-cd stm32f030r8
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030r8
-cd ..
-
-cd stm32f030r8-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f030r8-ra
-cd ..
-
-cd stm32f042f6
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f042f6
-cd ..
-
-cd stm32f042f6-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f042f6-ra
-cd ..
-
-cd stm32f051
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f051
-cd ..
-
-cd stm32f051-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f051-ra
-cd ..
-
-cd stm32f072rb
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f072rb
-cd ..
-
-cd stm32f072rb-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f072rb-ra
-cd ..
-
-cd stm32l031k6
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l031k6
-cd ..
-
-cd stm32l053c8
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8
-cd ..
-
-cd stm32l053c8-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l053c8-ra
-cd ..
-
-cd stm32l073rz
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l073rz
-cd ..
-
-cd stm32l073rz-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l073rz-ra
-cd ..
-
-cd stm32l082kz-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l082kz-ra
-cd ..
-
-cd stm32l152
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152
-cd ..
-
-cd stm32l152rb
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l152rb
-cd ..
-
-cd stm32l432-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l432-ra
-cd ..
-
-cd stm32f100
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f100
-cd ..
-
-cd stm32f103
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103
-cd ..
-
-cd stm32f103-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103-ra
-cd ..
-
-cd stm32f103rb
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103rb
-cd ..
-
-cd stm32f103rb-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f103rb-ra
-cd ..
-
-cd stm32f207zg
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f207zg
-cd ..
-
-cd stm32f207zg-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f207zg-ra
-cd ..
-
-cd stm32f303
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303
-cd ..
-
-cd stm32f303-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303-ra
-cd ..
-
-cd stm32f303k8
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303k8
-cd ..
-
-cd stm32f303k8-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303k8-ra
-cd ..
-
-cd stm32f303re-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f303re-ra
-cd ..
-
-cd stm32f401
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401
-cd ..
-
-cd stm32f401-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401-ra
-cd ..
-
-cd stm32f401cc
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cc
-cd ..
-
-cd stm32f401cc-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cc-ra
-cd ..
-
-cd stm32f401cd-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f401cd-ra
-cd ..
-
-cd stm32f407
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407
-cd ..
-
-cd stm32f407-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407-ra
-cd ..
-
-cd stm32f407diymore
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407diymore
-cd ..
-
-cd stm32f407diymore-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f407diymore-ra
-cd ..
-
-cd stm32f411
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f411
-cd ..
-
-cd stm32f411-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f411-ra
-cd ..
-
-cd stm32f429
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f429
-cd ..
-
-cd stm32l476
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l476
-cd ..
-
-cd stm32l476-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32l476-ra
-cd ..
-
-cd stm32f746-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f746-ra && cp *.hex ../../stm32f746-ra
-cd ..
-
-cd stm32f767-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32f767-ra && cp *.hex ../../stm32f767-ra
-cd ..
-
-cd stm32h743-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32h743-ra && cp *.hex ../../stm32h743-ra
-cd ..
-
-cd stm32g031f4
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f4
-cd ..
-
-cd stm32g031f6-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f6-ra
-cd ..
-
-cd stm32g031f8-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031f8-ra
-cd ..
-
-cd stm32g031j6-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g031j6-ra
-cd ..
-
-cd stm32g071rb-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g071rb-ra
-cd ..
-
-cd stm32g431kb-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32g431kb-ra
-cd ..
-
-cd stm32wb55
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../stm32wb55
-cd ..
-
-cd numworks-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../numworks-ra
-cd ..
-
-cd xmc1100
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100 && cp *.hex ../../xmc1100
-cd ..
-
-cd xmc1100-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../xmc1100-ra && cp *.hex ../../xmc1100-ra
-cd ..
-
-cd efm32gg990
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32gg990
-cd ..
-
-cd efm32gg990-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32gg990-ra
-cd ..
-
-cd efm32hg322
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32hg322
-cd ..
-
-cd efm32hg322-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../efm32hg322-ra
-cd ..
-
-cd cy8c4245axi
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c4245axi && cp *.hex ../../cy8c4245axi
-cd ..
-
-cd cy8c5888
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../cy8c5888
-cd ..
-
-cd nuc123
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123 && cp *.hex ../../nuc123
-cd ..
-
-cd nuc123-ra
-make clean all && ls -l *.bin && md5sum *.bin && cp *.bin ../../nuc123-ra && cp *.hex ../../nuc123-ra
-cd ..
+#!/bin/sh
+set -eu
+
+build() {
+	(
+		port="${1:?}"
+		cd "${port:?}"
+
+		mkdir -p "../../${port:?}"
+		make clean all
+
+		set -- *.bin
+		if [ -f "$1" ]; then
+			ls -l -- "$@"
+			md5sum -- "$@"
+			cp -- "$@" "../../${port:?}/"
+		fi
+
+		set -- *.hex
+		if [ -f "$1" ]; then
+			cp -- "$@" "../../${port:?}/"
+		fi
+
+		set -- *.srec
+		if [ -f "$1" ]; then
+			cp -- "$@" "../../${port:?}/"
+		fi
+
+	)
+}
+
+build aducm4050-ra
+build atsame70-ra
+build lpc1114fn28
+build lpc1114fn28-ra
+build lpc1114fbd48
+build lpc1114fbd48-ra
+build lpc1115fbd48
+build lpc1115fbd48-ra
+build lpc845m301
+build kl25z128
+build kl25z128-ra
+build kl46z256
+build kl46z256-ra
+build mk20dx256
+build mk64fn1m0
+build mk64fn1m0-ra
+build nrf51822
+build nrf52832
+build microbit
+build microbit-ra
+build microbit-v2
+build microbit-v2-ra
+build msp432p401r
+build msp432p401r-ra
+build lm3s811-ra
+build lm4f120
+build lm4f120-ra
+build lm4f232
+build palanqin
+build palanqin-ra
+build tm4c1294
+build tm4c1294-ra
+build stm32f030f4
+build stm32f030k6
+build stm32f030k6-ra
+build stm32f030r8
+build stm32f030r8-ra
+build stm32f042f6
+build stm32f042f6-ra
+build stm32f051
+build stm32f051-ra
+build stm32f072rb
+build stm32f072rb-ra
+build stm32l031k6
+build stm32l053c8
+build stm32l053c8-ra
+build stm32l073rz
+build stm32l073rz-ra
+build stm32l082kz-ra
+build stm32l152
+build stm32l152rb
+build stm32l432-ra
+build stm32f100
+build stm32f103
+build stm32f103-ra
+build stm32f103rb
+build stm32f103rb-ra
+build stm32f207zg
+build stm32f207zg-ra
+build stm32f303
+build stm32f303-ra
+build stm32f303k8
+build stm32f303k8-ra
+build stm32f303re-ra
+build stm32f401
+build stm32f401-ra
+build stm32f401cc
+build stm32f401cc-ra
+build stm32f401cd-ra
+build stm32f407
+build stm32f407-ra
+build stm32f407diymore
+build stm32f407diymore-ra
+build stm32f411
+build stm32f411-ra
+build stm32f429
+build stm32l476
+build stm32l476-ra
+build stm32f746-ra
+build stm32f767-ra
+build stm32h743-ra
+build stm32g031f4
+build stm32g031f6-ra
+build stm32g031f8-ra
+build stm32g031j6-ra
+build stm32g071rb-ra
+build stm32g431kb-ra
+build stm32wb55
+build numworks-ra
+build xmc1100
+build xmc1100-ra
+build efm32gg990
+build efm32gg990-ra
+build efm32hg322
+build efm32hg322-ra
+build cy8c4245axi
+build cy8c5888
+build nuc123
+build nuc123-ra
 
 cd rp2040-ra
 ./assemble

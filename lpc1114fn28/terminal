@@ -1,3 +1,4 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 picocom -b 115200 /dev/ttyUSB0 --imap lfcrlf,crcrlf --omap delbs,crlf --send-cmd "ascii-xfr -s -l 100 -n"

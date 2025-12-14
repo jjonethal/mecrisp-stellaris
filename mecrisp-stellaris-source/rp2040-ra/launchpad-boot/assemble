@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 arm-none-eabi-as launchpad_boot.s -o launchpad_boot.o
 arm-none-eabi-ld -o launchpad_boot.elf -T launchpad_boot.ld launchpad_boot.o

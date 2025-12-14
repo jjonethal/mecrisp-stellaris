@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 # Usage: runcore thumbulator mecrisp-stellaris-binary
 
 stty -icanon -echo
 
 {
-   echo -e "' h! hook-hflash! !\n"
+   echo \'' h! hook-hflash! !'
    cat -
 } | "$1" "$2"
 

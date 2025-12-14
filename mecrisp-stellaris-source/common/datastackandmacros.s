@@ -136,10 +136,15 @@ psp .req r7
 .endm
 
 .macro ddup
-  ldr r0, [psp]
-  pushdatos
-  subs psp, #4
+  .ifdef m0core
+  subs psp, #8
+  ldr r0, [psp, #8]
+  str tos, [psp, #4]
   str r0, [psp]
+  .else
+  ldr r0, [psp]
+  stmdb psp!, {r0, tos}
+  .endif
 .endm
 
 .macro ddrop
@@ -351,13 +356,13 @@ psp .req r7
 .ifdef registerallocator
 
 .macro Dictionary_Welcome
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris RA 2.6.5 ---"
+  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris RA 3.0.0 ---"
 .endm
 
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris RA 2.6.5"
+7:      .ascii "Mecrisp-Stellaris RA 3.0.0"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm
@@ -365,13 +370,13 @@ psp .req r7
 .else
 
 .macro Dictionary_Welcome
-  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris 2.6.5 ---"
+  Wortbirne Flag_invisible, "--- Mecrisp-Stellaris 3.0.0 ---"
 .endm
 
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris 2.6.5"
+7:      .ascii "Mecrisp-Stellaris 3.0.0"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm

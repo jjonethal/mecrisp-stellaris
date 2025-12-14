@@ -1,3 +1,4 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 cat ../common/disassembler-m3.txt ../common/dictionary-tools.txt ../common/multitask.txt ../common/multitask-debug.txt io.txt delay.txt keyboard.txt display.txt graphics-unicode-8x16.txt editor.txt cornerstone.txt > completesources.txt

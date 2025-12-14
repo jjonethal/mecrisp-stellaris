@@ -24,8 +24,11 @@
   @ ( -- 0 8 )
 case:
 @------------------------------------------------------------------------------
-  pushdaconst 0 @ Zahl der Zweige    Current number of branches
-  pushdaconst 8 @ Strukturerkennung  Structure pattern
+  subs psp, #8
+  str tos, [psp, #4]
+  movs tos, #0  @ Zahl der Zweige    Current number of branches
+  str tos, [psp]
+  movs tos, #8  @ Strukturerkennung  Structure pattern
   bx lr
 
 @ Small test:
@@ -99,14 +102,15 @@ of_opcodiereinsprung:
   pushda r0
 
     @ Is constant small enough to fit in one Byte ?
-    movs r1, #0xFF  @ Mask for 8 Bits
-    ands r1, tos
-    cmp r1, tos
-    bne.n 2f
-    @ Equal ? Constant fits in 8 Bits.
+    lsrs r1, tos, #8  @ mask out low 8 bits
+    bne.n 2f          @ No bits left? Constant fits into 8 bits.
 
+.ifdef m0core
     ldr r1, =0x2E00 @ Opcode cmp r6, #0
     orrs tos, r1     @ Or together with constant
+.else
+    orr tos, tos, #0x2e00
+.endif
     bl hkomma
     b.n of_opcodiereinsprung
 
@@ -205,10 +209,8 @@ spruenge_einpflegen: @ Internal use only.
   beq 2f
 
   push {r0, r1}
-  movs r1, #1          @ Check if this shall be a conditional jump instead. Needed for ?do which reuses this code.
-  ands r1, tos         @ Prüfe, ob es ein bedingter Sprung werden soll - ?do benötigt solche.
-
-  cmp r1, #0
+                       @ Check if this shall be a conditional jump instead. Needed for ?do which reuses this code.
+  lsls r1, tos, #31    @ Prüfe, ob es ein bedingter Sprung werden soll - ?do benötigt solche
   beq 3f
     subs tos, #1 @ Markierung für den bedingten Sprung entfernen  Remove temporary bit for this beeing a conditional jump
     bl v_nullbranch  @ Insert conditional jump

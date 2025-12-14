@@ -393,20 +393,16 @@ stringkomma: @ Fügt ein String an das Dictionary an  Write a string in Dictiona
    @ bl stype
    @ writeln "<"
 
-   movs r1, #0xFF @ Maximum counted string length
-   ands r1, tos   @ Fetch string length
-   drop
-   popda r0 @ Fetch string address
+   uxtb r1, tos   @ Fetch string length
+   ldm psp!, {r0} @ Fetch string address
 
    cmp r1, #0 @ Zero length string ?
    bne 1f
-
-     pushdaconst 0
+     movs tos, #0
      bl hkomma
      pop {r0, r1, r2, pc}
 
 1: @ Write length byte and the first character.
-   pushdatos
    ldrb tos, [r0]
    lsls tos, #8
    orrs tos, r1
@@ -844,6 +840,7 @@ nvariable: @ Creates an initialised variable of given length.
       @ Prüfe hier, ob genug Ram da ist !?
       @ Maybe check in future if there is enough RAM left ?
 
+  @ XXX instead of masking the length, print an error message for overly long variables!
   movs r0, #0x0F @ Maximum length for flash variables !
   ands tos, r0   @ Limit is important to not break Flags for catchflashpointers.
 
@@ -856,9 +853,9 @@ nvariable: @ Creates an initialised variable of given length.
   @ Write code and initialise elements.
   @ r1 is target location in RAM.
 
-  popda r0   @ Fetch amount of cells
+  popda r0    @ Fetch amount of cells
   movs r2, r0 @ Save the value for generating flags for catchflashpointers later
-  cmp r0, #0 @ If nvariable is called with length zero... Maybe this could be useful sometimes.
+  beq 2f      @ If nvariable is called with length zero... Maybe this could be useful sometimes.
   beq 2f
 
 1:str tos, [r1] @ Initialize RAM location
@@ -884,8 +881,7 @@ variable_ram:
   @ Amount of elements to write is in TOS.
 
   popda r0   @ Fetch amount of cells
-  cmp r0, #0 @ If nvariable is called with length zero... Maybe this could be useful sometimes.
-  beq.n finish_var_buf_ram
+  beq.n finish_var_buf_ram @ If nvariable is called with length zero... Maybe this could be useful sometimes.
 
 1:bl komma
   subs r0, #1
@@ -907,13 +903,9 @@ finish_var_buf_ram: @ Finished.
   bl create
 
   @ Round requested buffer length to next 4-Byte boundary to ensure alignment
-  movs r0, #1
-  ands r0, tos
+  movs r0, #3
   adds tos, r0
-
-  movs r0, #2
-  ands r0, tos
-  adds tos, r0
+  bics tos, r0
 
   ldr r0, =Dictionarypointer
   ldr r1, [r0]
@@ -1082,13 +1074,11 @@ dictionarynext: @ Scans dictionary chain and returns true if end is reached.
   Wortbirne Flag_visible, "skipstring"
 @ -----------------------------------------------------------------------------
     @ String überlesen und Pointer gerade machen
-    ldrb r1, [tos] @ Länge des Strings holen      Fetch length
-    adds r1, #1   @ Plus 1 Byte für die Länge   One more for length byte
-
-    movs r2, #1  @ Wenn es ungerade ist, noch einen mehr:   Maybe one more for aligning.
-    ands r2, r1
-
-    adds r1, r2
+    ldrb r1, [tos] @ Länge des Strings holen     Fetch length
+    adds r1, #1+1  @ Plus 1 Byte für die Länge   One more for length byte
+                   @ und 1 Byte zum aufrunden    and one byte for rounding up
+    movs r2, #1    @ Und großzügig aufrunden     round up to even address
+    bics r1, r2
     adds tos, r1
     bx lr
 
@@ -1097,13 +1087,11 @@ skipstring: @ Überspringt einen String, dessen Adresse in r0 liegt.  Skip strin
 @ -----------------------------------------------------------------------------
   push {r1, r2}
     @ String überlesen und Pointer gerade machen
-    ldrb r1, [r0] @ Länge des Strings holen      Fetch length
-    adds r1, #1   @ Plus 1 Byte für die Länge   One more for length byte
-
-    movs r2, #1  @ Wenn es ungerade ist, noch einen mehr:   Maybe one more for aligning.
-    ands r2, r1
-
-    adds r1, r2
+    ldrb r1, [r0] @ Länge des Strings holen     fetch length
+    adds r1, #1+1 @ plus 1 Byte für die Länge   one more for length byte
+                  @ und 1 Byte zum aufrunden    and one byte for rounding up
+    movs r2, #1   @ und großzügig aufrunden     round up to even address
+    bics r1, r2
     adds r0, r1
   pop {r1, r2}
   bx lr

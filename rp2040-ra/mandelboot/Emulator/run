@@ -1,3 +1,4 @@
 #!/bin/sh
+set -eu
 
 ./thumbulator-rp2040-bootblock ../mandelboot.bin

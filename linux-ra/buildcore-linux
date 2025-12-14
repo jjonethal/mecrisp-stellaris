@@ -1,37 +1,38 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 # With disassembler and math
 
 stty -icanon -echo
 
 {
-   echo -e "compiletoflash\n"
+   echo "compiletoflash"
    cat ../common/fixpt-math-lib.fs
    cat ../common/disassembler-m3.txt
    cat save.txt
-   echo -e "save\" mecrisp-stellaris-linux-with-disassembler-and-math\n"
+   echo 'save" mecrisp-stellaris-linux-with-disassembler-and-math'
    # cat -
-} | ./mecrisp-stellaris-linux
+} | qemu-arm-static mecrisp-stellaris-linux
 
 stty sane
 
-echo -e ""
+echo
 
 # With VIS
 
 stty -icanon -echo
 
 {
-   echo -e "compiletoflash\n"
+   echo "compiletoflash"
    cat ../common/VIS/vis-0.8.4.2-mecrisp-stellaris.fs
-   echo -e "compiletoflash\n"
+   echo "compiletoflash"
    cat ../common/VIS/vis-0.8.4-disassembler-m3.fs
-   echo -e "compiletoram\n"
+   echo "compiletoram"
    cat save.txt
-   echo -e "save\" mecrisp-stellaris-linux-vis\n"
+   echo 'save" mecrisp-stellaris-linux-vis'
    # cat -
 } | qemu-arm-static mecrisp-stellaris-linux
 
 stty sane
 
-echo -e ""
+echo

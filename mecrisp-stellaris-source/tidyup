@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
 cd aducm4050-ra
 make clean
@@ -77,6 +78,10 @@ make clean
 cd ..
 
 cd microbit-ra
+make clean
+cd ..
+
+cd microbit-v2
 make clean
 cd ..
 

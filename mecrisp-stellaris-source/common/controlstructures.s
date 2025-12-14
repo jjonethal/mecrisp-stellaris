@@ -24,8 +24,8 @@
 cjumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel Bitmaske -- )
                 @ ( Address-of-hole-for-jump Target Bitmask -- )
 @------------------------------------------------------------------------------
-  popda r2 @ Bitmaske    Bitmask for jump condition
-  popda r1 @ Sprungziel  Target
+  movs r2, tos        @ Bitmask  Bitmask for jump condition
+  ldm psp!, {r1, tos} @ Sprungziel  Target
   @ popda r0 @ Adresse-der-Opcodelücke - bleibt auf dem Stack  Hole to fill in opcode - keep that on stack
 
   @ Calculate jump offset.
@@ -38,27 +38,21 @@ cjumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel Bitmaske -- )
   @ Short conditional B.. opcodes support 8 Bits jump range - one of that for sign.
   @ Check if opcodable range is enough to reach target:
 
-  ldr r1, =0xFFFFFF01   @ 7 Bits frei
-  ands r1, r3
-  cmp r1, #0  @ Wenn dies Null ergibt, positive Distanz ok.
-  beq 1f
-
-  ldr r0, =0xFFFFFF00
-  cmp r1, r0
-  beq 1f  @ Wenn es gleich ist: Negative Distanz ok.
-    @ Ansonsten ist die Sprungdistanz einfach zu groß.
-jump_too_far:
+   lsls r1, r3, #31  @ Sprung in den ARM-Modus?
+   bne jump_too_far
+   asrs r1, r3, #8   @ positives Sprungziel ok?
+   beq 1f
+   mvns r1, r1       @ negatives Sprungziel ok?
+   beq 1f
+jump_too_far:        @ Ansonsten ist die Sprungdistanz einfach zu groß.
     Fehler_Quit "Jump too far"
 1:
 
   @ Generate proper jump opcode:
-  asrs r3, #1 @ Schieben, da die Sprünge immer auf geraden Adressen beginnen und enden.  Shift one bit out as jumps always have an even offset
-  movs r1, #0xFF @ Genau 8 Bits Sprungmaske.  Exactly 8 Bits available -
-  ands r3, r1    @ Ausschnitt anwenden          mask them to clip sign bits
-
-  orrs r3, r2    @ Sprungbedingung und den Rest des Opcodes hinzufügen  Or together with jump condition
-  movs r0, tos  @ Adresse-der-Opcodelücke in r0 holen                    Exchange registers
-  movs tos, r3  @ Sprungopcode stattdessen hineinlegen
+  movs r0, tos      @ Adress der Opcode lücke           opcode gab address
+  asrs r3, #1       @ Thumb-Bit wegschmeißen            discard thumb bit
+  uxtb r3, r3       @ Sprungziel auf 8 Bit maskieren    mask jump target to 8 bits
+  adds tos, r2, r3  @ Sprungziel in Opcode einfriemeln  patch jump target into opcode
 
 sprungbefehl_einfuegen: @ strh r3, [r0] over h, to handle Flash writes
   push {lr}
@@ -78,8 +72,8 @@ sprungbefehl_einfuegen: @ strh r3, [r0] over h, to handle Flash writes
 jumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel -- )
                @ ( Address-of-hole-for-jump Target -- )
 @------------------------------------------------------------------------------
-  popda r1 @ Sprungziel  Target
-  popda r0 @ Adresse-der-Opcodelücke  Hole to fill in opcode
+  movs r1, tos         @ Sprungziel               Target
+  ldm psp!, {r0, tos}  @ Adresse der Opcodelücke  opcode address gap
 
   subs r3, r1, r0 @ Differenz aus Lücken-Adresse und Sprungziel bilden  Calculate relative jump offset
   subs r3, #4     @ Da der aktuelle Befehl noch läuft und es komischerweise andere Offsets beim ARM gibt.   Current instruction still running...
@@ -90,20 +84,15 @@ jumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel -- )
   @ Short unconditional B opcodes support 11 Bits jump range - one of that for sign.
   @ Check if opcodable range is enough to reach target:
 
-  ldr r1, =0xFFFFF801  @ 10 Bits frei
-  ands r1, r3
-  cmp r1, #0  @ Wenn dies Null ergibt, positive Distanz ok.
+  lsls r1, r3, #31  @ Sprung in den ARM-Modus?
+  bne jump_too_far
+  asrs r1, r3, #11  @ positives Sprungziel ok?
   beq 1f
+  mvns r1, r1       @ negatives Sprungziel ok?
+  bne jump_too_far
 
-  ldr r2, =0xFFFFF800
-  cmp r1, r2
-  bne.n jump_too_far @ Wenn es gleich ist: Negative Distanz ok.
-
-1:
-
-  asrs r3, #1 @ Schieben, da die Sprünge immer auf geraden Adressen beginnen und enden. Shift one bit out as jumps always have an even offset
-  ldr r2, =0x7FF @ Genau 11 Bits Sprungmaske.  Exactly 11 Bits available -
-  ands r3, r2     @ Ausschnitt anwenden          mask them to clip sign bits
+1:lsls r3, #20  @ mask jump target to 11 bits and discard thumb bit
+  lsrs r3, #21  @ Sprungziel auf 11 Bit maskieren und Thumb-Bit wegschmeißen
 
   .ifdef m0core
     ldr r2, =0xE000

@@ -91,13 +91,11 @@ SucheFlashPointer_Hangelschleife:
       @ Die Flags werden später nicht mehr gebraucht.
       @ This one allocates RAM, Flags are not needed anymore.
 
-      movs r3, #0x0F @ Das unterste Nibble maskieren  Mask lower 4 bits that contains amount of 32 bit locations requested.
-      ands r1, r3
-
         @ Bei Null Bytes brauche ich nichts zu kopieren, den Fall erkennt move.
         @ Zero byte requests are handled by move itself, no need to catch this special case. Sounds strange, but is useful to have two handles for one variable.
-        lsls r1, #2 @ Mit vier malnehmen                  Multiply by 4
-        subs r5, r1 @ Ramvariablenpointer wandern lassen  Subtract from the pointer that points to the next free location
+        lsls r1, #28 @ auf das unterste Nibble maskieren (das jetzt das oberste ist)
+        lsrs r1, #26 @ und dieses mit 4 multiplizieren (insgesamt: r1 = (r1 & 0xf) * 4)
+        subs r5, r1  @ Ramvariablenpointer wandern lassen  Subtract from the pointer that points to the next free location
 
         @ Den neu geschaffenen Platz initialisieren !
         @ Initialise the freshly allocated RAM locations !
@@ -114,9 +112,11 @@ SucheFlashPointer_Hangelschleife:
         bl suchedefinitionsende @ Advance pointer to end of code. This is detected by "bx lr" or "pop {pc}" opcodes.
         @ r0 ist nun an der Stelle, wo die Initialisierungsdaten liegen. r0 now points to the location of the initialisation at the end of code of current definition.
         @ Kopiere die gewünschte Zahl von r1 Bytes von [r0] an [r5]  Copy desired amount of r1 bytes from [r0] to [r5].
-        pushda r0 @ Quelle  Source
-        pushda r5 @ Ziel    Target
-        pushda r1 @ Anzahl an Bytes  Amount
+        subs psp, #12
+        str tos, [psp, #8]
+        str r0,  [psp, #4] @ Quelle  Source
+        str r5,  [psp, #0] @ Ziel    Target
+        movs tos, r1       @ Anzahl an Bytes  Amount
         bl move
 
 Sucheflashpointer_Speicherbelegung_fertig:

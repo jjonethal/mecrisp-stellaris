@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 cat ../common/longcomment.txt \
     ../common/conditional.txt \
