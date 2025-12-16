@@ -259,6 +259,7 @@ psp .req r7
 @ Those are hardwired and not recognized by catchflashpointers, simply to not have to type their RAM addresses manually.
 .macro ramallot Name, Menge         @ Für Variablen und Puffer zu Beginn des Rams, die im Kern verwendet werden sollen.
   .equ \Name, rampointer            @ Uninitialisiert.
+  .global \Name
   .set rampointer, rampointer + \Menge
 .endm
 
