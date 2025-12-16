@@ -1,0 +1,63 @@
+diff -bur mecrisp-stellaris-source/common/compiler-flash.s /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/compiler-flash.s
+--- mecrisp-stellaris-source/common/compiler-flash.s	2019-02-14 22:37:59.000000000 +0100
++++ /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/compiler-flash.s	2020-05-13 22:56:50.309496000 +0200
+@@ -593,7 +593,7 @@
+ 
+     write "\x1B[33m Redefine "
+     bl stype @ Den neuen Tokennamen nochmal ausgeben
+-    write ".\x1B[0m "
++    write ".\x1B[0m \x12"
+ 
+   .else
+ 
+diff -bur mecrisp-stellaris-source/common/datastackandmacros.s /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/datastackandmacros.s
+--- mecrisp-stellaris-source/common/datastackandmacros.s	2020-02-17 12:25:14.015848164 +0100
++++ /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/datastackandmacros.s	2020-05-13 22:57:17.625924000 +0200
+@@ -382,7 +382,7 @@
+   bl dotgaensefuesschen
+         .byte 8f - 7f         @ Compute length of name field.
+ .ifdef color
+-7:    .ascii "\x1B[31m\Meldung\x1B[0m\n"
++7:    .ascii "\x1B[31m\Meldung\x1B[0m\n\x15"
+ .else
+ 7:    .ascii "\Meldung\n"
+ .endif
+@@ -399,7 +399,7 @@
+   bl dotgaensefuesschen
+         .byte 8f - 7f         @ Compute length of name field.
+ .ifdef color
+-7:    .ascii "\x1B[31m\Meldung\x1B[0m\n"
++7:    .ascii "\x1B[31m\Meldung\x1B[0m\n\x15"
+ .else
+ 7:    .ascii "\Meldung\n"
+ .endif
+diff -bur mecrisp-stellaris-source/common/interpreter.s /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/interpreter.s
+--- mecrisp-stellaris-source/common/interpreter.s	2019-02-14 22:47:12.000000000 +0100
++++ /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/interpreter.s	2020-05-13 23:02:11.271533000 +0200
+@@ -631,9 +631,9 @@
+   cmp r0, r1
+   bhs.n 1f
+ 
+-    writeln "ok'\x1B[0m"
++    writeln "ok'\x1B[0m\x06"
+     b.n quit_innenschleife
+-1:  writeln "ok.\x1B[0m"
++1:  writeln "ok.\x1B[0m\x06"
+     b.n quit_innenschleife
+ 
+   .else
+diff -bur mecrisp-stellaris-source/common/ra/interpreter.s /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/ra/interpreter.s
+--- mecrisp-stellaris-source/common/ra/interpreter.s	2019-02-14 22:47:19.000000000 +0100
++++ /home/crest/mecrisp-stellaris-2.5.3/mecrisp-stellaris-source/common/ra/interpreter.s	2020-05-13 23:01:31.153160000 +0200
+@@ -271,9 +271,9 @@
+   cmp r0, r1
+   bhs.n 1f
+ 
+-    writeln "ok'\x1B[0m"
++    writeln "ok'\x1B[0m\x06"
+     b.n quit_innenschleife
+-1:  writeln "ok.\x1B[0m"
++1:  writeln "ok.\x1B[0m\x06"
+     b.n quit_innenschleife
+ 
+   .else
