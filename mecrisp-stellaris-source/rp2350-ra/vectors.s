@@ -98,11 +98,3 @@ Interruptvektortabelle:
 .word irq_vektor_SPAREIRQ_IRQ_5   + 1 @ Position 51: SPAREIRQ_IRQ_5
 
 @ -----------------------------------------------------------------------------
-
-@ ---- IMAGE_DEF --------------------------------------------------------------
-@ must be located within the first 4 kByte
-.word 0xffffded3 @ PICOBIN_BLOCK_MARKER_START
-.word 0x10210142
-.word 0x000001ff
-.word 0x00000000
-.word 0xab123579
