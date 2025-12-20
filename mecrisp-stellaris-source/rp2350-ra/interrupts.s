@@ -27,35 +27,60 @@
 interrupt svcall
 interrupt pendsv
 
-interrupt TIMER_0
-interrupt TIMER_1
-interrupt TIMER_2
-interrupt TIMER_3
-interrupt PWM_WRAP
-interrupt USBCTRL
-interrupt XIP
-interrupt PIO0_0
-interrupt PIO0_1
-interrupt PIO1_0
-interrupt PIO1_1
-interrupt DMA_0
-interrupt DMA_1
-
+interrupt TIMER0_IRQ_0
+interrupt TIMER0_IRQ_1
+interrupt TIMER0_IRQ_2
+interrupt TIMER0_IRQ_3
+interrupt TIMER1_IRQ_0
+interrupt TIMER1_IRQ_1
+interrupt TIMER1_IRQ_2
+interrupt TIMER1_IRQ_3
+interrupt PWM_IRQ_WRAP_0
+interrupt PWM_IRQ_WRAP_1
+interrupt DMA_IRQ_0
+interrupt DMA_IRQ_1
+interrupt DMA_IRQ_2
+interrupt DMA_IRQ_3
+interrupt USBCTRL_IRQ
 .ltorg
-
-interrupt IO_BANK0
-interrupt IO_QSPI
-interrupt SIO_PROC0
-interrupt SIO_PROC1
-interrupt CLOCKS
-interrupt SPI0
-interrupt SPI1
-interrupt UART0
-interrupt UART1
-interrupt ADC_FIFO
-interrupt I2C0
-interrupt I2C1
-interrupt RTC
+interrupt PIO0_IRQ_0
+interrupt PIO0_IRQ_1
+interrupt PIO1_IRQ_0
+interrupt PIO1_IRQ_1
+interrupt PIO2_IRQ_0
+interrupt PIO2_IRQ_1
+interrupt IO_IRQ_BANK0
+interrupt IO_IRQ_BANK0_NS
+interrupt IO_IRQ_QSPI
+interrupt IO_IRQ_QSPI_NS
+interrupt SIO_IRQ_FIFO
+interrupt SIO_IRQ_BELL
+interrupt SIO_IRQ_FIFO_NS
+interrupt SIO_IRQ_BELL_NS
+interrupt SIO_IRQ_MTIMECMP
+interrupt CLOCKS_IRQ
+.ltorg
+interrupt SPI0_IRQ
+interrupt SPI1_IRQ
+interrupt UART0_IRQ
+interrupt UART1_IRQ
+interrupt ADC_IRQ_FIFO
+interrupt I2C0_IRQ
+interrupt I2C1_IRQ
+interrupt OTP_IRQ
+interrupt TRNG_IRQ
+interrupt PROC0_IRQ_CTI
+interrupt PROC1_IRQ_CTI
+interrupt PLL_SYS_IRQ
+interrupt PLL_USB_IRQ
+interrupt POWMAN_IRQ_POW
+interrupt POWMAN_IRQ_TIMER
+interrupt SPAREIRQ_IRQ_0
+interrupt SPAREIRQ_IRQ_1
+interrupt SPAREIRQ_IRQ_2
+interrupt SPAREIRQ_IRQ_3
+interrupt SPAREIRQ_IRQ_4
+interrupt SPAREIRQ_IRQ_5
 
 .ltorg
 

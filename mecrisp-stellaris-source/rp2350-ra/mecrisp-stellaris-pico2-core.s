@@ -28,7 +28,7 @@
 .equ does_above_64kb, 1
 .equ charkommaavailable, 1
 .equ registerallocator, 1
-
+.equ vtor_ns, 0xE002ED08 @ interrupt vector offset address register
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions
 @ -----------------------------------------------------------------------------
@@ -42,13 +42,14 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20020000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20040000 @ End   of RAM. 128 kb. Porting: Change this !
+.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
+.equ RamEnde,   0x20082000 @ End   of RAM. 520 kb. Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
-.equ FlashDictionaryAnfang, 0x20005000 @ 20 kb für den Kern reserviert...           20 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x20020000 @ 108 kb Platz für das Flash-Dictionary     108 kb Flash available. Porting: Change this
+.equ Kernschutzadresse,     0x10008000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
+.equ FlashDictionaryAnfang, 0x10008000 @  32 kb für den Kern reserviert...          32 kb Flash reserved for core.
+.equ FlashDictionaryEnde,   0x10030000 @ 160 kb Platz für das Flash-Dictionary     160 kb Flash available. Porting: Change this
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 @ -----------------------------------------------------------------------------
@@ -58,6 +59,15 @@
 .text    @ Hier beginnt das Vergnügen mit der Stackadresse und der Einsprungadresse
 
 .include "vectors.s" @ Contains Second-Stage-Loader-Block, too.
+
+
+@ -----------------------------------------------------------------------------
+@ The RP2350 image definition block must be located within the first 4096
+@ bytes.
+@ borrowed from rp2350 data sheet 5.9.5.1. Minimum Arm IMAGE_DEF
+@ -----------------------------------------------------------------------------
+.include "rp2350_image_def.s"
+
 
 @ -----------------------------------------------------------------------------
 @ Include the Forth core of Mecrisp-Stellaris
@@ -80,5 +90,3 @@ Reset: @ Einsprung zu Beginn
    @ Ready to fly !
    .include "../common/boot.s"
 
-.org  0x5000, 0x00
-.org 0x20000, 0xFF
