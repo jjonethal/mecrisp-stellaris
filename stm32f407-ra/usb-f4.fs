@@ -72,13 +72,13 @@ create cfg-data here
 	\ |     |      |      |     index for this configuration
 	\ |     |      |      |     |     configuration string descriptor index (0 = none)
 	\ |     |      |      |     |     |            attribute bitmap (bit 7 = bus powered, bit 6 = self powered) oxymoron?!?
-        \ |     |      |      |     |     |            |      max power in steps of two mA
-        \ |     |      |      |     |     |            |      |
-        \ v     v      v      v     v     v            v      v
-          9 c,  2 c,  67 2c,  2 c,  1 c,  0 c, %11000000 c, 100 2/ c, \ USB Configuration
+	\ |     |      |      |     |     |            |      max power in steps of two mA
+	\ |     |      |      |     |     |            |      |
+	\ v     v      v      v     v     v            v      v
+	  9 c,  2 c,  67 2c,  2 c,  1 c,  0 c, %11000000 c, 100 2/ c, \ USB Configuration
 
-        \ interface descriptor length
-        \ |    descriptor type (4 = interface descriptor)
+	\ interface descriptor length
+	\ |    descriptor type (4 = interface descriptor)
 	\ |    |    interface number
 	\ |    |    |    alternate setting
 	\ |    |    |    |    number of endpoints
@@ -100,13 +100,13 @@ create cfg-data here
 	\ |    |      endpoint address (endpoint = 2, direction = IN)
 	\ |    |      |    attributes (type = interrupt)
 	\ |    |      |    |    max packet size
-        \ |    |      |    |    |       polling interval in ms (slow?)
-        \ |    |      |    |    |       |
-        \ v    v      v    v    v       v
-          7 c, 5 c, 130 c, 3 c, 8 2c, 255 c, \ Endpoint 2 IN
+	\ |    |      |    |    |       polling interval in ms (slow?)
+	\ |    |      |    |    |       |
+	\ v    v      v    v    v       v
+	  7 c, 5 c, 130 c, 3 c, 8 2c, 255 c, \ Endpoint 2 IN
 
-        \ interface descriptor length
-        \ |    descriptor type (4 = interface descriptor)
+	\ interface descriptor length
+	\ |    descriptor type (4 = interface descriptor)
 	\ |    |    interface number
 	\ |    |    |    alternate setting
 	\ |    |    |    |    number of endpoints
@@ -122,20 +122,20 @@ create cfg-data here
 	\ |    |    endpoint address (endpoint = 1, direction = OUT)
 	\ |    |    |    attributes (type = bulk)
 	\ |    |    |    |     max packet size
-        \ |    |    |    |     |      polling interval (ignored)
-        \ |    |    |    |     |      |
-        \ v    v    v    v     v      v
-          7 c, 5 c, 1 c, 2 c, 64 2c,  0 c, \ Endpoint 1 OUT
+	\ |    |    |    |     |      polling interval (ignored)
+	\ |    |    |    |     |      |
+	\ v    v    v    v     v      v
+	  7 c, 5 c, 1 c, 2 c, 64 2c,  0 c, \ Endpoint 1 OUT
 
-        \ endpoint descriptor length
-        \ |    descriptor type (5 = endpoint descriptor)
+	\ endpoint descriptor length
+	\ |    descriptor type (5 = endpoint descriptor)
 	\ |    |      endpoint address (endpoint = 1, direction = IN)
 	\ |    |      |    attributes (type = bulk)
 	\ |    |      |    |     max packet size
-        \ |    |      |    |     |     polling interval (ignored)
-        \ |    |      |    |     |     |
-        \ v    v      v    v     v     v
-          7 c, 5 c, 129 c, 2 c, 64 2c, 0 c, \ Endpoint 1 IN
+	\ |    |      |    |     |     polling interval (ignored)
+	\ |    |      |    |     |     |
+	\ v    v      v    v     v     v
+	  7 c, 5 c, 129 c, 2 c, 64 2c, 0 c, \ Endpoint 1 IN
 here align swap - constant cfg-size
 
 : usb-on ( -- ) 7 bit RCC_AHB2ENR bis! ;
@@ -145,23 +145,23 @@ here align swap - constant cfg-size
 
 : usb-gpio ( -- )
 	\ Pulse PA11 low as open drain for 3 ms
-        %1111 11 2* lshift GPIOA_MODER   bic! \ Clear mode of PA11 and PA12
-        %1111 11 2* lshift GPIOA_OSPEEDR bic! \ Clear drive strength
-        %0101 11 2* lshift GPIOA_OSPEEDR bis! \ Set drive strength for 25 MHz
+	%1111 11 2* lshift GPIOA_MODER   bic! \ Clear mode of PA11 and PA12
+	%1111 11 2* lshift GPIOA_OSPEEDR bic! \ Clear drive strength
+	%0101 11 2* lshift GPIOA_OSPEEDR bis! \ Set drive strength for 25 MHz
 
-          12 bit 16 lshift GPIOA_BSRR       ! \ PA12 low
-          %01 12 2* lshift GPIOA_MODER   bis! \ Set PA12 as output
+	  12 bit 16 lshift GPIOA_BSRR       ! \ PA12 low
+	  %01 12 2* lshift GPIOA_MODER   bis! \ Set PA12 as output
 
-        12 bit             GPIOA_OTYPER  bis! \ PA12 Open Drain
-        3 ms
-        12 bit             GPIOA_OTYPER  bic!
+	12 bit             GPIOA_OTYPER  bis! \ PA12 Open Drain
+	3 ms
+	12 bit             GPIOA_OTYPER  bic!
 
-        %1111 11 2* lshift GPIOA_MODER   bic! \ Clear mode of PA11 and PA12
+	%1111 11 2* lshift GPIOA_MODER   bic! \ Clear mode of PA11 and PA12
 
-        $000FF000          GPIOA_AFRH    bic! \ Clear alternate function
-        $000AA000          GPIOA_AFRH    bis! \ Set alternate function 10
+	$000FF000          GPIOA_AFRH    bic! \ Clear alternate function
+	$000AA000          GPIOA_AFRH    bis! \ Set alternate function 10
 
-        %1010 11 2* lshift GPIOA_MODER   bis! \ Set pins to alternate function mode
+	%1010 11 2* lshift GPIOA_MODER   bis! \ Set pins to alternate function mode
 ;
 
 21 bit constant NOVBUSSENS
@@ -266,30 +266,30 @@ usb-buf 6 + constant usb-len
 	512 4 / 16 lshift 512 or 128 or DIEPTXF1 ! \ 512b for TX ep1
 
 	\ see p.1354
-    \ Configure endpoint 1 IN:
-    31 bit          \ enable endpoint
-    26 bit or       \ clear NAK bit
-	1 22 lshift or  \ use fifo 1
-    2 18 lshift or  \ endpoint type = BULK
-    15 bit or       \ activate endpoint
-    64 or           \ max packet size
-    DIEPCTL1 !
-
-    \ Configure endpoint 2 IN:
-	2 22 lshift     \ use fifo 2
-    3 18 lshift or  \ endpoint type = INTERRUPT
-    15 bit or       \ activate endpoint
-    64 or           \ max packet size
-    DIEPCTL2 !
-
-    \ Configure endpoint 0 OUT:
-	3 29 lshift     \ allow up to three setup packets
-    64 or           \ transfer size
-    DOEPTSIZ0 !
+	\ Configure endpoint 1 IN:
 	31 bit          \ enable endpoint
-    26 bit or       \ clear NAK bit
-    15 bit or       \ activate endpoint
-    DOEPCTL0 ! ;
+	26 bit or       \ clear NAK bit
+	1 22 lshift or  \ use fifo 1
+	2 18 lshift or  \ endpoint type = BULK
+	15 bit or       \ activate endpoint
+	64 or           \ max packet size
+	DIEPCTL1 !
+
+	\ Configure endpoint 2 IN:
+	2 22 lshift     \ use fifo 2
+	3 18 lshift or  \ endpoint type = INTERRUPT
+	15 bit or       \ activate endpoint
+	64 or           \ max packet size
+	DIEPCTL2 !
+
+	\ Configure endpoint 0 OUT:
+	3 29 lshift     \ allow up to three setup packets
+	64 or           \ transfer size
+	DOEPTSIZ0 !
+	31 bit          \ enable endpoint
+	26 bit or       \ clear NAK bit
+	15 bit or       \ activate endpoint
+	DOEPCTL0 ! ;
 
 : usb-status@ ( -- status ) GRXSTSP @ inline ;
 

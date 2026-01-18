@@ -85,7 +85,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " with M33 core for Raspberry Pico by Matthias Koch"
+   welcome " with M33 core for Raspberry Pico 2 by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
