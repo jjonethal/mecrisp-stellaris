@@ -560,7 +560,7 @@ Enable_GPIO:
   movs r1, #0 @ All pins inputs
   str  r1, [r0, #GPIO_OE]
 
-  ldr r0, =IO_BANK0_BASE
+  ldr  r0, =IO_BANK0_BASE
   movs r1, #5 @ SIO function
 
   str r1, [r0, # 2 * 8 + 4]
@@ -594,7 +594,28 @@ Enable_GPIO:
   str r1, [r0, #(27 - 16) * 8 + 4]
   str r1, [r0, #(28 - 16) * 8 + 4]
   str r1, [r0, #(29 - 16) * 8 + 4]
+  str r1, [r0, #(30 - 16) * 8 + 4]
+  str r1, [r0, #(31 - 16) * 8 + 4]
 
+  ldr r0, =IO_BANK0_BASE + 32 * 8
+
+  str r1, [r0, #(32 - 32) * 8 + 4]
+  str r1, [r0, #(33 - 32) * 8 + 4]
+  str r1, [r0, #(34 - 32) * 8 + 4]
+  str r1, [r0, #(35 - 32) * 8 + 4]
+  str r1, [r0, #(36 - 32) * 8 + 4]
+  str r1, [r0, #(37 - 32) * 8 + 4]
+  str r1, [r0, #(38 - 32) * 8 + 4]
+  str r1, [r0, #(39 - 32) * 8 + 4]
+  str r1, [r0, #(40 - 32) * 8 + 4]
+  str r1, [r0, #(41 - 32) * 8 + 4]
+  str r1, [r0, #(42 - 32) * 8 + 4]
+  str r1, [r0, #(43 - 32) * 8 + 4]
+  str r1, [r0, #(44 - 32) * 8 + 4]
+  str r1, [r0, #(45 - 32) * 8 + 4]
+  str r1, [r0, #(46 - 32) * 8 + 4]
+  str r1, [r0, #(47 - 32) * 8 + 4]
+  
   bx lr
 
 
