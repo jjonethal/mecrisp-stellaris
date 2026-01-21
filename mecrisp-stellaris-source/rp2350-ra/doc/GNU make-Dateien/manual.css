@@ -1,0 +1,37 @@
+/* Style-sheet to use for manuals (copied from Emacs) */
+
+@import url('/style.css');
+
+/* Increase inter-line spacing to improve readability.  */
+p, pre, li, dt, dd, table, code, address { line-height: 1.5em; }
+
+/* makeinfo 6.7 uses <div class="header"> for navigation links above node
+   titles.  Make those links less prominent.  */
+.header {
+    line-height: 2em;
+    font-size: 87.5%;
+    color: #433;
+}
+
+/* In title and node titles, use Fira Sans if available as it is more
+   pleasant and more compact than Helvetica.  */
+.settitle, .top, .chapter, .section, .subsection, .subsubsection {
+    font-family: Fira Sans, sans-serif;
+}
+
+/* ----- coreutils specific styling ----- */
+
+/* underlined links are distracting, especially within outlined tables.  */
+a { /*add :link for external links*/
+    text-decoration: none; /* don't underline links by default */
+    outline-style: none;   /* don't put dotted box around clicked links */
+}
+a:hover {
+    text-decoration: underline;
+}
+
+body {
+    /* Make sure the body doesn't become too wide: long lines are hard to
+       read.  */
+    max-width: 50em;
+}

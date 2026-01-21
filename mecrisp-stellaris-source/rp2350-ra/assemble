@@ -15,7 +15,7 @@ cd ..
 
 # Assemble Forth core
 
-arm-none-eabi-as -g mecrisp-stellaris-pico2-core.s -o mecrisp-stellaris-pico2-core.o
+arm-none-eabi-as -a -g mecrisp-stellaris-pico2-core.s -o mecrisp-stellaris-pico2-core.o
 arm-none-eabi-ld --cref --print-map-locals -Map=mecrisp-stellaris-pico2-core.map -g -o mecrisp-stellaris-pico2-core.elf -T memmap mecrisp-stellaris-pico2-core.o
 arm-none-eabi-objdump -g -S -D mecrisp-stellaris-pico2-core.elf > mecrisp-stellaris-pico2-core.list
 arm-none-eabi-objcopy -g mecrisp-stellaris-pico2-core.elf mecrisp-stellaris-pico2-core.bin -O binary

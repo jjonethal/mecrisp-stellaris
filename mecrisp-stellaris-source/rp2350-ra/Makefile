@@ -33,12 +33,17 @@ BUILD_FILES += mecrisp-stellaris-pico2-core.uf2
 .PHONY: all
 all: $(BUILD_FILES)
 
+-include mecrisp-stellaris-pico2-core.o.d
 
-mecrisp-stellaris-pico2-core.o: mecrisp-stellaris-pico2-core.s
-	$(AS) -g -o $@ $<
+mecrisp-stellaris-pico2-core.o.d: mecrisp-stellaris-pico2-core.o
+
+mecrisp-stellaris-pico2-core.o.lst: mecrisp-stellaris-pico2-core.o
+
+mecrisp-stellaris-pico2-core.o: mecrisp-stellaris-pico2-core.s Makefile
+	$(AS) -agmshl=$@.lst -MD $@.d -g -o $@ $<
 
 mecrisp-stellaris-pico2-core.elf: mecrisp-stellaris-pico2-core.o memmap
-	$(LD) -o $@ --cref --print-map-locals -Map=$(patsubst %.elf,%.map,$@) -g -T memmap $<
+	$(LD) -g -o $@ --cref --print-map-locals -Map=$(patsubst %.elf,%.map,$@) -g -T memmap $<
 
 mecrisp-stellaris-pico2-core.map: mecrisp-stellaris-pico2-core.elf
 
@@ -64,6 +69,12 @@ run-openocd-mecrisp:
 
 wait-openocd:
 	$(call monitor-file,openocd.log,"Listening on port 3333")
+
+.PHONY: baud
+baud: baud.o
+	@echo "Assembled baud.o"
+	 arm-none-eabi-as -g -o baud.o -agmshl=baud.o.lst baud.s
+	 npp baud.o.lst
 
 dump-%:
 	$(info $* = $($*))

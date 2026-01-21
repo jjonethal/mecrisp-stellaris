@@ -4,6 +4,8 @@
 
 @ ---- IMAGE_DEF --------------------------------------------------------------
 @ must be located within the first 4 kByte
+.global IMAGE_DEF
+IMAGE_DEF:
 .word 0xffffded3 @ PICOBIN_BLOCK_MARKER_START
 .word 0x10210142
 .word 0x000001ff

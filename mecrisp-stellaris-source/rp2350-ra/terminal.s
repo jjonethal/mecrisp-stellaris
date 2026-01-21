@@ -16,8 +16,8 @@
 @    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @
 
-@ Terminalroutinen
-@ Terminal code and initialisations.
+@ Terminalroutinen fuer RP2350 (Raspberry Pi Pico 2)
+@ Terminal code and initialisations for RP2350 (Raspberry Pi Pico 2) 
 @ Porting: Rewrite this !
 
 @ -----------------------------------------------------------------------------
@@ -69,9 +69,14 @@
 .equ CLK_PERI_DIV        , 0x4c @ Clock divisor, can be changed on-the-fly
 .equ CLK_PERI_SELECTED   , 0x50 @ Indicates which src is currently selected (one-hot)
 
-.equ CLK_USB_CTRL        , 0x54 @ Clock control, can be changed on-the-fly (except for auxsrc)
-.equ CLK_USB_DIV         , 0x58 @ Clock divisor, can be changed on-the-fly
-.equ CLK_USB_SELECTED    , 0x5c @ Indicates which src is currently selected (one-hot)
+.equ CLK_HSTX_CTRL       , 0x54 @ Clock control, can be changed on-the-fly (except for auxsrc)
+.equ CLK_HSTX_DIV		 , 0x58 @ Clock divisor, can be changed on-the-fly
+.equ CLK_HSTX_SELECTED   , 0x5c @ Indicates which src is currently selected (one-hot)
+.equ CLK_USB_CTRL        , 0x60 @ Clock control, can be changed on-the-fly (except for auxsrc)
+ .equ USB_CTRL_ENABLED    , 1 << 28 @ ENABLED: clock generator is enabled (RO)
+ .equ USB_CTRL_ENABLE     , 1 << 11 @ ENABLE: Starts and stops the clock generator cleanly (RW)
+.equ CLK_USB_DIV         , 0x64 @ Clock divisor, can be changed on-the-fly
+.equ CLK_USB_SELECTED    , 0x68 @ Indicates which src is currently selected (one-hot)
 
 .equ CLK_ADC_CTRL        , 0x60 @ Clock control, can be changed on-the-fly (except for auxsrc)
 .equ CLK_ADC_DIV         , 0x64 @ Clock divisor, can be changed on-the-fly
@@ -87,6 +92,7 @@
 .equ FC0_REF_KHZ         , 0x8C @ Reference clock frequency in kHz
 .equ FC0_MIN_KHZ         , 0x90 @ Minimum pass frequency in kHz. This is optional. Set to 0 if you are not using the pass/fail flags
 .equ FC0_MAX_KHZ         , 0x94 @ Maximum pass frequency in kHz. This is optional. Set to 0x1ffffff if you are not using the pass/fail flags
+@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 .equ FC0_DELAY           , 0x98 @ Delays the start of frequency counting to allow the mux to settle Delay is measured in multiples of the reference clock period
 .equ FC0_INTERVAL        , 0x9c @ The test interval is 0.98us * 2**interval, but let’s call it 1us * 2**interval The default gives a test interval of 250us
 .equ FC0_SRC             , 0xa0 @ Clock sent to frequency counter, set to 0 when not required Writing to this register initiates the frequency count
@@ -177,8 +183,8 @@
 .equ SYSTEM_CLOCK_MHZ , 150000000 @ System clock frequency in Hz
 .equ BAUD_RATE     , 115200
 .equ UART_CLK_FREQ , SYSTEM_CLOCK_MHZ                                                 @ clk_peri is system_clock is 150 MHz
-.equ UART_FREQ     , (UART_CLK_FREQ + (8 * BAUD_RATE))/ (16 * BAUD_RATE)              @ Frequency required for baud rate generator
-.equ UART_BRDIDIV  , UART_CLK_FREQ / UART_FREQ                                        @ Integer part of baud rate divisor
+.equ UART_FREQ     , (16 * BAUD_RATE)                                                 @ Frequency required for baud rate generator
+.equ UART_BRDIDIV  , (UART_CLK_FREQ + (8 * BAUD_RATE))/ (16 * BAUD_RATE)              @ Integer part of baud rate divisor
 .equ UART_BRDFRACT , ((UART_CLK_FREQ % UART_FREQ) * 64 + (UART_FREQ / 2)) / UART_FREQ @ Fractional part of baud rate divisor
 .equ UART0_IBAUD   , UART_BRDIDIV                                                     @ 150000000 / (16 * 115200) = 81.3802083
 .equ UART0_FBAUD   , UART_BRDFRACT                                                    @ floor integer(0.3802083 * 64 + 0.5) = 24
@@ -261,9 +267,8 @@
 .equ RESETS_BUSCTRL   ,  1
 .equ RESETS_ADC       ,  0
 .equ RESETS_ALL       , 0x1fffffff
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-.equ RESETS_EARLY     , RESETS_ALL & ~(1<<RESETS_IO_QSPI) & ~(1<<RESETS_PADS_QSPI) & ~(1<<RESETS_PLL_USB) & ~(1<<RESETS_PLL_SYS)
-.equ RESETS_CLK_GLMUX , RESETS_ALL & ~(1<<RESETS_ADC) &  ~(1<<RESETS_SPI0) & ~(1<<RESETS_SPI1) & ~(1<<RESETS_UART0) & ~(1<<RESETS_UART1) & ~(1<<RESETS_USBCTRL)
+.equ RESETS_EARLY     , RESETS_ALL & ~(1<<RESETS_IO_QSPI) & ~(1<<RESETS_JTAG) & ~(1<<RESETS_PADS_QSPI) & ~(1<<RESETS_PLL_USB) & ~(1<<RESETS_PLL_SYS)
+.equ RESETS_CLK_GLMUX , RESETS_ALL & ~(1<<RESETS_ADC) &  ~(1<<RESETS_SPI0) & ~(1<<RESETS_SPI1) & ~(1<<RESETS_UART0) & ~(1<<RESETS_UART1) & ~(1<<RESETS_USBCTRL) & ~(1<<RESETS_HSTX)
 .equ RESETS_PLLS      , (1<<RESETS_PLL_USB) | (1<<RESETS_PLL_SYS)
 
 .equ XOSC_MHZ         , 12
@@ -283,7 +288,7 @@
 @.equ WATCHDOG_TICK_ENABLE, 9
 @.equ WATCHDOG_START_TICK, (1<<WATCHDOG_TICK_ENABLE) | XOSC_MHZ
 
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+@.global uart_init
 @ -----------------------------------------------------------------------------
 uart_init: @ Many thanks to Jan Bramkamp
 @ -----------------------------------------------------------------------------
@@ -309,13 +314,14 @@ uart_init: @ Many thanks to Jan Bramkamp
 	ands r2, r0
 	bne  1b
 
-@ TODO: Enable watchdog later
+@ ------- TODO: Enable watchdog later -----------------------------
 .if 0 @ disable watchdog durin development
 Watchdog_Start_Tick:
 	ldr  r1, =WATCHDOG_BASE
 	ldr  r0, =WATCHDOG_START_TICK
 	str  r0, [r1, #WATCHDOG_TICK]
 .endif
+@ ------- TODO: Enable watchdog later -----------------------------
 
 Disable_Resus:
 	movs r0, 0
@@ -424,7 +430,7 @@ Init_Clk_Ref:
 	bne  1b
 
 	// Don't divide the reference clock
-	lsls r1, #6
+	movs r1, #1<<16
 	str  r1, [r0, #CLK_REF_DIV]
 
 Init_Clk_Sys:
@@ -445,47 +451,57 @@ Init_Clk_Sys:
 	str  r2, [r0, #CLK_SYS_CTRL]
 
 	// Don't divide the system clock
-	lsls r2, #8
+	lsls r2, #16
 	str  r2, [r0, #CLK_SYS_DIV]
 
 Init_Clk_USB:
 	// Disable the USB clock
-	lsls r2, #11-8
+	ldr  r1, =CLOCKS_BASE | ALIAS_CLR
+	movs r2, #1 << 11
 	str  r2, [r1, #CLK_USB_CTRL]
 
 	// Wait for the clock to stop
-	movs r3, #3 @ ceil(125 MHz / 48 MHz)
-1:	subs r3, 1
+	ldr  r1, =CLOCKS_BASE
+	ldr  r3, =USB_CTRL_ENABLED
+1:	ldr  r2, [r1, #CLK_USB_CTRL]
+	ands r2, r3 @ wait for enabled flag to clear
 	bne  1b
 
-	// Select the USB PLL as auxiliary clock source (reuses the zero in r3)
+	// Select the USB PLL as auxiliary clock source
+	movs r3, #0
 	str  r3, [r0, #CLK_USB_CTRL]
 
 	// (Re-)start the USB clock (only the enable flag is set)
+	ldr  r1, =CLOCKS_BASE | ALIAS_SET
+	ldr  r2, =USB_CTRL_ENABLE
 	str  r2, [r0, #CLK_USB_CTRL]
 
 	// Don't divide the USB clock
-	lsrs r2, #11-8
+	ldr  r2, =#1 << 16
 	str  r2, [r0, #CLK_USB_DIV]
 
 Init_Clk_ADC:
 	// Stop the ADC clock
-	lsls r2, #11-8
+	ldr  r1, =CLOCKS_BASE | ALIAS_CLR
+	ldr  r2, =1 << 11
 	str  r2, [r1, #CLK_ADC_CTRL]
 
 	// Wait for the clock to stop
-	movs r3, #3 @ ceil(125 MHz / 48 MHz)
-1:	subs r3, 1
+	ldr  r3, =1 << 28
+1:	ldr  r2, [r0, #CLK_ADC_CTRL]
+	ands r2, r3
 	bne  1b
 
-	// Select the USB PLL as auxiliary clock source (reuses the zero in r3)
-	str  r3, [r0, #CLK_ADC_CTRL]
+	// Select the USB PLL as auxiliary clock source (reuses the zero in r2)
+	str  r2, [r0, #CLK_ADC_CTRL]
 
 	// (Re-)start the ADC clock (only the enable flag is set)
+	ldr  r1, =CLOCKS_BASE | ALIAS_SET
+	ldr  r2, =1 << 11
 	str  r2, [r0, #CLK_ADC_CTRL]
 
 	// Don't divide the ADC clock
-	lsrs r2, #11-8
+	lsls r2, #16-11
 	str  r2, [r0, #CLK_ADC_DIV]
 
 .if 0 @ rp2350 has no RTC TODO: REMOVE
