@@ -193,7 +193,6 @@
 .equ PADS_BANK0_BASE, 0x40038000
 .equ SIO_BASE       , 0xd0000000
 
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 .equ GPIO_0_STATUS,  IO_BANK0_BASE + (8 *  0)
 .equ GPIO_0_CTRL,    IO_BANK0_BASE + (8 *  0) + 4
@@ -498,6 +497,7 @@ Init_Clk_ADC:
 	ldr  r2, =1 << 11
 	str  r2, [r0, #CLK_ADC_CTRL]
 
+@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// Don't divide the ADC clock
 	lsls r2, #16-11
 	str  r2, [r0, #CLK_ADC_DIV]
