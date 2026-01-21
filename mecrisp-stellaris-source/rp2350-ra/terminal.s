@@ -191,6 +191,9 @@
 
 .equ IO_BANK0_BASE  , 0x40028000
 .equ PADS_BANK0_BASE, 0x40038000
+  .equ PADS_VOLTAGE_SELECT , 0x00 @ Voltage select register for all pins in bank0
+  .equ PADS_BANK0_GPIO0    , 0x04 @ Pad control register for GPIO0
+  .equ PADS_BANK0_GPIO1    , 0x08 @ Pad control register for GPIO1
 .equ SIO_BASE       , 0xd0000000
 
 
@@ -554,6 +557,13 @@ UART_Function:
 	str  r0, [r1, #4+0]
 	str  r0, [r1, #4+8]
 
+PADS_Enable: @ Enable pads GPIO0 for UART TX and GPIO1 for UART-RX with pull-ups
+	ldr  r0, =PADS_BANK0_BASE
+	movs r1, #0 
+	str  r1, [r0, #PADS_BANK0_GPIO0] @ GPIO0
+	movs r1, # ( 1<< 7) | (1 << 6) | (1 << 3) @ ouput disable, input-enable, pull-up enable
+	str  r1, [r0, #PADS_BANK0_GPIO1] @ GPIO1
+
 Enable_GPIO:
 
   ldr  r0, =SIO_BASE
@@ -669,11 +679,11 @@ serial_qemit:  @ ( -- ? ) Ready to send a character ?
    bl pause
 
    pushdatos
-   ldr r6, =UART0_BASE
-   ldr r6, [r6, #UARTFR] @ Fetch status
-   lsls r6, r6, 31-5     @ TX FIFO full, bit 5. Mask just a single bit by shifting
-   asrs r6, r6, 31
-   mvns r6, r6
+   ldr  tos, =UART0_BASE
+   ldr  tos, [tos, #UARTFR] @ Fetch status
+   lsls tos, tos, 31-5     @ TX FIFO full, bit 5. Mask just a single bit by shifting
+   asrs tos, tos, 31
+   mvns tos, tos
 
    pop {pc}
 
@@ -685,11 +695,11 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
    bl pause
 
    pushdatos
-   ldr r6, =UART0_BASE
-   ldr r6, [r6, #UARTFR] @ Fetch status
-   lsls r6, r6, 31-4     @ RX FIFO empty, bit 4. Mask just a single bit by shifting
-   asrs r6, r6, 31
-   mvns r6, r6
+   ldr  tos, =UART0_BASE
+   ldr  tos, [tos, #UARTFR] @ Fetch status
+   lsls tos, tos, 31-4     @ RX FIFO empty, bit 4. Mask just a single bit by shifting
+   asrs tos, tos, 31
+   mvns tos, tos
 
    pop {pc}
 
