@@ -215,7 +215,7 @@ eraseimage:                         @ Erase an image from the SPI flash
   bl exit_xip
 
   bl image2spioffset
-  pushdaconstw 0x1B000
+  pushdaconstl 0x1B000
   pushdaconstw 0x1000
   pushdaconst  0x20
   bl erase_range
@@ -236,8 +236,8 @@ save:                              @ Save current dictionary contents into SPI f
   bl exit_xip
 
   bl image2spioffset         @ Source address
-  pushdaconstw 0x20005000     @ Destination address
-  pushdaconstw 0x1B000          @ 108 kb
+  pushdaconstl 0x20005000     @ Destination address
+  pushdaconstl 0x1B000          @ 108 kb
   bl program_range
 
 restore_xip_intern:
@@ -256,8 +256,8 @@ restore_xip_intern:
   bl image2spioffset
   ldr r0, =0x10000000
   adds tos, r0               @ Source address
-  pushdaconstw 0x20005000     @ Destination address
-  pushdaconstw 0x1B000          @ 108 kb
+  pushdaconstl 0x20005000     @ Destination address
+  pushdaconstl 0x1B000          @ 108 kb
   bl move
 
   bl Reset

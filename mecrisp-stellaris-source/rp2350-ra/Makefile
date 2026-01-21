@@ -40,7 +40,7 @@ mecrisp-stellaris-pico2-core.o.d: mecrisp-stellaris-pico2-core.o
 mecrisp-stellaris-pico2-core.o.lst: mecrisp-stellaris-pico2-core.o
 
 mecrisp-stellaris-pico2-core.o: mecrisp-stellaris-pico2-core.s Makefile
-	$(AS) -agmshl=$@.lst -MD $@.d -g -o $@ $<
+	$(AS) -mcpu=cortex-m3 -agmshl=$@.lst -MD $@.d -g -o $@ $<
 
 mecrisp-stellaris-pico2-core.elf: mecrisp-stellaris-pico2-core.o memmap
 	$(LD) -g -o $@ --cref --print-map-locals -Map=$(patsubst %.elf,%.map,$@) -g -T memmap $<

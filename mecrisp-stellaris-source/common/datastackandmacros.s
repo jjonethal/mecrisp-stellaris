@@ -97,6 +97,12 @@ psp .req r7
   .endif
 .endm
 
+.macro pushdaconstl zahl @ Push long 32 bit constant on datastack
+  pushdatos
+  ldr tos, =\zahl
+.endm
+
+
 .macro pushda register @ Push register on Datastack
   pushdatos
   movs tos, \register

@@ -24,7 +24,7 @@
 @ Swiches for capabilities of this chip
 @ -----------------------------------------------------------------------------
 
-.equ m0core, 0
+@.equ m0core, 0
 .equ does_above_64kb, 1
 .equ charkommaavailable, 1
 .equ registerallocator, 1
