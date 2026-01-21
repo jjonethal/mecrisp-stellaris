@@ -151,7 +151,6 @@
 .equ PLL_START     , (1<<PLL_VCOPD)    | (1<<PLL_PD)
 .equ PLL_SYS_DIV   , (5<<PLL_POSTDIV1) | (2<<PLL_POSTDIV2) @ 1500 MHz / 10 = 150 MHz see Init_PLLs:
 .equ PLL_USB_DIV   , (5<<PLL_POSTDIV1) | (4<<PLL_POSTDIV2) @  960 MHz / 20 =  48 MHz see Init_PLLs:
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 @ -----------------------------------------------------------------------------
 @ UARTs
@@ -175,10 +174,10 @@
 .equ UARTICR  , 0x44 @ Interrupt Clear Register, UARTICR
 .equ UARTDMACR, 0x48 @ DMA Control Register, UARTDMACR
 
-.equ UART_8N1    , 3 << 5
-.equ UART_FIFO   , 1 << 4
-.equ UART_ENABLE , 1<<9|1<<8|1<<0
-.equ UART_DMA    , 1<<2|1<<1
+.equ UART_8N1    , 3 << 5 @ UARTLCR_H
+.equ UART_FIFO   , 1 << 4 @ UARTLCR_H
+.equ UART_ENABLE , 1<<9|1<<8|1<<0 @ UARTCR Enable RX, TX, UART
+.equ UART_DMA    , 1<<1|1<<0 @ UARTDMACR Enable TX, RX DMA
 
 .equ SYSTEM_CLOCK_MHZ , 150000000 @ System clock frequency in Hz
 .equ BAUD_RATE     , 115200
@@ -194,8 +193,7 @@
 .equ PADS_BANK0_BASE, 0x40038000
 .equ SIO_BASE       , 0xd0000000
 
-
-.equ WAKE_EN0, CLOCKS_BASE + 0x000000ac
+@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 .equ GPIO_0_STATUS,  IO_BANK0_BASE + (8 *  0)
 .equ GPIO_0_CTRL,    IO_BANK0_BASE + (8 *  0) + 4
