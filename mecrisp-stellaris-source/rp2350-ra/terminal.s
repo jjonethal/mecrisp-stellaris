@@ -96,7 +96,6 @@
 .equ FC0_INTERVAL        , 0x9c @ The test interval is 0.98us * 2**interval, but let’s call it 1us * 2**interval The default gives a test interval of 250us
 .equ FC0_SRC             , 0xa0 @ Clock sent to frequency counter, set to 0 when not required Writing to this register initiates the frequency count
 .equ FC0_STATUS          , 0xa4 @ Frequency counter status
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 .equ FC0_RESULT          , 0xa8 @ Result of frequency measurement, only valid when status_done=1
 .equ WAKE_EN0            , 0xac @ enable clock in wake mode
 .equ WAKE_EN1            , 0xb0 @ enable clock in wake mode
@@ -152,6 +151,7 @@
 .equ PLL_START     , (1<<PLL_VCOPD)    | (1<<PLL_PD)
 .equ PLL_SYS_DIV   , (5<<PLL_POSTDIV1) | (2<<PLL_POSTDIV2) @ 1500 MHz / 10 = 150 MHz see Init_PLLs:
 .equ PLL_USB_DIV   , (5<<PLL_POSTDIV1) | (4<<PLL_POSTDIV2) @  960 MHz / 20 =  48 MHz see Init_PLLs:
+@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 @ -----------------------------------------------------------------------------
 @ UARTs
