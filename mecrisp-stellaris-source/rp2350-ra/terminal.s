@@ -78,9 +78,9 @@
 .equ CLK_USB_DIV         , 0x64 @ Clock divisor, can be changed on-the-fly
 .equ CLK_USB_SELECTED    , 0x68 @ Indicates which src is currently selected (one-hot)
 
-.equ CLK_ADC_CTRL        , 0x60 @ Clock control, can be changed on-the-fly (except for auxsrc)
-.equ CLK_ADC_DIV         , 0x64 @ Clock divisor, can be changed on-the-fly
-.equ CLK_ADC_SELECTED    , 0x68 @ Indicates which src is currently selected (one-hot)
+.equ CLK_ADC_CTRL        , 0x6C @ Clock control, can be changed on-the-fly (except for auxsrc)
+.equ CLK_ADC_DIV         , 0x70 @ Clock divisor, can be changed on-the-fly
+.equ CLK_ADC_SELECTED    , 0x74 @ Indicates which src is currently selected (one-hot)
 
 .equ DFTCLK_XOSC_CTRL    , 0x78 @ Control for Xtal oscillator
 .equ DFTCLK_ROSC_CTRL    , 0x7C @ Control for Ring oscillator
@@ -92,11 +92,11 @@
 .equ FC0_REF_KHZ         , 0x8C @ Reference clock frequency in kHz
 .equ FC0_MIN_KHZ         , 0x90 @ Minimum pass frequency in kHz. This is optional. Set to 0 if you are not using the pass/fail flags
 .equ FC0_MAX_KHZ         , 0x94 @ Maximum pass frequency in kHz. This is optional. Set to 0x1ffffff if you are not using the pass/fail flags
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 .equ FC0_DELAY           , 0x98 @ Delays the start of frequency counting to allow the mux to settle Delay is measured in multiples of the reference clock period
 .equ FC0_INTERVAL        , 0x9c @ The test interval is 0.98us * 2**interval, but let’s call it 1us * 2**interval The default gives a test interval of 250us
 .equ FC0_SRC             , 0xa0 @ Clock sent to frequency counter, set to 0 when not required Writing to this register initiates the frequency count
 .equ FC0_STATUS          , 0xa4 @ Frequency counter status
+@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 .equ FC0_RESULT          , 0xa8 @ Result of frequency measurement, only valid when status_done=1
 .equ WAKE_EN0            , 0xac @ enable clock in wake mode
 .equ WAKE_EN1            , 0xb0 @ enable clock in wake mode
