@@ -497,7 +497,6 @@ Init_Clk_ADC:
 	ldr  r2, =1 << 11
 	str  r2, [r0, #CLK_ADC_CTRL]
 
-@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// Don't divide the ADC clock
 	lsls r2, #16-11
 	str  r2, [r0, #CLK_ADC_DIV]
@@ -514,20 +513,21 @@ Init_Clk_RTC:
 	bne  1b
 .endif
 
-
+	movs  r3, #0
 	// Select the USB PLL as auxiliary clock source (reuses the zero in r3)
 	str  r3, [r0, #CLK_ADC_CTRL]
 	// (Re-)start the ADC clock (only the enable flag is set)
 	str  r2, [r0, #CLK_ADC_CTRL]
 
 	// Divide the USB PLL by 1024
-	lsls r2, #5
+	ldr  r2, =0x10000
 	str  r2, [r0, #CLK_ADC_DIV]
 
 Init_Clk_Peri:
 	ldr  r2, =1<<11
 	str  r2, [r0, #CLK_PERI_CTRL]
 
+@ !!!!!!!!!!!!!! TODO: Fix definitions below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Unreset_All:
 	// We did the clock dance for a reason
 	ldr  r1, =RESETS_BASE
