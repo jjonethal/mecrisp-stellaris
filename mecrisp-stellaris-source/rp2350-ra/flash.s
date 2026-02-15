@@ -20,6 +20,8 @@
 
 @ As flash dictionary is mirrored in RAM on Raspberry Pico, directly write to the locations.
 
+@!!!!!!!!!!!!!!!! TODO: REWORK TO USE QSPI FLASH !!!!!!!!!!!!!!!!!!
+
 @ -----------------------------------------------------------------------------
    Wortbirne Flag_visible, "cflash!" @ ( x Addr -- )
 c_flashkomma:

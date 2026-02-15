@@ -1,0 +1,2920 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 25.8.3.2 (Windows)"/>
+	<meta name="created" content="2026-02-14T15:50:57.018978700"/>
+	<meta name="changed" content="2026-02-14T20:03:24.087324600"/>
+	<style type="text/css">
+		td p { font-family: "Calibri"; font-size: 10pt }
+		h1.cjk { font-family: "Calibri" }
+		h1.ctl { font-family: "Calibri" }
+		p { font-family: "Calibri"; font-size: 10pt }
+	</style>
+</head>
+<body lang="de-DE" dir="ltr"><p><span id="Rahmen1" dir="ltr" style="float: left; width: 58.4cm; border: none; padding: 0cm; background: #ffffff"><h1 class="western">
+	W25Q32RV Instructions</h1>
+	<h2>SPI Instructions</h2>
+	<table dir="ltr" width="458" cellpadding="2" cellspacing="0" style="page-break-before: always">
+		<colgroup>
+			<col width="122"/>
+		</colgroup>
+		<colgroup>
+			<col width="38"/>
+		</colgroup>
+		<colgroup>
+			<col width="55"/>
+			<col width="45"/>
+			<col width="40"/>
+			<col width="51"/>
+			<col width="43"/>
+			<col width="29"/>
+		</colgroup>
+		<tr>
+			<td width="122" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1.50pt solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Data
+				Input Output </b></font></font></font>
+				</p>
+			</td>
+			<td width="38" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				1 </b></font></font></font>
+				</p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				2 </b></font></font></font>
+				</p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				3 </b></font></font></font>
+				</p>
+			</td>
+			<td width="40" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				4 </b></font></font></font>
+				</p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				5 </b></font></font></font>
+				</p>
+			</td>
+			<td width="43" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				6 </b></font></font></font>
+				</p>
+			</td>
+			<td width="29" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				7 </b></font></font></font>
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock(1-1-1) </b></font></font></font>
+				</p>
+			</td>
+			<td width="38" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="40" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="43" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="29" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Enable </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>06h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Volatile
+				SR Write Enable </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>50h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Disable </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>04h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Release
+				Power-down / ID </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>ABh
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)(2)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Manufacturer/Device
+				ID </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>90h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">00h
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(MF7-MF0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">JEDEC
+				ID </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>9Fh
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(MF7-MF0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID15-ID8)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Unique ID </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4Bh
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(UID63-0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Data </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>03h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>0Bh
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Page
+				Program </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>02h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">D7-D0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">D7-D0(3)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Sector
+				Erase (4KB) </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>20h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Block
+				Erase (32KB) </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>52h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Block
+				Erase (64KB) </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>D8h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Chip
+				Erase </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>C7h/60h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Status Register-1 </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>05h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S7-S0)(2)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Status Register-1 </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>01h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S7-S0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Status Register-2 </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>35h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S15-S8)(2)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Status Register-2 </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>31h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S15-S8)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Status Register-3 </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>15h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S23-S16)(2)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Status Register-3 </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>11h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S23-S16)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				SFDP Register </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>5Ah
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="right">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Erase
+				Security Register(4) </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>44h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Program
+				Security Register(4) </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>42h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">D7-D0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">D7-D0(3)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Security Register((4) </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>48h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8
+				</font></font></font>
+				</p>
+			</td>
+			<td width="40" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="51" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy
+				</font></font></font>
+				</p>
+			</td>
+			<td width="43" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)
+				</font></font></font>
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Erase
+				/ Program Suspend </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>75h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Erase
+				/ Program Resume </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>7Ah
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Power-down
+				</font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>B9h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Set
+				Read Parameters </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>C0h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">P7-P0
+				</font></font></font>
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Enter
+				QPI Mode </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>38h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Enable
+				Reset </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>66h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="122" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Reset
+				Device </font></font></font>
+				</p>
+			</td>
+			<td width="38" style="border-top: none; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>99h
+				</b></font></font></font>
+				</p>
+			</td>
+			<td width="55" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: 1.50pt solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="40" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="43" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="29" valign="top" style="border-top: 1.50pt solid #000000; border-bottom: 1.50pt solid #000000; border-left: none; border-right: 1.50pt solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+	</table>
+	<p><br/>
+<br/>
+
+	</p>
+	<h2>W25Q32RV Instruction Set Table 2 (Dual/Quad SPI Instructions)
+	(1)</h2>
+	<table dir="ltr" width="607" cellpadding="2" cellspacing="0" style="page-break-before: always">
+		<colgroup>
+			<col width="108"/>
+		</colgroup>
+		<colgroup>
+			<col width="46"/>
+		</colgroup>
+		<colgroup>
+			<col width="49"/>
+		</colgroup>
+		<colgroup>
+			<col width="55"/>
+		</colgroup>
+		<colgroup>
+			<col width="47"/>
+		</colgroup>
+		<colgroup>
+			<col width="50"/>
+		</colgroup>
+		<colgroup>
+			<col width="59"/>
+			<col width="51"/>
+			<col width="57"/>
+			<col width="45"/>
+		</colgroup>
+		<tr>
+			<td width="108" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Data
+				Input Output</b></font></font></font></p>
+			</td>
+			<td width="46" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				1</b></font></font></font></p>
+			</td>
+			<td width="49" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				2</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				3</b></font></font></font></p>
+			</td>
+			<td width="47" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				4</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				5</b></font></font></font></p>
+			</td>
+			<td width="59" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				6</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				7</b></font></font></font></p>
+			</td>
+			<td width="57" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				8</b></font></font></font></p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				9</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock(1-1-2)</b></font></font></font></p>
+			</td>
+			<td width="46" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="49" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="47" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="59" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="57" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read Dual Output</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>3Bh</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="59" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)(6)</font></font></font></p>
+			</td>
+			<td width="57" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p align="left">
+				<font color="#000000">…</font></p>
+			</td>
+			<td width="45" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock(1-2-2)</b></font></font></font></p>
+			</td>
+			<td width="46" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="49" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="47" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="59" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1px solid #000000; border-bottom: none; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0cm; padding-left: 0.05cm; padding-right: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="57" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1px solid #000000; border-bottom: none; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0cm; padding-left: 0.05cm; padding-right: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border-top: 1px solid #000000; border-bottom: none; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0cm; padding-left: 0.05cm; padding-right: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read Dual I/O</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>BBh</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16(5)</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8(5)</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0(5)</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">M7-M0</font></font></font></p>
+			</td>
+			<td width="59" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)(6)</font></font></font></p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p align="left">
+				<font color="#000000">…</font></p>
+			</td>
+			<td width="57" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Mftr./Device
+				ID Dual I/O</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>92h</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16(5)</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8(5)</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">00(5)</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(17)</font></font></font></p>
+			</td>
+			<td width="59" style="border-top: 1px solid #000000; border-bottom: none; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0cm; padding-left: 0.05cm; padding-right: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(MF7-MF0)(6)</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)(6)</font></font></font></p>
+			</td>
+			<td width="57" style="border-top: 1px solid #000000; border-bottom: none; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" style="border-top: 1px solid #000000; border-bottom: none; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock(1-1-4)</b></font></font></font></p>
+			</td>
+			<td width="46" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="49" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="47" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="59" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="57" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Quad
+				Input Page Program</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>32h</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)(8)</font></font></font></p>
+			</td>
+			<td width="59" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)(3)</font></font></font></p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p align="left">
+				<font color="#000000">…</font></p>
+			</td>
+			<td width="57" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read Quad Output</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>6Bh</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="59" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="57" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="45" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)(9)</font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock(1-4-4)</b></font></font></font></p>
+			</td>
+			<td width="46" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="8" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>8</b></font></font></font></p>
+			</td>
+			<td width="49" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2(7)</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2(7)</b></font></font></font></p>
+			</td>
+			<td width="47" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2(7)</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="59" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="57" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="45" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Mftr./Device
+				ID Quad I/O</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>94h</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm" sdval="0" sdnum="1031;0;00"><p align="right">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">00</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(13)</font></font></font></p>
+			</td>
+			<td width="59" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="57" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(MF7-MF0)</font></font></font></p>
+			</td>
+			<td width="45" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)</font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read Quad I/O</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>EBh</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">M7-M0(13)</font></font></font></p>
+			</td>
+			<td width="59" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(11)</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(11)</font></font></font></p>
+			</td>
+			<td width="57" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)</font></font></font></p>
+			</td>
+			<td width="45" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000">…</font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="108" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Set
+				Burst with Wrap</font></font></font></p>
+			</td>
+			<td width="46" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>77h</b></font></font></font></p>
+			</td>
+			<td width="49" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="47" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">W7-W0</font></font></font></p>
+			</td>
+			<td width="59" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="57" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="45" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+	</table>
+	<p><br/>
+<br/>
+
+	</p>
+	<h2>Instruction Set Table 3 (QPI Instructions)(10)</h2>
+	<table dir="ltr" width="448" cellpadding="2" cellspacing="0" style="page-break-before: always">
+		<colgroup>
+			<col width="105"/>
+		</colgroup>
+		<colgroup>
+			<col width="37"/>
+		</colgroup>
+		<colgroup>
+			<col width="55"/>
+			<col width="44"/>
+			<col width="39"/>
+			<col width="51"/>
+			<col width="50"/>
+			<col width="34"/>
+		</colgroup>
+		<tr>
+			<td width="105" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Data
+				Input Output</b></font></font></font></p>
+			</td>
+			<td width="37" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				1</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				2</b></font></font></font></p>
+			</td>
+			<td width="44" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				3</b></font></font></font></p>
+			</td>
+			<td width="39" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				4</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				5</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				6</b></font></font></font></p>
+			</td>
+			<td width="34" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				7</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock (4-4-4)</b></font></font></font></p>
+			</td>
+			<td width="37" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="44" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="39" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="34" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Enable</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>06h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Volatile
+				SR Write Enable</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>50h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Disable</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>04h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Release
+				Power-down / ID</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>ABh</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)(2)</font></font></font></p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Manufacturer/Device
+				ID</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>90h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">00h</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(MF7-MF0)</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)</font></font></font></p>
+			</td>
+			<td width="34" style="border: 1px solid #000000; padding: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">JEDEC
+				ID</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>9Fh</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(MF7-MF0)</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID15-ID8)</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(ID7-ID0)</font></font></font></p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Set
+				Read Parameters</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>C0h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">P7-P0</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Page
+				Program</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>02h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">D7-D0(9)</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">D7-D0(3)</font></font></font></p>
+			</td>
+			<td width="34" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000">…</font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Sector
+				Erase (4KB)</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>20h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Block
+				Erase (32KB)</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>52h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Block
+				Erase (64KB)</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>D8h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Chip
+				Erase</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>C7h/60h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Status Register-1</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>05h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S7-S0)(2)</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Status Register-1</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>01h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S7-S0)</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Status Register-2</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>35h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S15-S8)(2)</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Status Register-2</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>31h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S15-S8)</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Read
+				Status Register-3</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>15h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S23-S16)(2)</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Write
+				Status Register-3</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>11h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(S23-S16)</font></font></font></p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Power-down</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>B9h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Enable
+				Reset</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>66h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Reset
+				Device</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>99h</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Exit
+				QPI Mode</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>FFh</b></font></font></font></p>
+			</td>
+			<td width="55" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0.05cm; padding-right: 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="44" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="39" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="51" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="50" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.05cm 0cm"><p>
+				<br/>
+
+				</p>
+			</td>
+			<td width="34" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: 1px solid #000000; padding-top: 0.05cm; padding-bottom: 0.05cm; padding-left: 0cm; padding-right: 0.05cm"><p>
+				<br/>
+
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Data
+				Input Output</b></font></font></font></p>
+			</td>
+			<td width="37" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				1</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				2</b></font></font></font></p>
+			</td>
+			<td width="44" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				3</b></font></font></font></p>
+			</td>
+			<td width="39" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				4</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				5</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				6</b></font></font></font></p>
+			</td>
+			<td width="34" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Byte
+				7</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>Number
+				of Clock (4-4-4)</b></font></font></font></p>
+			</td>
+			<td width="37" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="55" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="44" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="39" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="51" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+			<td width="50" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="4" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>4</b></font></font></font></p>
+			</td>
+			<td width="34" bgcolor="#c0c0c0" style="background: #c0c0c0; border: 1px solid #000000; padding: 0.05cm" sdval="2" sdnum="1031;"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>2</b></font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>0Bh</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(11)</font></font></font></p>
+			</td>
+			<td width="34" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)</font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Burst
+				Read with Wrap</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>0Ch</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(11)</font></font></font></p>
+			</td>
+			<td width="34" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)</font></font></font></p>
+			</td>
+		</tr>
+		<tr>
+			<td width="105" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Fast
+				Read Quad I/O</font></font></font></p>
+			</td>
+			<td width="37" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt"><b>EBh</b></font></font></font></p>
+			</td>
+			<td width="55" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A23-A16</font></font></font></p>
+			</td>
+			<td width="44" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A15-A8</font></font></font></p>
+			</td>
+			<td width="39" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">A7-A0</font></font></font></p>
+			</td>
+			<td width="51" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">M7-M0(13)</font></font></font></p>
+			</td>
+			<td width="50" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">Dummy(11)</font></font></font></p>
+			</td>
+			<td width="34" style="border: 1px solid #000000; padding: 0.05cm"><p align="left">
+				<font color="#000000"><font face="Arial"><font size="1" style="font-size: 7pt">(D7-D0)</font></font></font></p>
+			</td>
+		</tr>
+	</table>
+	<p><br/>
+<br/>
+
+	</p>
+</span><img src="W25Q32RV_SPI_QPI_commands-Dateien/W25Q32RV_SPI_QPI_commands_21483_image002.gif" name="Bild20" align="bottom" width="2" height="2" border="0"/>
+
+</p>
+</body>
+</html>
