@@ -1,0 +1,7 @@
+{
+    "armls.defaultArchitecture": "A32",
+    "armls.externalDiagnostics.clang.args": [
+        "--target=aarch32",
+        "--arch=armv7-m"
+    ]
+}
