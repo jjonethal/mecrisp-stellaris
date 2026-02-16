@@ -3,5 +3,7 @@
     "armls.externalDiagnostics.clang.args": [
         "--target=aarch32",
         "--arch=armv7-m"
-    ]
+    ],
+    "makefile.makefilePath": "mecrisp-stellaris-source/rp2350-ra/Makefile",
+    "makefile.makeDirectory": "mecrisp-stellaris-source/rp2350-ra"
 }

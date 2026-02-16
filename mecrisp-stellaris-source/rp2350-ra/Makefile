@@ -61,7 +61,7 @@ clean:
 .PHONY: clean test-shell
 
 test-shell:
-	@echo "Hallo, Welt!"
+	@echo "Hallo, Welt! $(SHELL)"
 	@set
 
 run-openocd-mecrisp:
