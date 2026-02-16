@@ -373,6 +373,19 @@ qmi_wait_program_done:
     bx lr 
 
 @ -----------------------------------------------------------------------------
+@ write enable command, set WEL bit in status register
+@ regs used: r0, r1
+qmi_write_enable:
+    push {lr}
+    bl   qmi_wait_ready
+    ldr  r0, =XIP_QMI_BASE
+    ldr  r1, =(W25Q32RV_CMD_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+    str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+    bl   qmi_wait_ready
+    pop {pc}
+
+
+@ -----------------------------------------------------------------------------
 @ Program flash page with data in RAM buffer to address on top of stack
 @ data must be located inside flash page, otherwise flash will be corrupted.
 @ qspi tx fifo is 4 entries of 8 or 16 bit data, so we can write 4 or 8 bytes at a time depending on data width setting.
@@ -407,7 +420,7 @@ qmi_program_page:
     @ r1 has data format for the data bytes.
     @ r3 can be reused to as buffer address. 
     @ load counter and buffer address from stack to r1 and r0
-    ldm  psp!, {tos, r3} @ load count to tos and buffer address to r3
+    ldm  psp!, {r3, tos} @ load count to tos and buffer address to r3
     @ r3 has buffer address, tos has count.
     @ check if count is > 0 and write data to flash
 1:  cmp  tos, #0
@@ -437,7 +450,16 @@ c_flashkomma:
     ldm  psp!, {r1} @ store byte to write in r1
     movs r0, tos    @ save flash address in r0
     ldr  r2, =XIP_QMI_BASE
-    ldr  r3, =(W25Q32RV_CMD_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (0 << XIP_QMI.DIRECT_TX.IWIDTH_SHIFT) | (r1 << XIP_QMI.DIRECT_TX.DATA_SHIFT))
+    ldr  r3, =(W25Q32RV_CMD_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (0 << XIP_QMI.DIRECT_TX.IWIDTH_SHIFT))
     str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
     bl   qmi_wait_ready
     pop {r4, pc}
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "hflash!" @ ( x Addr -- )
+  @ Schreibt an die auf 2 gerade Adresse in den Flash.
+h_flashkomma:
+@ -----------------------------------------------------------------------------
+    bx lr
+
+@eof
