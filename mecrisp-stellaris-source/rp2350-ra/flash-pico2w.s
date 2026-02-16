@@ -65,7 +65,7 @@
 @ 77h Set Burst with Wrap
 
 
-
+.cpu cortex-m33
 
 @ 06h Write Enable
 @ 50h Volatile SR Write Enable
@@ -344,6 +344,34 @@ qmi_exit_xip:
     pop {r4, pc}
 .ltorg
 
+
+@ -----------------------------------------------------------------------------
+@ flush the direct mode rx fifo, this is needed after read command to clear the rx fifo before next command, otherwise the old data in rx fifo may cause problem for next command.
+@ regs used: r0, r1
+qmi_flush_rx_fifo:
+    ldr r0, =XIP_QMI_BASE
+1:  ldr r1, [r0, #XIP_QMI.DIRECT_RX]
+    ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
+    tst r1, #XIP_QMI.DIRECT_CSR.RXEMPTY
+    beq 1b
+    bx lr
+@ -----------------------------------------------------------------------------
+@ wait for qspi program/erase done by polling status register qspi must be in spi mode to read status register, so make sure flash is in spi mode before calling this function.
+@ poll status register 1 bit 0 WIP, when it is 0, program/erase is done.
+@ regs used: r0, r1
+qmi_wait_program_done:
+    bl   qmi_wait_ready
+    bl   qmi_flush_rx_fifo
+    ldr  r0, =XIP_QMI_BASE
+1:  ldr  r1, =(W25Q32RV_CMD_READ_STATUS_REG1 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+    str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+    mov  r1, #0
+    str  r1, [r0, #XIP_QMI.DIRECT_TX] @ dummy write to trigger the read command
+    ldr  r1, [r0, #XIP_QMI.DIRECT_RX]
+    ands r1, r1, #0x01 @ check WIP bit
+    bne 1b
+    bx lr 
+
 @ -----------------------------------------------------------------------------
 @ Program flash page with data in RAM buffer to address on top of stack
 @ data must be located inside flash page, otherwise flash will be corrupted.
@@ -375,8 +403,29 @@ qmi_program_page:
     orr  r3, r3, r1
     str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write 3rd address byte to direct tx register.
     mov  r3, tos @ load flash address to r3
-
-
+    @ now copy data to flash.
+    @ r1 has data format for the data bytes.
+    @ r3 can be reused to as buffer address. 
+    @ load counter and buffer address from stack to r1 and r0
+    ldm  psp!, {tos, r3} @ load count to tos and buffer address to r3
+    @ r3 has buffer address, tos has count.
+    @ check if count is > 0 and write data to flash
+1:  cmp  tos, #0
+    beq 2f
+    @ check if there is place in tx fifo, if not wait until there is place
+1:  ldr r0, [r2, #XIP_QMI.DIRECT_CSR]
+    tst r0, #XIP_QMI.DIRECT_CSR.TXFULL
+    bne 1b @ wait until there is place in tx fifo
+    ldrb r0, [r3], #1 @ load byte from buffer to r0 and post increment buffer address
+    orr  r0, r1, r1 @ combine with command and address bytes in r1
+    str  r0, [r2, #XIP_QMI.DIRECT_TX] @ write data byte to direct tx register
+    subs tos, tos, #1 @ decrement count
+    bne 1b
+2:  bl   qmi_wait_ready
+    bl   qmi_wait_program_done
+    bl   qmi_enter_xip @ re-enter XIP mode after programming
+    pop {r4, pc}
+.ltorg
 
 @ -----------------------------------------------------------------------------
    Wortbirne Flag_visible, "cflash!" @ ( x Addr -- )
