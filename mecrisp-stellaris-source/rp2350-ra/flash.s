@@ -324,8 +324,9 @@ qmi_enter_xip:
 @ After exit QPI mode, flash is in SPI mode with 8 dummy cycles.
 @ send FFh exit
 @ to make sure flash is in spi mode  transfer 0xFFFF in single io transfer mode.
+@ registers used: r1, r2, r3
 qmi_exit_xip:
-    push {r4, lr}
+    push {lr}
     bl   qmi_wait_ready
     ldr  r2, =XIP_QMI_BASE
     @ enable direct transfer engine
@@ -341,7 +342,7 @@ qmi_exit_xip:
     ldr  r3, =((0xFFFF ) | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
     str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
     bl   qmi_wait_ready
-    pop {r4, pc}
+    pop {pc}
 .ltorg
 
 
@@ -440,26 +441,94 @@ qmi_program_page:
     pop {r4, pc}
 .ltorg
 
-@ -----------------------------------------------------------------------------
-   Wortbirne Flag_visible, "cflash!" @ ( x Addr -- )
-@ top of stack is flash address, next is value to write
-c_flashkomma:
-@ -----------------------------------------------------------------------------
-    push {r4, lr}
-    bl   qmi_wait_ready
-    ldm  psp!, {r1} @ store byte to write in r1
-    movs r0, tos    @ save flash address in r0
-    ldr  r2, =XIP_QMI_BASE
-    ldr  r3, =(W25Q32RV_CMD_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (0 << XIP_QMI.DIRECT_TX.IWIDTH_SHIFT))
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    pop {r4, pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "hflash!" @ ( x Addr -- )
   @ Schreibt an die auf 2 gerade Adresse in den Flash.
 h_flashkomma:
 @ -----------------------------------------------------------------------------
-    bx lr
+  popda r0 @ Adresse
+  popda r1 @ Inhalt.
+
+  @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
+  ldr r3, =Kernschutzadresse
+  cmp r0, r3
+  blo 3f
+
+  ldr r3, =FlashDictionaryEnde
+  cmp r0, r3
+  bhs 3f
+
+
+  @ Prüfe Inhalt. Schreibe nur, wenn es NICHT -1 ist.
+  ldr r3, =0xFFFF
+  ands r1, r3  @ High-Halfword der Daten wegmaskieren
+  cmp r1, r3
+  beq 2f @ Fertig ohne zu Schreiben
+
+  @ Prüfe die Adresse: Sie muss auf 2 gerade sein:
+  ands r2, r0, #1
+  cmp r2, #0
+  bne 3f
+
+  @ Ist an der gewünschten Stelle -1 im Speicher ?
+  ldrh r2, [r0]
+  cmp r2, r3
+  bne 3f
+
+  @ Okay, alle Proben bestanden.
+
+2:bx lr
+3:Fehler_Quit "Wrong address or data for writing flash !"
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "cflash!" @ ( x Addr -- )
+  @ Schreibt ein einzelnes Byte in den Flash.
+c_flashkomma:
+@ -----------------------------------------------------------------------------
+  popda r0 @ Adresse
+  popda r1 @ Inhalt.
+
+  @ Ist die gewünschte Stelle im Flash-Dictionary ? Außerhalb des Forth-Kerns ?
+  ldr r3, =Kernschutzadresse
+  cmp r0, r3
+  blo 3b
+
+  ldr r3, =FlashDictionaryEnde
+  cmp r0, r3
+  bhs 3b
+
+
+  @ Prüfe Inhalt. Schreibe nur, wenn es NICHT -1 ist.
+  ands r1, #0xFF @ Alles Unwichtige von den Daten wegmaskieren
+  cmp  r1, #0xFF
+  beq 2f @ Fertig ohne zu Schreiben
+
+  @ Ist an der gewünschten Stelle -1 im Speicher ?
+  ldrb r2, [r0]
+  cmp r2, #0xFF
+  bne 3b
+
+  @ Okay, alle Proben bestanden.
+
+2:bx lr
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "eraseflashsector" @ ( u -- )
+eraseflashsector:  @ Erase one flash sector
+@ -----------------------------------------------------------------------------
+
+
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "eraseflash" @ ( -- )
+@ Erase full flash dictionary.
+@ -----------------------------------------------------------------------------
+@ Flash is in sectors, check each sector if erasing is needed.
+@ So I can save the memory and erase it smoothly :-)
+  cpsid i @ Disable interrupt handler
+
+  push {lr}
+
+
 
 @eof
