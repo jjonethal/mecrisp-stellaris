@@ -200,19 +200,34 @@
     .equ XIP_QMI.MX_RFMT.DUMMY_LEN_MSK,       (0x07 << XIP_QMI.MX_RFMT.DUMMY_LEN_SHIFT)
     .equ XIP_QMI.MX_RFMT.SUFFIX_LEN_SHIFT,    (14)
     .equ XIP_QMI.MX_RFMT.SUFFIX_LEN_MSK,      (0x03 << XIP_QMI.MX_RFMT.SUFFIX_LEN_SHIFT)
+    .equ XIP_QMI.MX_RFMT.SUFFIX_LEN_8_BIT,    (2 << XIP_QMI.MX_RFMT.SUFFIX_LEN_SHIFT)
+    .equ XIP_QMI.MX_RFMT.SUFFIX_LEN_0_BIT,    (0 << XIP_QMI.MX_RFMT.SUFFIX_LEN_SHIFT)
     .equ XIP_QMI.MX_RFMT.PREFIX_LEN_SHIFT,    (12)
+    .equ XIP_QMI.MX_RFMT.PREFIX_LEN_8_BIT,    (1 << XIP_QMI.MX_RFMT.PREFIX_LEN_SHIFT)
+    .equ XIP_QMI.MX_RFMT.PREFIX_LEN_0_BIT,    (0 << XIP_QMI.MX_RFMT.PREFIX_LEN_SHIFT)
     .equ XIP_QMI.MX_RFMT.PREFIX_LEN_MSK,      (0x01 << XIP_QMI.MX_RFMT.PREFIX_LEN_SHIFT)
-    .equ XIP_QMI.MX_RFMT.PREFIX_LEN,          (0x01 << XIP_QMI.MX_RFMT.PREFIX_LEN_SHIFT)
     .equ XIP_QMI.MX_RFMT.DATA_WIDTH_SHIFT,    (8)
     .equ XIP_QMI.MX_RFMT.DATA_WIDTH_MSK,      (0x03 << XIP_QMI.MX_RFMT.DATA_WIDTH_SHIFT)
     .equ XIP_QMI.MX_RFMT.DUMMY_WIDTH_SHIFT,   (6)
     .equ XIP_QMI.MX_RFMT.DUMMY_WIDTH_MSK,     (0x03 << XIP_QMI.MX_RFMT.DUMMY_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.DUMMY_WIDTH_SINGLE,  (0x00 << XIP_QMI.MX_RFMT.DUMMY_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.DUMMY_WIDTH_DUAL,    (0x01 << XIP_QMI.MX_RFMT.DUMMY_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.DUMMY_WIDTH_QUAD,    (0x02 << XIP_QMI.MX_RFMT.DUMMY_WIDTH_SHIFT)
     .equ XIP_QMI.MX_RFMT.SUFFIX_WIDTH_SHIFT,  (4)
     .equ XIP_QMI.MX_RFMT.SUFFIX_WIDTH_MSK,    (0x03 << XIP_QMI.MX_RFMT.SUFFIX_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.SUFFIX_WIDTH_SINGLE, (0x00 << XIP_QMI.MX_RFMT.SUFFIX_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.SUFFIX_WIDTH_DUAL,   (0x01 << XIP_QMI.MX_RFMT.SUFFIX_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.SUFFIX_WIDTH_QUAD,   (0x02 << XIP_QMI.MX_RFMT.SUFFIX_WIDTH_SHIFT)
     .equ XIP_QMI.MX_RFMT.ADDR_WIDTH_SHIFT,    (2)
     .equ XIP_QMI.MX_RFMT.ADDR_WIDTH_MSK,      (0x03 << XIP_QMI.MX_RFMT.ADDR_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.ADDR_WIDTH_SINGLE,   (0x00 << XIP_QMI.MX_RFMT.ADDR_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.ADDR_WIDTH_DUAL,     (0x01 << XIP_QMI.MX_RFMT.ADDR_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.ADDR_WIDTH_QUAD,     (0x02 << XIP_QMI.MX_RFMT.ADDR_WIDTH_SHIFT)
     .equ XIP_QMI.MX_RFMT.PREFIX_WIDTH_SHIFT,  (0)
     .equ XIP_QMI.MX_RFMT.PREFIX_WIDTH_MSK,    (0x03 << XIP_QMI.MX_RFMT.PREFIX_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.PREFIX_WIDTH_SINGLE, (0x00 << XIP_QMI.MX_RFMT.PREFIX_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.PREFIX_WIDTH_DUAL,   (0x01 << XIP_QMI.MX_RFMT.PREFIX_WIDTH_SHIFT)
+    .equ XIP_QMI.MX_RFMT.PREFIX_WIDTH_QUAD,   (0x02 << XIP_QMI.MX_RFMT.PREFIX_WIDTH_SHIFT)
   .equ XIP_QMI.M0_RCMD,    0x14
   .equ XIP_QMI.M1_RCMD,    0x28
     .equ XIP_QMI.MX_RCMD.SUFFIX_SHIFT,        (8)
@@ -258,6 +273,10 @@
     .equ XIP_QMI.ATRANSX.BASE_SHIFT,          (0)
     .equ XIP_QMI.ATRANSX.BASE_MSK,            (0xFFF << XIP_QMI.ATRANSX.BASE_SHIFT)
 
+
+@ uncached XIP access address offset
+.equ XIP_NOCACHE_NOALLOC_BASE, 0x14000000
+ 
 @ atomic register access for register settings
 .equ ADR_NORMAL, 0x0000
 .equ ADR_XOR,    0x1000
@@ -269,17 +288,31 @@
 
 
 @ -----------------------------------------------------------------------------
-@ wait until qspi is ready for next command
+@ busy wait until qspi is ready for next command
 @ regs used: r0, r1
-
 qmi_wait_ready:
 @ -----------------------------------------------------------------------------
-    ldr r0, =XIP_QMI_BASE
-1:  ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
-    tst r1, #XIP_QMI.DIRECT_CSR.BUSY
-    bne 1b
-    bx lr
+  ldr r0, =XIP_QMI_BASE
+1:ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
+  tst r1, #XIP_QMI.DIRECT_CSR.BUSY
+  bne 1b
+  bx lr
 .ltorg
+
+@ -----------------------------------------------------------------------------
+@ busy wait until qspi has space in direct tx fifo.
+@ regs used: none
+qmi_wait_tx_space:
+@ -----------------------------------------------------------------------------
+  push {r0, r1}
+  ldr r0, =XIP_QMI_BASE
+1:ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
+  tst r1, #XIP_QMI.DIRECT_CSR.TXFULL
+  bne 1b
+  pop {r0, r1}
+  bx lr
+.ltorg
+
 
 @ -----------------------------------------------------------------------------
 @ enter XIP mode :
@@ -292,31 +325,106 @@ qmi_wait_ready:
 @ Fast Read Quad I/O: EBh with mode A0h 6 address cycles, 2 mode cycles and 6 dummy cycles
 
 qmi_enter_xip:
-    push {r4, lr}
-    bl   qmi_wait_ready
-    ldr  r2, =XIP_QMI_BASE
-    @ volatile status register write enable
-    ldr  r3, =(W25Q32RV_CMD_VOLATILE_SR_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (0 << XIP_QMI.DIRECT_TX.IWIDTH_SHIFT))
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    @ set QE bit in status register 2
-    ldr  r3, =(W25Q32RV_CMD_WRITE_STATUS_REG2 | (0x02 << 8) | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT)  | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    @ send C0h,30h to set 8 dummy cycles for QPI mode
-    ldr  r3, =(W25Q32RV_CMD_SET_READ_PARAMETERS | (0x30 << 8) | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    @ enter QPI mode send 38h command with 1 bit instruction width, 1 bit data width and no push
-    ldr  r3, =(W25Q32RV_CMD_ENTER_QPI_MODE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT))
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    @ switch off direct transfer engine to avoid accidental writes to flash
-    ldr  r3, =(XIP_QMI.DIRECT_CSR + ADR_CLR)
-    mov  r1, #XIP_QMI.DIRECT_CSR.EN
-    str  r1, [r3]
-    pop  {r4, pc}
+  push {lr}
+  bl   qmi_wait_ready
+  ldr  r2, =XIP_QMI_BASE
+  @ volatile status register write enable
+  ldr  r3, =(W25Q32RV_CMD_VOLATILE_SR_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (0 << XIP_QMI.DIRECT_TX.IWIDTH_SHIFT))
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  @ set Quad Enable bit in status register 2
+  ldr  r3, =(W25Q32RV_CMD_WRITE_STATUS_REG2 | (0x02 << 8) | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT)  | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  @ send C0h, 30h to set 8 dummy cycles for QPI mode
+  ldr  r3, =(W25Q32RV_CMD_SET_READ_PARAMETERS | (0x30 << 8) | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  @ enter QPI mode send 38h command with 1 bit instruction width, 1 bit data width and no push
+  ldr  r3, =(W25Q32RV_CMD_ENTER_QPI_MODE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT))
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  @ set continous read mode auto command format :
+  @ set QMI XIP read format to dummy len 6 cycles-24 bits, suffix len 0 bits, prefix len 1, data width 4 lines, dummy width 4 lines, suffix width 4 lines, addr width 4 lines
+  ldr  r3, =((6 << XIP_QMI.MX_RFMT.DUMMY_LEN_SHIFT) | (XIP_QMI.MX_RFMT.SUFFIX_LEN_8_BIT) | (XIP_QMI.MX_RFMT.PREFIX_LEN_0_BIT) | (2 << XIP_QMI.MX_RFMT.DATA_WIDTH_SHIFT) | (XIP_QMI.MX_RFMT.DUMMY_WIDTH_QUAD) | (XIP_QMI.MX_RFMT.SUFFIX_WIDTH_QUAD) | (XIP_QMI.MX_RFMT.ADDR_WIDTH_QUAD) | (XIP_QMI.MX_RFMT.PREFIX_WIDTH_QUAD))
+  str r3, [r2, #XIP_QMI.M0_RFMT]
+  @ Set M0_RCMD to Fast Read Quad I/O: EBh with mode A0h.
+  ldr  r3, =(W25Q32RV_CMD_FAST_READ_QUAD_IO | (0xA0 << 8))
+  str  r3, [r2, #XIP_QMI.M0_RCMD] @ write command to direct tx register
+  bl   qmi_wait_ready
+  @ to initiate continuous read mode, we need to send a read command to the flash memory. before switching off direct transfer engine.
+  ldr r3,=(W25Q32RV_CMD_FAST_READ_QUAD_IO | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  @ write dummy address byte 1
+  ldr r3, =(0| XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  @ write dummy address byte 2
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  @ write dummy address byte 3
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  bl  qmi_wait_tx_space
+  @ write mode byte
+  ldr r3, =(0xA0 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  @switch dummy direction dummy byte 1
+  ldr r3,=(0x00 | XIP_QMI.DIRECT_TX.NOPUSH | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  bl  qmi_wait_tx_space
+  @ write dummy byte 1
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  bl  qmi_wait_tx_space
+  @ write dummy byte 2
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  bl  qmi_wait_tx_space
+  @ write dummy byte 3
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  bl  qmi_wait_tx_space
+  @ write dummy byte 4
+  str r3, [r2, #XIP_QMI.DIRECT_TX]
+  bl  qmi_wait_ready
+  @ switch off direct transfer engine back to XIP mode.
+  ldr  r3, =(XIP_QMI.DIRECT_CSR + ADR_CLR)
+  mov  r1, #XIP_QMI.DIRECT_CSR.EN
+  str  r1, [r2,r3]
+  pop  {pc}
 .ltorg
+
+@ -----------------------------------------------------------------------------
+@ write data via direct transfer engine fifo
+@ parameters: r0 data to write
+qmi_write_direct_tx_fifo:
+  push {r1,lr}
+  bl   qmi_wait_ready
+  ldr  r1, =XIP_QMI_BASE
+  pop  {r1,pc}
+.ltorg
+
+@ -----------------------------------------------------------------------------
+@ read data from direct transfer engine rx fifo
+@ return r0 data read
+qmi_read_direct_rx_fifo:
+  push {r1}
+  ldr  r1, =XIP_QMI_BASE
+  ldr  r0, [r1, #XIP_QMI.DIRECT_RX]
+  pop  {r1}
+  bx lr
+.ltorg
+
+@ -----------------------------------------------------------------------------
+@ get direct rx fifo level
+@ return r0 rx fifo level
+qmi_get_direct_rx_fifo_level:
+  push {r1}
+  ldr  r1, =XIP_QMI_BASE
+  ldr  r0, [r1, #XIP_QMI.DIRECT_CSR]
+  ldr  r1,=XIP_QMI.DIRECT_CSR.RX_LEVEL_MSK
+  ands r0, r0, r1
+  ldr  r1,=XIP_QMI.DIRECT_CSR.RX_LEVEL_SHIFT
+  lsr  r0, r0, r1
+  pop  {r1}
+  bx lr
+.ltorg
+
+
 
 @-----------------------------------------------------------------------------
 @ exit XIP mode:
@@ -326,23 +434,23 @@ qmi_enter_xip:
 @ to make sure flash is in spi mode  transfer 0xFFFF in single io transfer mode.
 @ registers used: r1, r2, r3
 qmi_exit_xip:
-    push {lr}
-    bl   qmi_wait_ready
-    ldr  r2, =XIP_QMI_BASE
-    @ enable direct transfer engine
-    ldr  r3, =(XIP_QMI.DIRECT_CSR + ADR_SET)
-    mov  r1, #XIP_QMI.DIRECT_CSR.EN
-    str  r1, [r3]
-    bl   qmi_wait_ready
-    @ send FFh command to exit QPI mode with 4 bit instruction width, 4 bit data width and no push
-    ldr  r3, =(W25Q32RV_CMD_EXIT_QPI_MODE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT))
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    @ send 0xFFFF in single io mode to make sure flash is in spi mode with 8 dummy cycles
-    ldr  r3, =((0xFFFF ) | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    pop {pc}
+  push {lr}
+  bl   qmi_wait_ready
+  ldr  r2, =XIP_QMI_BASE
+  @ enable direct transfer engine
+  ldr  r3, =(XIP_QMI.DIRECT_CSR + ADR_SET)
+  mov  r1, #XIP_QMI.DIRECT_CSR.EN
+  str  r1, [r3]
+  bl   qmi_wait_ready
+  @ send FFh command to exit QPI mode with 4 bit instruction width, 4 bit data width and no push
+  ldr  r3, =(W25Q32RV_CMD_EXIT_QPI_MODE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT))
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  @ send 0xFFFF in single io mode to make sure flash is in spi mode with 8 dummy cycles
+  ldr  r3, =((0xFFFF ) | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  pop {pc}
 .ltorg
 
 
@@ -350,40 +458,82 @@ qmi_exit_xip:
 @ flush the direct mode rx fifo, this is needed after read command to clear the rx fifo before next command, otherwise the old data in rx fifo may cause problem for next command.
 @ regs used: r0, r1
 qmi_flush_rx_fifo:
-    ldr r0, =XIP_QMI_BASE
-1:  ldr r1, [r0, #XIP_QMI.DIRECT_RX]
-    ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
-    tst r1, #XIP_QMI.DIRECT_CSR.RXEMPTY
-    beq 1b
-    bx lr
+  ldr r0, =XIP_QMI_BASE
+1:ldr r1, [r0, #XIP_QMI.DIRECT_RX]
+  ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
+  tst r1, #XIP_QMI.DIRECT_CSR.RXEMPTY
+  beq 1b
+  bx lr
 @ -----------------------------------------------------------------------------
 @ wait for qspi program/erase done by polling status register qspi must be in spi mode to read status register, so make sure flash is in spi mode before calling this function.
 @ poll status register 1 bit 0 WIP, when it is 0, program/erase is done.
 @ regs used: r0, r1
 qmi_wait_program_done:
-    bl   qmi_wait_ready
-    bl   qmi_flush_rx_fifo
-    ldr  r0, =XIP_QMI_BASE
-1:  ldr  r1, =(W25Q32RV_CMD_READ_STATUS_REG1 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
-    str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    mov  r1, #0
-    str  r1, [r0, #XIP_QMI.DIRECT_TX] @ dummy write to trigger the read command
-    ldr  r1, [r0, #XIP_QMI.DIRECT_RX]
-    ands r1, r1, #0x01 @ check WIP bit
-    bne 1b
-    bx lr 
+  bl   qmi_wait_ready
+  bl   qmi_flush_rx_fifo
+  ldr  r0, =XIP_QMI_BASE
+1:ldr  r1, =(W25Q32RV_CMD_READ_STATUS_REG1 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r1, #0
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ dummy write to trigger the read command
+  ldr  r1, [r0, #XIP_QMI.DIRECT_RX]
+  ands r1, r1, #0x01 @ check WIP bit
+  bne 1b
+  bx lr 
 
 @ -----------------------------------------------------------------------------
 @ write enable command, set WEL bit in status register
 @ regs used: r0, r1
 qmi_write_enable:
-    push {lr}
-    bl   qmi_wait_ready
-    ldr  r0, =XIP_QMI_BASE
-    ldr  r1, =(W25Q32RV_CMD_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
-    str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    bl   qmi_wait_ready
-    pop {pc}
+  push {lr}
+  bl   qmi_wait_ready
+  ldr  r0, =XIP_QMI_BASE
+  ldr  r1, =(W25Q32RV_CMD_WRITE_ENABLE | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  bl   qmi_wait_ready
+  pop {pc}
+
+@ -----------------------------------------------------------------------------
+@ program a single byte to flash
+@ ( byte flashaddr24bit -- )
+qmi_program_byte:
+  push {r4, lr}
+  bl   qmi_wait_ready
+  bl   qmi_exit_xip @ make sure flash is in spi mode for programming
+  bl   qmi_write_enable
+  ldr  r0, =XIP_QMI_BASE
+  ldr  r1, =(W25Q32RV_CMD_PAGE_PROGRAM | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT))
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r1, tos @ load flash address to r1
+  lsr  r1, r1, #16 @ get top byte of flash address for 24 bit addressing
+  and  r1, r1, #0xFF @ mask to 8 bit
+  @ prepare 8 bit address for page program command, with 1 bit instruction width, 1 bit data width and no push
+  ldr  r2, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  orr  r1, r1, r2
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r1, tos @ load flash address to r1
+  lsr  r1, r1, #8 @ get top byte of flash address for 24 bit addressing
+  and  r1, r1, #0xFF @ mask to 8 bit
+  @ prepare 8 bit address for page program command, with 1 bit instruction width, 1 bit data width and no push
+  ldr  r2, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  orr  r1, r1, r2
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r1, tos @ load flash address to r1
+  lsr  r1, r1, #0 @ get top byte of flash address for 24 bit addressing
+  and  r1, r1, #0xFF @ mask to 8 bit
+  @ prepare 8 bit address for page program command, with 1 bit instruction width, 1 bit data width and no push
+  ldr  r2, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  orr  r1, r1, r2
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r1, tos @ load flash address to r1
+  lsr  r1, r1, #0 @ get top byte of flash address for 24 bit addressing
+  and  r1, r1, #0xFF @ mask to 8 bit
+  @ prepare 8 bit address for page program command, with 1 bit instruction width, 1 bit data width and no push
+  ldr  r2, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  orr  r1, r1, r2
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  pop {r4, pc}
+.ltorg
 
 
 @ -----------------------------------------------------------------------------
@@ -392,53 +542,53 @@ qmi_write_enable:
 @ qspi tx fifo is 4 entries of 8 or 16 bit data, so we can write 4 or 8 bytes at a time depending on data width setting.
 @ ( bufferaddress count flashaddr24bit -- )
 qmi_program_page:
-    push {r4, lr}
-    bl   qmi_wait_ready
-    bl   qmi_exit_xip @ make sure flash is in spi mode for programming
-    bl   qmi_write_enable
-    @ send page program command with 1 bit instruction width, 1 bit data width and no push
-    ldr  r2, =XIP_QMI_BASE
-    ldr  r3, =(W25Q32RV_CMD_PAGE_PROGRAM | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT))
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    mov  r3, tos @ load flash address to r3
-    lsr  r3, r3, #16 @ get top byte of flash address for 24 bit addressing
-    and  r3, r3, #0xFF @ mask to 8 bit
-    @ prepare 8 bit address for page program command, with 1 bit instruction width, 1 bit data width and no push
-    ldr  r1, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
-    orr  r3, r3, r1
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-    mov  r3, tos @ load flash address to r3
-    lsl  r3, r3, #8 @ shift left to get middle byte of flash address for 24 bit addressing
-    and  r3, r3, #0xff @ mask to 8 bit
-    orr  r3, r3, r1
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write 2nd address byte to direct tx register.
-    mov  r3, tos @ load flash address to r3
-    and  r3, r3, #0xff @ mask to 8 bit for 24 bit addressing
-    orr  r3, r3, r1
-    str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write 3rd address byte to direct tx register.
-    mov  r3, tos @ load flash address to r3
-    @ now copy data to flash.
-    @ r1 has data format for the data bytes.
-    @ r3 can be reused to as buffer address. 
-    @ load counter and buffer address from stack to r1 and r0
-    ldm  psp!, {r3, tos} @ load count to tos and buffer address to r3
-    @ r3 has buffer address, tos has count.
-    @ check if count is > 0 and write data to flash
-1:  cmp  tos, #0
-    beq 2f
-    @ check if there is place in tx fifo, if not wait until there is place
-1:  ldr r0, [r2, #XIP_QMI.DIRECT_CSR]
-    tst r0, #XIP_QMI.DIRECT_CSR.TXFULL
-    bne 1b @ wait until there is place in tx fifo
-    ldrb r0, [r3], #1 @ load byte from buffer to r0 and post increment buffer address
-    orr  r0, r1, r1 @ combine with command and address bytes in r1
-    str  r0, [r2, #XIP_QMI.DIRECT_TX] @ write data byte to direct tx register
-    subs tos, tos, #1 @ decrement count
-    bne 1b
-2:  bl   qmi_wait_ready
-    bl   qmi_wait_program_done
-    bl   qmi_enter_xip @ re-enter XIP mode after programming
-    pop {r4, pc}
+  push {r4, lr}
+  bl   qmi_wait_ready
+  bl   qmi_exit_xip @ make sure flash is in spi mode for programming
+  bl   qmi_write_enable
+  @ send page program command with 1 bit instruction width, 1 bit data width and no push
+  ldr  r2, =XIP_QMI_BASE
+  ldr  r3, =(W25Q32RV_CMD_PAGE_PROGRAM | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT))
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r3, tos @ load flash address to r3
+  lsr  r3, r3, #16 @ get top byte of flash address for 24 bit addressing
+  and  r3, r3, #0xFF @ mask to 8 bit
+  @ prepare 8 bit address for page program command, with 1 bit instruction width, 1 bit data width and no push
+  ldr  r1, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  orr  r3, r3, r1
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r3, tos @ load flash address to r3
+  lsl  r3, r3, #8 @ shift left to get middle byte of flash address for 24 bit addressing
+  and  r3, r3, #0xff @ mask to 8 bit
+  orr  r3, r3, r1
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write 2nd address byte to direct tx register.
+  mov  r3, tos @ load flash address to r3
+  and  r3, r3, #0xff @ mask to 8 bit for 24 bit addressing
+  orr  r3, r3, r1
+  str  r3, [r2, #XIP_QMI.DIRECT_TX] @ write 3rd address byte to direct tx register.
+  mov  r3, tos @ load flash address to r3
+  @ now copy data to flash.
+  @ r1 has data format for the data bytes.
+  @ r3 can be reused to as buffer address. 
+  @ load counter and buffer address from stack to r1 and r0
+  ldm  psp!, {r3, tos} @ load count to tos and buffer address to r3
+  @ r3 has buffer address, tos has count.
+  @ check if count is > 0 and write data to flash
+1:cmp  tos, #0
+  beq 2f
+  @ check if there is place in tx fifo, if not wait until there is place
+1:ldr r0, [r2, #XIP_QMI.DIRECT_CSR]
+  tst r0, #XIP_QMI.DIRECT_CSR.TXFULL
+  bne 1b @ wait until there is place in tx fifo
+  ldrb r0, [r3], #1 @ load byte from buffer to r0 and post increment buffer address
+  orr  r0, r1, r1 @ combine with command and address bytes in r1
+  str  r0, [r2, #XIP_QMI.DIRECT_TX] @ write data byte to direct tx register
+  subs tos, tos, #1 @ decrement count
+  bne 1b
+2:bl   qmi_wait_ready
+  bl   qmi_wait_program_done
+  bl   qmi_enter_xip @ re-enter XIP mode after programming
+  pop {r4, pc}
 .ltorg
 
 
@@ -531,4 +681,4 @@ eraseflashsector:  @ Erase one flash sector
 
 
 
-@eof
+@ ------------ end of file ------------
