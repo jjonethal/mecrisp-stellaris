@@ -66,6 +66,10 @@
 
 
 .cpu cortex-m33
+  .ifdef BIT0
+  .else
+@    .include "../common/datastackandmacros.s"
+  .endif
 
 @ 06h Write Enable
 @ 50h Volatile SR Write Enable
@@ -274,9 +278,11 @@
     .equ XIP_QMI.ATRANSX.BASE_MSK,            (0xFFF << XIP_QMI.ATRANSX.BASE_SHIFT)
 
 
+@ for max performance qspi will operate in quad mode
+
 @ uncached XIP access address offset
 .equ XIP_NOCACHE_NOALLOC_BASE, 0x14000000
- 
+
 @ atomic register access for register settings
 .equ ADR_NORMAL, 0x0000
 .equ ADR_XOR,    0x1000
@@ -292,12 +298,46 @@
 @ regs used: r0, r1
 qmi_wait_ready:
 @ -----------------------------------------------------------------------------
+  push {r0,r1}
   ldr r0, =XIP_QMI_BASE
 1:ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
   tst r1, #XIP_QMI.DIRECT_CSR.BUSY
   bne 1b
+  pop {r0,r1}
   bx lr
 .ltorg
+
+@ -----------------------------------------------------------------------------
+@ flush direct rx fifo
+@ regs used: none
+qmi_flush_direct_rx_fifo:
+@ -----------------------------------------------------------------------------
+  push {r0,r1}
+  bl qmi_wait_ready                   @ wait until qspi is ready for next command
+  ldr r0, =XIP_QMI_BASE               @ load base address of qspi
+1:ldr r1, [r0, #XIP_QMI.DIRECT_RX]    @ dummy read direct rx fifo
+  ldr r1, [r0, #XIP_QMI.DIRECT_CSR]   @ read direct control register
+  tst r1, #XIP_QMI.DIRECT_CSR.RXEMPTY @ check if direct rx fifo is empty
+  bne 1b                              @ if not empty, loop
+  pop {r0,r1}                         @ restore registers
+  bx lr                               @ return
+.ltorg
+
+
+@ -----------------------------------------------------------------------------
+@ wait for data in direct rx fifo
+@ regs used: none
+qmi_wait_rx_data:
+@ -----------------------------------------------------------------------------
+  push {r0,r1}
+  ldr r0, =XIP_QMI_BASE               @ load base address of qspi
+1:ldr r1, [r0, #XIP_QMI.DIRECT_CSR]   @ read direct control register
+  tst r1, #XIP_QMI.DIRECT_CSR.RXEMPTY @ check if direct rx fifo is empty
+  bne 1b                              @ if not empty, loop
+  pop {r0,r1}                         @ restore registers
+  bx lr                               @ return
+.ltorg
+
 
 @ -----------------------------------------------------------------------------
 @ busy wait until qspi has space in direct tx fifo.
@@ -312,6 +352,121 @@ qmi_wait_tx_space:
   pop {r0, r1}
   bx lr
 .ltorg
+
+@ -----------------------------------------------------------------------------
+@ read qspi flash status register 2 in spi mode
+@ ( -- sr2 )
+qmi_read_sr2:
+@ -----------------------------------------------------------------------------
+  push {r0,r1,lr}
+  bl   qmi_wait_ready
+  bl   qmi_flush_direct_rx_fifo
+  ldr  r0, =XIP_QMI_BASE
+  ldr  r1, =(W25Q32RV_CMD_READ_STATUS_REG2 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  mov  r1, #0x00 
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ dummy write to shift in status register 2
+  bl   qmi_wait_rx_data             @ wait for data in direct rx fifo
+  ldr  r1, [r0, #XIP_QMI.DIRECT_RX] @ read status register 2
+  pushda r1                         @ put r1 register to stack see ../common/datastackandmacros.s
+  pop  {r0,r1,pc}                   @ restore registers and return
+.ltorg
+
+@ -----------------------------------------------------------------------------
+@ write qspi flash status register 2 in spi mode
+@ ( sr2 -- )
+qmi_write_sr2:
+@ -----------------------------------------------------------------------------
+  push {r0,r1,lr}
+  bl   qmi_wait_ready
+  bl   qmi_flush_direct_rx_fifo
+  ldr  r0, =XIP_QMI_BASE
+  and  tos,tos,#0xff
+  lsl  tos,tos,#8
+  ldr  r1, =(W25Q32RV_CMD_WRITE_STATUS_REG2 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_16_BIT) )
+  orr  r1,r1,tos
+  drop
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  pop  {r0,r1,pc}                   @ restore registers and return
+.ltorg
+
+
+@ -----------------------------------------------------------------------------
+@ write data byte to qspi flash in spi mode
+@ ( b -- )
+qmi_write_data_spi:
+@ -----------------------------------------------------------------------------
+  push {r0,r1,lr}
+  bl   qmi_wait_tx_space
+  ldr  r0, =XIP_QMI_BASE
+  ldr  r1, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  and  tos,tos,#0xff
+  orr  r1, r1, tos
+  drop
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  pop  {r0,r1,pc}                   @ restore registers and return
+.ltorg
+
+@ -----------------------------------------------------------------------------
+@ write data byte to qspi flash in qpi mode
+@ ( b -- )
+qmi_write_data_qpi:
+@ -----------------------------------------------------------------------------
+  push {r0,r1,lr}
+  bl   qmi_wait_tx_space
+  ldr  r0, =XIP_QMI_BASE
+  ldr  r1, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_4_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
+  and  tos,tos,#0xff
+  orr  r1, r1, tos
+  drop
+  str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
+  pop  {r0,r1,pc}                   @ restore registers and return
+.ltorg
+
+
+@ -----------------------------------------------------------------------------
+@ enable volatile status register write enable in spi mode
+qmi_volatile_status_reg_write_enable:
+@ -----------------------------------------------------------------------------
+  push {lr}
+  bl   qmi_wait_ready
+  pushdaconstl #W25Q32RV_CMD_VOLATILE_STATUS_REG_WRITE_ENABLE
+  bl qmi_write_data_spi
+  pop  {pc}                   @ restore registers and return
+.ltorg
+
+@ -----------------------------------------------------------------------------
+@ enter spi mode
+@ -----------------------------------------------------------------------------
+qmi_enter_spi_mode:
+  push {lr}
+  bl   qmi_wait_ready
+  pushdaconstl #W25Q32RV_CMD_EXIT_QPI_MODE
+  dup
+  dup
+  dup
+  bl qmi_write_data_qpi
+  bl qmi_write_data_qpi
+  bl qmi_write_data_qpi
+  bl qmi_write_data_qpi
+  bl   qmi_wait_ready
+  pop  {pc}                   @ restore registers and return
+.ltorg
+
+@ -----------------------------------------------------------------------------
+@ init qspi interface
+@ -----------------------------------------------------------------------------
+qmi_init:
+  bl qmi_enter_spi_mode
+  bl qmi_read_sr2
+  bl qmi_volatile_status_reg_write_enable
+  orr tos,0x02 @ set QE bit in status register 2
+  bl qmi_write_sr2
+  bl qmi_exit_xip
+
+
+@ -----------------------------------------------------------------------------
+
 
 
 @ -----------------------------------------------------------------------------
@@ -455,22 +610,12 @@ qmi_exit_xip:
 
 
 @ -----------------------------------------------------------------------------
-@ flush the direct mode rx fifo, this is needed after read command to clear the rx fifo before next command, otherwise the old data in rx fifo may cause problem for next command.
-@ regs used: r0, r1
-qmi_flush_rx_fifo:
-  ldr r0, =XIP_QMI_BASE
-1:ldr r1, [r0, #XIP_QMI.DIRECT_RX]
-  ldr r1, [r0, #XIP_QMI.DIRECT_CSR]
-  tst r1, #XIP_QMI.DIRECT_CSR.RXEMPTY
-  beq 1b
-  bx lr
-@ -----------------------------------------------------------------------------
 @ wait for qspi program/erase done by polling status register qspi must be in spi mode to read status register, so make sure flash is in spi mode before calling this function.
 @ poll status register 1 bit 0 WIP, when it is 0, program/erase is done.
 @ regs used: r0, r1
 qmi_wait_program_done:
   bl   qmi_wait_ready
-  bl   qmi_flush_rx_fifo
+  bl   qmi_flush_direct_rx_fifo
   ldr  r0, =XIP_QMI_BASE
 1:ldr  r1, =(W25Q32RV_CMD_READ_STATUS_REG1 | XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
   str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
@@ -497,7 +642,7 @@ qmi_write_enable:
 @ program a single byte to flash
 @ ( byte flashaddr24bit -- )
 qmi_program_byte:
-  push {r4, lr}
+  push {lr}
   bl   qmi_wait_ready
   bl   qmi_exit_xip @ make sure flash is in spi mode for programming
   bl   qmi_write_enable
@@ -532,7 +677,7 @@ qmi_program_byte:
   ldr  r2, =(XIP_QMI.DIRECT_TX.NOPUSH | XIP_QMI.DIRECT_TX.OE | (XIP_QMI.DIRECT_TX.IWIDTH_1_BIT) | (XIP_QMI.DIRECT_TX.DWIDTH_8_BIT) )
   orr  r1, r1, r2
   str  r1, [r0, #XIP_QMI.DIRECT_TX] @ write command to direct tx register
-  pop {r4, pc}
+  pop  {pc}
 .ltorg
 
 
